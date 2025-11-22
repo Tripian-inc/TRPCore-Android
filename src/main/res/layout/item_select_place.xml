@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_50sdp"
+    android:background="@color/transparent"
+    android:minHeight="@dimen/_50sdp"
+    android:paddingStart="@dimen/_10sdp"
+    android:paddingEnd="@dimen/_10sdp">
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imIcon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_centerVertical="true"
+        app:srcCompat="@drawable/ic_location_icon" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginStart="@dimen/_12sdp"
+        android:layout_toEndOf="@+id/imIcon"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvArea"
+            style="@style/TextBody2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/body" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAddress"
+            style="@style/TextBody3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/body" />
+    </LinearLayout>
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:layout_width="@dimen/_280sdp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        app:srcCompat="@drawable/im_line" />
+</RelativeLayout>

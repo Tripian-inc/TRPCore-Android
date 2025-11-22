@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/rlTop"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_135sdp"
+        android:background="@drawable/bg_rounded_bottom_white"
+        android:elevation="@dimen/_3sdp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imNavigation"
+            android:layout_width="@dimen/_36sdp"
+            android:layout_height="@dimen/_36sdp"
+            android:layout_marginStart="@dimen/_20sdp"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_create_trip_back" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/imNavigation"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:gravity="center"/>
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                app:srcCompat="@drawable/im_line" />
+        </LinearLayout>
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="@dimen/_16sdp"
+            android:layout_marginEnd="@dimen/_16sdp"
+            android:layout_marginBottom="@dimen/_24sdp"
+            android:animateLayoutChanges="true"
+            android:gravity="center">
+
+            <com.tripian.trpcore.util.widget.EditText
+                android:id="@+id/etSearch"
+                style="@style/TextFormField"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_36sdp"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:layout_marginEnd="@dimen/_12sdp"
+                android:layout_toStartOf="@+id/btnCancel"
+                android:background="@drawable/bg_oval_gray"
+                android:drawableStart="@drawable/ic_search_gray"
+                android:drawablePadding="@dimen/_8sdp"
+                android:imeOptions="actionDone"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingStart="@dimen/_10sdp"
+                android:paddingEnd="@dimen/_10sdp" />
+
+            <ProgressBar
+                android:id="@+id/pbProgress"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_alignTop="@+id/etSearch"
+                android:layout_alignEnd="@+id/etSearch"
+                android:layout_alignBottom="@+id/etSearch"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="@dimen/_8sdp"
+                android:visibility="gone"
+                tools:visibility="gone" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/btnCancel"
+                style="@style/TextBody2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/etSearch"
+                android:layout_alignBottom="@+id/etSearch"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:gravity="center"
+                android:textColor="@color/body"
+                android:visibility="gone" />
+        </RelativeLayout>
+    </RelativeLayout>
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvError"
+        style="@style/TextHeader2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/_80sdp"
+        android:layout_marginStart="@dimen/_16sdp"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:layout_gravity="center"
+        android:textColor="@color/text_primary" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/_80sdp"
+        android:clipToPadding="false"
+        android:paddingTop="@dimen/_84sdp" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

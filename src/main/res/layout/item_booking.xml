@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent"
+    android:paddingStart="@dimen/_12sdp"
+    android:paddingTop="@dimen/_12sdp"
+    android:paddingEnd="@dimen/_12sdp"
+    android:paddingBottom="@dimen/_12sdp">
+
+    <RelativeLayout
+        android:id="@+id/rlItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imPoi"
+            android:layout_width="@dimen/_65sdp"
+            android:layout_height="@dimen/_55sdp"
+            android:layout_centerVertical="true" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="@dimen/_8sdp"
+            android:layout_toRightOf="@+id/imPoi"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvCityName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:ellipsize="end"
+                tools:text="Barcelona" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:ellipsize="end"
+                tools:text="Finish Museum of Natural History" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="2"
+                android:visibility="gone"
+                android:ellipsize="end"
+                tools:text="Finish Museum of Natural History" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/btnCancel"
+                style="@style/ButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/_26sdp"
+                android:textColor="@color/blue_dark"
+                android:background="@drawable/selector_button_blue"
+                android:gravity="center"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:paddingStart="@dimen/_16sdp"
+                android:paddingEnd="@dimen/_16sdp"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>

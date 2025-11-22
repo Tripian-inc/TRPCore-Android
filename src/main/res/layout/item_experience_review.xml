@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/llRate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatRatingBar
+            android:id="@+id/rateBar"
+            style="?android:attr/ratingBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:rating="3.5"
+            android:theme="@style/AppThemeYellow"
+            android:visibility="visible" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRate"
+            style="@style/TextSubhead1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:textColor="@color/black"
+            android:visibility="visible"
+            tools:text="4.2" />
+
+        <View
+            android:id="@+id/viDot"
+            android:layout_width="3dp"
+            android:layout_height="3dp"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/_6sdp"
+            android:background="@drawable/bg_circle_black_full"
+            android:textColor="@color/extra_main"
+            android:visibility="visible" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvReviewDate"
+            style="@style/TextSubhead1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:textColor="@color/black"
+            android:visibility="visible"
+            tools:text="26 Dec 2021" />
+    </LinearLayout>
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvComment"
+        style="@style/TextBody1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:textColor="@color/body"
+        tools:text="Such a great experience!" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvAuthor"
+        style="@style/TextCaption2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:textColor="@color/body_dark"
+        tools:text="GetYourGuide traveler – United Arab Emirates" />
+</LinearLayout>

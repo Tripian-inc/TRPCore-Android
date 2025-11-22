@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/_2sdp">
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvTitle"
+        style="@style/TextHeader1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:layout_marginBottom="@dimen/_6sdp"
+        android:textColor="@color/black"
+        android:visibility="gone"
+        tools:text="Eylül"
+        tools:visibility="visible" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvName"
+        style="@style/TextHeader1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:layout_marginBottom="@dimen/_6sdp"
+        android:textColor="@color/black"
+        tools:text="Eylül" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/clSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:background="@drawable/bg_oval_gray_without_line"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingEnd="@dimen/_8sdp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSpinnerTitle"
+            style="@style/TextBody2Regular"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_12sdp"
+            android:textColor="@color/text_primary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSpinnerValue"
+            style="@style/TextBody2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingTop="@dimen/_12sdp"
+            android:paddingBottom="@dimen/_12sdp"
+            android:layout_marginEnd="@dimen/_12sdp"
+            android:textColor="@color/black"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/imCheck"
+            app:layout_constraintStart_toEndOf="@+id/tvSpinnerTitle"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="06 Jan 2023" />
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imCheck"
+            android:layout_width="@dimen/_16sdp"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/ic_arrow_down" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvInnerList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:layout_marginEnd="@dimen/_12sdp"
+        android:nestedScrollingEnabled="false" />
+</LinearLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="CheckView">
+        <attr name="text" format="reference" />
+    </declare-styleable>
+
+    <declare-styleable name="PillInputView">
+        <attr name="labelText" format="string"/>
+        <attr name="placeholderText" format="string"/>
+        <attr name="isPasswordToggleEnabled" format="boolean"/>
+        <attr name="android:inputType"/> <!-- pass through -->
+        <attr name="labelTextAppearance" format="reference"/>
+        <attr name="fieldTextAppearance" format="reference"/>
+        <attr name="placeholderTextAppearance" format="reference"/>
+    </declare-styleable>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!--    100    Extra Light or Ultra Light-->
+    <!--    200    Light or Thin-->
+    <!--    300    Book or Demi-->
+    <!--    400    Normal or Regular-->
+    <!--    500    Medium-->
+    <!--    600    Semibold, Demibold-->
+    <!--    700    Bold-->
+    <!--    800    Black, Extra Bold or Heavy-->
+    <!--    900    Extra Black, Fat, Poster or Ultra Black-->
+
+    <font
+        app:font="@font/opensans_regular"
+        app:fontStyle="normal"
+        app:fontWeight="400" />
+</font-family>

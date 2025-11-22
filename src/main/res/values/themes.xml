@@ -1,0 +1,110 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="BaseAppTheme" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorPrimaryDark">@color/primary</item>
+        <item name="colorAccent">@color/primary</item>
+
+        <item name="android:windowNoTitle">true</item>
+
+        <item name="android:windowBackground">@color/white</item>
+
+        <item name="android:windowMinWidthMajor">90%</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+
+        <item name="android:scrollbarSize">0dp</item>
+        <item name="android:scrollbarThumbVertical">@android:color/transparent</item>
+        <item name="android:windowDisablePreview">true</item>
+
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.Material3.BodyLarge</item>
+    </style>
+
+    <style name="AppTheme" parent="BaseAppTheme" />
+
+    <style name="AppTheme.Transparent">
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+
+    <style name="AppTheme.BottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
+        <item name="android:colorBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.3</item>
+
+        <item name="android:windowMinWidthMajor">100%</item>
+        <item name="android:windowMinWidthMinor">100%</item>
+    </style>
+
+    <style name="AppThemeYellow" parent="BaseAppTheme">
+        <item name="colorPrimaryDark">@color/yellow</item>
+        <item name="colorAccent">@color/yellow</item>
+    </style>
+
+    <style name="DefaultNumberPickerTheme" parent="AppTheme">
+        <item name="colorControlNormal">@color/ultra_light_grey</item>
+        <item name="android:fontFamily">@font/semibold</item>
+        <item name="android:textSize">@dimen/text_size_headline</item>
+        <item name="android:textColor">@color/black87</item>
+    </style>
+
+    <style name="datePicker" parent="Theme.AppCompat.DayNight.Dialog">
+        <item name="colorPrimary">@color/head</item>
+        <item name="colorPrimaryDark">@color/primary</item>
+        <item name="colorAccent">@color/primary</item>
+    </style>
+
+
+    <style name="chipCompanionSelectBackground" parent="Widget.MaterialComponents.Chip.Filter">
+<!--        <item name="chipBackgroundColor">chip</item>-->
+        <item name="chipCornerRadius">@dimen/_10sdp</item>
+        <item name="chipBackgroundColor">@color/extra_sub</item>
+        <item name="android:textAppearance">@style/TextBody2Regular</item>
+
+<!--        <item name="android:textColor">@color/color_choice_chip_text_color</item>-->
+    </style>
+    <!-- res/values/styles.xml -->
+    <style name="Widget.MyApp.PillInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
+        <item name="boxBackgroundMode">filled</item>
+        <item name="boxBackgroundColor">@color/main_gray_bg</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="boxStrokeColor">@color/stroke_grey_20</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.MyApp.Pill</item>
+        <item name="android:layout_margin">0dp</item>
+        <item name="hintTextColor">@color/main_dark</item>
+    </style>
+
+    <style name="ShapeAppearance.MyApp.Pill" parent="ShapeAppearance.Material3.Corner.Full">
+        <!-- 50% corners = perfect capsule -->
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="Widget.PillTextInput" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="boxBackgroundMode">none</item>
+        <item name="boxBackgroundColor">@color/transparent</item>
+        <item name="boxStrokeColor">@color/transparent</item>
+
+        <item name="android:layout_marginBottom">0dp</item>
+        <!-- collapsed hint (floating label) appearance -->
+        <item name="hintTextAppearance">@style/PillHint</item>
+        <item name="helperTextTextAppearance">@style/PillHelper</item>
+    </style>
+
+    <style name="PillHint" parent="TextAppearance.MaterialComponents.Caption">
+        <!-- smaller, slightly darker label similar to screenshot -->
+        <item name="android:fontFamily">@font/inter_tight_medium</item>
+        <item name="android:textColor">@color/main_dark</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="PillHelper" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:fontFamily">@font/inter_tight_regular</item>
+        <item name="android:textColor">@color/text_dark_64</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+</resources>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/rlTop"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_135sdp"
+        android:background="@drawable/bg_rounded_bottom_white"
+        android:elevation="@dimen/_3sdp"
+        android:paddingBottom="@dimen/_12sdp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imNavigation"
+            android:layout_width="@dimen/_36sdp"
+            android:layout_height="@dimen/_36sdp"
+            android:layout_marginStart="@dimen/_20sdp"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:clickable="true"
+            app:srcCompat="@drawable/ic_create_trip_back" />
+
+        <LinearLayout
+            android:id="@+id/llTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/imNavigation"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:gravity="center" />
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                app:srcCompat="@drawable/im_line" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.CardView
+            android:id="@+id/cvTab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            app:cardCornerRadius="@dimen/_22sdp"
+            app:cardElevation="0dp"
+            app:contentPaddingLeft="@dimen/_8sdp">
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:tabBackground="@color/transparent"
+                app:tabIndicatorColor="@color/primary"
+                app:tabIndicatorFullWidth="false"
+                app:tabIndicatorHeight="@dimen/_2sdp"
+                app:tabMinWidth="@dimen/_80sdp"
+                app:tabMode="scrollable"
+                app:tabRippleColor="@color/pink_soft"
+                app:tabSelectedTextColor="@color/black_soft"
+                app:tabTextAppearance="@style/TextSubhead1" />
+        </com.tripian.trpcore.util.widget.CardView>
+
+        <ProgressBar
+            android:id="@+id/pbProgress"
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="@dimen/_28sdp"
+            android:layout_marginEnd="@dimen/_16sdp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="@dimen/_26sdp"
+            android:layout_marginEnd="@dimen/_16sdp"
+            android:visibility="gone"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvStep"
+                style="@style/TextBody2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="4"
+                android:textColor="@color/primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_2sdp"
+                android:layout_marginEnd="@dimen/_2sdp"
+                android:gravity="center"
+                android:text="/"
+                android:textColor="@color/body" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTotalStep"
+                style="@style/TextBody3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="4"
+                android:textColor="@color/body" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/_80sdp"
+        android:layout_marginBottom="@dimen/_56sdp"
+        android:clipToPadding="false"
+        android:paddingTop="@dimen/_74sdp" />
+
+    <com.tripian.trpcore.util.widget.Button
+        android:id="@+id/btnDone"
+        style="@style/TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="@dimen/_24sdp"
+        android:layout_marginEnd="@dimen/_24sdp"
+        android:layout_marginBottom="@dimen/_12sdp"
+        android:background="@drawable/selector_button_primary"
+        android:visibility="visible"
+        android:textAllCaps="false"
+        android:textColor="@color/white" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

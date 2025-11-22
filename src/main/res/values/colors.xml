@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!--    <color name="purple">#571BCE</color>-->
+<!--    <color name="pink">#FF0078</color>-->
+    <color name="primary">#e9314a</color>
+    <color name="secondary">#FF7171</color>
+    <color name="gold">#FFAA02</color>
+    <color name="gold_transparent">#AAFFAA02</color>
+    <color name="black">#FF000000</color>
+    <color name="black_soft">#222222</color>
+    <color name="text_primary">#434B55</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="light_Red">#FFEEF0</color>
+
+    <color name="transparent">#00FFFFFF</color>
+    <color name="black_transparent">#95000000</color>
+
+    <color name="head">#0B0A1A</color>
+    <color name="body">#8C8E9A</color>
+    <color name="body_dark">#7B7D87</color>
+<!--    <color name="main_violet">@color/purple</color>-->
+    <color name="shade_violet">#DACFF0</color>
+    <color name="extra_main">#C2C4D1</color>
+    <color name="extra_shadow">#E3E4EC</color>
+    <color name="extra_sub">#F7F8FC</color>
+
+    <color name="pink_soft">#f0cfde</color>
+    <color name="blue">#50a4d7</color>
+    <color name="blue_soft">#e0f4fd</color>
+    <color name="ultra_light_grey_x">#fbfbfb</color>
+    <color name="ultra_light_grey">#f0f0f0</color>
+    <color name="light_grey">#c8c7cc</color>
+    <color name="grey">#9a9a9a</color>
+    <color name="dark_grey">#565a5c</color>
+    <color name="darker_grey">#3e4042</color>
+    <color name="green">#42a851</color>
+
+    <color name="black87">#de000000</color>
+    <color name="black56">#8f000000</color>
+    <color name="black12">#1e000000</color>
+    <color name="black8">#14000000</color>
+
+    <color name="success_message">#8cb840</color>
+    <color name="warning_message">#e7bc01</color>
+    <color name="error_message">#e54e53</color>
+    <color name="info_message">#2dbcff</color>
+
+    <color name="blue_500">#2196F3</color>
+    <color name="blue_dark">#5086ec</color>
+
+    <color name="yellow">#ffd600</color>
+
+    <color name="colorPrimary">#e9314a</color>
+    <color name="colorPrimaryDark">#212121</color>
+    <color name="colorAccent">@color/black_soft</color>
+
+    <color name="additional_orange">#F47104</color>
+    <color name="additional_red">#F41804</color>
+    <color name="additional_yellow_100">#FBD375</color>
+    <color name="additional_blue_100">#0C78C0</color>
+    <color name="main_dark">#242323</color>
+    <color name="main_gray_bg">#F2F2F2</color>
+    <color name="main_gray_sidebar">#EBEBEB</color>
+    <color name="stroke_grey_10">#EBEAEA</color>
+    <color name="stroke_grey_20">#D7D6D6</color>
+    <color name="text_dark_48">#7A242323</color>
+    <color name="text_dark_64">#A3242323</color>
+    <color name="text_dark_80">#CC242323</color>
+</resources>

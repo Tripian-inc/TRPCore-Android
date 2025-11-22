@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginTop="@dimen/_4sdp"
+    android:layout_weight="1"
+    android:paddingStart="@dimen/_6sdp"
+    android:paddingEnd="@dimen/_6sdp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_12sdp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvLogin"
+            style="@style/TextHeader1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_12sdp"
+            tools:text="Log in" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_8sdp"
+            android:orientation="horizontal">
+
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDontHaveAccount"
+                style="@style/TextBody1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/text_dark_48"
+                tools:text="Don't have account?" />
+
+            <com.tripian.trpcore.util.widget.Button
+                android:id="@+id/btnRegister"
+                style="@style/TextBody1"
+                android:layout_width="wrap_content"
+                android:layout_height="@dimen/_18sdp"
+                android:layout_marginStart="@dimen/_2sdp"
+                android:background="?selectableItemBackgroundBorderless"
+                android:textAllCaps="false"
+                android:textColor="@color/main_dark"
+                tools:text="Register Now" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.TextInputView
+            android:id="@+id/inputEmail"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_51sdp"
+            android:layout_marginTop="@dimen/_24sdp"
+            android:inputType="textEmailAddress"
+            app:isPasswordToggleEnabled="false" />
+
+        <com.tripian.trpcore.util.widget.TextInputView
+            android:id="@+id/inputPassword"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_51sdp"
+            android:layout_marginTop="@dimen/_9sdp"
+            android:inputType="textPassword"
+            app:isPasswordToggleEnabled="true" />
+
+
+        <com.tripian.trpcore.util.widget.Button
+            android:id="@+id/btnLogin"
+            style="@style/TextBody1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_18sdp"
+            android:background="@drawable/selector_button_primary"
+            android:paddingHorizontal="@dimen/_18sdp"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            tools:text="Login in now" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_6sdp"
+            android:gravity="center">
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/stroke_grey_20" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitleOr"
+                style="@style/TextCaption2"
+                android:layout_width="wrap_content"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="@dimen/_8sdp"
+                android:gravity="center"
+                android:textColor="@color/text_dark_48"
+                tools:text="Or" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:background="@color/stroke_grey_20" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/btnGoogle"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_31sdp"
+            android:layout_marginHorizontal="@dimen/_36sdp"
+            android:background="@drawable/selector_button_grey"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="@dimen/_1sdp"
+                android:elevation="@dimen/_12sdp"
+                app:srcCompat="@drawable/ic_google" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvGoogle"
+                style="@style/TextBody1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_3sdp"
+                android:layout_marginTop="@dimen/_1sdp"
+                android:gravity="center"
+                tools:text="Continue with Google" />
+        </LinearLayout>
+
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvForgotPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:layout_marginBottom="@dimen/_25sdp"
+            android:fontFamily="@font/poppins_semibold"
+            android:gravity="center"
+            android:paddingStart="@dimen/_10sdp"
+            android:paddingEnd="@dimen/_10sdp"
+            android:textColor="@color/main_dark"
+            android:textSize="@dimen/_13sdp" />
+
+    </LinearLayout>
+
+</ScrollView>

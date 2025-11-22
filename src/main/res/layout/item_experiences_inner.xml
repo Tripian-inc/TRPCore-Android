@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/llRoot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/_10sdp"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imImage"
+            android:layout_width="@dimen/_170sdp"
+            android:layout_height="@dimen/_170sdp" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvBestSeller"
+            style="@style/TextCaption1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/_12sdp"
+            android:background="@drawable/bg_best_seller"
+            android:gravity="center_vertical"
+            android:paddingStart="@dimen/_8sdp"
+            android:paddingTop="@dimen/_2sdp"
+            android:paddingEnd="@dimen/_8sdp"
+            android:paddingBottom="@dimen/_2sdp"
+            android:visibility="gone"
+            android:textColor="@color/white" />
+    </FrameLayout>
+
+    <RelativeLayout
+        android:layout_width="@dimen/_170sdp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="@dimen/_12sdp">
+
+        <androidx.appcompat.widget.AppCompatRatingBar
+            android:id="@+id/rateBar"
+            style="?android:attr/ratingBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tvTitle"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:rating="3.5"
+            android:theme="@style/AppThemeYellow" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            style="@style/TextSubhead2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:gravity="center_vertical"
+            android:maxLines="3"
+            android:minLines="3"
+            android:textStyle="italic"
+            tools:text="Title Title Title Title Title Title Title" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRate"
+            style="@style/TextCaption2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/rateBar"
+            android:layout_alignBottom="@+id/rateBar"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/rateBar"
+            android:gravity="center_vertical"
+            android:textColor="@color/grey_30"
+            tools:text="(12234)" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvPrice"
+            style="@style/TextTitle1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tvTitle"
+            android:layout_alignParentEnd="true"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:text="$123" />
+    </RelativeLayout>
+</LinearLayout>

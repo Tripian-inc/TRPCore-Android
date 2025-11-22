@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextDisplay2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Display 2" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextDisplay1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Display 1" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextHeadline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Headline" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextTitle2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Title 2" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextTitle1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Title 1" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextSubhead2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Subhead 2" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextSubhead1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Subhead 1" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextFormField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Form Field" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Body 2" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextBody1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Body 1" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Caption 2" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Caption 1" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/_36sdp"
+            android:padding="8dp"
+            android:text="Button" />
+    </LinearLayout>
+</ScrollView>

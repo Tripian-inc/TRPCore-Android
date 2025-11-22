@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="@dimen/_40sdp">
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvName"
+        style="@style/TextBody2"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_marginStart="@dimen/_10sdp"
+        android:layout_toEndOf="@+id/imCheck"
+        android:gravity="center"
+        android:textColor="@color/text_primary"
+        tools:text="Eylül" />
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imCheck"
+        android:layout_width="@dimen/_24sdp"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_alignParentStart="true"
+        app:srcCompat="@drawable/ic_check_new" />
+</RelativeLayout>

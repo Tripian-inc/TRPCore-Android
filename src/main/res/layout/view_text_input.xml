@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent"
+    android:gravity="center_vertical"
+    android:orientation="vertical">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_51sdp"
+        android:background="@drawable/bg_text_input_view"
+        android:paddingStart="@dimen/_18sdp"
+        android:paddingEnd="@dimen/_4sdp"
+        android:paddingVertical="@dimen/_9sdp">
+
+        <TextView
+            android:id="@+id/tvLabel"
+            style="@style/InterTight_Medium.12.Dark"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:layout_marginEnd="@dimen/_25sdp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Email address*" />
+
+
+        <com.tripian.trpcore.util.widget.TextInputLayout
+            android:id="@+id/til"
+            style="@style/Widget.PillTextInput"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:orientation="vertical"
+            app:endIconMode="password_toggle"
+            app:hintEnabled="false"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:passwordToggleTint="@color/text_dark_48">
+
+            <com.tripian.trpcore.util.widget.TextInputEditText
+                android:id="@+id/et"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:includeFontPadding="false"
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingStart="0dp"
+                android:paddingBottom="0dp"
+                android:scrollHorizontally="true"
+                android:singleLine="true"
+                android:textAppearance="@style/InterTight_Regular.16.Hint"
+                tools:hint="asds"
+                tools:ignore="RtlSymmetry"
+                tools:text="asdasdsd  uodashd ıhasıdh ıashd ıhasıod hıoasha " />
+        </com.tripian.trpcore.util.widget.TextInputLayout>
+
+        <!--        <com.tripian.trpcore.util.widget.EditText-->
+        <!--            android:id="@+id/editText"-->
+        <!--            style="@style/InterTight_Regular.16.Hint"-->
+        <!--            android:layout_width="0dp"-->
+        <!--            android:layout_height="0dp"-->
+        <!--            android:background="@color/transparent"-->
+        <!--            tools:text="email "-->
+        <!--            tools:hint="asdasd"-->
+        <!--            android:layout_marginTop="@dimen/_2sdp"-->
+        <!--            android:imeOptions="actionDone"-->
+        <!--            app:layout_constraintBottom_toBottomOf="parent"-->
+        <!--            app:layout_constraintEnd_toEndOf="parent"-->
+        <!--            app:layout_constraintStart_toStartOf="parent"-->
+        <!--            app:layout_constraintTop_toBottomOf="@+id/textView"/>-->
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

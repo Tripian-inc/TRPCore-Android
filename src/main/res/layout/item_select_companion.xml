@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/_40sdp"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="@dimen/_40sdp"
+    android:paddingHorizontal="@dimen/_12sdp">
+
+    <com.tripian.trpcore.util.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_32sdp"
+        android:background="@color/transparent"
+        app:cardBackgroundColor="@color/transparent"
+        app:cardCornerRadius="@dimen/_6sdp"
+        app:cardElevation="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:paddingHorizontal="@dimen/_6sdp"
+            android:layout_height="match_parent">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvName"
+                style="@style/TextSubhead2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Eylül" />
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imCancel"
+                android:layout_width="@dimen/_24sdp"
+                android:layout_height="@dimen/_24sdp"
+                app:layout_constraintBottom_toBottomOf="@+id/tvName"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/tvName"
+                app:srcCompat="@drawable/ic_delete_new" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </com.tripian.trpcore.util.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>

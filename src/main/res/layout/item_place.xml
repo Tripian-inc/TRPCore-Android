@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent"
+    android:paddingStart="@dimen/_10sdp"
+    android:paddingTop="@dimen/_10sdp"
+    android:paddingEnd="@dimen/_10sdp"
+    android:paddingBottom="@dimen/_10sdp">
+
+    <RelativeLayout
+        android:id="@+id/rlItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imPoi"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="@dimen/_48sdp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="@dimen/_10sdp"
+            app:srcCompat="@color/black_soft" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="@dimen/_12sdp"
+            android:layout_toStartOf="@+id/imCheck"
+            android:layout_toEndOf="@+id/imPoi"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextSubhead1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black_soft"
+                tools:text="Finish Museum of Natural History" />
+
+            <LinearLayout
+                android:id="@+id/llBottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvMatch"
+                    style="@style/TextCaption2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/pink"
+                    android:textSize="14sp"
+                    tools:text="%90 match" />
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvSplitter"
+                    style="@style/TextCaption1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=" • "
+                    android:textColor="@color/black_soft"
+                    android:textSize="14sp" />
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvPartOfDay"
+                    style="@style/TextCaption1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/grey"
+                    android:textSize="14sp"
+                    tools:text="Part of day" />
+            </LinearLayout>
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvCategory"
+                style="@style/TextCaption2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:textColor="@color/light_grey"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="Restaurants" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imCheck"
+            android:layout_width="@dimen/_16sdp"
+            android:layout_height="@dimen/_16sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_tripian_check" />
+    </RelativeLayout>
+</RelativeLayout>

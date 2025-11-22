@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <com.tripian.trpcore.util.widget.CardView
+        android:id="@+id/cvItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_32sdp"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:layout_marginBottom="@dimen/_16sdp"
+        android:minHeight="@dimen/_88sdp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="@dimen/_24sdp"
+        app:cardElevation="@dimen/_8sdp"
+        app:contentPaddingBottom="@dimen/_12sdp"
+        app:contentPaddingLeft="@dimen/_56sdp"
+        app:contentPaddingRight="@dimen/_12sdp"
+        app:contentPaddingTop="@dimen/_12sdp"
+        app:layout_constraintBottom_toBottomOf="@+id/imImage"
+        app:layout_constraintTop_toBottomOf="@+id/imImage">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextHeader2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignTop="@+id/llInView"
+                android:layout_toStartOf="@+id/llInView"
+                android:gravity="center_vertical"
+                android:layout_marginTop="@dimen/_4sdp"
+                tools:text="Restaurant Name" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvFrom"
+                style="@style/TextBody3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tvTitle"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:layout_toStartOf="@+id/llInView"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/body"
+                tools:text="Integer" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTo"
+                style="@style/TextBody3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tvFrom"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:layout_toStartOf="@+id/llInView"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/body"
+                tools:text="Integer" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDescriptionSpend"
+                style="@style/TextBody3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tvTo"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:ellipsize="end"
+                android:maxLines="3"
+                android:textColor="@color/body"
+                tools:text="Integer" />
+
+            <LinearLayout
+                android:id="@+id/llInView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:orientation="vertical">
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvOfferType"
+                    style="@style/TextBody2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:ellipsize="end"
+                    android:gravity="center"
+                    android:maxLines="3"
+                    android:textColor="@color/head"
+                    tools:text="Din-in" />
+
+                <com.tripian.trpcore.util.widget.InView
+                    android:id="@+id/inView"
+                    android:layout_width="wrap_content"
+                    android:layout_marginTop="@dimen/_4sdp"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </RelativeLayout>
+    </com.tripian.trpcore.util.widget.CardView>
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imOffer"
+        android:layout_width="@dimen/_64sdp"
+        android:layout_height="@dimen/_64sdp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="@dimen/_16sdp"
+        android:layout_marginBottom="@dimen/_8sdp"
+        android:elevation="20dp" />
+</FrameLayout>

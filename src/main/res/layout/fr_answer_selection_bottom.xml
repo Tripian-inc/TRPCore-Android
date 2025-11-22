@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent"
+    android:orientation="vertical">
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvTitle"
+        style="@style/TextHeader2"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_56sdp"
+        android:background="@drawable/bg_rounded_top_white"
+        android:gravity="center"
+        android:paddingTop="@dimen/_16sdp" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvAnswers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/tvTitle"
+        android:background="@color/white" />
+</RelativeLayout>

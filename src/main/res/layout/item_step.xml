@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:paddingStart="@dimen/_10sdp"
+    android:paddingTop="@dimen/_5sdp"
+    android:paddingEnd="@dimen/_10sdp">
+
+    <RelativeLayout
+        android:id="@+id/rlItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/transparent"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imPoi"
+            android:layout_width="@dimen/_56sdp"
+            android:layout_height="@dimen/_56sdp"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            app:srcCompat="@color/black_soft" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvOrder"
+            style="@style/TextCaption2"
+            android:layout_width="@dimen/_16sdp"
+            android:layout_height="@dimen/_16sdp"
+            android:layout_alignTop="@+id/imPoi"
+            android:layout_marginStart="@dimen/_12sdp"
+            android:background="@drawable/bg_poi_order"
+            android:gravity="center"
+            android:textColor="@color/white"
+            tools:text="1" />
+
+        <LinearLayout
+            android:id="@+id/llChangeTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/imPoi"
+            android:layout_alignParentStart="true"
+            android:layout_alignEnd="@id/imPoi"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_12sdp"
+                android:layout_height="@dimen/_12sdp"
+                app:srcCompat="@drawable/ic_change_time" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvHours"
+                style="@style/TextCaption2"
+                android:layout_marginStart="@dimen/_2sdp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAlignment="center"
+                android:textColor="@color/primary"
+                tools:text="1.2km" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            style="@style/TextSubhead1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:layout_toStartOf="@+id/imAction"
+            android:layout_toEndOf="@+id/imPoi"
+            android:maxLines="1"
+            android:textColor="@color/black_soft"
+            tools:text="Finish Museum of Natural History asdj asjd askdl jaskld jkalj sd ajskd aks dklas askldj a" />
+
+        <LinearLayout
+            android:id="@+id/llCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/tvTitle"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_1sdp"
+            android:layout_toStartOf="@+id/imAction"
+            android:layout_toEndOf="@+id/imPoi"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvCategory"
+                style="@style/TextCaption1"
+                tools:text="Restaurants"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/grey" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imAction"
+            android:layout_width="@dimen/_32sdp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="@dimen/_9sdp"
+            app:srcCompat="@drawable/ic_menu" />
+
+        <LinearLayout
+            android:id="@+id/llRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/llCategory"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_2sdp"
+            android:layout_toEndOf="@+id/imPoi"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                app:srcCompat="@drawable/ic_star" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvRate"
+                style="@style/TextBody2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_4sdp"
+                android:layout_marginBottom="@dimen/_1sdp"
+                android:includeFontPadding="false"
+                tools:text="(324)" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvReview"
+                style="@style/TextCaption1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_4sdp"
+                android:layout_marginBottom="@dimen/_1sdp"
+                android:textColor="@color/text_primary"
+                tools:text="(324)" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvCategoryPrice"
+                style="@style/TextCaption1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_4sdp"
+                android:layout_marginBottom="@dimen/_1sdp"
+                android:textColor="@color/light_grey"
+                android:textSize="14sp"
+                tools:text="$$$$" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llThumbsUpDown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/llRating"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/imPoi"
+            android:animateLayoutChanges="true"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imLike"
+                android:layout_width="@dimen/_26sdp"
+                android:layout_height="@dimen/_26sdp"
+                android:layout_marginEnd="@dimen/_6sdp"
+                android:background="@drawable/bg_circle_gray"
+                android:padding="@dimen/_6sdp"
+                app:srcCompat="@drawable/ic_like" />
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imDislike"
+                android:layout_width="@dimen/_26sdp"
+                android:layout_height="@dimen/_26sdp"
+                android:layout_marginStart="@dimen/_6sdp"
+                android:background="@drawable/bg_circle_gray"
+                android:padding="@dimen/_6sdp"
+                app:srcCompat="@drawable/ic_dislike" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llReplace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/llRating"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/imPoi"
+            android:background="@drawable/selector_step_alternatives"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="horizontal"
+            android:padding="@dimen/_4sdp"
+            android:visibility="gone">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvReplace"
+                style="@style/TextCaption1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:layout_marginEnd="@dimen/_4sdp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llRemove"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/llRating"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/llReplace"
+            android:background="@drawable/selector_step_alternatives"
+            android:clickable="true"
+            android:focusable="true"
+            android:orientation="horizontal"
+            android:padding="@dimen/_4sdp"
+            android:visibility="gone">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvRemove"
+                style="@style/TextCaption1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:layout_marginEnd="@dimen/_4sdp" />
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imDislikeSelected"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_below="@+id/llRating"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/llRemove"
+            android:background="@drawable/bg_circle_gray"
+            android:padding="@dimen/_6sdp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_dislike_purple" />
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imLikeSelected"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_below="@+id/llRating"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:layout_toEndOf="@+id/llRemove"
+            android:background="@drawable/selector_step_alternatives"
+            android:padding="@dimen/_6sdp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_like_green"
+            tools:visibility="visible" />
+    </RelativeLayout>
+
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/viLine"
+        android:layout_width="@dimen/_26sdp"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/llRouteInfo"
+        android:layout_alignBottom="@id/llRouteInfo"
+        android:rotation="90"
+        app:srcCompat="@drawable/bg_poi_order_line" />
+
+    <LinearLayout
+        android:id="@+id/llRouteInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/rlItem"
+        android:layout_marginStart="@dimen/_24sdp"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imDrive"
+            android:layout_width="20dp"
+            android:layout_height="wrap_content"
+            app:srcCompat="@drawable/ic_itinerary_walk" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvDistance"
+            style="@style/TextCaption2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/text_primary"
+            tools:text="1.2km" />
+    </LinearLayout>
+
+    <com.tripian.trpcore.util.widget.Button
+        android:id="@+id/btnBookARide"
+        style="@style/TextCaption2"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:layout_below="@+id/rlItem"
+        android:layout_marginStart="@dimen/_20sdp"
+        android:layout_marginTop="@dimen/_6sdp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginBottom="@dimen/_8sdp"
+        android:layout_toEndOf="@+id/llRouteInfo"
+        android:background="@drawable/selector_button_red"
+        android:paddingHorizontal="@dimen/_10sdp"
+        android:textAllCaps="false"
+        android:textColor="@color/white"
+        tools:text="Book a Ride" />
+</RelativeLayout>

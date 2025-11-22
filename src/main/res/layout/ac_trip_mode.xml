@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.tripian.trpcore.util.widget.MapView
+        android:id="@+id/mapView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/_50sdp"
+        app:layout_constraintBottom_toTopOf="@+id/llBottom"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <!--        <com.tripian.trpcore.util.widget.MapView-->
+        <!--            android:id="@+id/mapView"-->
+        <!--            android:layout_width="match_parent"-->
+        <!--            android:layout_height="match_parent" />-->
+    </com.tripian.trpcore.util.widget.MapView>
+
+    <RelativeLayout
+        android:id="@+id/rlTop"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_62sdp"
+        android:background="@color/white"
+        android:elevation="@dimen/_12sdp"
+        android:paddingBottom="@dimen/_12sdp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imBack"
+            android:layout_width="@dimen/_36sdp"
+            android:layout_height="@dimen/_36sdp"
+            android:layout_marginStart="@dimen/_20sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            app:srcCompat="@drawable/ic_create_trip_back" />
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imBooking"
+            android:layout_width="@dimen/_30sdp"
+            android:layout_height="@dimen/_30sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="visible"
+            app:srcCompat="@drawable/ic_my_offers" />
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imMyOffers"
+            android:layout_width="@dimen/_30sdp"
+            android:layout_height="@dimen/_30sdp"
+            android:layout_alignParentEnd="true"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_offer_search" />
+
+        <LinearLayout
+            android:id="@+id/llTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@id/imBack"
+            android:layout_centerInParent="true"
+            android:layout_marginStart="@dimen/_50sdp"
+            android:layout_marginEnd="@dimen/_50sdp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvPlanCity"
+                style="@style/TextDisplay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/body"
+                tools:text="Amsterdam" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvPlanDay"
+                    style="@style/TextBody3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="Day 1 - OCT 10" />
+
+                <com.tripian.trpcore.util.widget.ImageView
+                    android:id="@+id/imDayArrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_arrow_down_gold" />
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/llBottom"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent">
+
+        <LinearLayout
+            android:id="@+id/llFavorite"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imFavorite"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/ic_favorite_tab" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvFavorites"
+                style="@style/Regular.13.Black"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llItinerary"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imItinerary"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/ic_itinerary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvItinerary"
+                style="@style/Regular.13.Black"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llExperiences"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/ic_local_experience" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvExperiences"
+                style="@style/Regular.13.Black"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llSearch"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:id="@+id/imSearch"
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:layout_gravity="center"
+                app:srcCompat="@drawable/ic_explore_place" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvPlaces"
+                style="@style/Regular.13.Black"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+    <!--    <LinearLayout-->
+    <!--        android:id="@+id/llBottom"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="@dimen/_120sdp"-->
+    <!--        android:background="@color/black"-->
+    <!--        android:paddingTop="@dimen/_50sdp"-->
+    <!--        app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--        app:layout_constraintEnd_toEndOf="parent"-->
+    <!--        app:layout_constraintLeft_toLeftOf="parent">-->
+
+    <!--        <FrameLayout-->
+    <!--            android:id="@+id/llExperiences"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="match_parent"-->
+    <!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+    <!--            android:layout_weight="1">-->
+
+    <!--            <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                android:layout_width="@dimen/_28sdp"-->
+    <!--                android:layout_height="@dimen/_28sdp"-->
+    <!--                android:layout_gravity="center"-->
+    <!--                app:srcCompat="@drawable/ic_tripian_map" />-->
+    <!--        </FrameLayout>-->
+
+    <!--        <FrameLayout-->
+    <!--            android:id="@+id/llItinerary"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="match_parent"-->
+    <!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+    <!--            android:layout_weight="1">-->
+
+    <!--            <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                android:id="@+id/imItinerary"-->
+    <!--                android:layout_width="@dimen/_16sdp"-->
+    <!--                android:layout_height="@dimen/_16sdp"-->
+    <!--                android:layout_gravity="center"-->
+    <!--                app:srcCompat="@drawable/ic_itinerary" />-->
+    <!--        </FrameLayout>-->
+
+    <!--        <FrameLayout-->
+    <!--            android:id="@+id/llFavorite"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="match_parent"-->
+    <!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+    <!--            android:layout_weight="1">-->
+
+    <!--            <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                android:id="@+id/imFavorite"-->
+    <!--                android:layout_width="@dimen/_20sdp"-->
+    <!--                android:layout_height="@dimen/_20sdp"-->
+    <!--                android:layout_gravity="center"-->
+    <!--                app:srcCompat="@drawable/ic_favorite" />-->
+    <!--        </FrameLayout>-->
+
+    <!--        <FrameLayout-->
+    <!--            android:id="@+id/llSearch"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="match_parent"-->
+    <!--            android:background="?attr/selectableItemBackgroundBorderless"-->
+    <!--            android:layout_weight="1">-->
+
+    <!--            <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                android:id="@+id/imSearch"-->
+    <!--                android:layout_width="@dimen/_20sdp"-->
+    <!--                android:layout_height="@dimen/_20sdp"-->
+    <!--                android:layout_gravity="center"-->
+    <!--                app:srcCompat="@drawable/ic_home_search_unselected" />-->
+    <!--        </FrameLayout>-->
+    <!--    </LinearLayout>-->
+
+    <LinearLayout
+        android:id="@+id/llSearchThisArea"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/_26sdp"
+        android:layout_marginTop="@dimen/_20sdp"
+        android:background="@drawable/selector_button_primary"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_12sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:visibility="gone"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/mapView">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:layout_width="@dimen/_10sdp"
+            android:layout_height="@dimen/_10sdp"
+            app:srcCompat="@drawable/ic_search_white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSearchThisArea"
+            style="@style/TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llClearSearch"
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/_26sdp"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:background="@drawable/selector_button_blue"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/_12sdp"
+        android:paddingEnd="@dimen/_12sdp"
+        android:visibility="gone"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/llSearchThisArea">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:layout_width="@dimen/_8sdp"
+            android:layout_height="@dimen/_8sdp"
+            app:srcCompat="@drawable/ic_close_white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvClearResults"
+            style="@style/TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <com.tripian.trpcore.util.widget.CardView
+        android:id="@+id/cvAlternatives"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginBottom="@dimen/_10sdp"
+        android:visibility="invisible"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="@dimen/_18sdp"
+        app:cardElevation="@dimen/_6sdp"
+        app:layout_constraintBottom_toBottomOf="@id/mapView"
+        app:layout_constraintLeft_toLeftOf="parent">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAlternatives"
+            style="@style/TextCaption1"
+            android:layout_width="@dimen/_100sdp"
+            android:layout_height="@dimen/_36sdp"
+            android:layout_gravity="center"
+            android:gravity="center_vertical"
+            android:padding="@dimen/_8sdp"
+            android:textColor="@color/primary" />
+    </com.tripian.trpcore.util.widget.CardView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnAlternative"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="21dp"
+        android:visibility="visible"
+        app:backgroundTint="@color/white"
+        app:elevation="@dimen/_6sdp"
+        app:fabCustomSize="@dimen/_32sdp"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@+id/cvAlternatives"
+        app:layout_constraintLeft_toLeftOf="@id/cvAlternatives"
+        app:layout_constraintTop_toTopOf="@+id/cvAlternatives"
+        app:maxImageSize="@dimen/_18sdp"
+        app:rippleColor="@color/white"
+        app:srcCompat="@drawable/ic_btn_alternatives" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnReturn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:layout_marginBottom="@dimen/_4sdp"
+        android:visibility="gone"
+        app:backgroundTint="@color/white"
+        app:elevation="@dimen/_6sdp"
+        app:fabCustomSize="@dimen/_32sdp"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toTopOf="@+id/btnLocation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:maxImageSize="@dimen/_12sdp"
+        app:rippleColor="@color/white"
+        app:srcCompat="@drawable/btn_return"
+        tools:visibility="visible"
+        app:tint="@color/blue_dark" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:visibility="gone"
+        app:backgroundTint="@color/white"
+        app:elevation="@dimen/_6sdp"
+        app:fabCustomSize="@dimen/_32sdp"
+        app:fabSize="mini"
+        app:layout_constraintBottom_toBottomOf="@+id/btnAlternative"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/btnAlternative"
+        app:maxImageSize="@dimen/_16sdp"
+        app:rippleColor="@color/blue_soft"
+        app:srcCompat="@drawable/ic_btn_user_location"
+        app:tint="@color/black" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnOffers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:visibility="visible"
+        app:backgroundTint="@color/white"
+        app:elevation="@dimen/_6sdp"
+        app:fabCustomSize="@dimen/_32sdp"
+        app:fabSize="mini"
+        app:layout_constraintStart_toStartOf="@+id/btnAlternative"
+        app:layout_constraintTop_toBottomOf="@+id/rlTop"
+        app:maxImageSize="@dimen/_16sdp"
+        app:rippleColor="@color/blue_soft"
+        app:srcCompat="@drawable/ic_offer_search"
+        app:tint="@color/black" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnExportPlan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:layout_marginEnd="@dimen/_16sdp"
+        android:visibility="visible"
+        app:backgroundTint="@color/white"
+        app:elevation="@dimen/_6sdp"
+        app:fabCustomSize="@dimen/_32sdp"
+        app:fabSize="mini"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/rlTop"
+        app:maxImageSize="@dimen/_16sdp"
+        app:srcCompat="@drawable/btn_google_export"
+        android:tintMode="screen" />
+</androidx.constraintlayout.widget.ConstraintLayout>

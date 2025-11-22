@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:clickable="true">
+
+    <LinearLayout
+        android:layout_width="@dimen/_220sdp"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvWelcome"
+            style="@style/TextHeadline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_16sdp"
+            android:layout_marginTop="@dimen/_32sdp"
+            android:lineSpacingExtra="8dp"
+            android:textColor="@color/black_soft" />
+
+        <LinearLayout
+            android:id="@+id/llEditProfile"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:layout_marginTop="@dimen/_32sdp"
+            android:background="@drawable/shape_click_transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                app:srcCompat="@drawable/ic_edit" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:textColor="@color/black_soft" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llCompanion"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:background="@drawable/shape_click_transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                app:srcCompat="@drawable/ic_friends" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:textColor="@color/black_soft" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llChangePassword"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:background="@drawable/shape_click_transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                app:srcCompat="@drawable/ic_password" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:textColor="@color/black_soft" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llHelp"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:background="@drawable/shape_click_transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                app:srcCompat="@drawable/ic_help" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:textColor="@color/black_soft" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llAbout"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/_40sdp"
+            android:background="@drawable/shape_click_transparent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:visibility="gone">
+
+            <com.tripian.trpcore.util.widget.ImageView
+                android:layout_width="@dimen/_16sdp"
+                android:layout_height="@dimen/_16sdp"
+                app:srcCompat="@drawable/ic_info" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:textColor="@color/black_soft" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llLogout"
+        android:layout_width="@dimen/_240sdp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="@dimen/_16sdp">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:layout_width="@dimen/_16sdp"
+            android:layout_height="@dimen/_16sdp"
+            app:srcCompat="@drawable/ic_logout" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:textColor="@color/pink" />
+    </LinearLayout>
+</RelativeLayout>

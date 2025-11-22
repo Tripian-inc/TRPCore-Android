@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <View
+        android:layout_width="5dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center"
+        android:background="@drawable/bg_circle_red_full"
+        android:textColor="@color/extra_main"
+        android:visibility="visible" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvText"
+        style="@style/TextBody2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/_24sdp"
+        android:paddingTop="@dimen/_4sdp"
+        android:paddingBottom="@dimen/_4sdp"
+        android:gravity="center_vertical"
+        android:layout_marginStart="@dimen/_4sdp"
+        android:textColor="@color/body"
+        tools:text="Soak up the unique party atmosphere of flamenco Soak up the unique party atmosphere of flamenco" />
+</LinearLayout>

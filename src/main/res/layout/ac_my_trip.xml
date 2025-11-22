@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsingToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:minHeight="48dp"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <com.tripian.trpcore.util.widget.ImageView
+                    android:id="@+id/imProfile"
+                    android:layout_width="@dimen/_36sdp"
+                    android:layout_height="@dimen/_36sdp"
+                    android:layout_marginStart="@dimen/_20sdp"
+                    android:layout_marginTop="@dimen/_20sdp"
+                    android:clickable="true"
+                    app:srcCompat="@drawable/ic_profile" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignTop="@id/imProfile"
+                    android:layout_centerHorizontal="true"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+<!--                    <com.tripian.trpcore.util.widget.TextView-->
+<!--                        android:id="@+id/tvTitle"-->
+<!--                        style="@style/TextHeader2"-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="50dp"-->
+<!--                        android:gravity="center"-->
+<!--                        android:text="@string/page_title_mytrip" />-->
+
+
+                    <com.tripian.trpcore.util.widget.ImageView
+                        android:id="@+id/imLogo"
+                        android:layout_width="102dp"
+                        android:layout_height="46dp"
+                        app:srcCompat="@drawable/ic_tripian_new_logo" />
+                </LinearLayout>
+
+                <com.tripian.trpcore.util.widget.ImageView
+                    android:id="@+id/imAdd"
+                    android:layout_width="@dimen/_36sdp"
+                    android:layout_height="@dimen/_36sdp"
+                    android:layout_alignParentEnd="true"
+                    android:layout_marginTop="@dimen/_20sdp"
+                    android:layout_marginEnd="@dimen/_20sdp"
+                    app:srcCompat="@drawable/ic_add_trip" />
+            </RelativeLayout>
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabLayout"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_gravity="bottom"
+                android:layout_marginTop="@dimen/_65sdp"
+                android:background="@color/transparent"
+                app:layout_collapseMode="pin"
+                app:tabBackground="@color/transparent"
+                app:tabIndicatorColor="@color/primary"
+                app:tabIndicatorFullWidth="false"
+                app:tabIndicatorHeight="@dimen/_2sdp"
+                app:tabMode="fixed"
+                app:tabRippleColor="@color/pink_soft"
+                app:tabSelectedTextColor="@color/primary"
+                app:tabTextAppearance="@style/TextSubhead1">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </com.google.android.material.tabs.TabLayout>
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <FrameLayout
+        android:id="@+id/flContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

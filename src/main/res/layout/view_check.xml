@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_oval_gray_large_radius"
+    android:gravity="center"
+    android:minWidth="@dimen/_64sdp"
+    android:minHeight="@dimen/_32sdp"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/_4sdp"
+    android:paddingEnd="@dimen/_4sdp">
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvText"
+        style="@style/TextBody2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_4sdp"
+        android:layout_marginEnd="@dimen/_4sdp"
+        android:textColor="@color/body" />
+</LinearLayout>

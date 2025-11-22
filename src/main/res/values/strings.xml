@@ -1,0 +1,15 @@
+<resources>
+
+    <!-- TRIPIAN-->
+    <string name="default_notification_channel_id">tripian_push_channel</string>
+
+
+    <string name="please_select_field" translatable="false">Please select required fields</string>
+
+    <string name="app_name">Tripian One</string>
+
+    <string name="i_am_in" translatable="false">Opt-in</string>
+    <string name="i_am_out" translatable="false">Opt-out</string>
+    <string name="mandatory_indicator" translatable="false">*</string>
+    <string name="apply">Apply</string>
+</resources>

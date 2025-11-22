@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/transparent"
+    android:orientation="vertical">
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvTitle"
+        style="@style/TextHeader2"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_56sdp"
+        android:background="@drawable/bg_rounded_top_white"
+        android:gravity="center"
+        android:paddingTop="@dimen/_16sdp" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvNewest"
+        style="@style/TextBody1"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_40sdp"
+        android:background="@color/white"
+        android:gravity="center"
+        android:textColor="@color/body" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:layout_width="@dimen/_120sdp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/im_line" />
+    </FrameLayout>
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvHighRated"
+        style="@style/TextBody1"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_40sdp"
+        android:background="@color/white"
+        android:gravity="center"
+        android:textColor="@color/body" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:layout_width="@dimen/_120sdp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:scaleType="centerCrop"
+            app:srcCompat="@drawable/im_line" />
+    </FrameLayout>
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvLowRated"
+        style="@style/TextBody1"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_40sdp"
+        android:background="@color/white"
+        android:gravity="center"
+        android:textColor="@color/body" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white">
+
+        <com.tripian.trpcore.util.widget.Button
+            android:id="@+id/btnCancel"
+            style="@style/TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_24sdp"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:layout_marginEnd="@dimen/_24sdp"
+            android:layout_marginBottom="@dimen/_16sdp"
+            android:background="@drawable/selector_button_primary"
+            android:textColor="@color/white" />
+    </FrameLayout>
+</LinearLayout>

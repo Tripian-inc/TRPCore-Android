@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="text_display">20sp</dimen>
+    <dimen name="text_header_1">16sp</dimen>
+    <dimen name="text_header_2">16sp</dimen>
+    <dimen name="text_body_1">16sp</dimen>
+    <dimen name="text_body_2">14sp</dimen>
+    <dimen name="text_body_3">12sp</dimen>
+    <dimen name="text_button">14sp</dimen>
+
+    <dimen name="text_size_display_2">32sp</dimen>
+    <dimen name="text_size_display_1">29sp</dimen>
+    <dimen name="text_size_headline">24sp</dimen>
+    <dimen name="text_size_title_2">21sp</dimen>
+    <dimen name="text_size_title_1">18sp</dimen>
+    <dimen name="text_size_subhead">15sp</dimen>
+    <dimen name="text_size_form_field">15sp</dimen>
+    <dimen name="text_size_caption_2">11sp</dimen>
+    <dimen name="text_size_caption_1">12sp</dimen>
+</resources>

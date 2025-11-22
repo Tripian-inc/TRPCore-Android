@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/transparent"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_16sdp"
+        android:background="@drawable/bg_rounded_top_black" />
+
+    <LinearLayout
+        android:id="@+id/llRestaurants"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black_soft"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:paddingBottom="@dimen/_8sdp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRestaurant"
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llCafes"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black_soft"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:paddingBottom="@dimen/_8sdp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvCafes"
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llAttractions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black_soft"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:paddingBottom="@dimen/_8sdp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAttractions"
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/llAll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black_soft"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/_16sdp"
+        android:paddingTop="@dimen/_8sdp"
+        android:paddingBottom="@dimen/_8sdp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAll"
+            style="@style/TextBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            style="@style/TextCaption1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_4sdp"
+            android:gravity="center_vertical"
+            android:textColor="@color/white" />
+    </LinearLayout>
+</LinearLayout>

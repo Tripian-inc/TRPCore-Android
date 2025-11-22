@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.tripian.trpcore.util.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/_10sdp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintLeft_toLeftOf="parent"
+    app:layout_constraintRight_toRightOf="parent"
+    app:layout_constraintTop_toTopOf="parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="160dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@+id/llDate"
+            android:orientation="vertical"
+            android:padding="@dimen/_12sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center_vertical"
+                android:maxLines="1"
+                tools:text="Title" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_4sdp"
+                android:orientation="horizontal">
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvCityName"
+                    style="@style/TextBody3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    tools:text="Port of Valencia" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/llDate"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="@dimen/_8sdp"
+            android:background="@drawable/bg_oval_primary"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDate"
+                style="@style/TextBody2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                tools:text="01.01" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imImage"
+        android:layout_width="match_parent"
+        android:layout_height="160dp"
+        android:background="@color/blue_soft" />
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imDelete"
+        android:layout_width="@dimen/_32sdp"
+        android:layout_height="@dimen/_32sdp"
+        android:layout_gravity="end"
+        android:padding="@dimen/_8sdp"
+        android:layout_marginTop="@dimen/_6sdp"
+        android:layout_marginEnd="@dimen/_8sdp"
+        android:background="@drawable/bg_circle_white"
+        app:srcCompat="@drawable/ic_delete_trip" />
+
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/imEdit"
+        android:layout_width="@dimen/_32sdp"
+        android:layout_height="@dimen/_32sdp"
+        android:layout_gravity="end"
+        android:layout_marginEnd="@dimen/_48sdp"
+        android:layout_marginTop="@dimen/_6sdp"
+        android:padding="@dimen/_8sdp"
+        android:background="@drawable/bg_circle_white"
+        app:srcCompat="@drawable/ic_edit_trip"/>
+</com.tripian.trpcore.util.widget.CardView><!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+    <!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+    <!--    xmlns:tools="http://schemas.android.com/tools"-->
+    <!--    android:layout_width="match_parent"-->
+    <!--    android:layout_height="wrap_content">-->
+
+    <!--    <androidx.constraintlayout.widget.ConstraintLayout-->
+    <!--        android:id="@+id/root"-->
+    <!--        android:layout_width="match_parent"-->
+    <!--        android:layout_height="wrap_content">-->
+
+    <!--        <com.tripian.trpcore.util.widget.ImageView-->
+    <!--            android:id="@+id/imImage"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="@dimen/_200sdp"-->
+    <!--            android:scaleType="centerCrop"-->
+    <!--            app:layout_constraintEnd_toEndOf="parent"-->
+    <!--            app:layout_constraintLeft_toLeftOf="parent"-->
+    <!--            app:layout_constraintRight_toRightOf="parent"-->
+    <!--            app:layout_constraintStart_toStartOf="parent"-->
+    <!--            app:layout_constraintTop_toTopOf="parent" />-->
+
+    <!--        <com.tripian.trpcore.util.widget.ImageView-->
+    <!--            android:id="@+id/imMore"-->
+    <!--            style="@style/TextBody2"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:layout_margin="@dimen/_12sdp"-->
+    <!--            android:paddingStart="@dimen/_8sdp"-->
+    <!--            android:paddingTop="@dimen/_4sdp"-->
+    <!--            android:paddingEnd="@dimen/_8sdp"-->
+    <!--            android:paddingBottom="@dimen/_4sdp"-->
+    <!--            app:layout_constraintEnd_toEndOf="@id/imImage"-->
+    <!--            app:layout_constraintTop_toTopOf="@id/imImage"-->
+    <!--            app:srcCompat="@drawable/ic_edit_trip" />-->
+
+    <!--        <com.tripian.trpcore.util.widget.CardView-->
+    <!--            android:id="@+id/cvItem"-->
+    <!--            android:layout_width="0dp"-->
+    <!--            android:layout_height="wrap_content"-->
+    <!--            android:layout_marginStart="@dimen/_16sdp"-->
+    <!--            android:layout_marginEnd="@dimen/_16sdp"-->
+    <!--            app:cardBackgroundColor="@color/white"-->
+    <!--            app:cardCornerRadius="@dimen/_24sdp"-->
+    <!--            app:contentPaddingBottom="@dimen/_6sdp"-->
+    <!--            app:contentPaddingLeft="@dimen/_12sdp"-->
+    <!--            app:contentPaddingRight="@dimen/_12sdp"-->
+    <!--            app:contentPaddingTop="@dimen/_6sdp"-->
+    <!--            app:layout_constraintBottom_toBottomOf="@+id/imImage"-->
+    <!--            app:layout_constraintEnd_toEndOf="parent"-->
+    <!--            app:layout_constraintLeft_toLeftOf="parent"-->
+    <!--            app:layout_constraintRight_toRightOf="parent"-->
+    <!--            app:layout_constraintStart_toStartOf="parent"-->
+    <!--            app:layout_constraintTop_toBottomOf="@+id/imImage">-->
+
+    <!--            <RelativeLayout-->
+    <!--                android:layout_width="match_parent"-->
+    <!--                android:layout_height="match_parent">-->
+
+    <!--                <com.tripian.trpcore.util.widget.TextView-->
+    <!--                    android:id="@+id/tvTitle"-->
+    <!--                    style="@style/TextHeader2"-->
+    <!--                    android:layout_width="match_parent"-->
+    <!--                    android:layout_height="wrap_content"-->
+    <!--                    android:layout_marginTop="@dimen/_12sdp"-->
+    <!--                    android:layout_toStartOf="@+id/imNext"-->
+    <!--                    android:paddingStart="@dimen/_4sdp"-->
+    <!--                    tools:text="Restaurant Name" />-->
+
+    <!--                <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                    android:id="@+id/imOpen"-->
+    <!--                    style="@style/TextBody2"-->
+    <!--                    android:layout_width="wrap_content"-->
+    <!--                    android:layout_height="wrap_content"-->
+    <!--                    android:layout_alignTop="@+id/tvDate"-->
+    <!--                    android:layout_alignBottom="@+id/tvDate"-->
+    <!--                    app:srcCompat="@drawable/ic_open" />-->
+
+    <!--                <com.tripian.trpcore.util.widget.TextView-->
+    <!--                    android:id="@+id/tvDate"-->
+    <!--                    style="@style/TextBody3"-->
+    <!--                    android:layout_width="match_parent"-->
+    <!--                    android:layout_height="wrap_content"-->
+    <!--                    android:layout_below="@+id/tvTitle"-->
+    <!--                    android:layout_marginTop="@dimen/_8sdp"-->
+    <!--                    android:layout_marginBottom="@dimen/_8sdp"-->
+    <!--                    android:layout_toStartOf="@+id/imNext"-->
+    <!--                    android:layout_toEndOf="@+id/imOpen"-->
+    <!--                    android:ellipsize="end"-->
+    <!--                    android:maxLines="3"-->
+    <!--                    android:textColor="@color/body"-->
+    <!--                    tools:text="Integer" />-->
+
+    <!--                <com.tripian.trpcore.util.widget.ImageView-->
+    <!--                    android:id="@+id/imNext"-->
+    <!--                    style="@style/TextBody2"-->
+    <!--                    android:layout_width="wrap_content"-->
+    <!--                    android:layout_height="wrap_content"-->
+    <!--                    android:layout_alignParentEnd="true"-->
+    <!--                    android:layout_centerVertical="true"-->
+    <!--                    app:srcCompat="@drawable/ic_next_purple" />-->
+    <!--            </RelativeLayout>-->
+    <!--        </com.tripian.trpcore.util.widget.CardView>-->
+
+    <!--        <View-->
+    <!--            android:layout_width="1dp"-->
+    <!--            android:layout_height="1dp"-->
+    <!--            android:layout_marginTop="@dimen/_16sdp"-->
+    <!--            app:layout_constraintBottom_toBottomOf="parent"-->
+    <!--            app:layout_constraintEnd_toEndOf="parent"-->
+    <!--            app:layout_constraintLeft_toLeftOf="parent"-->
+    <!--            app:layout_constraintRight_toRightOf="parent"-->
+    <!--            app:layout_constraintStart_toStartOf="parent"-->
+    <!--            app:layout_constraintTop_toBottomOf="@id/cvItem" />-->
+    <!--    </androidx.constraintlayout.widget.ConstraintLayout>-->
+    <!--</FrameLayout>-->

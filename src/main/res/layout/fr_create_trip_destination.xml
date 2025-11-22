@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/_16sdp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_24sdp"
+        android:layout_marginEnd="@dimen/_24sdp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvWhereAreYouGoing"
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="start"
+                android:gravity="end"
+                android:singleLine="true"/>
+
+            <com.tripian.trpcore.util.widget.TextView
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="start"
+                android:gravity="end"
+                android:singleLine="true"
+                android:text="@string/mandatory_indicator"
+                android:textColor="@color/red_A200" />
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/llDestination"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDestinationPlaceholder"
+                style="@style/TextBody2Regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/text_primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDestination"
+                style="@style/TextBody2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/black"
+                android:visibility="gone"
+                tools:text="1 Adult, No children" />
+        </LinearLayout>
+
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSelectDates"
+            style="@style/TextHeader2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:ellipsize="start"
+            android:gravity="end"
+            android:singleLine="true" />
+
+
+        <LinearLayout
+            android:id="@+id/llArrivalDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDateArrival"
+                style="@style/TextBody2Regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/text_primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvArrivalDate"
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/black"
+                tools:text="06 Jan 2023" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/llDepartureDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDateDeparture"
+                style="@style/TextBody2Regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/text_primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDepartureDate"
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/black"
+                tools:text="06 Jan 2023" />
+
+        </LinearLayout>
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSelectHours"
+            style="@style/TextHeader2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:ellipsize="start"
+            android:gravity="end"
+            android:singleLine="true"/>
+
+        <LinearLayout
+            android:id="@+id/llArrivalTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvHourArrival"
+                style="@style/TextBody2Regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/text_primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvArrivalTime"
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/black"
+                tools:text="06 Jan 2023" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/llDepartureTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:background="@drawable/bg_oval_gray_without_line"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/_16sdp"
+            android:paddingEnd="@dimen/_16sdp">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvHourDeparture"
+                style="@style/TextBody2Regular"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/text_primary" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDepartureTime"
+                style="@style/TextBody2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:paddingTop="@dimen/_12sdp"
+                android:paddingBottom="@dimen/_12sdp"
+                android:textColor="@color/black"
+                tools:text="06 Jan 2023" />
+
+        </LinearLayout>
+
+
+    </LinearLayout>
+</ScrollView>
