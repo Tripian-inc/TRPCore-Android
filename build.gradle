@@ -16,6 +16,17 @@ allprojects {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        // Mapbox Maven repository
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = "mapbox"
+                password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: System.getenv("MAPBOX_DOWNLOADS_TOKEN") ?: ""
+            }
+        }
     }
 }
 
@@ -126,6 +137,8 @@ dependencies {
     // implementation 'com.github.Tripian-inc:TRPFoundationKit-Android:1.0.0'
 
     // Provider - Automatically include all other modules via JitPack
+    // IMPORTANT: These modules must be built on JitPack first before TRPCore can be built
+    // Build order: Build TRPAuth, TRPOne, TRPGyg, TRPProvider on JitPack first, then build TRPCore
     // These are resolved as Maven dependencies from their respective JitPack repositories
     implementation 'com.github.Tripian-inc:TRPProviderKit-Android:1.0.0'
     implementation 'com.github.Tripian-inc:TRPOne-Android:1.0.0'
