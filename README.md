@@ -19,13 +19,81 @@ allprojects {
 }
 ```
 
-### Step 2: Add dependency
+### Step 2: Add Mapbox Maven repository
+
+TRPCore uses Mapbox Android SDK v11, which requires the Mapbox Maven repository. Add it to your project-level `build.gradle` or `settings.gradle`:
+
+**For Groovy (build.gradle):**
+```gradle
+allprojects {
+    repositories {
+        ...
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = "mapbox"
+                password = project.findProperty("MAPBOX_DOWNLOADS_TOKEN") ?: System.getenv("MAPBOX_DOWNLOADS_TOKEN") ?: ""
+            }
+        }
+    }
+}
+```
+
+**For Kotlin DSL (settings.gradle.kts):**
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri("https://api.mapbox.com/downloads/v2/releases/maven")
+            authentication {
+                create<BasicAuthentication>("basic")
+            }
+            credentials {
+                username = "mapbox"
+                password = providers.gradleProperty("MAPBOX_DOWNLOADS_TOKEN")
+                    .orElse(providers.environmentVariable("MAPBOX_DOWNLOADS_TOKEN"))
+                    .orElse("")
+                    .get()
+            }
+        }
+    }
+}
+```
+
+**Note:** You need a Mapbox Downloads Token. Get it from your [Mapbox account](https://account.mapbox.com/access-tokens/). You can either:
+- Set it as an environment variable: `MAPBOX_DOWNLOADS_TOKEN=your_token_here`
+- Add it to your `local.properties`: `MAPBOX_DOWNLOADS_TOKEN=your_token_here`
+
+### Step 3: Configure Mapbox Access Token
+
+Create a resource file to store your Mapbox access token:
+
+1. Create `res/values/mapbox_access_token.xml` in your app module:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="mapbox_access_token" translatable="false" tools:ignore="UnusedResources">YOUR_MAPBOX_ACCESS_TOKEN</string>
+</resources>
+```
+
+2. Replace `YOUR_MAPBOX_ACCESS_TOKEN` with your actual Mapbox access token from [Mapbox account](https://account.mapbox.com/access-tokens/).
+
+**Important:** 
+- Keep this token secure and never commit it to version control
+- Add `mapbox_access_token.xml` to `.gitignore` if it contains your production token
+- Use different tokens for development and production
+
+### Step 4: Add TRPCore dependency
 
 In your app-level `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.Tripian-inc:TRPCore-Android:1.0.2'
+    implementation 'com.github.Tripian-inc:TRPCore-Android:1.0.0'
 }
 ```
 
@@ -34,6 +102,24 @@ dependencies {
 - `com.github.Tripian-inc:TRPOne-Android:1.0.0`
 - `com.github.Tripian-inc:TRPAuth-Android:1.0.0`
 - `com.github.Tripian-inc:TRPGyg-Android:1.0.0`
+- `com.mapbox.maps:android-ndk27:11.16.0` (Mapbox Android SDK v11)
+
+### Step 5: Minimum SDK Requirements
+
+Ensure your `minSdkVersion` is set to at least 21 (Android 5.0 Lollipop) in your app's `build.gradle`:
+
+```gradle
+android {
+    defaultConfig {
+        minSdkVersion 21  // Required for Mapbox SDK v11
+        // Other configurations...
+    }
+}
+```
+
+### Step 6: Sync Project
+
+After making these changes, sync your project with Gradle files to apply the new configurations.
 
 ## Initialization
 
@@ -266,7 +352,7 @@ The `appLanguage` parameter supports various language codes. Common examples:
 
 ## Version
 
-Current version: **1.0.2**
+Current version: **1.0.0**
 
 ## License
 
