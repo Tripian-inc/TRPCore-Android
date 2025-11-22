@@ -6,7 +6,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.android.tools.build:gradle:8.7.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -42,7 +42,7 @@ android {
     namespace 'com.tripian.trpcore'
     compileSdk = 35
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 35
         android.buildFeatures.buildConfig true
 
@@ -145,7 +145,6 @@ dependencies {
 
     // Foundation - Note: TRPFoundationKit-Android is not included in this repository
     // If needed, add as Maven dependency:
-    // implementation 'com.github.Tripian-inc:TRPFoundationKit-Android:1.0.0'
 
     // Provider - Automatically include all other modules via JitPack
     // IMPORTANT: These modules must be built on JitPack first before TRPCore can be built
@@ -155,6 +154,7 @@ dependencies {
     implementation 'com.github.Tripian-inc:TRPOne-Android:1.0.0'
     implementation 'com.github.Tripian-inc:TRPAuth-Android:1.0.0'
     implementation 'com.github.Tripian-inc:TRPGyg-Android:1.0.0'
+    implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
