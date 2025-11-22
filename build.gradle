@@ -1,6 +1,6 @@
 // Root build.gradle for TRPCore module
 buildscript {
-    ext.kotlin_version = '2.1.0'
+    ext.kotlin_version = '2.0.21'
     repositories {
         google()
         mavenCentral()
@@ -81,11 +81,13 @@ android {
 }
 
 // Force Kotlin stdlib version to match compiler version
+// This ensures all Kotlin dependencies use the same version as the compiler
 configurations.all {
     resolutionStrategy {
         force "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
         force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
         force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
     }
 }
 
