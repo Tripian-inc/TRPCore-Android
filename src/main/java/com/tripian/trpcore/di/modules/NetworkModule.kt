@@ -32,7 +32,7 @@ class NetworkModule {
     internal fun provideTOne(appConfig: AppConfig, app: Application, pref: Preferences): TRPRest {
         val tone = TRPRest(
             appContext = app,
-            url = "${appConfig.tripianServiceUrl()}/${BuildConfig.BASE_API_VERSION}",
+            url = "${appConfig.tripianServiceUrl()}/${appConfig.apiVersion()}",
             key = appConfig.apiKey(),
             Device(
                 deviceId = getDeviceId(pref),

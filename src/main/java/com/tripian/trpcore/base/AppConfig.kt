@@ -18,4 +18,9 @@ abstract class AppConfig {
     abstract fun apiKey(): String
 
     abstract fun mapboxApiKey(): String
+
+    /**
+     * API version path (e.g., "dev/" or "prod/")
+     */
+    abstract fun apiVersion(): String
 }
