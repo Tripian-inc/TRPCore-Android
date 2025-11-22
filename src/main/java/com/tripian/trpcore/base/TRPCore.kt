@@ -101,20 +101,17 @@ class TRPCore {
      *
      * @param context The application context.
      * @param email The user's email address.
-     * @param environment The environment (dev or prod) for API version configuration.
      * @param appLanguage The language code for translation (default "en").
      */
     fun startTripianWithEmail(
         context: Context,
         email: String,
-        environment: Environment = Environment.PROD,
         appLanguage: String = "en"
     ) {
         startTripianCore(
             context = context,
             email = email,
             uniqueId = null,
-            environment = environment,
             appLanguage = appLanguage
         )
     }
@@ -124,20 +121,17 @@ class TRPCore {
      *
      * @param context The application context.
      * @param uniqueId The unique user identifier.
-     * @param environment The environment (dev or prod) for API version configuration.
      * @param appLanguage The language code for translation (default "en").
      */
     fun startTripianWithUniqueId(
         context: Context,
         uniqueId: String,
-        environment: Environment = Environment.PROD,
         appLanguage: String = "en"
     ) {
         startTripianCore(
             context = context,
             email = null,
             uniqueId = uniqueId,
-            environment = environment,
             appLanguage = appLanguage
         )
     }
@@ -147,17 +141,13 @@ class TRPCore {
         context: Context,
         email: String? = null,
         uniqueId: String? = null,
-        environment: Environment,
         appLanguage: String
     ) {
-        // Update API version based on environment
-        apiVersion = environment.getApiVersion()
 
         val intent = Intent(context, ACSplash::class.java)
         intent.putExtra("email", email)
         intent.putExtra("uniqueId", uniqueId)
         intent.putExtra("appLanguage", appLanguage)
-        intent.putExtra("environment", environment.name)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
