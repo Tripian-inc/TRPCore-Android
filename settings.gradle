@@ -1,6 +1,1 @@
 rootProject.name = 'TRPCore'
-
-// Include other modules as subprojects for automatic integration
-// When JitPack builds TRPCore, it will automatically discover and build these modules
-// from the same repository structure
-include ':TRPProvider', ':TRPOne', ':TRPAuth', ':TRPGyg'

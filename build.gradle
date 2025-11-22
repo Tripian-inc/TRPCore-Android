@@ -125,13 +125,12 @@ dependencies {
     // If needed, add as Maven dependency:
     // implementation 'com.github.Tripian-inc:TRPFoundationKit-Android:1.0.0'
 
-    // Provider - Automatically include all other modules
-    // These are included as project dependencies, which JitPack will resolve
-    // when building TRPCore from the repository
-    implementation project(':TRPProvider')
-    implementation project(':TRPOne')
-    implementation project(':TRPAuth')
-    implementation project(':TRPGyg')
+    // Provider - Automatically include all other modules via JitPack
+    // These are resolved as Maven dependencies from their respective JitPack repositories
+    implementation 'com.github.Tripian-inc:TRPProviderKit-Android:1.0.0'
+    implementation 'com.github.Tripian-inc:TRPOne-Android:1.0.0'
+    implementation 'com.github.Tripian-inc:TRPAuth-Android:1.0.0'
+    implementation 'com.github.Tripian-inc:TRPGyg-Android:1.0.0'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
