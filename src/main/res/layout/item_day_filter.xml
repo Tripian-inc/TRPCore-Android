@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tvDayLabel"
+    android:layout_width="wrap_content"
+    android:layout_height="44dp"
+    android:layout_marginEnd="8dp"
+    android:gravity="center"
+    android:paddingHorizontal="16dp"
+    tools:text="Miércoles 13/05"
+    android:textSize="14sp"
+    android:fontFamily="@font/medium"
+    android:background="@drawable/bg_day_filter_unselected"
+    android:textColor="@color/fgWeak" />

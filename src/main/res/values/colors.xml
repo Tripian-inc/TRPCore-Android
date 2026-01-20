@@ -2,13 +2,13 @@
 <resources>
 <!--    <color name="purple">#571BCE</color>-->
 <!--    <color name="pink">#FF0078</color>-->
-    <color name="primary">#e9314a</color>
+    <color name="primary">#EA0558</color>
     <color name="secondary">#FF7171</color>
     <color name="gold">#FFAA02</color>
     <color name="gold_transparent">#AAFFAA02</color>
     <color name="black">#FF000000</color>
     <color name="black_soft">#222222</color>
-    <color name="text_primary">#434B55</color>
+    <color name="text_primary">#333333</color>
     <color name="white">#FFFFFFFF</color>
     <color name="light_Red">#FFEEF0</color>
 
@@ -25,6 +25,7 @@
     <color name="extra_sub">#F7F8FC</color>
 
     <color name="pink_soft">#f0cfde</color>
+    <color name="pink700">#C2033B</color>
     <color name="blue">#50a4d7</color>
     <color name="blue_soft">#e0f4fd</color>
     <color name="ultra_light_grey_x">#fbfbfb</color>
@@ -50,7 +51,7 @@
 
     <color name="yellow">#ffd600</color>
 
-    <color name="colorPrimary">#e9314a</color>
+    <color name="colorPrimary">#EA0558</color>
     <color name="colorPrimaryDark">#212121</color>
     <color name="colorAccent">@color/black_soft</color>
 
@@ -66,4 +67,77 @@
     <color name="text_dark_48">#7A242323</color>
     <color name="text_dark_64">#A3242323</color>
     <color name="text_dark_80">#CC242323</color>
+
+    <!-- Timeline Colors - Design Specs -->
+    <color name="timeline_primary">#EA0558</color>
+    <color name="timeline_secondary">#FF7A8F</color>
+    <color name="timeline_background">#F8F9FA</color>
+    <color name="timeline_surface">#FFFFFF</color>
+    <color name="timeline_text_secondary">#6B7280</color>
+    <color name="timeline_text_tertiary">#9CA3AF</color>
+    <color name="timeline_divider">#E5E7EB</color>
+    <color name="timeline_success">#10B981</color>
+    <color name="timeline_warning">#F59E0B</color>
+    <color name="timeline_error">#EF4444</color>
+    <color name="timeline_info">#3B82F6</color>
+    <color name="timeline_rating">#FBBF24</color>
+    <color name="timeline_card_shadow">#1A000000</color>
+    <color name="timeline_badge_confirmed">#10B981</color>
+    <color name="timeline_badge_pending">#F59E0B</color>
+    <color name="timeline_fab_color">#EA0558</color>
+    <!-- Legacy color mappings for compatibility -->
+    <color name="timeline_title_color">@color/text_primary</color>
+    <color name="timeline_subtitle_color">@color/timeline_text_secondary</color>
+    <color name="timeline_accent">@color/timeline_primary</color>
+    <color name="timeline_rating_color">@color/timeline_rating</color>
+    <color name="timeline_section_header_bg">@color/timeline_surface</color>
+    <color name="timeline_recommendations_header_bg">#F5F7FA</color>
+    <color name="timeline_day_filter_selected">@color/timeline_primary</color>
+    <color name="timeline_day_filter_unselected">#F0F0F0</color>
+    <color name="timeline_day_filter_text_selected">#FFFFFF</color>
+    <color name="timeline_day_filter_text_unselected">@color/text_primary</color>
+    <color name="timeline_price_color">@color/text_primary</color>
+    <color name="timeline_success_color">@color/timeline_success</color>
+
+    <!-- AddPlan Flow Colors -->
+    <color name="bgCloudy">#F7F7F7</color>
+    <color name="bgPink">#FFEAF1</color>
+    <color name="lineWeak">#CFCFCF</color>
+    <color name="fgWeak">#666666</color>
+    <color name="neutral100">#F5F5F5</color>
+    <color name="neutral200">#F5F4F5</color>
+    <color name="neutral300">#CFCFCF</color>
+
+    <!-- Button Colors -->
+    <color name="btn_continue_bg">@color/primary</color>
+    <color name="btn_continue_bg_disabled">#CCCCCC</color>
+    <color name="neutral500">#9E9E9E</color>
+    <color name="addplan_category_selected_bg">#FFEAF1</color>
+    <color name="addplan_category_selected_border">#EA0558</color>
+    <color name="bgDisabled">#CCCCCC</color>
+    <color name="borderActive">#8C8C8C</color>
+
+    <!-- Activity Listing Colors -->
+    <color name="rating_yellow">#FBBF24</color>
+    <color name="text_secondary">#6B7280</color>
+    <color name="grey_10">#E5E7EB</color>
+    <color name="grey_20">#D1D5DB</color>
+    <color name="grey_30">#9CA3AF</color>
+    <color name="error">#EF4444</color>
+
+    <!-- Activity Card Colors -->
+    <color name="activity_title">#333333</color>
+    <color name="activity_rating_count">#666666</color>
+    <color name="activity_count_label">#999999</color>
+
+    <!-- Category Selection Colors -->
+    <color name="category_icon_bg_selected">#FFEAF1</color>
+    <color name="category_icon_bg_unselected">#F5F5F5</color>
+    <color name="category_text_selected">@color/primary</color>
+    <color name="category_text_unselected">#666666</color>
+
+    <!-- Booked Activity Badge Colors -->
+    <color name="confirmed_badge_bg">#DAFAEB</color>
+    <color name="confirmed_badge_text">#075E45</color>
+    <color name="advantage">#00825B</color>
 </resources>

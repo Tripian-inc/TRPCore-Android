@@ -12,6 +12,8 @@ import com.tripian.trpcore.di.modules.mytrip.MyTripScope
 import com.tripian.trpcore.di.modules.overview.OverViewModule
 import com.tripian.trpcore.di.modules.places.PlacesModule
 import com.tripian.trpcore.di.modules.places.PlacesScope
+import com.tripian.trpcore.di.modules.timeline.TimelineModule
+import com.tripian.trpcore.di.modules.timeline.TimelineScope
 import com.tripian.trpcore.di.modules.trip.TripModule
 import com.tripian.trpcore.di.modules.trip.TripScope
 import com.tripian.trpcore.di.modules.user.UserModule
@@ -33,6 +35,15 @@ import com.tripian.trpcore.ui.trip.favorite.ACFavorite
 import com.tripian.trpcore.ui.trip.my_offers.ACMyOffers
 import com.tripian.trpcore.ui.trip.places.ACMustTry
 import com.tripian.trpcore.ui.trip.places.ACPlaces
+import com.tripian.trpcore.ui.timeline.ACTimeline
+import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
+import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
+import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelection
+import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
+import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
+import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
+import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
+import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
 import com.tripian.trpcore.ui.trip_detail.ACTripDetail
 import com.tripian.trpcore.ui.user.ACEditProfile
 import dagger.Module
@@ -164,4 +175,43 @@ abstract class ViewPages {
      */
     @ContributesAndroidInjector
     abstract fun bindACMyOffers(): ACMyOffers
+
+    /**
+     * TIMELINE
+     */
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACTimeline(): ACTimeline
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindAddPlanContainerBottomSheet(): AddPlanContainerBottomSheet
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACPOISelection(): ACPOISelection
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACStartingPointSelection(): ACStartingPointSelection
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACActivityListing(): ACActivityListing
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACPOIListing(): ACPOIListing
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACSavedPlans(): ACSavedPlans
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindActivityTimeSelectionBottomSheet(): ActivityTimeSelectionBottomSheet
+
+    @TimelineScope
+    @ContributesAndroidInjector(modules = [TimelineModule::class])
+    abstract fun bindACPOIDetail(): ACPOIDetail
 }

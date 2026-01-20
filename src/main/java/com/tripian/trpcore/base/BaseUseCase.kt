@@ -69,15 +69,15 @@ abstract class BaseUseCase<Response, Params>(vararg cases: BaseUseCase<*, *>) {
     }
 
     /**
-     * ViewModel kapanması sonrasında içerisindeki RxJava çağrılarının döndürdüğü
-     * disposable'ların temizlenmesi için tutulan değişken
+     * Variable that holds disposables returned by RxJava calls
+     * for cleanup after ViewModel is closed
      */
     private val compositeDisposable = CompositeDisposable()
 
     abstract fun on(params: Params? = null)
 
     /**
-     * Servis cagrisinde servisi belirtmek icin kullanilir
+     * Used to specify the service in a service call
      */
     @CallSuper
     fun on(
@@ -96,7 +96,7 @@ abstract class BaseUseCase<Response, Params>(vararg cases: BaseUseCase<*, *>) {
     }
 
     /**
-     * Lifecycle tamamlandığında silinecek disposable'lar tutulur
+     * Stores disposables to be deleted when lifecycle is complete
      *
      * @param disposable disposable
      */
@@ -105,7 +105,7 @@ abstract class BaseUseCase<Response, Params>(vararg cases: BaseUseCase<*, *>) {
     }
 
     /**
-     * Memory leak önlenmesi için disposable'lar silinir.
+     * Disposables are cleared to prevent memory leaks.
      */
     @CallSuper
     open fun clear() {

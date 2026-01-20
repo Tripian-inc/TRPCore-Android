@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Activity Time Selection Bottom Sheet -->
+<!-- iOS Reference: ActivityTimeSelectionView -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/_24sdp">
+
+    <!-- Toolbar -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_56sdp"
+        android:paddingHorizontal="@dimen/_16sdp">
+
+        <!-- Back Button -->
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="@dimen/_18sdp"
+            android:layout_height="@dimen/_18sdp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:contentDescription="Back"
+            android:src="@drawable/ic_back" />
+
+        <!-- Title -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            android:textSize="18sp"
+            android:fontFamily="@font/bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            tools:text="Add Plan"
+            android:textColor="@color/text_primary" />
+
+    </RelativeLayout>
+
+    <!-- Day Filter Section -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvDays"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:clipToPadding="false"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/_12sdp"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+    <!-- Time Slot Section Label -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvSelectTime"
+        android:fontFamily="@font/semibold"
+        android:textSize="16sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_24sdp"
+        tools:text="Select Time"
+        android:textColor="@color/text_primary"/>
+
+    <!-- Time Slots (Horizontal wrap layout using FlexboxLayout) -->
+    <com.google.android.flexbox.FlexboxLayout
+        android:id="@+id/flexTimeSlots"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        app:flexWrap="wrap"
+        app:alignItems="flex_start"
+        app:justifyContent="flex_start" />
+
+    <!-- Loading Progress -->
+    <ProgressBar
+        android:id="@+id/pbLoading"
+        android:layout_width="@dimen/_32sdp"
+        android:layout_height="@dimen/_32sdp"
+        android:layout_gravity="center"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:visibility="gone" />
+
+    <!-- No Time Slots Message -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvNoTimeSlots"
+        style="@style/TextBody2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_24sdp"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:gravity="center"
+        tools:text="No time slots available"
+        android:textColor="@color/grey_30"
+        android:visibility="gone" />
+
+    <!-- Continue Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnContinue"
+        style="@style/ButtonPrimary"
+        android:layout_marginHorizontal="@dimen/_24sdp"
+        android:layout_marginTop="@dimen/_24sdp"
+        android:enabled="false"
+        tools:text="Continue" />
+
+</LinearLayout>

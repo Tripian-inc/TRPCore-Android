@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/_24sdp">
+
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="@dimen/_40sdp"
+        android:layout_height="@dimen/_4sdp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:background="@drawable/bg_drag_handle" />
+
+    <!-- Header: Title + Close Button -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:paddingHorizontal="@dimen/_16sdp">
+
+        <!-- Title -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="@font/semibold"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            tools:text="Filters" />
+
+        <!-- Close Button -->
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/ivClose"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:layout_gravity="end|center_vertical"
+            android:src="@drawable/ic_close" />
+    </FrameLayout>
+
+    <!-- Price Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_24sdp"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_16sdp">
+
+        <!-- Price Label -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvPriceLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/semibold"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            tools:text="Price" />
+
+        <!-- Price Range Labels -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvPriceMin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                tools:text="Free" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvPriceMax"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                tools:text="1500€" />
+        </LinearLayout>
+
+        <!-- Price RangeSlider -->
+        <com.google.android.material.slider.RangeSlider
+            android:id="@+id/sliderPrice"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="1500"
+            android:stepSize="10"
+            app:labelBehavior="gone"
+            app:trackColorActive="@color/primary"
+            app:trackColorInactive="@color/lineWeak"
+            app:trackHeight="8dp"
+            app:trackStopIndicatorSize="0dp"
+            app:tickColorActive="@android:color/transparent"
+            app:tickColorInactive="@android:color/transparent" />
+    </LinearLayout>
+
+    <!-- Duration Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/_16sdp">
+
+        <!-- Duration Label -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvDurationLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/semibold"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            tools:text="Duration" />
+
+        <!-- Duration Range Labels -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/_16sdp"
+            android:orientation="horizontal">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDurationMin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                tools:text="0h" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvDurationMax"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                tools:text="24h" />
+        </LinearLayout>
+
+        <!-- Duration RangeSlider -->
+        <com.google.android.material.slider.RangeSlider
+            android:id="@+id/sliderDuration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:valueFrom="0"
+            android:valueTo="1440"
+            android:stepSize="30"
+            app:labelBehavior="gone"
+            app:trackColorActive="@color/primary"
+            app:trackColorInactive="@color/lineWeak"
+            app:trackHeight="8dp"
+            app:trackStopIndicatorSize="0dp"
+            app:tickColorActive="@android:color/transparent"
+            app:tickColorInactive="@android:color/transparent" />
+    </LinearLayout>
+
+    <!-- Bottom Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_32sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+
+        <!-- Clear Selection (left side) -->
+        <TextView
+            android:id="@+id/tvClearSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:layout_weight="1"
+            android:paddingHorizontal="16dp"
+            tools:text="Clear Selection"
+            android:textSize="14sp"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/fgWeak"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="visible" />
+
+        <!-- Confirm Button (right side, 48dp) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minHeight="48dp"
+            android:minWidth="120dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            tools:text="Confirm"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:fontFamily="@font/semibold"
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/primary"
+            app:cornerRadius="24dp"
+            android:enabled="true" />
+    </LinearLayout>
+
+</LinearLayout>

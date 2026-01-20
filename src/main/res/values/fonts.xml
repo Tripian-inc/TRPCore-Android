@@ -22,8 +22,8 @@
 
     <style name="TextHeader2">
         <item name="android:fontFamily">@font/semibold</item>
-        <item name="android:textSize">@dimen/text_header_2</item>
-        <item name="android:textColor">@color/head</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:textColorHint">@color/text_primary</item>
     </style>
 

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AddPlan Container BottomSheet - iOS Reference: AddPlanContainerVC.swift -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_bottom_sheet_handle"/>
+
+    <!-- ==================== -->
+    <!-- HEADER (44dp)        -->
+    <!-- ==================== -->
+    <RelativeLayout
+        android:id="@+id/headerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/white">
+
+        <!-- Back Button (24x24, start:16) -->
+        <ImageButton
+            android:id="@+id/ivBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_arrow_back"
+            android:contentDescription="Back"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <!-- Title (center, SemiBold 18sp) -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/semibold"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:text="Add Activity"
+            tools:text="Add Activity"/>
+
+        <!-- Close Button (24x24, end:16) -->
+        <ImageButton
+            android:id="@+id/ivClose"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close"/>
+
+    </RelativeLayout>
+
+    <!-- ==================== -->
+    <!-- CONTENT CONTAINER    -->
+    <!-- ==================== -->
+    <FrameLayout
+        android:id="@+id/fragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <!-- ==================== -->
+    <!-- FOOTER               -->
+    <!-- ==================== -->
+    <LinearLayout
+        android:id="@+id/footerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@android:color/white"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp">
+
+        <!-- Clear Selection (left side) -->
+        <TextView
+            android:id="@+id/tvClearSelection"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:layout_weight="1"
+            android:paddingHorizontal="16dp"
+            tools:text="Clear Selection"
+            android:textSize="14sp"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/fgWeak"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+
+        <!-- Continue Button (right side, 48dp) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnContinue"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minHeight="48dp"
+            android:minWidth="120dp"
+            android:layout_weight="1"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            tools:text="Continue"
+            android:textAllCaps="false"
+            android:textSize="16sp"
+            android:fontFamily="@font/semibold"
+            android:textColor="@android:color/white"
+            app:backgroundTint="@color/btn_continue_selector"
+            app:cornerRadius="24dp"
+            android:enabled="false"
+            tools:enabled="true"/>
+
+    </LinearLayout>
+
+</LinearLayout>

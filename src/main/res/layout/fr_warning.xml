@@ -11,22 +11,23 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:background="@color/white"
-        app:cardCornerRadius="8dp"
+        app:cardCornerRadius="@dimen/_8sdp"
         app:cardElevation="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="24dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="24dp"
-            android:layout_marginBottom="16dp"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginTop="@dimen/_20sdp"
+            android:layout_marginBottom="@dimen/_14sdp"
             android:orientation="vertical">
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextDisplay"
-                android:layout_width="wrap_content"
+                style="@style/TextHeader1"
+                android:textSize="18sp"
+                android:layout_width="match_parent"
+                android:gravity="center_horizontal"
                 android:layout_height="wrap_content"
                 android:textColor="@color/head"
                 tools:text="Healine" />
@@ -34,33 +35,35 @@
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDescription"
                 style="@style/TextBody1"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
+                android:textAlignment="center"
+                android:textSize="14sp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_8sdp"
                 tools:text="Lorem ipsum dolor sit amet, constur adipiscing elit. " />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="right"
                 android:layout_marginTop="@dimen/_24sdp"
                 android:orientation="horizontal">
 
                 <com.tripian.trpcore.util.widget.Button
                     android:id="@+id/btnNegative"
+                    android:layout_weight="1"
                     style="@style/TextButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="@dimen/_4sdp"
                     android:layout_height="wrap_content"
                     android:background="?selectableItemBackgroundBorderless"
                     tools:text="Negative" />
 
-                <com.tripian.trpcore.util.widget.Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnPositive"
-                    style="@style/TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:background="?selectableItemBackgroundBorderless"
+                    style="@style/ButtonPrimary"
+                    android:layout_weight="1"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="@dimen/_4sdp"
                     tools:text="Positive" />
             </LinearLayout>
         </LinearLayout>

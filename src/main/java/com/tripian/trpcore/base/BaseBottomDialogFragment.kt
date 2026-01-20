@@ -92,6 +92,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
                     BottomSheetBehavior.from(bottomSheet)
                 bottomSheetBehavior.isDraggable = isDragEnable()
                 bottomSheetBehavior.skipCollapsed = true
+                bottomSheetBehavior.isFitToContents = true
                 if (isFullscreen()) {
                     setupFullHeight(it)
                 }

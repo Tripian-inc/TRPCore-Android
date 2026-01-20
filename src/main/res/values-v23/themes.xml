@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppThemeWhite" parent="BaseAppTheme">
+    <style name="AppTheme" parent="BaseAppTheme">
+        <!-- Status bar: white background with dark icons -->
         <item name="android:statusBarColor">@color/white</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation bar: white background -->
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
+
+    <style name="AppThemeWhite" parent="BaseAppTheme">
+        <!-- Status bar: white background with dark icons -->
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation bar: white background -->
+        <item name="android:navigationBarColor">@color/white</item>
     </style>
 </resources>

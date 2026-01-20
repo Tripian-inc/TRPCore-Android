@@ -5,6 +5,7 @@ package com.tripian.trpcore.base
  */
 enum class Environment {
     DEV,
+    PREDEV,
     PROD;
 
     /**
@@ -13,6 +14,7 @@ enum class Environment {
     fun getApiVersion(): String {
         return when (this) {
             DEV -> "dev/"
+            PREDEV -> "predev/"
             PROD -> "prod/"
         }
     }

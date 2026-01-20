@@ -11,6 +11,7 @@ import com.tripian.trpcore.domain.DoLogin
 import com.tripian.trpcore.domain.DoRegister
 import com.tripian.trpcore.domain.FetchConfigList
 import com.tripian.trpcore.domain.FetchLanguages
+import com.tripian.trpcore.domain.GetCities
 import com.tripian.trpcore.domain.GetUser
 import com.tripian.trpcore.domain.LogoutUser
 import com.tripian.trpcore.domain.SaveAppLanguage
@@ -39,6 +40,7 @@ class ACSplashVM @Inject constructor(
     private val saveAppLanguage: SaveAppLanguage,
     private val fetchLanguages: FetchLanguages,
     private val fetchConfigList: FetchConfigList,
+    private val getCities: GetCities,
     private val tripRepository: TripRepository,
     private val questionRepository: QuestionRepository,
     val poiRepository: PoiRepository,
@@ -50,6 +52,7 @@ class ACSplashVM @Inject constructor(
     var startTime = 0L
     var endTime = 0L
 
+    private var isCitiesFetched = false
     private var isLanguageFetched = false
     private var isLogon = false
     private var goLogin = false
@@ -70,9 +73,25 @@ class ACSplashVM @Inject constructor(
             )
         }
 
+        // SDK Initialization order:
+        // 1. Fetch cities
+        // 2. Fetch languages
+        // 3. LightLogin with uniqueId
         fetchConfigList.on()
+        fetchCities()
         fetchLanguages()
         login()
+    }
+
+    private fun fetchCities() {
+        getCities.on(success = {
+            isCitiesFetched = true
+            checkAllMissionsCompleted()
+        }, error = {
+            // Even if cities fail, continue with other initialization
+            isCitiesFetched = true
+            checkAllMissionsCompleted()
+        })
     }
 
     private fun login() {
@@ -116,7 +135,8 @@ class ACSplashVM @Inject constructor(
             }
             return
         }
-        if (isLogon.not() || isLanguageFetched.not()) {
+        // Wait for all: cities, languages, and login
+        if (isLogon.not() || isLanguageFetched.not() || isCitiesFetched.not()) {
             return
         }
         if (goLogin) startLogin()
@@ -124,7 +144,8 @@ class ACSplashVM @Inject constructor(
     }
 
     private fun startHome() {
-        if (isLanguageFetched.not()) return
+        // Wait for all required data: cities, languages
+        if (isLanguageFetched.not() || isCitiesFetched.not()) return
         val data = Bundle()
         clearCache()
 

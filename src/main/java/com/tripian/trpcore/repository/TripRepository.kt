@@ -18,6 +18,51 @@ class TripRepository @Inject constructor(val service: Service) {
 
     private var items = ArrayList<City>()
 
+    /**
+     * Pre-fetch cities and cache them.
+     * Called at SDK initialization to ensure cities are available throughout the app.
+     * @return Observable<Boolean> - true if cities were fetched/cached successfully
+     */
+    fun prefetchCities(): Observable<Boolean> {
+        return if (items.isEmpty()) {
+            service.getCities(null, 1000, null).map { response ->
+                response.data?.let { list ->
+                    val sortedCities = list.sortedBy { it.name }
+                    items.clear()
+                    items.addAll(sortedCities)
+                }
+                true
+            }
+        } else {
+            Observable.just(true)
+        }
+    }
+
+    /**
+     * Get a city by ID from the cache.
+     * @param cityId City ID to look up
+     * @return City if found, null otherwise
+     */
+    fun getCachedCityById(cityId: Int): City? {
+        return items.find { it.id == cityId }
+    }
+
+    /**
+     * Get all cached cities.
+     * @return List of cached cities (empty if not yet fetched)
+     */
+    fun getCachedCities(): List<City> {
+        return items.toList()
+    }
+
+    /**
+     * Check if cities are cached.
+     * @return true if cities are available in cache
+     */
+    fun hasCachedCities(): Boolean {
+        return items.isNotEmpty()
+    }
+
     fun getUserTrip(from: String?, to: String?, limit: Int, page: Int?): Observable<TripsResponse> {
         return service.getUserTrip(from, to, limit, page)
     }

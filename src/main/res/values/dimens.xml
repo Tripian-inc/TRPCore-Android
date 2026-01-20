@@ -17,4 +17,15 @@
     <dimen name="text_size_form_field">15sp</dimen>
     <dimen name="text_size_caption_2">11sp</dimen>
     <dimen name="text_size_caption_1">12sp</dimen>
+
+    <!-- AddPlan Flow -->
+    <dimen name="category_grid_spacing">8dp</dimen>
+    <dimen name="corner_radius_3dp">3dp</dimen>
+    <dimen name="corner_radius_8dp">8dp</dimen>
+
+    <!-- POI Detail -->
+    <dimen name="poi_indicator_active_width">14dp</dimen>
+    <dimen name="poi_indicator_inactive_size">8dp</dimen>
+    <dimen name="poi_indicator_margin">4dp</dimen>
+    <dimen name="poi_product_card_corner_radius">8dp</dimen>
 </resources>

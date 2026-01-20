@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AddPlan SearchBar Component -->
+<!-- Height: 48dp, Border: 0.5dp #CFCFCF -->
+<!-- Icon: left 18dp padding -->
+<!-- Placeholder: Light 14sp, Text: Medium 14sp, Color: primaryText -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:background="@drawable/bg_addplan_search_bar">
+
+    <!-- Search Icon - shown when no text -->
+    <ImageView
+        android:id="@+id/ivSearch"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginStart="18dp"
+        android:src="@drawable/ic_search"
+        android:contentDescription="Search" />
+
+    <!-- EditText - marginStart changes based on search icon visibility -->
+    <EditText
+        android:id="@+id/etInput"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="50dp"
+        android:layout_marginEnd="48dp"
+        android:background="@android:color/transparent"
+        android:fontFamily="@font/light"
+        android:hint="Search..."
+        android:imeOptions="actionSearch"
+        android:inputType="text"
+        android:maxLines="1"
+        android:paddingVertical="12dp"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_primary"
+        android:textSize="14sp"
+        tools:ignore="Autofill,LabelFor" />
+
+    <!-- Clear Button - shown when text is entered -->
+    <ImageView
+        android:id="@+id/ivClear"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="18dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:padding="3dp"
+        android:src="@drawable/ic_close"
+        android:visibility="gone"
+        android:contentDescription="Clear"
+        tools:visibility="visible" />
+
+</FrameLayout>

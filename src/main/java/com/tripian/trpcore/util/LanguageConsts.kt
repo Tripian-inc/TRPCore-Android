@@ -72,6 +72,8 @@ object LanguageConst {
     const val LOCATION_PERMISSION = "location_permission"
     const val ENABLE_LOCATION_PERMISSION = "enable_location"
     const val ERROR_LOCATION_PERMISSION = "location_permission_denied"
+    const val SETTINGS = "common.button.settings"
+    const val BACK = "common.button.back"
     const val NOT_IN_CITY = "your_current_location_is_not_in_city"
     const val ENTER_TWO_CHARS = "trips.myTrips.exploreMore.placeholder"
     const val FAVORITES = "trips.myTrips.itinerary.favorites.title"
@@ -179,4 +181,166 @@ object LanguageConst {
     const val LUNCH_BRUNCH = "trips.createNewTrip.restaurantQuestion.lunchBrunch"
     const val DINNER = "trips.createNewTrip.restaurantQuestion.dinner"
     const val PLEASE_SELECT = "trips.myTrips.localExperiences.tourDetails.pleaseSelect"
+
+    // Timeline
+    const val RECOMMENDATIONS = "recommendations"
+    const val NO_PLANS_FOR_DAY = "no_plans_for_day"
+    const val CONFIRMED = "timeline.bookedActivity.confirmed"
+    const val RESERVATION = "timeline.bookedActivity.reservation"
+    const val VIEW_DETAILS = "view_details"
+    const val DELETE_SEGMENT = "delete_segment"
+    const val DELETE_SEGMENT_CONFIRM = "delete_segment_confirm"
+    const val SAVED_PLANS = "saved_plans"
+    const val MAP_VIEW = "map_view"
+    const val LIST_VIEW = "list_view"
+    const val GENERATING_ITINERARY = "generating_itinerary"
+    const val REMOVE_ACTIVITY = "timeline.removeActivity.title"
+    const val REMOVE_ACTIVITY_MESSAGE = "timeline.removeActivity.message"
+    const val REMOVE_BUTTON = "timeline.removeActivity.remove"
+    const val REMOVE_RECOMMENDATIONS = "timeline.removeRecommendations.title"
+    const val REMOVE_RECOMMENDATIONS_MESSAGE = "timeline.removeRecommendations.message"
+    const val NO_PLANS_YET = "timeline.emptyState.noPlansYet"
+    const val NO_PLANS_DESCRIPTION = "timeline.emptyState.noPlansDescription"
+    const val ADD_PLANS = "timeline.emptyState.addPlans"
+    const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
+
+    // =====================
+    // ADD PLAN FLOW
+    // =====================
+
+    // Main Actions
+    const val ADD_PLAN_TITLE = "addPlan.title.addPlan"
+    const val ADD_PLAN_ADD_ACTIVITY = "addPlan.title.addActivity"
+    const val ADD_PLAN_CONTINUE = "common.button.continue"
+    const val ADD_PLAN_CANCEL = "common.button.cancel"
+    const val ADD_PLAN_CONFIRM = "common.button.confirm"
+    const val ADD_PLAN_SELECT = "common.button.select"
+    const val ADD_PLAN_CLEAR_SELECTION = "addPlan.button.clearSelection"
+    const val ADD_PLAN_GENERATE = "addPlan.button.generate"
+
+    // Selection Mode
+    const val ADD_PLAN_HOW_TO_ADD = "addPlan.label.howToAddPlans"
+    const val ADD_PLAN_SMART_RECOMMENDATIONS = "addPlan.mode.smartRecommendations"
+    const val ADD_PLAN_SMART_DESC = "addPlan.description.smartRecommendations"
+    const val ADD_PLAN_ADD_MANUALLY = "addPlan.mode.addManually"
+    const val ADD_PLAN_MANUAL_DESC = "addPlan.description.addManually"
+
+    // Time & Location
+    const val ADD_PLAN_ADD_TO_DAY = "addPlan.label.addToDay"
+    const val ADD_PLAN_CITY = "addPlan.label.city"
+    const val ADD_PLAN_SELECT_CITY = "addPlan.title.selectCity"
+    const val ADD_PLAN_START_TIME = "addPlan.label.startTime"
+    const val ADD_PLAN_END_TIME = "addPlan.label.endTime"
+    const val ADD_PLAN_TIME = "addPlan.title.time"
+    const val ADD_PLAN_SELECT_STARTING_POINT = "addPlan.label.selectStartingPoint"
+    const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
+    const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectTime"
+    const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.label.noTimeSlots"
+    const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
+
+    // Categories (Smart Mode)
+    const val ADD_PLAN_SELECT_CATEGORIES = "addPlan.label.selectCategories"
+    const val ADD_PLAN_CAT_GUIDED_TOURS = "addPlan.category.guidedTours"
+    const val ADD_PLAN_CAT_TICKETS = "addPlan.category.tickets"
+    const val ADD_PLAN_CAT_EXCURSIONS = "addPlan.category.excursions"
+    const val ADD_PLAN_CAT_POI = "addPlan.category.poi"
+    const val ADD_PLAN_CAT_FOOD = "addPlan.category.food"
+    const val ADD_PLAN_CAT_SHOWS = "addPlan.category.shows"
+    const val ADD_PLAN_CAT_TRANSPORT = "addPlan.category.transport"
+
+    // Categories (Manual Mode)
+    const val ADD_PLAN_CAT_MANUAL_ACTIVITIES = "addPlan.category.manual.activities"
+    const val ADD_PLAN_CAT_MANUAL_PLACES = "addPlan.category.manual.placesOfInterest"
+    const val ADD_PLAN_CAT_MANUAL_EAT_DRINK = "addPlan.category.manual.eatAndDrink"
+
+    // Activity Listing
+    const val ADD_PLAN_CAT_ALL = "addPlan.category.all"
+    const val ADD_PLAN_SEARCH_ACTIVITY = "addPlan.search.activity"
+    const val ADD_PLAN_FILTERS = "addPlan.button.filters"
+    const val ADD_PLAN_SORT_BY = "addPlan.button.sortBy"
+    const val ADD_PLAN_OPINIONS = "addPlan.label.opinions"
+    const val ADD_PLAN_FREE_CANCELLATION = "common.label.freeCancellation"
+    const val ADD_PLAN_ACTIVITY = "addPlan.label.activity"
+    const val ADD_PLAN_ACTIVITIES = "addPlan.label.activities"
+    const val ACTIVITIES_FOUND = "addPlan.activitiesFound"
+
+    // Activity Filters
+    const val ADD_PLAN_FILTER_TITLE = "addPlan.filter.title"
+    const val ADD_PLAN_FILTER_PRICE = "addPlan.filter.price"
+    const val ADD_PLAN_FILTER_DURATION = "addPlan.filter.duration"
+    const val ADD_PLAN_FILTER_CLEAR = "addPlan.filter.clearSelection"
+    const val ADD_PLAN_FILTER_FREE = "addPlan.filter.free"
+    const val ADD_PLAN_FILTER_DAYS = "addPlan.filter.days"
+
+    // POI Search
+    const val ADD_PLAN_SEARCH_POI = "addPlan.placeholder.searchPOI"
+    const val ADD_PLAN_NEAR_ME = "addPlan.option.nearMe"
+    const val ADD_PLAN_CITY_CENTER = "addPlan.label.cityCenter"
+    const val PLACES_FOUND = "addPlan.placesFound"
+    const val ADD_PLAN_TITLE_PLACES_OF_INTEREST = "addPlan.title.placesOfInterest"
+
+    // Other
+    const val ADD_PLAN_SELECT_TRAVELERS = "addPlan.label.selectTravelers"
+    const val ADD_PLAN_TRAVELERS = "addPlan.label.travelers"
+    const val ADD_PLAN_SAVED_ACTIVITIES = "addPlan.section.savedActivities"
+    const val ADD_PLAN_EMPTY_SAVED = "addPlan.emptyState.addSavedPlansToItinerary"
+    const val ADD_PLAN_SAVED_PLANS = "addPlan.title.savedPlans"
+    const val ADD_PLAN_NO_SAVED_PLANS = "addPlan.emptyState.noSavedPlans"
+    const val ADD_PLAN_NO_SAVED_PLANS_DESC = "addPlan.emptyState.noSavedPlansDescription"
+
+    // Error Messages
+    const val ADD_PLAN_ERROR_MISSING = "trips.myTrips.timelineitinerary.addPlan.error.missingData"
+    const val ADD_PLAN_ERROR_CREATE_FAILED = "trips.myTrips.timelineitinerary.addPlan.error.createFailed"
+
+    // =====================
+    // POI DETAIL SCREEN
+    // =====================
+
+    // Sections
+    const val POI_DETAIL_ACTIVITIES = "poiDetail.section.activities"
+    const val POI_DETAIL_KEY_DATA = "poiDetail.section.keyData"
+    const val POI_DETAIL_MEETING_POINT = "poiDetail.section.meetingPoint"
+    const val POI_DETAIL_FEATURES = "poiDetail.section.features"
+
+    // Buttons
+    const val POI_DETAIL_SEE_MORE = "poiDetail.button.seeMore"
+    const val POI_DETAIL_READ_FULL = "poiDetail.button.readFullDescription"
+    const val POI_DETAIL_CLOSE_FULL = "poiDetail.button.closeFullDescription"
+    const val POI_DETAIL_VIEW_MAP = "poiDetail.button.viewMap"
+    const val POI_DETAIL_CANCEL = "poiDetail.button.cancel"
+
+    // Labels
+    const val POI_DETAIL_PHONE = "poiDetail.label.phone"
+    const val POI_DETAIL_OPENING_HOURS = "poiDetail.label.openingHours"
+    const val POI_DETAIL_CLOSED = "poiDetail.label.closed"
+    const val POI_DETAIL_WHERE_STARTS = "poiDetail.label.whereItStarts"
+    const val POI_DETAIL_FREE_CANCELLATION = "poiDetail.label.freeCancellation"
+    const val POI_DETAIL_FROM = "poiDetail.label.from"
+
+    // Action Sheets
+    const val POI_DETAIL_OPEN_IN = "poiDetail.actionSheet.openIn"
+
+    // Legacy keys (still in use)
+    const val TIME_AND_TRAVELERS = "time_and_travelers"
+    const val STARTING_POINT = "starting_point"
+    const val ACCOMMODATION_POINT = "accommodation"
+    const val CUSTOM_LOCATION = "custom_location"
+    const val GENERATE_RECOMMENDATIONS = "generate_recommendations"
+    const val SELECT_POI = "select_poi"
+    const val SEE_DO = "see_and_do"
+    const val EAT_DRINK = "eat_and_drink"
+    const val SPORTS = "sports"
+    const val ENTERTAINMENT = "entertainment"
+
+    // =====================
+    // SORT OPTIONS
+    // =====================
+    const val SORT_BY_POPULARITY = "addPlan.sort.popularity"
+    const val SORT_BY_RATING = "addPlan.sort.rating"
+    const val SORT_BY_PRICE_LOW_HIGH = "addPlan.sort.priceLowToHigh"
+    const val SORT_BY_PRICE_HIGH_LOW = "addPlan.sort.priceHighToLow"
+    const val SORT_BY_NEWEST = "addPlan.sort.newest"
+    const val SORT_BY_DURATION = "addPlan.sort.duration"
+    const val SORT_BY_DURATION_LONG_SHORT = "addPlan.sort.durationLongToShort"
+
 }

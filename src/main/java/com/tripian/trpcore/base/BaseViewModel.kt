@@ -41,7 +41,7 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
     var arguments: Bundle? = null
 
     /**
-     * Use case'lerde request'leri dispose etmek için use case listesini tutuyoruz
+     * Holds the list of use cases to dispose requests in use cases
      */
     var useCases = arrayListOf(*cases)
 
@@ -86,8 +86,8 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
     }
 
     /**
-     * ViewModel lifecycle'ı sonlandığında çağırılır.
-     * RxJava Disposable'larını temizler.
+     * Called when the ViewModel lifecycle ends.
+     * Clears RxJava Disposables.
      */
     override fun onCleared() {
         super.onCleared()
@@ -163,7 +163,7 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     @Subscribe
     fun onDummyBusEvent(dummy: Unit) {
-        // NOTE: Burasi silinmemeli, bu kısım register oldugunda ihtiyac duyuluyor
+        // NOTE: Do not delete this, this method is required when registered to EventBus
     }
 
     fun showFragment(factory: FragmentFactory) {

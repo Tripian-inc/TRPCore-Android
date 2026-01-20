@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- POI Listing Item Layout - Matches Activity Card Style -->
+<!-- iOS Reference: POIListingCell -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/_12sdp"
+    android:paddingTop="@dimen/_12sdp"
+    android:background="@color/white">
+
+    <!-- POI Image - 62x62 with rounded corners -->
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/ivPOIImage"
+        android:layout_width="@dimen/_62sdp"
+        android:layout_height="@dimen/_62sdp"
+        android:scaleType="centerCrop"
+        app:cornerRadius="@dimen/_3sdp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="@color/grey_10" />
+
+    <!-- Add Button -->
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/btnAdd"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@android:color/transparent"
+        android:padding="6dp"
+        android:src="@drawable/ic_add_to_plan"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Title - Semibold 16sp -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvPOIName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_12sdp"
+        android:layout_marginEnd="@dimen/_6sdp"
+        android:ellipsize="end"
+        android:fontFamily="@font/semibold"
+        android:maxLines="2"
+        android:textColor="@color/activity_title"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@id/btnAdd"
+        app:layout_constraintStart_toEndOf="@id/ivPOIImage"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Colosseum Ancient Arena" />
+
+    <!-- Rating Row -->
+    <LinearLayout
+        android:id="@+id/llRatingRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_3sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/tvPOIName"
+        app:layout_constraintTop_toBottomOf="@id/tvPOIName">
+
+        <!-- Rating Value - Bold 14sp -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/bold"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            tools:text="4.8" />
+
+        <!-- Rating Star -->
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/ivStar"
+            android:layout_width="@dimen/_9sdp"
+            android:layout_height="@dimen/_9sdp"
+            android:layout_marginBottom="@dimen/_1sdp"
+            android:layout_marginStart="@dimen/_1sdp"
+            android:src="@drawable/ic_rating_star" />
+
+        <!-- Rating Count - Regular 14sp -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRatingCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_3sdp"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/fgWeak"
+            android:textSize="14sp"
+            tools:text="(1,234 reviews)" />
+    </LinearLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
