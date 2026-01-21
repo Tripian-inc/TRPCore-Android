@@ -6,18 +6,16 @@ import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
-import com.tapadoo.alerter.Alerter
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.widget.BottomToast
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.ToolbarProperties
 import com.tripian.trpcore.util.dialog.DGLockScreen
@@ -195,21 +193,12 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
     }
 
     fun showAlert(type: AlertType, message: String) {
-        val color = when (type) {
-            AlertType.SUCCESS -> ContextCompat.getColor(this, R.color.trp_success_message)
-            AlertType.WARNING -> ContextCompat.getColor(this, R.color.trp_warning_message)
-            AlertType.ERROR -> ContextCompat.getColor(this, R.color.trp_error_message)
-            AlertType.INFO -> ContextCompat.getColor(this, R.color.trp_info_message)
-            else -> 0
-        }
-
-        Alerter.create(this)
-            .setBackgroundColorInt(color)
-            .setDuration(1500)
-            .setText(message)
-            .hideIcon()
-            .setTextTypeface(ResourcesCompat.getFont(this, R.font.bold)!!)
-            .show()
+        BottomToast.show(
+            activity = this,
+            message = message,
+            alertType = type,
+            duration = 3000L
+        )
     }
 
     open fun setToolbarProperties(properties: ToolbarProperties) {}

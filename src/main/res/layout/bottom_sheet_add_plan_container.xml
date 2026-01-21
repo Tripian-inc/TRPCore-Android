@@ -92,7 +92,7 @@
         <!-- Clear Selection (left side) -->
         <TextView
             android:id="@+id/tvClearSelection"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="48dp"
             android:gravity="center"
             android:layout_weight="1"
@@ -108,10 +108,9 @@
         <!-- Continue Button (right side, 48dp) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnContinue"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="48dp"
             android:minHeight="48dp"
-            android:minWidth="120dp"
             android:layout_weight="1"
             android:insetTop="0dp"
             android:insetBottom="0dp"

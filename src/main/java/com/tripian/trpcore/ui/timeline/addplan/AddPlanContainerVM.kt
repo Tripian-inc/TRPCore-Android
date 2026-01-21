@@ -482,11 +482,8 @@ class AddPlanContainerVM @Inject constructor() : BaseViewModel() {
             AddPlanStep.CATEGORY_SELECTION -> isSmartMode
         }
 
-        // Update continue button text
-        _continueButtonTextKey.value = when (step) {
-            AddPlanStep.CATEGORY_SELECTION -> LanguageConst.ADD_PLAN_GENERATE
-            else -> LanguageConst.ADD_PLAN_CONTINUE
-        }
+        // Update continue button text - always "Continue"
+        _continueButtonTextKey.value = LanguageConst.ADD_PLAN_CONTINUE
 
         updateContinueButtonState()
     }

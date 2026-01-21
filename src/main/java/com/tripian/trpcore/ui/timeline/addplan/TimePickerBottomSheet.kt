@@ -204,7 +204,7 @@ class TimePickerBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun updateDisplayTexts() {
-        val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT_TIME)
+        val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
 
         binding.tvStartTimeDisplay.text = selectedStartTime?.let { convert24hTo12h(it) } ?: selectText
         binding.tvEndTimeDisplay.text = selectedEndTime?.let { convert24hTo12h(it) } ?: selectText
