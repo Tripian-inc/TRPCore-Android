@@ -93,7 +93,7 @@ In your app-level `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.Tripian-inc:TRPCore-Android:1.0.0'
+    implementation 'com.github.Tripian-inc:TRPCore-Android:1.1.3'
 }
 ```
 
@@ -197,7 +197,9 @@ class MainActivity : AppCompatActivity() {
 ### Environment Options
 
 - **`Environment.PROD`**: Production environment - uses `"prod/"` API version
+- **`Environment.TEST`**: Test environment - uses `"test/"` API version
 - **`Environment.DEV`**: Development environment - uses `"dev/"` API version
+- **`Environment.PREDEV`**: Pre-development environment - uses `"predev/"` API version
 
 **Example with DEV environment:**
 
@@ -352,7 +354,7 @@ The `appLanguage` parameter supports various language codes. Common examples:
 
 ## Version
 
-Current version: **1.0.0**
+Current version: **1.1.3**
 
 ## License
 
