@@ -149,9 +149,11 @@ class MyApplication : Application() {
 
 ## Starting Timeline Itinerary
 
-### Method 1: startWithItinerary (Recommended)
+Use `startWithItinerary` method to start the SDK. This is the **only entry point** you need.
 
-This is the **primary entry point** for the SDK. Use when you have user's travel information.
+### Scenario 1: Create New Timeline
+
+When user doesn't have an existing timeline, pass `tripHash = null`:
 
 ```kotlin
 import com.tripian.trpcore.base.TRPCore
@@ -174,14 +176,44 @@ val itinerary = ItineraryWithActivities(
 TRPCore.core.startWithItinerary(
     context = this,
     itinerary = itinerary,
-    tripHash = null,           // null = create new, or pass existing hash
+    tripHash = null,           // null = create new timeline
     uniqueId = "user_12345",
     canBack = true,
     appLanguage = "en"
 )
 ```
 
-#### startWithItinerary Parameters
+### Scenario 2: Load Existing Timeline
+
+When user has a previously saved `tripHash`, pass it along with the itinerary:
+
+```kotlin
+val itinerary = ItineraryWithActivities(
+    tripName = "Barcelona Trip",
+    startDatetime = "2025-03-15 09:00",
+    endDatetime = "2025-03-18 18:00",
+    uniqueId = "user_12345",
+    tripianHash = savedTripHash,    // Can also pass here
+    destinationItems = listOf(
+        SegmentDestinationItem(
+            title = "Barcelona",
+            coordinate = "41.3851,2.1734",
+            countryName = "Spain"
+        )
+    )
+)
+
+TRPCore.core.startWithItinerary(
+    context = this,
+    itinerary = itinerary,
+    tripHash = savedTripHash,       // Or pass here - both work
+    uniqueId = "user_12345",
+    canBack = true,
+    appLanguage = "en"
+)
+```
+
+### startWithItinerary Parameters
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -192,29 +224,7 @@ TRPCore.core.startWithItinerary(
 | `canBack` | `Boolean` | No | Show back button (default: true) |
 | `appLanguage` | `String` | No | Language code (default: "en") |
 
-### Method 2: startWithTripHash
-
-Use when you have a previously created timeline hash:
-
-```kotlin
-TRPCore.core.startWithTripHash(
-    context = this,
-    tripHash = "abc123xyz",
-    uniqueId = "user_12345",
-    canBack = true,
-    appLanguage = "en"
-)
-```
-
-#### startWithTripHash Parameters
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `context` | `Context` | Yes | Android context |
-| `tripHash` | `String` | Yes | Timeline hash to load |
-| `uniqueId` | `String?` | No | User ID |
-| `canBack` | `Boolean` | No | Show back button (default: true) |
-| `appLanguage` | `String` | No | Language code (default: "en") |
+> **Note:** `tripHash` can be passed either as a parameter or inside `itinerary.tripianHash`. If both are provided, the parameter takes precedence.
 
 ---
 
@@ -616,6 +626,20 @@ class MainActivity : AppCompatActivity(), TRPCoreSDKListener {
 ## Legacy Methods
 
 These methods are available for backwards compatibility:
+
+### startWithTripHash
+
+Use only when you have a tripHash but no itinerary data:
+
+```kotlin
+TRPCore.core.startWithTripHash(
+    context = this,
+    tripHash = "abc123xyz",
+    uniqueId = "user_12345",
+    canBack = true,
+    appLanguage = "en"
+)
+```
 
 ### startTripianWithEmail
 
