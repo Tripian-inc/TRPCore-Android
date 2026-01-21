@@ -8,7 +8,7 @@
     android:layout_height="wrap_content"
     android:paddingHorizontal="@dimen/_12sdp"
     android:paddingTop="@dimen/_12sdp"
-    android:background="@color/white">
+    android:background="@color/trp_white">
 
     <!-- POI Image - 62x62 with rounded corners -->
     <com.tripian.trpcore.util.widget.ImageView
@@ -19,7 +19,7 @@
         app:cornerRadius="@dimen/_3sdp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:background="@color/grey_10" />
+        tools:background="@color/trp_grey_10" />
 
     <!-- Add Button -->
     <com.tripian.trpcore.util.widget.ImageView
@@ -42,7 +42,7 @@
         android:ellipsize="end"
         android:fontFamily="@font/semibold"
         android:maxLines="2"
-        android:textColor="@color/activity_title"
+        android:textColor="@color/trp_activity_title"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/btnAdd"
         app:layout_constraintStart_toEndOf="@id/ivPOIImage"
@@ -67,7 +67,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/bold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="4.8" />
 
@@ -87,7 +87,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_3sdp"
             android:fontFamily="@font/medium"
-            android:textColor="@color/fgWeak"
+            android:textColor="@color/trp_fgWeak"
             android:textSize="14sp"
             tools:text="(1,234 reviews)" />
     </LinearLayout>

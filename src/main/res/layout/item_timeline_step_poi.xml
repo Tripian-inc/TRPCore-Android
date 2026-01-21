@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/bgCloudy"
+    android:background="@color/trp_bgCloudy"
     android:orientation="vertical"
     android:paddingTop="20dp"
     android:paddingHorizontal="16dp">
@@ -28,7 +28,7 @@
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
-            android:textColor="@color/white"
+            android:textColor="@color/trp_white"
             android:textSize="16sp"
             tools:text="1" />
 
@@ -41,7 +41,7 @@
             android:layout_marginHorizontal="10dp"
             android:gravity="end"
             android:fontFamily="@font/medium"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="10:00 - 11:00" />
 
@@ -53,7 +53,7 @@
         android:layout_width="1dp"
         android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:background="@color/lineWeak" />
+        android:background="@color/trp_lineWeak" />
 
     <!-- Content Row (Image + Details) -->
     <LinearLayout
@@ -73,7 +73,7 @@
                 android:id="@+id/ivImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/bgCloudy"
+                android:background="@color/trp_bgCloudy"
                 android:contentDescription="POI Image"
                 android:scaleType="centerCrop" />
 
@@ -95,7 +95,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/semibold"
                 android:maxLines="2"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="15sp"
                 tools:text="Place Name" />
 
@@ -116,7 +116,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/bold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="14sp"
                     tools:text="9,3" />
 
@@ -135,7 +135,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:fontFamily="@font/regular"
-                    android:textColor="@color/fgWeak"
+                    android:textColor="@color/trp_fgWeak"
                     android:textSize="14sp"
                     tools:text="74.913 opinions" />
 
@@ -151,7 +151,7 @@
                 android:fontFamily="@font/medium"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="4dp"
-                android:textColor="@color/confirmed_badge_text"
+                android:textColor="@color/trp_confirmed_badge_text"
                 android:textSize="12sp"
                 android:visibility="gone"
                 tools:text="Restaurant"

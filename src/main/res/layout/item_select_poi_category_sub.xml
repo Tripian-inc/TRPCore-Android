@@ -16,7 +16,7 @@
         android:layout_marginStart="@dimen/_10sdp"
         android:layout_toEndOf="@+id/imCheck"
         android:gravity="center"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         tools:text="Eylül" />
 
     <com.tripian.trpcore.util.widget.ImageView

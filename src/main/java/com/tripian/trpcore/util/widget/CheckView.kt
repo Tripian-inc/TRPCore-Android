@@ -59,10 +59,10 @@ class CheckView @JvmOverloads constructor(
 
         if (isChecked) {
             root.setBackgroundResource(R.drawable.bg_oval_purple_large_radius)
-            tvText.setTextColor(ContextCompat.getColor(context, R.color.white))
+            tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_white))
         } else {
             root.setBackgroundResource(R.drawable.bg_oval_gray_large_radius)
-            tvText.setTextColor(ContextCompat.getColor(context, R.color.body))
+            tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_body))
         }
     }
 

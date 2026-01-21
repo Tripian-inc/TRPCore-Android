@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_8sdp"
         android:layout_marginBottom="@dimen/_6sdp"
-        android:textColor="@color/black"
+        android:textColor="@color/trp_black"
         android:visibility="gone"
         tools:text="Eylül"
         tools:visibility="visible" />
@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_12sdp"
         android:layout_marginBottom="@dimen/_6sdp"
-        android:textColor="@color/black"
+        android:textColor="@color/trp_black"
         tools:text="Eylül" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:paddingTop="@dimen/_12sdp"
             android:paddingBottom="@dimen/_12sdp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -63,7 +63,7 @@
             android:paddingTop="@dimen/_12sdp"
             android:paddingBottom="@dimen/_12sdp"
             android:layout_marginEnd="@dimen/_12sdp"
-            android:textColor="@color/black"
+            android:textColor="@color/trp_black"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/imCheck"
             app:layout_constraintStart_toEndOf="@+id/tvSpinnerTitle"

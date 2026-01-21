@@ -10,6 +10,6 @@
     android:fontFamily="@font/medium"
     android:paddingHorizontal="12dp"
     android:paddingVertical="6dp"
-    android:textColor="@color/text_primary"
+    android:textColor="@color/trp_text_primary"
     android:textSize="12sp"
     tools:text="Museum" />

@@ -113,7 +113,7 @@ class FRRegister : BaseFragment<FrRegisterBinding, FRRegisterVM>(FrRegisterBindi
         currentCalendar.timeInMillis = viewModel.selectedDate
 
         val datePicker = DatePickerDialog(
-            requireContext(), R.style.datePicker, listener,
+            requireContext(), R.style.TrpDatePicker, listener,
             currentCalendar[Calendar.YEAR], currentCalendar[Calendar.MONTH], currentCalendar[Calendar.DAY_OF_MONTH]
         )
 
@@ -136,7 +136,7 @@ class FRRegister : BaseFragment<FrRegisterBinding, FRRegisterVM>(FrRegisterBindi
 
             override fun updateDrawState(ds: TextPaint) {
                 super.updateDrawState(ds)
-                ds.color = ContextCompat.getColor(requireContext(), R.color.primary)
+                ds.color = ContextCompat.getColor(requireContext(), R.color.trp_primary)
                 ds.isUnderlineText = true
             }
         }

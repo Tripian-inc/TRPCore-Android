@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:orientation="vertical">
 
     <View
@@ -14,7 +14,7 @@
         android:id="@+id/llRestaurants"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingStart="@dimen/_16sdp"
@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             style="@style/TextCaption1"
@@ -35,14 +35,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_4sdp"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/llCafes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingStart="@dimen/_16sdp"
@@ -55,7 +55,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             style="@style/TextCaption1"
@@ -63,14 +63,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_4sdp"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/llAttractions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingStart="@dimen/_16sdp"
@@ -83,7 +83,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             style="@style/TextCaption1"
@@ -91,14 +91,14 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_4sdp"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/llAll"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center"
         android:orientation="vertical"
         android:paddingStart="@dimen/_16sdp"
@@ -111,7 +111,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             style="@style/TextCaption1"
@@ -119,6 +119,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_4sdp"
             android:gravity="center_vertical"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 </LinearLayout>

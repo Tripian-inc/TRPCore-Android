@@ -42,7 +42,7 @@ class TimePickerBottomSheet : BottomSheetDialogFragment() {
     // AM/PM values
     private val amPmValues = arrayOf("AM", "PM")
 
-    override fun getTheme(): Int = R.style.TimelineBottomSheetDialog
+    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -217,15 +217,15 @@ class TimePickerBottomSheet : BottomSheetDialogFragment() {
         // Update text color based on selection and validation
         binding.tvStartTimeDisplay.setTextColor(
             requireContext().getColor(
-                if (selectedStartTime != null) R.color.text_primary else R.color.fgWeak
+                if (selectedStartTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
             )
         )
         binding.tvEndTimeDisplay.setTextColor(
             requireContext().getColor(
                 when {
-                    isEndTimeInvalid -> R.color.error_message  // Show red if end time is before start time
-                    selectedEndTime != null -> R.color.text_primary
-                    else -> R.color.fgWeak
+                    isEndTimeInvalid -> R.color.trp_error_message  // Show red if end time is before start time
+                    selectedEndTime != null -> R.color.trp_text_primary
+                    else -> R.color.trp_fgWeak
                 }
             )
         )

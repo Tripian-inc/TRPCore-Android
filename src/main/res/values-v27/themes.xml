@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppTheme" parent="BaseAppTheme">
+    <style name="TrpAppTheme" parent="TrpBaseAppTheme">
         <!-- Status bar: white background with dark icons -->
-        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:statusBarColor">@color/trp_white</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Navigation bar: white background with dark icons (API 27+) -->
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/trp_white</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 
-    <style name="AppThemeWhite" parent="BaseAppTheme">
+    <style name="TrpAppThemeWhite" parent="TrpBaseAppTheme">
         <!-- Status bar: white background with dark icons -->
-        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:statusBarColor">@color/trp_white</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Navigation bar: white background with dark icons (API 27+) -->
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/trp_white</item>
         <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

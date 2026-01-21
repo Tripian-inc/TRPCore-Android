@@ -66,7 +66,7 @@ class FRTripQuestionVM @Inject constructor(val questions: Questions, val getPace
     }
 
     fun onShowError() {
-        showAlert(AlertType.ERROR, strings.getString(R.string.please_select_field))
+        showAlert(AlertType.ERROR, getLanguageForKey(LanguageConst.PLEASE_SELECT_FIELD))
     }
 
     fun onPaceSelected(pace: Pace) {

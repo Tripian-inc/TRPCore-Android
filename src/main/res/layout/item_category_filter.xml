@@ -25,7 +25,7 @@
         android:layout_weight="1"
         android:layout_marginStart="12dp"
         android:textSize="16sp"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         android:fontFamily="@font/regular"
         tools:text="Attractions" />
 

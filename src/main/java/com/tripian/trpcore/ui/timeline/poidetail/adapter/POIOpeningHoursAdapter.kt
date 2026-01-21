@@ -41,12 +41,12 @@ class POIOpeningHoursAdapter : ListAdapter<OpeningHourItem, POIOpeningHoursAdapt
             // Style closed days differently
             if (item.isClosed) {
                 binding.tvHours.setTextColor(
-                    ContextCompat.getColor(binding.root.context, R.color.text_secondary)
+                    ContextCompat.getColor(binding.root.context, R.color.trp_text_secondary)
                 )
                 binding.tvHours.setTypeface(null, Typeface.ITALIC)
             } else {
                 binding.tvHours.setTextColor(
-                    ContextCompat.getColor(binding.root.context, R.color.text_primary)
+                    ContextCompat.getColor(binding.root.context, R.color.trp_text_primary)
                 )
                 binding.tvHours.setTypeface(null, Typeface.NORMAL)
             }

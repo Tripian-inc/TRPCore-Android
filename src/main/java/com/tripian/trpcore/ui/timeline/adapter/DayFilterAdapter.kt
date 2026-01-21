@@ -71,12 +71,12 @@ class DayFilterAdapter(
             if (isSelected) {
                 binding.tvDayLabel.setBackgroundResource(R.drawable.bg_day_filter_selected)
                 binding.tvDayLabel.setTextColor(
-                    ContextCompat.getColor(context, R.color.primary)
+                    ContextCompat.getColor(context, R.color.trp_primary)
                 )
             } else {
                 binding.tvDayLabel.setBackgroundResource(R.drawable.bg_day_filter_unselected)
                 binding.tvDayLabel.setTextColor(
-                    ContextCompat.getColor(context, R.color.borderActive)
+                    ContextCompat.getColor(context, R.color.trp_borderActive)
                 )
             }
 

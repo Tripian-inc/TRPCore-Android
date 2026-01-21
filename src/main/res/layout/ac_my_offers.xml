@@ -7,7 +7,7 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:elevation="0dp">
 
         <RelativeLayout
@@ -60,6 +60,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         android:visibility="gone" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -37,7 +37,7 @@
             android:ellipsize="end"
             android:fontFamily="@font/semibold"
             android:maxLines="2"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="16sp"
             tools:text="Skip the Line: Anne Frank House Tour" />
 
@@ -57,7 +57,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/bold"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="14sp"
                 tools:text="4.5" />
 
@@ -75,7 +75,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
                 android:fontFamily="@font/medium"
-                android:textColor="@color/fgWeak"
+                android:textColor="@color/trp_fgWeak"
                 android:textSize="14sp"
                 tools:text="1,234 opinions" />
 
@@ -88,7 +88,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:fontFamily="@font/medium"
-            android:textColor="@color/advantage"
+            android:textColor="@color/trp_advantage"
             android:textSize="14sp"
             tools:text="Free cancellation" />
 
@@ -106,7 +106,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/regular"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="14sp"
                 tools:text="From " />
 
@@ -116,7 +116,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/bold"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="16sp"
                 tools:text="$49" />
         </LinearLayout>

@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/trp_white">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -23,7 +23,7 @@
                 android:id="@+id/vpPager"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_240sdp"
-                android:background="@color/grey_10" />
+                android:background="@color/trp_grey_10" />
 
             <View
                 android:layout_width="match_parent"
@@ -49,7 +49,7 @@
                 android:shadowDx="-2"
                 android:shadowDy="-2"
                 android:shadowRadius="1"
-                android:textColor="@color/white"
+                android:textColor="@color/trp_white"
                 tools:text="semihozkoroglu" />
 
             <com.tripian.gyg.widget.indicator.PageIndicatorView
@@ -62,8 +62,8 @@
                 app:piv_interactiveAnimation="true"
                 app:piv_padding="12dp"
                 app:piv_radius="4dp"
-                app:piv_selectedColor="@color/primary"
-                app:piv_unselectedColor="@color/shade_violet"
+                app:piv_selectedColor="@color/trp_primary"
+                app:piv_unselectedColor="@color/trp_shade_violet"
                 app:piv_viewPager="@id/vpPager" />
 
             <com.tripian.trpcore.util.widget.ImageView
@@ -120,7 +120,7 @@
                     android:layout_marginEnd="@dimen/_8sdp"
                     android:gravity="center"
                     android:lineSpacingExtra="4dp"
-                    android:textColor="@color/head"
+                    android:textColor="@color/trp_head"
                     tools:text="Iglesia de San Juan Bautista Bautista Bautista" />
 
                 <LinearLayout
@@ -139,7 +139,7 @@
                         style="@style/TextCaption1"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/body"
+                        android:textColor="@color/trp_body"
                         android:visibility="gone"
                         tools:text="(234)" />
 
@@ -150,7 +150,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:rating="3.5"
-                        android:theme="@style/AppThemeYellow"
+                        android:theme="@style/TrpAppThemeYellow"
                         android:visibility="gone" />
 
                     <View
@@ -160,7 +160,7 @@
                         android:layout_gravity="center"
                         android:layout_marginStart="@dimen/_6sdp"
                         android:background="@drawable/bg_circle_gray_full"
-                        android:textColor="@color/extra_main"
+                        android:textColor="@color/trp_extra_main"
                         android:visibility="gone" />
 
                     <com.tripian.trpcore.util.widget.TextView
@@ -169,7 +169,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/_6sdp"
-                        android:textColor="@color/body"
+                        android:textColor="@color/trp_body"
                         android:visibility="gone"
                         tools:text="Price" />
                 </LinearLayout>
@@ -199,7 +199,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/_4sdp"
-                        android:textColor="@color/body"
+                        android:textColor="@color/trp_body"
                         android:visibility="gone"
                         tools:text="- Part of the day 1" />
                 </LinearLayout>
@@ -299,7 +299,7 @@
                     android:layout_toEndOf="@+id/imDescription"
                     android:lineSpacingExtra="8dp"
                     android:maxLines="2"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="turkish turkish turkish turkish turkish turkish" />
 
                 <com.tripian.trpcore.util.widget.ImageView
@@ -336,7 +336,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
                     android:lineSpacingExtra="8dp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="This spot serves one of the best inegöl meatballs, Meatballs, Kofta in İstanbul" />
             </LinearLayout>
 
@@ -363,7 +363,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
                     android:lineSpacingExtra="4dp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="turkish" />
             </LinearLayout>
 
@@ -391,7 +391,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
                     android:lineSpacingExtra="8dp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="vegaterian,kids menu,organic dishes,salad,takeaway,waiter service,lunch,dinner,kid friendly,dessert" />
             </LinearLayout>
 
@@ -419,7 +419,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
                     android:lineSpacingExtra="8dp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="Sun: 10:30 AM - 11:00 PM" />
 
                 <com.tripian.trpcore.util.widget.ImageView
@@ -451,7 +451,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
-                    android:textColor="@color/blue"
+                    android:textColor="@color/trp_blue"
                     tools:text="905333331111" />
             </LinearLayout>
 
@@ -477,7 +477,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_8sdp"
-                    android:textColor="@color/blue"
+                    android:textColor="@color/trp_blue"
                     tools:text="http://sultanahmet.com" />
             </LinearLayout>
 
@@ -506,7 +506,7 @@
                     android:layout_alignParentBottom="true"
                     android:layout_marginStart="@dimen/_8sdp"
                     android:lineSpacingExtra="8dp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="Alemdar, Divan Yolu cad. No:12 34110 Fatih/İstanbul Turkey" />
             </LinearLayout>
 
@@ -520,7 +520,7 @@
                 android:layout_marginEnd="@dimen/_48sdp"
                 android:layout_marginBottom="@dimen/_8sdp"
                 android:background="@drawable/selector_button_primary"
-                android:textColor="@color/white"
+                android:textColor="@color/trp_white"
                 android:visibility="gone" />
 
             <com.tripian.trpcore.util.widget.MapView
@@ -546,7 +546,7 @@
                     android:layout_marginStart="@dimen/_16sdp"
                     android:gravity="center"
                     android:lineSpacingExtra="4dp"
-                    android:textColor="@color/head" />
+                    android:textColor="@color/trp_head" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvGygDescription"

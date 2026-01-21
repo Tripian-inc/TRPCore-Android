@@ -24,7 +24,7 @@ class ActivitySortBottomSheet : BottomSheetDialogFragment() {
     private var onSortSelected: ((SortOption) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
 
-    override fun getTheme(): Int = R.style.TimelineBottomSheetDialog
+    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,

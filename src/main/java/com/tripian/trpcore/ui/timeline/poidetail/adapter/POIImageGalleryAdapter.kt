@@ -37,8 +37,8 @@ class POIImageGalleryAdapter : ListAdapter<Image, POIImageGalleryAdapter.ViewHol
         fun bind(image: Image) {
             Glide.with(binding.root.context)
                 .load(image.url)
-                .placeholder(R.color.grey_10)
-                .error(R.color.grey_10)
+                .placeholder(R.color.trp_grey_10)
+                .error(R.color.trp_grey_10)
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .centerCrop()
                 .into(binding.ivGalleryImage)

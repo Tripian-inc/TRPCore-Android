@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             tools:text="Add Plan"
-            android:textColor="@color/text_primary" />
+            android:textColor="@color/trp_text_primary" />
 
     </RelativeLayout>
 
@@ -60,7 +60,7 @@
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_24sdp"
         tools:text="Select Time"
-        android:textColor="@color/text_primary"/>
+        android:textColor="@color/trp_text_primary"/>
 
     <!-- Time Slots (Horizontal wrap layout using FlexboxLayout) -->
     <com.google.android.flexbox.FlexboxLayout
@@ -92,13 +92,13 @@
         android:layout_marginTop="@dimen/_16sdp"
         android:gravity="center"
         tools:text="No time slots available"
-        android:textColor="@color/grey_30"
+        android:textColor="@color/trp_grey_30"
         android:visibility="gone" />
 
     <!-- Continue Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"
-        style="@style/ButtonPrimary"
+        style="@style/TrpButtonPrimary"
         android:layout_marginHorizontal="@dimen/_24sdp"
         android:layout_marginTop="@dimen/_24sdp"
         android:enabled="false"

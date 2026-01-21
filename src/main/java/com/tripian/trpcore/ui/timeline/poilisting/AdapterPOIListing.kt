@@ -54,10 +54,10 @@ class AdapterPOIListing(
                 Glide.with(binding.ivPOIImage)
                     .load(imageUrl)
                     .transform(CenterCrop(), RoundedCorners(cornerRadius))
-                    .placeholder(R.color.grey_10)
+                    .placeholder(R.color.trp_grey_10)
                     .into(binding.ivPOIImage)
             } else {
-                binding.ivPOIImage.setImageResource(R.color.grey_10)
+                binding.ivPOIImage.setImageResource(R.color.trp_grey_10)
             }
 
             // Rating

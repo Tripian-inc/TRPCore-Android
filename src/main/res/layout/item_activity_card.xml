@@ -9,7 +9,7 @@
     android:paddingHorizontal="@dimen/_12sdp"
     android:paddingTop="@dimen/_18sdp"
     android:paddingBottom="12dp"
-    android:background="@color/white">
+    android:background="@color/trp_white">
 
     <!-- Activity Image - 80x80 with rounded corners -->
     <com.tripian.trpcore.util.widget.ImageView
@@ -20,7 +20,7 @@
         app:cornerRadius="@dimen/_3sdp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:background="@color/grey_10" />
+        tools:background="@color/trp_grey_10" />
 
     <!-- Add Button - Transparent background, only icon visible -->
 
@@ -45,7 +45,7 @@
         android:ellipsize="end"
         android:fontFamily="@font/semibold"
         android:maxLines="2"
-        android:textColor="@color/activity_title"
+        android:textColor="@color/trp_activity_title"
         android:textSize="16sp"
         app:layout_constraintEnd_toStartOf="@id/btnAdd"
         app:layout_constraintStart_toEndOf="@id/ivActivityImage"
@@ -70,7 +70,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/bold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="5.0" />
 
@@ -89,7 +89,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
             android:fontFamily="@font/regular"
-            android:textColor="@color/activity_rating_count"
+            android:textColor="@color/trp_activity_rating_count"
             android:textSize="14sp"
             tools:text="9 opinions" />
     </LinearLayout>
@@ -120,7 +120,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
             android:fontFamily="@font/medium"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="3h 30m" />
     </LinearLayout>
@@ -132,7 +132,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_4sdp"
         android:fontFamily="@font/regular"
-        android:textColor="@color/timeline_success"
+        android:textColor="@color/trp_timeline_success"
         android:textSize="14sp"
         android:visibility="gone"
         app:layout_constraintStart_toStartOf="@+id/tvTitle"
@@ -156,7 +156,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/regular"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="From " />
 
@@ -166,7 +166,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/bold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="16sp"
             tools:text="$49" />
     </LinearLayout>

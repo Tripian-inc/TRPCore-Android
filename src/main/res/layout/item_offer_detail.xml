@@ -14,7 +14,7 @@
         android:layout_marginEnd="@dimen/_16sdp"
         android:layout_marginBottom="@dimen/_16sdp"
         android:minHeight="@dimen/_88sdp"
-        app:cardBackgroundColor="@color/white"
+        app:cardBackgroundColor="@color/trp_white"
         app:cardCornerRadius="@dimen/_24sdp"
         app:cardElevation="@dimen/_8sdp"
         app:contentPaddingBottom="@dimen/_12sdp"
@@ -50,7 +50,7 @@
                 android:layout_toStartOf="@+id/llInView"
                 android:ellipsize="end"
                 android:maxLines="3"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 tools:text="Integer" />
 
             <com.tripian.trpcore.util.widget.TextView
@@ -63,7 +63,7 @@
                 android:layout_toStartOf="@+id/llInView"
                 android:ellipsize="end"
                 android:maxLines="3"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 tools:text="Integer" />
 
             <com.tripian.trpcore.util.widget.TextView
@@ -75,7 +75,7 @@
                 android:layout_marginTop="@dimen/_4sdp"
                 android:ellipsize="end"
                 android:maxLines="3"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 tools:text="Integer" />
 
             <LinearLayout
@@ -94,7 +94,7 @@
                     android:ellipsize="end"
                     android:gravity="center"
                     android:maxLines="3"
-                    android:textColor="@color/head"
+                    android:textColor="@color/trp_head"
                     tools:text="Din-in" />
 
                 <com.tripian.trpcore.util.widget.InView

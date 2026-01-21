@@ -196,10 +196,10 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
     fun showAlert(type: AlertType, message: String) {
         val color = when (type) {
-            AlertType.SUCCESS -> ContextCompat.getColor(this, R.color.success_message)
-            AlertType.WARNING -> ContextCompat.getColor(this, R.color.warning_message)
-            AlertType.ERROR -> ContextCompat.getColor(this, R.color.error_message)
-            AlertType.INFO -> ContextCompat.getColor(this, R.color.info_message)
+            AlertType.SUCCESS -> ContextCompat.getColor(this, R.color.trp_success_message)
+            AlertType.WARNING -> ContextCompat.getColor(this, R.color.trp_warning_message)
+            AlertType.ERROR -> ContextCompat.getColor(this, R.color.trp_error_message)
+            AlertType.INFO -> ContextCompat.getColor(this, R.color.trp_info_message)
             else -> 0
         }
 

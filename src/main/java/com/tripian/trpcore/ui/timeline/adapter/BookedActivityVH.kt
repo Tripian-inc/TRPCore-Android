@@ -72,7 +72,7 @@ class BookedActivityVH(
         // Badge - Confirmed style (green bg, green text)
         binding.tvBadge.text = getLanguage(LanguageConst.CONFIRMED)
         binding.tvBadge.setBackgroundResource(R.drawable.bg_confirmed_badge)
-        binding.tvBadge.setTextColor(binding.root.context.getColor(R.color.confirmed_badge_text))
+        binding.tvBadge.setTextColor(binding.root.context.getColor(R.color.trp_confirmed_badge_text))
 
         // Travelers - "X Adults, Y Children" format
         val travelers = mutableListOf<String>()

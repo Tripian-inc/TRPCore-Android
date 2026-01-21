@@ -140,7 +140,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     }
 
     override fun getTheme(): Int {
-        return R.style.AppTheme_BottomSheetDialog
+        return R.style.TrpAppTheme_BottomSheetDialog
     }
 
     private fun hideKeyboard() {

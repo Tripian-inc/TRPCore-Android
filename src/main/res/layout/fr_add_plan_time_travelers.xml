@@ -27,7 +27,7 @@
             android:layout_marginStart="16dp"
             android:fontFamily="@font/light"
             android:textSize="12sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Add to Day"/>
 
         <!-- Day Filter RecyclerView -->
@@ -60,7 +60,7 @@
                 android:layout_height="16dp"
                 android:fontFamily="@font/light"
                 android:textSize="12sp"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 tools:text="City"/>
 
             <FrameLayout
@@ -81,7 +81,7 @@
                     android:paddingEnd="40dp"
                     android:fontFamily="@font/medium"
                     android:textSize="14sp"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     tools:text="Barcelona"/>
 
                 <ImageView
@@ -90,7 +90,7 @@
                     android:layout_gravity="center_vertical|end"
                     android:layout_marginEnd="16dp"
                     android:src="@drawable/ic_chevron_down"
-                    android:tint="@color/text_primary"/>
+                    android:tint="@color/trp_text_primary"/>
 
             </FrameLayout>
 
@@ -101,7 +101,7 @@
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
             android:layout_marginTop="24dp"
-            android:background="@color/neutral200"/>
+            android:background="@color/trp_neutral200"/>
 
         <!-- ==================== -->
         <!-- STARTING POINT       -->
@@ -116,7 +116,7 @@
             android:layout_marginHorizontal="16dp"
             android:fontFamily="@font/semibold"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Select a Starting Point"/>
 
         <!-- Starting Point Button (48dp) -->
@@ -139,7 +139,7 @@
                 android:paddingEnd="40dp"
                 android:fontFamily="@font/medium"
                 android:textSize="14sp"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 tools:text="City Center"/>
 
             <!-- Clear Button (X) -->
@@ -151,7 +151,7 @@
                 android:layout_marginEnd="12dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_close"
-                android:tint="@color/fgWeak"
+                android:tint="@color/trp_fgWeak"
                 android:visibility="gone"
                 android:contentDescription="Clear"/>
 
@@ -170,7 +170,7 @@
             android:layout_marginHorizontal="16dp"
             android:fontFamily="@font/semibold"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Select time"/>
 
         <!-- Time Buttons Row -->
@@ -196,7 +196,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/light"
                     android:textSize="12sp"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     tools:text="Start Time"/>
 
                 <FrameLayout
@@ -227,7 +227,7 @@
                             android:layout_marginStart="8dp"
                             android:fontFamily="@font/medium"
                             android:textSize="14sp"
-                            android:textColor="@color/fgWeak"
+                            android:textColor="@color/trp_fgWeak"
                             tools:text="Select"/>
 
                     </LinearLayout>
@@ -250,7 +250,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/light"
                     android:textSize="12sp"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     tools:text="End Time"/>
 
                 <FrameLayout
@@ -273,7 +273,7 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:src="@drawable/ic_time"
-                            android:tint="@color/fgWeak"/>
+                            android:tint="@color/trp_fgWeak"/>
 
                         <TextView
                             android:id="@+id/tvEndTime"
@@ -282,7 +282,7 @@
                             android:layout_marginStart="8dp"
                             android:fontFamily="@font/medium"
                             android:textSize="14sp"
-                            android:textColor="@color/fgWeak"
+                            android:textColor="@color/trp_fgWeak"
                             tools:text="Select"/>
 
                     </LinearLayout>
@@ -306,7 +306,7 @@
             android:layout_marginHorizontal="16dp"
             android:fontFamily="@font/semibold"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Select Travelers"/>
 
         <!-- Travelers Counter Row -->
@@ -325,7 +325,7 @@
                 android:layout_weight="1"
                 android:fontFamily="@font/medium"
                 android:textSize="14sp"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 tools:text="Travelers"/>
 
             <!-- Minus Button (32x32, circle) -->
@@ -335,7 +335,7 @@
                 android:layout_height="32dp"
                 android:background="@drawable/bg_circle_button"
                 android:src="@drawable/ic_minus"
-                android:tint="@color/fgWeak"
+                android:tint="@color/trp_fgWeak"
                 android:contentDescription="Decrease"/>
 
             <!-- Count -->
@@ -346,7 +346,7 @@
                 android:gravity="center"
                 android:fontFamily="@font/medium"
                 android:textSize="16sp"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:text="1"/>
 
             <!-- Plus Button (32x32, circle) -->
@@ -356,7 +356,7 @@
                 android:layout_height="32dp"
                 android:background="@drawable/bg_circle_button"
                 android:src="@drawable/ic_increase"
-                android:tint="@color/fgWeak"
+                android:tint="@color/trp_fgWeak"
                 android:contentDescription="Increase"/>
 
         </LinearLayout>
@@ -366,7 +366,7 @@
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
             android:layout_marginTop="24dp"
-            android:background="@color/neutral200"/>
+            android:background="@color/trp_neutral200"/>
 
     </LinearLayout>
 

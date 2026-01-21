@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/trp_white"
     android:orientation="vertical">
 
     <!-- Fixed Header: Back Button + Title -->
@@ -68,7 +68,7 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="@dimen/_12sdp"
-        android:background="@color/lineWeak" />
+        android:background="@color/trp_lineWeak" />
 
     <!-- Fixed: Filter & Sort Buttons Row -->
     <LinearLayout
@@ -91,15 +91,15 @@
             android:insetBottom="0dp"
             android:fontFamily="@font/medium"
             android:textAllCaps="false"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             app:cornerRadius="@dimen/_16sdp"
             app:icon="@drawable/ic_filter_activity"
             app:iconGravity="textStart"
             app:iconPadding="@dimen/_4sdp"
             app:iconSize="@dimen/_14sdp"
-            app:iconTint="@color/fgWeak"
-            app:strokeColor="@color/lineWeak"
+            app:iconTint="@color/trp_fgWeak"
+            app:strokeColor="@color/trp_lineWeak"
             app:strokeWidth="1dp"
             tools:text="Filters" />
 
@@ -114,15 +114,15 @@
             android:insetBottom="0dp"
             android:fontFamily="@font/medium"
             android:textAllCaps="false"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             app:cornerRadius="@dimen/_16sdp"
             app:icon="@drawable/ic_order_activity"
             app:iconGravity="textStart"
             app:iconPadding="@dimen/_4sdp"
             app:iconSize="@dimen/_14sdp"
-            app:iconTint="@color/text_primary"
-            app:strokeColor="@color/lineWeak"
+            app:iconTint="@color/trp_text_primary"
+            app:strokeColor="@color/trp_lineWeak"
             app:strokeWidth="1dp"
             tools:text="Sort by" />
     </LinearLayout>
@@ -136,7 +136,7 @@
         android:layout_marginTop="@dimen/_12sdp"
         android:layout_marginBottom="@dimen/_8sdp"
         android:fontFamily="@font/regular"
-        android:textColor="@color/activity_count_label"
+        android:textColor="@color/trp_activity_count_label"
         android:textSize="12sp"
         tools:text="150 places found" />
 
@@ -172,7 +172,7 @@
             android:gravity="center"
             android:padding="@dimen/_24sdp"
             android:text="No places found"
-            android:textColor="@color/grey_30"
+            android:textColor="@color/trp_grey_30"
             android:visibility="gone" />
 
         <!-- Error State -->
@@ -184,7 +184,7 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="@dimen/_24sdp"
-            android:textColor="@color/error"
+            android:textColor="@color/trp_error"
             android:visibility="gone"
             tools:text="An error occurred" />
     </FrameLayout>

@@ -13,7 +13,7 @@
         style="@style/TextBody1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/body"
+        android:textColor="@color/trp_body"
         tools:text="CityName" />
 
     <com.tripian.trpcore.util.widget.TextView
@@ -22,7 +22,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_4sdp"
-        android:textColor="@color/light_grey"
+        android:textColor="@color/trp_light_grey"
         android:visibility="visible"
         tools:text="CountyName" />
 </LinearLayout>

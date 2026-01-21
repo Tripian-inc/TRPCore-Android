@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/trp_white">
 
     <!-- Navigation Area -->
     <ImageView
@@ -40,7 +40,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:src="@drawable/ic_search_gray"
-            app:tint="@color/fgWeak"
+            app:tint="@color/trp_fgWeak"
             android:contentDescription="Search" />
 
         <EditText
@@ -51,8 +51,8 @@
             android:layout_marginStart="8dp"
             android:background="@null"
             tools:hint="Search"
-            android:textColorHint="@color/fgWeak"
-            android:textColor="@color/text_primary"
+            android:textColorHint="@color/trp_fgWeak"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             android:fontFamily="@font/regular"
             android:inputType="text"
@@ -66,7 +66,7 @@
             android:src="@drawable/ic_close"
             android:visibility="gone"
             android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/fgWeak"
+            app:tint="@color/trp_fgWeak"
             android:contentDescription="Clear" />
 
     </LinearLayout>
@@ -98,7 +98,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_location"
-                app:tint="@color/text_primary" />
+                app:tint="@color/trp_text_primary" />
 
             <TextView
                 android:id="@+id/tvNearMe"
@@ -108,7 +108,7 @@
                 tools:text="Near Me"
                 android:textSize="16sp"
                 android:fontFamily="@font/medium"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
         </LinearLayout>
 
@@ -127,7 +127,7 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_city_center"
-                app:tint="@color/text_primary" />
+                app:tint="@color/trp_text_primary" />
 
             <TextView
                 android:id="@+id/tvCityCenterName"
@@ -136,7 +136,7 @@
                 android:layout_marginStart="24dp"
                 android:textSize="16sp"
                 android:fontFamily="@font/medium"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 tools:text="Barcelona | City Center" />
 
         </LinearLayout>
@@ -149,7 +149,7 @@
             tools:text="Saved Activities"
             android:textSize="16sp"
             android:fontFamily="@font/semibold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"

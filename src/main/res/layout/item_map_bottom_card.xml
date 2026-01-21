@@ -5,7 +5,7 @@
     android:layout_width="300dp"
     android:layout_height="wrap_content"
     android:layout_marginEnd="12dp"
-    app:cardBackgroundColor="@color/white"
+    app:cardBackgroundColor="@color/trp_white"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp">
 
@@ -37,7 +37,7 @@
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
-            android:textColor="@color/white"
+            android:textColor="@color/trp_white"
             android:textSize="18sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -62,7 +62,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/semibold"
                 android:maxLines="3"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="14sp"
                 tools:text="Sagrada asd asd sad sa dasd sa dsa da dsad  asd asd  Familia" />
 
@@ -83,7 +83,7 @@
                     android:layout_gravity="center_vertical"
                     android:contentDescription="Date"
                     android:src="@drawable/ic_calendar"
-                    app:tint="@color/timeline_subtitle_color" />
+                    app:tint="@color/trp_timeline_subtitle_color" />
 
                 <!-- Date Text -->
                 <TextView
@@ -92,7 +92,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:fontFamily="@font/regular"
-                    android:textColor="@color/timeline_subtitle_color"
+                    android:textColor="@color/trp_timeline_subtitle_color"
                     android:textSize="12sp"
                     tools:text="13/05/2025" />
 
@@ -104,7 +104,7 @@
                     android:layout_marginStart="12dp"
                     android:contentDescription="Time"
                     android:src="@drawable/ic_time"
-                    app:tint="@color/timeline_subtitle_color" />
+                    app:tint="@color/trp_timeline_subtitle_color" />
 
                 <!-- Time Text -->
                 <TextView
@@ -113,7 +113,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:fontFamily="@font/regular"
-                    android:textColor="@color/timeline_subtitle_color"
+                    android:textColor="@color/trp_timeline_subtitle_color"
                     android:textSize="12sp"
                     tools:text="09:00" />
 

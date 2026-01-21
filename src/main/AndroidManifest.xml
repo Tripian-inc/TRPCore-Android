@@ -8,7 +8,7 @@
     </queries>
     <application
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/TrpAppTheme">
 
         <activity
             android:name="com.tripian.trpcore.ui.splash.ACSplash"
@@ -57,7 +57,7 @@
         <activity
             android:name="com.tripian.trpcore.ui.trip.ACTripMode"
             android:exported="false"
-            android:theme="@style/AppThemeWhite"
+            android:theme="@style/TrpAppThemeWhite"
             android:windowSoftInputMode="adjustPan" />
 
         <activity

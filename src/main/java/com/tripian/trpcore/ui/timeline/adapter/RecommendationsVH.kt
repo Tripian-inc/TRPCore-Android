@@ -166,7 +166,7 @@ class RecommendationsVH(
         if (height > 0) {
             val cornerRadius = height / 2f
             val strokeWidth = (1 * container.context.resources.displayMetrics.density).toInt()
-            val strokeColor = ContextCompat.getColor(container.context, R.color.lineWeak)
+            val strokeColor = ContextCompat.getColor(container.context, R.color.trp_lineWeak)
 
             val drawable = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE

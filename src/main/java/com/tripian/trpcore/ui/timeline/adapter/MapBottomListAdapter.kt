@@ -64,10 +64,10 @@ class MapBottomListAdapter(
                 Glide.with(binding.ivThumbnail)
                     .load(item.imageUrl)
                     .transform(CenterCrop(), RoundedCorners(cornerRadius))
-                    .placeholder(R.color.grey_10)
+                    .placeholder(R.color.trp_grey_10)
                     .into(binding.ivThumbnail)
             } else {
-                binding.ivThumbnail.setImageResource(R.color.grey_10)
+                binding.ivThumbnail.setImageResource(R.color.trp_grey_10)
             }
 
             // Date and time

@@ -9,7 +9,7 @@
 
             <corners android:radius="@dimen/_2sdp" />
 
-            <solid android:color="@color/primary" />
+            <solid android:color="@color/trp_primary" />
         </shape>
     </item>
 </layer-list>

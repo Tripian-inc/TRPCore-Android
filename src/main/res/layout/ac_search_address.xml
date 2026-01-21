@@ -95,7 +95,7 @@
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 android:gravity="center"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 android:visibility="gone" />
         </RelativeLayout>
     </RelativeLayout>
@@ -110,7 +110,7 @@
         android:layout_marginStart="@dimen/_16sdp"
         android:layout_marginEnd="@dimen/_16sdp"
         android:layout_gravity="center"
-        android:textColor="@color/text_primary" />
+        android:textColor="@color/trp_text_primary" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvList"

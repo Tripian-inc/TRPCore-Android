@@ -29,7 +29,7 @@
             android:paddingEnd="@dimen/_8sdp"
             android:paddingBottom="@dimen/_2sdp"
             android:visibility="gone"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </FrameLayout>
 
     <RelativeLayout
@@ -46,7 +46,7 @@
             android:layout_below="@+id/tvTitle"
             android:layout_marginTop="@dimen/_4sdp"
             android:rating="3.5"
-            android:theme="@style/AppThemeYellow" />
+            android:theme="@style/TrpAppThemeYellow" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvTitle"
@@ -70,7 +70,7 @@
             android:layout_marginStart="@dimen/_4sdp"
             android:layout_toEndOf="@+id/rateBar"
             android:gravity="center_vertical"
-            android:textColor="@color/grey_30"
+            android:textColor="@color/trp_grey_30"
             tools:text="(12234)" />
 
         <com.tripian.trpcore.util.widget.TextView

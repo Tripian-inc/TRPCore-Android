@@ -18,7 +18,7 @@
         android:layout_marginStart="16dp"
         android:text="Generating your itinerary..."
         android:textSize="16sp"
-        android:textColor="@color/timeline_title_color"
+        android:textColor="@color/trp_timeline_title_color"
         android:fontFamily="@font/medium"/>
 
 </LinearLayout>

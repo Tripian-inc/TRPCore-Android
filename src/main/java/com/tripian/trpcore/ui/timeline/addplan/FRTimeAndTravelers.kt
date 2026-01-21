@@ -273,8 +273,8 @@ class FRTimeAndTravelers : Fragment() {
             binding.tvStartTime.text = time?.let { formatTimeFor12h(it) } ?: selectText
             binding.tvStartTime.setTextColor(
                 requireContext().getColor(
-                    if (time != null) R.color.text_primary
-                    else R.color.fgWeak
+                    if (time != null) R.color.trp_text_primary
+                    else R.color.trp_fgWeak
                 )
             )
         }
@@ -285,8 +285,8 @@ class FRTimeAndTravelers : Fragment() {
             binding.tvEndTime.text = time?.let { formatTimeFor12h(it) } ?: selectText
             binding.tvEndTime.setTextColor(
                 requireContext().getColor(
-                    if (time != null) R.color.text_primary
-                    else R.color.fgWeak
+                    if (time != null) R.color.trp_text_primary
+                    else R.color.trp_fgWeak
                 )
             )
         }

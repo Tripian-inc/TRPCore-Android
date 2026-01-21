@@ -268,7 +268,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
      */
     private class ActivitySeparatorDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val paint = Paint().apply {
-            color = ContextCompat.getColor(context, R.color.lineWeak)
+            color = ContextCompat.getColor(context, R.color.trp_lineWeak)
             strokeWidth = context.resources.displayMetrics.density * 0.5f // 0.5dp
         }
         private val horizontalPadding = (context.resources.displayMetrics.density * 16).toInt() // 16dp

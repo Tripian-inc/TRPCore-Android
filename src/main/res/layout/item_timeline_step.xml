@@ -26,7 +26,7 @@
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
-            android:textColor="@color/white"
+            android:textColor="@color/trp_white"
             android:textSize="16sp"
             tools:text="1" />
 
@@ -39,7 +39,7 @@
             android:layout_marginHorizontal="10dp"
             android:gravity="end"
             android:fontFamily="@font/medium"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="09:00 - 11:30" />
 
@@ -51,7 +51,7 @@
         android:layout_width="1dp"
         android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:background="@color/lineWeak" />
+        android:background="@color/trp_lineWeak" />
 
     <!-- Step Content (connected to line) -->
     <LinearLayout
@@ -70,7 +70,7 @@
                 android:id="@+id/ivImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/bgCloudy"
+                android:background="@color/trp_bgCloudy"
                 android:contentDescription="POI Image"
                 android:scaleType="centerCrop" />
 
@@ -98,7 +98,7 @@
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
                     android:fontFamily="@font/semibold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="16sp"
                     tools:text="Place Name" />
 
@@ -124,7 +124,7 @@
                 android:fontFamily="@font/medium"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
-                android:textColor="@color/timeline_primary"
+                android:textColor="@color/trp_timeline_primary"
                 android:textSize="10sp"
                 android:visibility="gone"
                 tools:text="Activity"
@@ -137,7 +137,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:fontFamily="@font/regular"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/trp_text_secondary"
                 android:textSize="12sp"
                 tools:text="Restaurant" />
 
@@ -150,7 +150,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/regular"
                 android:maxLines="2"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/trp_text_secondary"
                 android:textSize="12sp"
                 android:visibility="gone"
                 tools:text="A wonderful activity description..."
@@ -165,7 +165,7 @@
                 android:ellipsize="end"
                 android:fontFamily="@font/regular"
                 android:maxLines="1"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/trp_text_secondary"
                 android:textSize="11sp"
                 android:visibility="gone"
                 tools:text="123 Street Name, City" />
@@ -193,7 +193,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="2dp"
                     android:fontFamily="@font/medium"
-                    android:textColor="@color/timeline_rating_color"
+                    android:textColor="@color/trp_timeline_rating_color"
                     android:textSize="11sp"
                     tools:text="4.5" />
 
@@ -209,10 +209,10 @@
         android:layout_width="match_parent"
         android:layout_height="40dp"
         android:layout_marginTop="8dp"
-        android:backgroundTint="@color/timeline_primary"
+        android:backgroundTint="@color/trp_timeline_primary"
         android:fontFamily="@font/medium"
         android:textAllCaps="false"
-        android:textColor="@color/white"
+        android:textColor="@color/trp_white"
         android:textSize="13sp"
         android:visibility="gone"
         app:cornerRadius="8dp"

@@ -7,5 +7,5 @@
     android:paddingHorizontal="24dp"
     android:textSize="16sp"
     android:fontFamily="@font/light"
-    android:textColor="@color/text_primary"
+    android:textColor="@color/trp_text_primary"
     android:background="?attr/selectableItemBackground" />

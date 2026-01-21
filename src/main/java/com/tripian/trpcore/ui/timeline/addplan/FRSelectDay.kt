@@ -217,10 +217,10 @@ class FRSelectDay : Fragment() {
 
     private fun updateCardSelection(card: com.google.android.material.card.MaterialCardView, selected: Boolean) {
         if (selected) {
-            card.strokeColor = requireContext().getColor(com.tripian.trpcore.R.color.text_primary)
+            card.strokeColor = requireContext().getColor(com.tripian.trpcore.R.color.trp_text_primary)
             card.strokeWidth = 2
         } else {
-            card.strokeColor = requireContext().getColor(com.tripian.trpcore.R.color.lineWeak)
+            card.strokeColor = requireContext().getColor(com.tripian.trpcore.R.color.trp_lineWeak)
             card.strokeWidth = 1
         }
     }

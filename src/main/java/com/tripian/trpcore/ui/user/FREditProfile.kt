@@ -39,6 +39,8 @@ class FREditProfile : BaseFragment<FrEditProfileBinding, FREditProfileVM>(FrEdit
     override fun setListeners() {
         super.setListeners()
 
+        binding.etFirstName.hint = getLanguageForKey(LanguageConst.ENTER_FIRST_NAME)
+        binding.etLastName.hint = getLanguageForKey(LanguageConst.ENTER_LAST_NAME)
         binding.etMail.hint = getLanguageForKey(LanguageConst.EMAIL_PLACEHOLDER)
         binding.etAge.hint = getLanguageForKey(LanguageConst.DATE_OF_BIRTH)
         binding.tvChangePassword.text = getLanguageForKey(LanguageConst.CHANGE_PSW)
@@ -112,7 +114,7 @@ class FREditProfile : BaseFragment<FrEditProfileBinding, FREditProfileVM>(FrEdit
         currentCalendar.timeInMillis = selectedDate
 
         val datePicker = DatePickerDialog(
-            requireContext(), R.style.datePicker, listener,
+            requireContext(), R.style.TrpDatePicker, listener,
             currentCalendar[Calendar.YEAR], currentCalendar[Calendar.MONTH], currentCalendar[Calendar.DAY_OF_MONTH]
         )
 

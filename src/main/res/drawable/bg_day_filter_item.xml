@@ -2,13 +2,13 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_selected="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/timeline_day_filter_selected"/>
+            <solid android:color="@color/trp_timeline_day_filter_selected"/>
             <corners android:radius="12dp"/>
         </shape>
     </item>
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="@color/timeline_day_filter_unselected"/>
+            <solid android:color="@color/trp_timeline_day_filter_unselected"/>
             <corners android:radius="12dp"/>
         </shape>
     </item>

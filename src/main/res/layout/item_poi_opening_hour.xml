@@ -11,7 +11,7 @@
         android:layout_width="55dp"
         android:layout_height="wrap_content"
         android:fontFamily="@font/medium"
-        android:textColor="@color/fgWeak"
+        android:textColor="@color/trp_fgWeak"
         android:textSize="16sp"
         tools:text="Wed" />
 
@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/medium"
-        android:textColor="@color/fgWeak"
+        android:textColor="@color/trp_fgWeak"
         android:textSize="16sp"
         tools:text="09:00 - 18:00" />
 

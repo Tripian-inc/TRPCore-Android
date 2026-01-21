@@ -343,4 +343,21 @@ object LanguageConst {
     const val SORT_BY_DURATION = "addPlan.sort.duration"
     const val SORT_BY_DURATION_LONG_SHORT = "addPlan.sort.durationLongToShort"
 
+    // =====================
+    // EMPTY STATES & SEARCH
+    // =====================
+    const val ADD_PLAN_NO_RECOMMENDATIONS = "addPlan.emptyState.noRecommendations"
+    const val POI_SELECTION_ADD_PLACE = "addPlan.button.addPlace"
+    const val ADD_PLAN_SEARCH_PLACES_HINT = "addPlan.placeholder.searchPlaces"
+    const val POI_SELECTION_NO_PLACES = "addPlan.emptyState.noPlaces"
+    const val ACTIVITY_LISTING_NO_ACTIVITIES = "addPlan.emptyState.noActivities"
+    const val SEARCH_BAR_HINT = "common.placeholder.search"
+
+    // =====================
+    // COMMON UI STRINGS
+    // =====================
+    const val I_AM_IN = "common.button.iAmIn"
+    const val I_AM_OUT = "common.button.iAmOut"
+    const val PLEASE_SELECT_FIELD = "common.validation.pleaseSelectField"
+
 }

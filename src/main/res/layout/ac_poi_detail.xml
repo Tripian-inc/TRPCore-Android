@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/trp_white"
     android:fitsSystemWindows="false">
 
     <androidx.core.widget.NestedScrollView
@@ -48,7 +48,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_back"
-                        app:tint="@color/text_primary" />
+                        app:tint="@color/trp_text_primary" />
 
                 </androidx.cardview.widget.CardView>
 
@@ -82,7 +82,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/medium"
-                    android:textColor="@color/borderActive"
+                    android:textColor="@color/trp_borderActive"
                     android:textSize="14sp"
                     tools:text="Amsterdam" />
 
@@ -95,7 +95,7 @@
                     android:fontFamily="@font/bold"
                     android:includeFontPadding="false"
                     android:lineHeight="28dp"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="22sp"
                     tools:text="Anne Frank House" />
 
@@ -117,7 +117,7 @@
                         android:layout_marginStart="4dp"
                         android:fontFamily="@font/medium"
                         android:includeFontPadding="false"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/trp_text_primary"
                         android:textSize="16sp"
                         tools:text="4.5" />
 
@@ -134,7 +134,7 @@
                         android:layout_marginStart="4dp"
                         android:fontFamily="@font/medium"
                         android:includeFontPadding="false"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/trp_text_primary"
                         android:textSize="16sp"
                         tools:text="(1,234 opinions)" />
 
@@ -151,7 +151,7 @@
                     android:lineHeight="24dp"
                     android:maxLines="4"
                     android:textAlignment="center"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="16sp"
                     tools:text="The Anne Frank House is a museum dedicated to Jewish wartime diarist Anne Frank. The building is located on a canal called the Prinsengracht, close to the Westerkerk, in central Amsterdam in the Netherlands." />
 
@@ -172,7 +172,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:fontFamily="@font/regular"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/trp_text_primary"
                         android:textSize="16sp"
                         tools:text="Read full description" />
 
@@ -201,7 +201,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/lineWeak"/>
+                    android:background="@color/trp_lineWeak"/>
 
                 <TextView
                     android:id="@+id/tvActivitiesHeader"
@@ -210,7 +210,7 @@
                     android:layout_marginTop="40dp"
                     android:layout_marginHorizontal="16dp"
                     android:fontFamily="@font/semibold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="18sp"
                     tools:text="Activities" />
 
@@ -239,7 +239,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/lineWeak" />
+                    android:background="@color/trp_lineWeak" />
 
                 <TextView
                     android:layout_marginTop="40dp"
@@ -247,7 +247,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/semibold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="18sp"
                     tools:text="Key Data" />
 
@@ -264,7 +264,7 @@
                     <androidx.cardview.widget.CardView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        app:cardBackgroundColor="@color/neutral200"
+                        app:cardBackgroundColor="@color/trp_neutral200"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp"
                         app:layout_constraintStart_toStartOf="parent"
@@ -275,7 +275,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_phone"
-                            app:tint="@color/text_primary" />
+                            app:tint="@color/trp_text_primary" />
 
                     </androidx.cardview.widget.CardView>
 
@@ -293,7 +293,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/regular"
                             android:includeFontPadding="false"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/trp_text_primary"
                             android:textSize="16sp"
                             tools:text="Phone:" />
 
@@ -304,7 +304,7 @@
                             android:fontFamily="@font/medium"
                             android:layout_marginStart="4dp"
                             android:includeFontPadding="false"
-                            android:textColor="@color/fgWeak"
+                            android:textColor="@color/trp_fgWeak"
                             android:textSize="16sp"
                             tools:text="+31 20 556 7105" />
 
@@ -326,7 +326,7 @@
                     <androidx.cardview.widget.CardView
                         android:layout_width="40dp"
                         android:layout_height="40dp"
-                        app:cardBackgroundColor="@color/neutral200"
+                        app:cardBackgroundColor="@color/trp_neutral200"
                         app:cardCornerRadius="20dp"
                         app:cardElevation="0dp"
                         app:layout_constraintStart_toStartOf="parent"
@@ -337,7 +337,7 @@
                             android:layout_height="24dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_opening_hours"
-                            app:tint="@color/text_primary" />
+                            app:tint="@color/trp_text_primary" />
 
                     </androidx.cardview.widget.CardView>
 
@@ -355,7 +355,7 @@
                             android:layout_marginTop="10dp"
                             android:fontFamily="@font/regular"
                             android:includeFontPadding="false"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/trp_text_primary"
                             android:textSize="16sp"
                             tools:text="Opening Hours" />
 
@@ -388,7 +388,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/lineWeak" />
+                    android:background="@color/trp_lineWeak" />
 
                 <TextView
                     android:id="@+id/tvMeetingPointHeader"
@@ -396,7 +396,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="40dp"
                     android:fontFamily="@font/semibold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="18sp"
                     tools:text="Meeting Point" />
 
@@ -431,7 +431,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:fontFamily="@font/medium"
-                        android:textColor="@color/fgWeak"
+                        android:textColor="@color/trp_fgWeak"
                         android:textSize="16sp"
                         tools:text="Prinsengracht 263-267, 1016 GV Amsterdam sad asd " />
                 </LinearLayout>
@@ -448,7 +448,7 @@
                         android:layout_height="48dp"
                         android:fontFamily="@font/medium"
                         android:gravity="center"
-                        android:textColor="@color/colorPrimary"
+                        android:textColor="@color/trp_colorPrimary"
                         android:textSize="16sp"
                         android:visibility="visible"
                         tools:text="View map" />
@@ -478,7 +478,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@color/lineWeak" />
+                    android:background="@color/trp_lineWeak" />
 
                 <TextView
                     android:id="@+id/tvFeaturesHeader"
@@ -486,7 +486,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="40dp"
                     android:fontFamily="@font/semibold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="18sp"
                     tools:text="Features" />
 

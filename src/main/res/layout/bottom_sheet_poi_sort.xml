@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:fontFamily="@font/semibold"
             tools:text="Sort by" />
 
@@ -41,7 +41,7 @@
             android:layout_centerVertical="true"
             android:src="@drawable/ic_close"
             android:contentDescription="Close"
-            app:tint="@color/text_primary" />
+            app:tint="@color/trp_text_primary" />
 
     </RelativeLayout>
 
@@ -63,7 +63,7 @@
             android:drawableEnd="@drawable/selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Popularity" />
 
         <!-- Rating -->
@@ -76,7 +76,7 @@
             android:drawableEnd="@drawable/selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             tools:text="Rating" />
 
     </RadioGroup>

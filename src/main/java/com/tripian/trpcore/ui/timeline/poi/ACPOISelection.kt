@@ -136,10 +136,10 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
             isCheckable = true
             isChecked = category.isSelected
             chipBackgroundColor = getColorStateList(
-                if (category.isSelected) R.color.timeline_primary else R.color.timeline_background
+                if (category.isSelected) R.color.trp_timeline_primary else R.color.trp_timeline_background
             )
             setTextColor(
-                getColor(if (category.isSelected) R.color.white else R.color.text_primary)
+                getColor(if (category.isSelected) R.color.trp_white else R.color.trp_text_primary)
             )
             chipStrokeWidth = 0f
         }

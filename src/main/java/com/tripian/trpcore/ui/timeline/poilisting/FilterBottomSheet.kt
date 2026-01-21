@@ -30,7 +30,7 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
     private var onFilterApplied: ((FilterData) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
 
-    override fun getTheme(): Int = R.style.TimelineBottomSheetDialog
+    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,

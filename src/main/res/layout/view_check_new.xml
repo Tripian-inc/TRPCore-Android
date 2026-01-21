@@ -26,6 +26,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_8sdp"
         android:layout_marginEnd="@dimen/_4sdp"
-        android:textColor="@color/black"
+        android:textColor="@color/trp_black"
         tools:text="deneme" />
 </LinearLayout>

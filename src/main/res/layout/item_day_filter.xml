@@ -11,4 +11,4 @@
     android:textSize="14sp"
     android:fontFamily="@font/medium"
     android:background="@drawable/bg_day_filter_unselected"
-    android:textColor="@color/fgWeak" />
+    android:textColor="@color/trp_fgWeak" />

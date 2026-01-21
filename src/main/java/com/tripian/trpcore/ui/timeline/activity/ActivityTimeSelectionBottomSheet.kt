@@ -46,7 +46,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var favoriteDuration: Double? = null
     private var onFavoriteTimeSelectedListener: ((Date, String?, String?) -> Unit)? = null
 
-    override fun getTheme(): Int = R.style.TimelineBottomSheetDialog
+    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun setListeners() {
         super.setListeners()

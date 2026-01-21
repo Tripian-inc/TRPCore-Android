@@ -26,7 +26,7 @@
         android:id="@+id/rlTop"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_62sdp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:elevation="@dimen/_12sdp"
         android:paddingBottom="@dimen/_12sdp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -81,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 tools:text="Amsterdam" />
 
             <LinearLayout
@@ -112,7 +112,7 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/_50sdp"
         android:layout_alignParentBottom="true"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent">
@@ -218,7 +218,7 @@
     <!--        android:id="@+id/llBottom"-->
     <!--        android:layout_width="match_parent"-->
     <!--        android:layout_height="@dimen/_120sdp"-->
-    <!--        android:background="@color/black"-->
+    <!--        android:background="@color/trp_black"-->
     <!--        android:paddingTop="@dimen/_50sdp"-->
     <!--        app:layout_constraintBottom_toBottomOf="parent"-->
     <!--        app:layout_constraintEnd_toEndOf="parent"-->
@@ -310,7 +310,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 
     <LinearLayout
@@ -339,7 +339,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 
     <com.tripian.trpcore.util.widget.CardView
@@ -348,7 +348,7 @@
         android:layout_height="0dp"
         android:layout_marginBottom="@dimen/_10sdp"
         android:visibility="invisible"
-        app:cardBackgroundColor="@color/white"
+        app:cardBackgroundColor="@color/trp_white"
         app:cardCornerRadius="@dimen/_18sdp"
         app:cardElevation="@dimen/_6sdp"
         app:layout_constraintBottom_toBottomOf="@id/mapView"
@@ -362,7 +362,7 @@
             android:layout_gravity="center"
             android:gravity="center_vertical"
             android:padding="@dimen/_8sdp"
-            android:textColor="@color/primary" />
+            android:textColor="@color/trp_primary" />
     </com.tripian.trpcore.util.widget.CardView>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -371,7 +371,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="21dp"
         android:visibility="visible"
-        app:backgroundTint="@color/white"
+        app:backgroundTint="@color/trp_white"
         app:elevation="@dimen/_6sdp"
         app:fabCustomSize="@dimen/_32sdp"
         app:fabSize="mini"
@@ -379,7 +379,7 @@
         app:layout_constraintLeft_toLeftOf="@id/cvAlternatives"
         app:layout_constraintTop_toTopOf="@+id/cvAlternatives"
         app:maxImageSize="@dimen/_18sdp"
-        app:rippleColor="@color/white"
+        app:rippleColor="@color/trp_white"
         app:srcCompat="@drawable/ic_btn_alternatives" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -389,17 +389,17 @@
         android:layout_marginEnd="@dimen/_16sdp"
         android:layout_marginBottom="@dimen/_4sdp"
         android:visibility="gone"
-        app:backgroundTint="@color/white"
+        app:backgroundTint="@color/trp_white"
         app:elevation="@dimen/_6sdp"
         app:fabCustomSize="@dimen/_32sdp"
         app:fabSize="mini"
         app:layout_constraintBottom_toTopOf="@+id/btnLocation"
         app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="@dimen/_12sdp"
-        app:rippleColor="@color/white"
+        app:rippleColor="@color/trp_white"
         app:srcCompat="@drawable/btn_return"
         tools:visibility="visible"
-        app:tint="@color/blue_dark" />
+        app:tint="@color/trp_blue_dark" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnLocation"
@@ -407,7 +407,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/_16sdp"
         android:visibility="gone"
-        app:backgroundTint="@color/white"
+        app:backgroundTint="@color/trp_white"
         app:elevation="@dimen/_6sdp"
         app:fabCustomSize="@dimen/_32sdp"
         app:fabSize="mini"
@@ -415,9 +415,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/btnAlternative"
         app:maxImageSize="@dimen/_16sdp"
-        app:rippleColor="@color/blue_soft"
+        app:rippleColor="@color/trp_blue_soft"
         app:srcCompat="@drawable/ic_btn_user_location"
-        app:tint="@color/black" />
+        app:tint="@color/trp_black" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnOffers"
@@ -425,16 +425,16 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_16sdp"
         android:visibility="visible"
-        app:backgroundTint="@color/white"
+        app:backgroundTint="@color/trp_white"
         app:elevation="@dimen/_6sdp"
         app:fabCustomSize="@dimen/_32sdp"
         app:fabSize="mini"
         app:layout_constraintStart_toStartOf="@+id/btnAlternative"
         app:layout_constraintTop_toBottomOf="@+id/rlTop"
         app:maxImageSize="@dimen/_16sdp"
-        app:rippleColor="@color/blue_soft"
+        app:rippleColor="@color/trp_blue_soft"
         app:srcCompat="@drawable/ic_offer_search"
-        app:tint="@color/black" />
+        app:tint="@color/trp_black" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnExportPlan"
@@ -443,7 +443,7 @@
         android:layout_marginTop="@dimen/_16sdp"
         android:layout_marginEnd="@dimen/_16sdp"
         android:visibility="visible"
-        app:backgroundTint="@color/white"
+        app:backgroundTint="@color/trp_white"
         app:elevation="@dimen/_6sdp"
         app:fabCustomSize="@dimen/_32sdp"
         app:fabSize="mini"

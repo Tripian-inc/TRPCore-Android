@@ -33,7 +33,7 @@
                 android:ellipsize="start"
                 android:gravity="end"
                 android:singleLine="true"
-                android:text="@string/mandatory_indicator"
+                android:text="*"
                 android:textColor="@color/red_A200" />
         </LinearLayout>
 
@@ -56,7 +56,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDestination"
@@ -65,7 +65,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/black"
+                android:textColor="@color/trp_black"
                 android:visibility="gone"
                 tools:text="1 Adult, No children" />
         </LinearLayout>
@@ -100,7 +100,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvArrivalDate"
@@ -110,7 +110,7 @@
                 android:gravity="end"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/black"
+                android:textColor="@color/trp_black"
                 tools:text="06 Jan 2023" />
 
         </LinearLayout>
@@ -134,7 +134,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDepartureDate"
@@ -144,7 +144,7 @@
                 android:gravity="end"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/black"
+                android:textColor="@color/trp_black"
                 tools:text="06 Jan 2023" />
 
         </LinearLayout>
@@ -177,7 +177,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvArrivalTime"
@@ -187,7 +187,7 @@
                 android:gravity="end"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/black"
+                android:textColor="@color/trp_black"
                 tools:text="06 Jan 2023" />
 
         </LinearLayout>
@@ -211,7 +211,7 @@
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDepartureTime"
@@ -221,7 +221,7 @@
                 android:gravity="end"
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/black"
+                android:textColor="@color/trp_black"
                 tools:text="06 Jan 2023" />
 
         </LinearLayout>

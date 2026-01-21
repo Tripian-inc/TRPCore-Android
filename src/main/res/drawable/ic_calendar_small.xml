@@ -5,6 +5,6 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="@color/timeline_text_secondary"
+        android:fillColor="@color/trp_timeline_text_secondary"
         android:pathData="M19,4h-1V2h-2v2H8V2H6v2H5C3.89,4 3.01,4.9 3.01,6L3,20c0,1.1 0.89,2 2,2h14c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2zM19,20H5V9h14v11zM9,13H7v-2h2v2zM13,13h-2v-2h2v2zM17,13h-2v-2h2v2zM9,17H7v-2h2v2zM13,17h-2v-2h2v2zM17,17h-2v-2h2v2z"/>
 </vector>

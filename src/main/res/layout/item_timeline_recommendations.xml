@@ -13,7 +13,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/bgCloudy"
+        android:background="@color/trp_bgCloudy"
         android:orientation="vertical">
 
         <!-- Header -->
@@ -22,7 +22,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/_55sdp"
             android:padding="16dp"
-            android:background="@color/timeline_recommendations_header_bg">
+            android:background="@color/trp_timeline_recommendations_header_bg">
 
             <!-- Left: Title and Info -->
             <LinearLayout
@@ -41,7 +41,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/bold"
                     android:text="Recommendations"
-                    android:textColor="@color/timeline_title_color"
+                    android:textColor="@color/trp_timeline_title_color"
                     android:textSize="16sp" />
 
             </LinearLayout>
@@ -94,7 +94,7 @@
                 android:layout_marginStart="12dp"
                 android:text="Generating your itinerary..."
                 android:textSize="14sp"
-                android:textColor="@color/timeline_subtitle_color"/>
+                android:textColor="@color/trp_timeline_subtitle_color"/>
 
         </LinearLayout>
 
@@ -107,7 +107,7 @@
             android:gravity="center"
             android:text="No recommendations found for this area"
             android:textSize="14sp"
-            android:textColor="@color/timeline_subtitle_color"
+            android:textColor="@color/trp_timeline_subtitle_color"
             android:visibility="gone"/>
 
         <!-- Starting Point Row -->
@@ -141,7 +141,7 @@
                 android:layout_marginStart="8dp"
                 android:fontFamily="@font/medium"
                 android:textSize="14sp"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:ellipsize="end"
                 tools:text="Hotel ABC | City Center asd sadas dasd asd asd as" />
 
@@ -152,7 +152,7 @@
             android:id="@+id/startingPointRouteContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/bgCloudy"
+            android:background="@color/trp_bgCloudy"
             android:layout_marginTop="20dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -196,7 +196,7 @@
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvSteps"
             android:layout_width="match_parent"
-            android:background="@color/bgCloudy"
+            android:background="@color/trp_bgCloudy"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false"
             android:clipToPadding="false"

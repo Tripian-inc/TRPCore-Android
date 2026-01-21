@@ -1,17 +1,17 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="BaseAppTheme" parent="Theme.Material3.Light.NoActionBar">
+    <style name="TrpBaseAppTheme" parent="Theme.Material3.Light.NoActionBar">
         <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/white</item>
-        <item name="colorAccent">@color/primary</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="colorPrimary">@color/trp_primary</item>
+        <item name="colorPrimaryDark">@color/trp_white</item>
+        <item name="colorAccent">@color/trp_primary</item>
+        <item name="colorOnPrimary">@color/trp_white</item>
+        <item name="android:textColorPrimary">@color/trp_text_primary</item>
 
         <item name="android:windowNoTitle">true</item>
 
-        <item name="android:windowBackground">@color/white</item>
-        <item name="android:colorBackground">@color/white</item>
+        <item name="android:windowBackground">@color/trp_white</item>
+        <item name="android:colorBackground">@color/trp_white</item>
 
         <item name="android:windowMinWidthMajor">90%</item>
         <item name="android:windowMinWidthMinor">90%</item>
@@ -21,26 +21,26 @@
         <item name="android:windowDisablePreview">true</item>
 
         <!-- Status bar: white background with dark icons -->
-        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:statusBarColor">@color/trp_white</item>
         <item name="android:windowLightStatusBar">true</item>
 
         <!-- Navigation bar: white background with dark icons -->
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/trp_white</item>
 
         <item name="android:fitsSystemWindows">true</item>
         <item name="textAppearanceBodyLarge">@style/TextAppearance.Material3.BodyLarge</item>
     </style>
 
-    <style name="AppTheme" parent="BaseAppTheme" />
+    <style name="TrpAppTheme" parent="TrpBaseAppTheme" />
 
-    <style name="AppTheme.Transparent">
+    <style name="TrpAppTheme.Transparent">
         <item name="android:background">@android:color/transparent</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
     </style>
 
-    <style name="AppTheme.BottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
+    <style name="TrpAppTheme.BottomSheetDialog" parent="Theme.Design.BottomSheetDialog">
         <item name="android:colorBackground">@android:color/transparent</item>
         <item name="android:backgroundDimEnabled">true</item>
         <item name="android:backgroundDimAmount">0.3</item>
@@ -49,123 +49,114 @@
         <item name="android:windowMinWidthMinor">100%</item>
     </style>
 
-    <style name="AppThemeYellow" parent="BaseAppTheme">
-        <item name="colorPrimaryDark">@color/yellow</item>
-        <item name="colorAccent">@color/yellow</item>
+    <style name="TrpAppThemeYellow" parent="TrpBaseAppTheme">
+        <item name="colorPrimaryDark">@color/trp_yellow</item>
+        <item name="colorAccent">@color/trp_yellow</item>
     </style>
 
-    <style name="DefaultNumberPickerTheme" parent="AppTheme">
-        <item name="colorControlNormal">@color/ultra_light_grey</item>
+    <style name="TrpDefaultNumberPickerTheme" parent="TrpAppTheme">
+        <item name="colorControlNormal">@color/trp_ultra_light_grey</item>
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/text_size_headline</item>
-        <item name="android:textColor">@color/black87</item>
+        <item name="android:textColor">@color/trp_black87</item>
     </style>
 
-    <style name="TimePickerTheme" parent="AppTheme">
-        <item name="colorControlNormal">@color/neutral200</item>
+    <style name="TrpTimePickerTheme" parent="TrpAppTheme">
+        <item name="colorControlNormal">@color/trp_neutral200</item>
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">20sp</item>
-        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColor">@color/trp_text_primary</item>
     </style>
 
-    <style name="datePicker" parent="Theme.AppCompat.Light.Dialog">
-        <item name="colorPrimary">@color/primary</item>
-        <item name="colorPrimaryDark">@color/primary</item>
-        <item name="colorAccent">@color/primary</item>
-        <item name="android:textColorPrimary">@color/text_primary</item>
-        <item name="android:textColorSecondary">@color/text_primary</item>
-        <item name="android:buttonBarPositiveButtonStyle">@style/datePickerButton</item>
-        <item name="android:buttonBarNegativeButtonStyle">@style/datePickerButton</item>
-        <item name="android:buttonBarNeutralButtonStyle">@style/datePickerButton</item>
+    <style name="TrpDatePicker" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorPrimary">@color/trp_primary</item>
+        <item name="colorPrimaryDark">@color/trp_primary</item>
+        <item name="colorAccent">@color/trp_primary</item>
+        <item name="android:textColorPrimary">@color/trp_text_primary</item>
+        <item name="android:textColorSecondary">@color/trp_text_primary</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/TrpDatePickerButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/TrpDatePickerButton</item>
+        <item name="android:buttonBarNeutralButtonStyle">@style/TrpDatePickerButton</item>
     </style>
 
-    <style name="datePickerButton" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
-        <item name="android:textColor">@color/primary</item>
+    <style name="TrpDatePickerButton" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/trp_primary</item>
     </style>
 
 
-    <style name="chipCompanionSelectBackground" parent="Widget.MaterialComponents.Chip.Filter">
-<!--        <item name="chipBackgroundColor">chip</item>-->
+    <style name="TrpChipCompanionSelectBackground" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="chipCornerRadius">@dimen/_10sdp</item>
-        <item name="chipBackgroundColor">@color/extra_sub</item>
+        <item name="chipBackgroundColor">@color/trp_extra_sub</item>
         <item name="android:textAppearance">@style/TextBody2Regular</item>
-
-<!--        <item name="android:textColor">@color/color_choice_chip_text_color</item>-->
     </style>
-    <!-- res/values/styles.xml -->
-    <style name="Widget.MyApp.PillInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
+
+    <style name="Trp.Widget.PillInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
         <item name="boxBackgroundMode">filled</item>
-        <item name="boxBackgroundColor">@color/main_gray_bg</item>
+        <item name="boxBackgroundColor">@color/trp_main_gray_bg</item>
         <item name="boxStrokeWidth">0dp</item>
         <item name="boxStrokeWidthFocused">0dp</item>
-        <item name="boxStrokeColor">@color/stroke_grey_20</item>
-        <item name="shapeAppearance">@style/ShapeAppearance.MyApp.Pill</item>
+        <item name="boxStrokeColor">@color/trp_stroke_grey_20</item>
+        <item name="shapeAppearance">@style/Trp.ShapeAppearance.Pill</item>
         <item name="android:layout_margin">0dp</item>
-        <item name="hintTextColor">@color/main_dark</item>
+        <item name="hintTextColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="ShapeAppearance.MyApp.Pill" parent="ShapeAppearance.Material3.Corner.Full">
-        <!-- 50% corners = perfect capsule -->
+    <style name="Trp.ShapeAppearance.Pill" parent="ShapeAppearance.Material3.Corner.Full">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
 
-    <style name="Widget.PillTextInput" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+    <style name="Trp.Widget.PillTextInput" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
         <item name="boxBackgroundMode">none</item>
-        <item name="boxBackgroundColor">@color/transparent</item>
-        <item name="boxStrokeColor">@color/transparent</item>
-
+        <item name="boxBackgroundColor">@color/trp_transparent</item>
+        <item name="boxStrokeColor">@color/trp_transparent</item>
         <item name="android:layout_marginBottom">0dp</item>
-        <!-- collapsed hint (floating label) appearance -->
-        <item name="hintTextAppearance">@style/PillHint</item>
-        <item name="helperTextTextAppearance">@style/PillHelper</item>
+        <item name="hintTextAppearance">@style/TrpPillHint</item>
+        <item name="helperTextTextAppearance">@style/TrpPillHelper</item>
     </style>
 
-    <style name="PillHint" parent="TextAppearance.MaterialComponents.Caption">
-        <!-- smaller, slightly darker label similar to screenshot -->
+    <style name="TrpPillHint" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:fontFamily">@font/inter_tight_medium</item>
-        <item name="android:textColor">@color/main_dark</item>
+        <item name="android:textColor">@color/trp_main_dark</item>
         <item name="android:textSize">12sp</item>
     </style>
 
-    <style name="PillHelper" parent="TextAppearance.MaterialComponents.Caption">
+    <style name="TrpPillHelper" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:fontFamily">@font/inter_tight_regular</item>
-        <item name="android:textColor">@color/text_dark_64</item>
+        <item name="android:textColor">@color/trp_text_dark_64</item>
         <item name="android:textSize">16sp</item>
     </style>
 
     <!-- Timeline Styles -->
-    <style name="TimelineTabTextAppearance" parent="TextAppearance.Design.Tab">
+    <style name="TrpTimelineTabTextAppearance" parent="TextAppearance.Design.Tab">
         <item name="android:fontFamily">@font/medium</item>
         <item name="android:textSize">14sp</item>
         <item name="textAllCaps">false</item>
     </style>
 
-    <style name="RoundedImageView" parent="">
+    <style name="TrpRoundedImageView" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">8dp</item>
     </style>
 
-    <style name="AppThemeWhite" parent="BaseAppTheme">
-        <item name="android:windowBackground">@color/white</item>
-        <!-- Status bar: white background with dark icons -->
-        <item name="android:statusBarColor">@color/white</item>
+    <style name="TrpAppThemeWhite" parent="TrpBaseAppTheme">
+        <item name="android:windowBackground">@color/trp_white</item>
+        <item name="android:statusBarColor">@color/trp_white</item>
         <item name="android:windowLightStatusBar">true</item>
-        <!-- Navigation bar: white background -->
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/trp_white</item>
     </style>
 
-    <style name="TimelineBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
-        <item name="bottomSheetStyle">@style/TimelineBottomSheet</item>
+    <style name="TrpTimelineBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/TrpTimelineBottomSheet</item>
         <item name="android:colorBackground">@android:color/transparent</item>
     </style>
 
-    <style name="TimelineBottomSheet" parent="Widget.Design.BottomSheet.Modal">
+    <style name="TrpTimelineBottomSheet" parent="Widget.Design.BottomSheet.Modal">
         <item name="android:background">@drawable/bg_bottom_sheet</item>
     </style>
 
     <!-- AddPlan Continue Button Style -->
-    <style name="ButtonPrimary">
+    <style name="TrpButtonPrimary">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">48dp</item>
         <item name="android:minHeight">48dp</item>
@@ -177,9 +168,6 @@
         <item name="android:textColor">@android:color/white</item>
         <item name="backgroundTint">@color/btn_continue_selector</item>
         <item name="cornerRadius">24dp</item>
-        <item name="rippleColor">@color/white</item>
+        <item name="rippleColor">@color/trp_white</item>
     </style>
-
-    <!-- ButtonPrimary Style (alias for backward compatibility) -->
-<!--    <style name="ButtonPrimary" parent="AddPlan.Button.Continue" />-->
 </resources>

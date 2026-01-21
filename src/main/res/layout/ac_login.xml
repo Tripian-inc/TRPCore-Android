@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/main_gray_bg"
+    android:background="@color/trp_main_gray_bg"
     android:padding="@dimen/_6sdp">
 
     <com.tripian.trpcore.util.widget.ImageView

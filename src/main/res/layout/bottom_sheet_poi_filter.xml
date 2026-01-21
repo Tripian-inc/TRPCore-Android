@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:fontFamily="@font/semibold"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="16sp"
             tools:text="Filters" />
 
@@ -40,7 +40,7 @@
             android:layout_centerVertical="true"
             android:contentDescription="Close"
             android:src="@drawable/ic_close"
-            app:tint="@color/text_primary" />
+            app:tint="@color/trp_text_primary" />
 
     </RelativeLayout>
 
@@ -73,7 +73,7 @@
             android:fontFamily="@font/medium"
             android:gravity="center"
             android:paddingHorizontal="16dp"
-            android:textColor="@color/fgWeak"
+            android:textColor="@color/trp_fgWeak"
             android:textSize="14sp"
             android:visibility="gone"
             tools:text="Clear Selection"
@@ -94,7 +94,7 @@
             android:textAllCaps="false"
             android:textColor="@android:color/white"
             android:textSize="16sp"
-            app:backgroundTint="@color/btn_continue_bg"
+            app:backgroundTint="@color/trp_btn_continue_bg"
             app:cornerRadius="24dp"
             tools:enabled="true"
             tools:text="Continue" />

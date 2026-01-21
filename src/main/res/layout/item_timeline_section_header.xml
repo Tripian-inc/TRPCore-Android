@@ -8,6 +8,6 @@
     android:paddingTop="16dp"
     android:paddingBottom="4dp"
     android:textSize="20sp"
-    android:textColor="@color/text_primary"
+    android:textColor="@color/trp_text_primary"
     android:fontFamily="@font/semibold"
     tools:text="City Name" />

@@ -29,7 +29,7 @@ class CitySelectionBottomSheet : BottomSheetDialogFragment() {
     private var selectedCityId: Int? = null
     private var onCitySelected: ((City) -> Unit)? = null
 
-    override fun getTheme(): Int = R.style.TimelineBottomSheetDialog
+    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -129,9 +129,9 @@ class CitySelectionBottomSheet : BottomSheetDialogFragment() {
 
                 // Set color: selected = primary, unselected = text_primary
                 val textColor = if (isSelected) {
-                    ContextCompat.getColor(context, R.color.colorPrimary)
+                    ContextCompat.getColor(context, R.color.trp_colorPrimary)
                 } else {
-                    ContextCompat.getColor(context, R.color.text_primary)
+                    ContextCompat.getColor(context, R.color.trp_text_primary)
                 }
                 binding.tvCityName.setTextColor(textColor)
 

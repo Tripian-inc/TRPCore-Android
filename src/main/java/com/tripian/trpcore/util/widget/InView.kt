@@ -6,6 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.util.LanguageConst
 
 class InView @JvmOverloads constructor(
     context: Context?,
@@ -34,11 +36,11 @@ class InView @JvmOverloads constructor(
 //                root.setBackgroundResource(R.drawable.bg_i_am_in_disable)
 //            }
 //            imIcon.setImageResource(R.drawable.ic_i_am_in_disable)
-            tvText.text = context.getString(R.string.i_am_out)
+            tvText.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.I_AM_OUT)
         } else {
             root.setBackgroundResource(R.drawable.bg_i_am_in_enable)
 //            imIcon.setImageResource(R.drawable.ic_i_am_in_enable)
-            tvText.text = context.getString(R.string.i_am_in)
+            tvText.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.I_AM_IN)
         }
     }
 }

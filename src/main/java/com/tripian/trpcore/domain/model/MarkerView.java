@@ -33,7 +33,7 @@ public class MarkerView extends RelativeLayout {
 
         LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         setLayoutParams(layoutParams);
-        setBackgroundColor(ContextCompat.getColor(context, R.color.transparent));
+        setBackgroundColor(ContextCompat.getColor(context, R.color.trp_transparent));
         setGravity(Gravity.CENTER);
         setPadding((int) UtilityKt.dp2Px(3),
                 (int) UtilityKt.dp2Px(3),

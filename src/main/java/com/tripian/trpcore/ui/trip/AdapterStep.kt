@@ -146,7 +146,7 @@ abstract class AdapterStep(
                 val str = getPriceSpannableString(
                     color = ContextCompat.getColor(
                         context,
-                        R.color.primary
+                        R.color.trp_primary
                     ),
                     price = item.price
                 )

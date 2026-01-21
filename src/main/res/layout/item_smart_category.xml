@@ -21,7 +21,7 @@
             android:id="@+id/ivIcon"
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:tint="@color/text_primary"
+            android:tint="@color/trp_text_primary"
             tools:src="@drawable/ic_local_experience"/>
 
         <TextView
@@ -32,7 +32,7 @@
             android:gravity="center"
             android:fontFamily="@font/regular"
             android:textSize="12sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:maxLines="2"
             android:ellipsize="end"
             tools:text="Guided Tours"/>

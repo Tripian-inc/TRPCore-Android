@@ -4,14 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/trp_white">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:paddingHorizontal="16dp"
         android:paddingVertical="16dp"
         app:layout_constraintTop_toTopOf="parent">
@@ -33,7 +33,7 @@
             android:fontFamily="@font/bold"
             android:gravity="center"
             android:paddingHorizontal="24dp"
-            android:textColor="@color/timeline_title_color"
+            android:textColor="@color/trp_timeline_title_color"
             android:textSize="18sp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -49,7 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="16dp"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/neutral100"
+        app:cardBackgroundColor="@color/trp_neutral100"
         app:cardCornerRadius="8dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -91,7 +91,7 @@
                     android:fontFamily="@font/semibold"
                     android:gravity="center"
                     android:includeFontPadding="false"
-                    android:textColor="@color/white"
+                    android:textColor="@color/trp_white"
                     android:textSize="11sp"
                     tools:text="3" />
 
@@ -105,7 +105,7 @@
                 android:layout_marginStart="11dp"
                 android:layout_marginEnd="16dp"
                 android:fontFamily="@font/medium"
-                android:textColor="@color/text_primary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="14sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/ivSavedPlansArrow"
@@ -134,7 +134,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_6sdp"
-        android:background="@color/transparent"
+        android:background="@color/trp_transparent"
         app:layout_constraintTop_toBottomOf="@id/btnSavedPlans" />
 
     <!-- SwipeRefreshLayout with RecyclerView -->
@@ -149,7 +149,7 @@
             android:id="@+id/rvTimeline"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:clipToPadding="false"
             android:paddingBottom="120dp"
             tools:listitem="@layout/item_timeline_recommendations" />
@@ -180,15 +180,15 @@
         android:layout_width="wrap_content"
         android:layout_height="40dp"
         android:layout_margin="16dp"
-        android:textColor="@color/timeline_primary"
+        android:textColor="@color/trp_timeline_primary"
         android:textSize="12sp"
         android:visibility="gone"
         app:cornerRadius="20dp"
         app:icon="@drawable/ic_near_me"
-        app:iconTint="@color/timeline_primary"
+        app:iconTint="@color/trp_timeline_primary"
         app:layout_constraintBottom_toTopOf="@id/fabAddPlan"
         app:layout_constraintStart_toStartOf="parent"
-        app:strokeColor="@color/timeline_primary"
+        app:strokeColor="@color/trp_timeline_primary"
         tools:text="Near Me" />
 
     <!-- Empty State -->
@@ -215,7 +215,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="@font/medium"
-            android:textColor="@color/timeline_title_color"
+            android:textColor="@color/trp_timeline_title_color"
             android:textSize="18sp"
             tools:text="No plans yet" />
 
@@ -225,7 +225,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:textColor="@color/timeline_subtitle_color"
+            android:textColor="@color/trp_timeline_subtitle_color"
             android:textSize="14sp"
             tools:text="Tap the button below to add your first plan" />
 
@@ -240,13 +240,13 @@
         android:layout_marginBottom="16dp"
         android:contentDescription="Map"
         android:src="@drawable/ic_map"
-        app:backgroundTint="@color/text_primary"
+        app:backgroundTint="@color/trp_text_primary"
         app:elevation="4dp"
         app:fabCustomSize="52dp"
         app:layout_constraintBottom_toTopOf="@id/fabAddPlan"
         app:layout_constraintEnd_toEndOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-        app:tint="@color/white" />
+        app:tint="@color/trp_white" />
 
     <!-- Add Plan FAB - Liste gorunumunde gorunur -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -257,13 +257,13 @@
         android:layout_marginBottom="32dp"
         android:contentDescription="Add Plan"
         android:src="@drawable/ic_plus_bold"
-        app:backgroundTint="@color/pink700"
+        app:backgroundTint="@color/trp_pink700"
         app:elevation="4dp"
         app:fabCustomSize="52dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-        app:tint="@color/white" />
+        app:tint="@color/trp_white" />
 
     <!-- List Toggle FAB - Map gorunumunde gorunur (Add Plan yerine) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -275,13 +275,13 @@
         android:contentDescription="List"
         android:src="@drawable/ic_list"
         android:visibility="gone"
-        app:backgroundTint="@color/text_primary"
+        app:backgroundTint="@color/trp_text_primary"
         app:elevation="4dp"
         app:fabCustomSize="52dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
-        app:tint="@color/white" />
+        app:tint="@color/trp_white" />
 
     <!-- Map Bottom Item List - Horizontal list at bottom of map -->
     <androidx.recyclerview.widget.RecyclerView

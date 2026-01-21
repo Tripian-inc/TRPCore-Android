@@ -8,14 +8,14 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:id="@+id/collapsingToolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:minHeight="48dp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
@@ -72,7 +72,7 @@
                     android:maxLines="1"
                     android:paddingTop="@dimen/_12sdp"
                     android:paddingBottom="@dimen/_12sdp"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvCategory"
@@ -83,7 +83,7 @@
                     android:paddingTop="@dimen/_12sdp"
                     android:ellipsize="end"
                     android:paddingBottom="@dimen/_12sdp"
-                    android:textColor="@color/black"
+                    android:textColor="@color/trp_black"
                     android:visibility="gone"
                     tools:text="1 Adult, No children"
                     tools:visibility="visible" />
@@ -132,7 +132,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:gravity="center"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     android:visibility="gone" />
             </RelativeLayout>
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -156,11 +156,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_48sdp"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:gravity="center"
             android:padding="@dimen/_8sdp"
             tools:text="error"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:visibility="gone" />
     </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

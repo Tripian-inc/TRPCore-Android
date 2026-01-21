@@ -23,7 +23,7 @@
             android:layout_height="24dp"
             android:layout_gravity="center"
             android:src="@drawable/ic_location_pin"
-            app:tint="@color/text_primary" />
+            app:tint="@color/trp_text_primary" />
 
     </FrameLayout>
 
@@ -36,7 +36,7 @@
         android:layout_marginEnd="16dp"
         android:textSize="16sp"
         android:fontFamily="@font/semibold"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         android:maxLines="1"
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/iconContainer"
@@ -54,7 +54,7 @@
         android:layout_marginTop="2dp"
         android:textSize="14sp"
         android:fontFamily="@font/regular"
-        android:textColor="@color/fgWeak"
+        android:textColor="@color/trp_fgWeak"
         android:maxLines="1"
         android:ellipsize="end"
         app:layout_constraintStart_toStartOf="@id/tvName"

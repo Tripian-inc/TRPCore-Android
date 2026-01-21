@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/timeline_background">
+    android:background="@color/trp_timeline_background">
 
     <!-- Header -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -13,7 +13,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="16dp"
-        android:background="@color/timeline_surface"
+        android:background="@color/trp_timeline_surface"
         android:elevation="2dp"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:text="Add Place"
             android:textSize="18sp"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:fontFamily="@font/bold"
             android:gravity="center"
             app:layout_constraintStart_toEndOf="@id/ivBack"
@@ -54,7 +54,7 @@
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp"
-        android:background="@color/timeline_surface"
+        android:background="@color/trp_timeline_surface"
         app:layout_constraintTop_toBottomOf="@id/headerContainer">
 
         <LinearLayout
@@ -80,8 +80,8 @@
                 android:layout_marginStart="8dp"
                 android:background="@null"
                 android:hint="Search places..."
-                android:textColorHint="@color/timeline_text_tertiary"
-                android:textColor="@color/text_primary"
+                android:textColorHint="@color/trp_timeline_text_tertiary"
+                android:textColor="@color/trp_text_primary"
                 android:textSize="14sp"
                 android:inputType="text"
                 android:imeOptions="actionSearch"
@@ -105,7 +105,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:scrollbars="none"
-        android:background="@color/timeline_surface"
+        android:background="@color/trp_timeline_surface"
         android:paddingBottom="12dp"
         app:layout_constraintTop_toBottomOf="@id/searchContainer">
 
@@ -124,7 +124,7 @@
         android:id="@+id/divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/timeline_divider"
+        android:background="@color/trp_timeline_divider"
         app:layout_constraintTop_toBottomOf="@id/categoryScrollView"/>
 
     <!-- POI List -->
@@ -175,7 +175,7 @@
             android:layout_marginTop="16dp"
             android:text="No places found"
             android:textSize="16sp"
-            android:textColor="@color/timeline_text_secondary"
+            android:textColor="@color/trp_timeline_text_secondary"
             android:fontFamily="@font/medium"/>
 
     </LinearLayout>

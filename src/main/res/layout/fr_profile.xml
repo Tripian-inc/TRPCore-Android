@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
+    android:background="@color/trp_white"
     android:clickable="true">
 
     <LinearLayout
@@ -19,7 +19,7 @@
             android:layout_marginStart="@dimen/_16sdp"
             android:layout_marginTop="@dimen/_32sdp"
             android:lineSpacingExtra="8dp"
-            android:textColor="@color/black_soft" />
+            android:textColor="@color/trp_black_soft" />
 
         <LinearLayout
             android:id="@+id/llEditProfile"
@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_marginStart="@dimen/_8sdp"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
         </LinearLayout>
 
         <LinearLayout
@@ -64,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
         </LinearLayout>
 
         <LinearLayout
@@ -86,7 +86,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
         </LinearLayout>
 
         <LinearLayout
@@ -108,7 +108,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
         </LinearLayout>
 
         <LinearLayout
@@ -131,7 +131,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
         </LinearLayout>
     </LinearLayout>
 

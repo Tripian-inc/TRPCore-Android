@@ -74,13 +74,13 @@ class ACTripMode : BaseActivity<AcTripModeBinding, ACTripModeVM>() {
         observe(viewModel.onShowAlternativesListener) {
             binding.mapView.showMapIcons(it!!)
 
-//            btnAlternative.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white))
-            binding.btnAlternative.setColorFilter(ContextCompat.getColor(this, R.color.blue_dark))
+//            btnAlternative.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.trp_white))
+            binding.btnAlternative.setColorFilter(ContextCompat.getColor(this, R.color.trp_blue_dark))
         }
 
         observe(viewModel.onHideAlternativesListener) {
 //            btnAlternative.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.pink))
-            binding.btnAlternative.setColorFilter(ContextCompat.getColor(this, R.color.black))
+            binding.btnAlternative.setColorFilter(ContextCompat.getColor(this, R.color.trp_black))
         }
 
         observe(viewModel.onShowSearchListener) {
@@ -130,12 +130,12 @@ class ACTripMode : BaseActivity<AcTripModeBinding, ACTripModeVM>() {
         }
 
         observe(viewModel.onEnableLocationListener) {
-            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.black))
+            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.trp_black))
         }
 
         observe(viewModel.onGoLocationListener) {
             binding.btnReturn.visibility = View.VISIBLE
-            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.blue_dark))
+            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.trp_blue_dark))
             binding.mapView.enableLocation()
             binding.mapView.moveCameraTo(it)
         }
@@ -146,7 +146,7 @@ class ACTripMode : BaseActivity<AcTripModeBinding, ACTripModeVM>() {
 
         observe(viewModel.onGoCityListener) {
             binding.btnReturn.visibility = View.GONE
-            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.black))
+            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.trp_black))
             binding.mapView.disableLocation()
             lifecycleScope.launch {
                 binding.mapView.moveCameraTo()
@@ -155,7 +155,7 @@ class ACTripMode : BaseActivity<AcTripModeBinding, ACTripModeVM>() {
 
         observe(viewModel.onDisableLocationListener) {
             binding.btnReturn.visibility = View.GONE
-            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.light_grey))
+            binding.btnLocation.setColorFilter(ContextCompat.getColor(this, R.color.trp_light_grey))
         }
 
         observe(viewModel.onSetCityNameListener) {
@@ -223,11 +223,11 @@ class ACTripMode : BaseActivity<AcTripModeBinding, ACTripModeVM>() {
         observe(viewModel.onShowOffersListener) {
             binding.mapView.showMapIcons(it!!)
 
-            binding.btnOffers.setColorFilter(ContextCompat.getColor(this, R.color.green))
+            binding.btnOffers.setColorFilter(ContextCompat.getColor(this, R.color.trp_green))
         }
 
         observe(viewModel.onHideOffersListener) {
-            binding.btnOffers.setColorFilter(ContextCompat.getColor(this, R.color.black))
+            binding.btnOffers.setColorFilter(ContextCompat.getColor(this, R.color.trp_black))
         }
 
         observe(viewModel.onExportPlanListener) {

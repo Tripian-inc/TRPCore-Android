@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black_transparent">
+    android:background="@color/trp_black_transparent">
 
     <com.tripian.trpcore.util.widget.CardView
         android:layout_width="320dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:cardCornerRadius="8dp"
         app:cardElevation="8dp">
 
@@ -27,7 +27,7 @@
                 style="@style/TextHeadline"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/black_soft" />
+                android:textColor="@color/trp_black_soft" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDescription"
@@ -52,14 +52,14 @@
                     android:paddingTop="@dimen/_16sdp"
                     android:paddingBottom="@dimen/_16sdp"
                     android:text="09:00"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     style="@style/TextDisplay1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="-"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvEndTime"
@@ -71,7 +71,7 @@
                     android:paddingTop="@dimen/_16sdp"
                     android:paddingBottom="@dimen/_16sdp"
                     android:text="09:00"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
             </LinearLayout>
 
             <LinearLayout

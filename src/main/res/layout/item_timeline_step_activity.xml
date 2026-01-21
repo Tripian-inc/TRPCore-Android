@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/bgCloudy"
+    android:background="@color/trp_bgCloudy"
     android:orientation="vertical"
     android:paddingHorizontal="16dp"
     android:paddingTop="20dp">
@@ -28,7 +28,7 @@
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
-            android:textColor="@color/white"
+            android:textColor="@color/trp_white"
             android:textSize="16sp"
             tools:text="1" />
 
@@ -41,7 +41,7 @@
             android:layout_weight="1"
             android:fontFamily="@font/medium"
             android:gravity="end"
-            android:textColor="@color/text_primary"
+            android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="09:00 - 11:30" />
 
@@ -53,7 +53,7 @@
         android:layout_width="1dp"
         android:layout_height="24dp"
         android:layout_marginStart="16dp"
-        android:background="@color/lineWeak" />
+        android:background="@color/trp_lineWeak" />
 
     <!-- Content Row (Image + Details) -->
     <LinearLayout
@@ -72,7 +72,7 @@
                 android:id="@+id/ivImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/bgCloudy"
+                android:background="@color/trp_bgCloudy"
                 android:contentDescription="Activity Image"
                 android:scaleType="centerCrop" />
 
@@ -106,7 +106,7 @@
                         android:ellipsize="end"
                         android:fontFamily="@font/semibold"
                         android:maxLines="2"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/trp_text_primary"
                         android:textSize="16sp"
                         tools:text="Guided tour of the Basilica" />
 
@@ -126,7 +126,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/bold"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/trp_text_primary"
                             android:textSize="14sp"
                             tools:text="4.5" />
 
@@ -145,7 +145,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:fontFamily="@font/medium"
-                            android:textColor="@color/fgWeak"
+                            android:textColor="@color/trp_fgWeak"
                             android:textSize="14sp"
                             tools:text="1,234 opinions" />
 
@@ -174,7 +174,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
                             android:fontFamily="@font/medium"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/trp_text_primary"
                             android:textSize="14sp"
                             tools:text="2.5 hours" />
 
@@ -187,7 +187,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/medium"
-                        android:textColor="@color/advantage"
+                        android:textColor="@color/trp_advantage"
                         android:textSize="14sp"
                         tools:text="Free cancellation" />
 
@@ -222,7 +222,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/regular"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="14sp"
                     tools:text="From " />
 
@@ -232,7 +232,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/bold"
-                    android:textColor="@color/text_primary"
+                    android:textColor="@color/trp_text_primary"
                     android:textSize="16sp"
                     tools:text="$49" />
             </LinearLayout>
@@ -240,7 +240,7 @@
             <!-- Reservation Button - Primary style -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReservation"
-                style="@style/ButtonPrimary"
+                style="@style/TrpButtonPrimary"
                 android:layout_height="@dimen/_31sdp"
                 android:layout_marginTop="@dimen/_8sdp"
                 tools:text="Reservation" />

@@ -22,6 +22,7 @@ import com.tripian.one.TRPRest
 import com.tripian.trpprovider.base.ProviderCore
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
+import com.mapbox.common.MapboxOptions
 import io.reactivex.plugins.RxJavaPlugins
 import javax.inject.Inject
 
@@ -157,6 +158,9 @@ class TRPCore {
         mapBoxApiKey = mapboxApiKey
         apiVersion = environment.getApiVersion()
 
+        // Set Mapbox access token programmatically (instead of XML resource)
+        MapboxOptions.accessToken = mapboxApiKey
+
         ProviderCore().init(app, "")
 
         Tripian.setGetLanguage {
@@ -193,7 +197,10 @@ class TRPCore {
             .build()
             .inject(this)
 
-        FirebaseApp.initializeApp(app)
+        // Conditional Firebase initialization - only if not already initialized by consumer app
+        if (FirebaseApp.getApps(app).isEmpty()) {
+            FirebaseApp.initializeApp(app)
+        }
 
         // Fetch languages on SDK initialization
         fetchLanguages()

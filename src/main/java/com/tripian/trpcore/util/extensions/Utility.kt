@@ -539,7 +539,7 @@ fun BaseActivity<*,*>.openCustomTabExt(url: String) {
             val builder = CustomTabsIntent.Builder()
             val customTabsIntent = builder.build()
 
-            val colorInt: Int = ContextCompat.getColor(this, R.color.primary)
+            val colorInt: Int = ContextCompat.getColor(this, R.color.trp_primary)
             val defaultColors = CustomTabColorSchemeParams.Builder()
                 .setToolbarColor(colorInt)
                 .build()

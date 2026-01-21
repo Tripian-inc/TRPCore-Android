@@ -4,14 +4,14 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black56"
+    android:background="@color/trp_black56"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:clickable="true"
         android:visibility="visible"
         app:elevation="0dp">
@@ -20,7 +20,7 @@
             android:id="@+id/collapsingToolbar"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_50sdp"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:minHeight="@dimen/_50sdp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
@@ -37,7 +37,7 @@
                 android:layout_height="match_parent"
                 android:layout_marginStart="@dimen/_44sdp"
                 android:layout_marginEnd="@dimen/_24sdp"
-                android:background="@color/white"
+                android:background="@color/trp_white"
                 android:transitionName="search">
 
                 <com.tripian.trpcore.util.widget.TextInputLayout
@@ -49,7 +49,7 @@
                         style="@style/TextFormField"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@color/white"
+                        android:background="@color/trp_white"
                         android:imeOptions="actionDone"
                         android:inputType="textEmailAddress"
                         android:maxLength="50"
@@ -75,17 +75,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:gravity="center"
         android:padding="@dimen/_8sdp"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         android:visibility="gone" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvList"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:clickable="true"
         android:overScrollMode="never"
         android:paddingTop="@dimen/_4sdp" />

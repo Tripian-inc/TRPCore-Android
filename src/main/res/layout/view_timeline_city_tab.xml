@@ -4,11 +4,11 @@
     android:id="@+id/tabLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/white"
+    android:background="@color/trp_white"
     app:tabMode="scrollable"
     app:tabGravity="start"
-    app:tabIndicatorColor="@color/timeline_accent"
+    app:tabIndicatorColor="@color/trp_timeline_accent"
     app:tabIndicatorHeight="3dp"
-    app:tabSelectedTextColor="@color/timeline_title_color"
-    app:tabTextColor="@color/timeline_subtitle_color"
-    app:tabTextAppearance="@style/TimelineTabTextAppearance"/>
+    app:tabSelectedTextColor="@color/trp_timeline_title_color"
+    app:tabTextColor="@color/trp_timeline_subtitle_color"
+    app:tabTextAppearance="@style/TrpTimelineTabTextAppearance"/>

@@ -5,7 +5,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:paddingStart="@dimen/_10sdp"
     android:paddingTop="@dimen/_8sdp"
     android:paddingEnd="@dimen/_10sdp">
@@ -22,7 +22,7 @@
             android:layout_height="@dimen/_48sdp"
             android:layout_centerVertical="true"
             android:layout_marginStart="@dimen/_10sdp"
-            app:srcCompat="@color/black_soft" />
+            app:srcCompat="@color/trp_black_soft" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvTitle"
@@ -32,7 +32,7 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="@dimen/_8sdp"
             android:layout_toEndOf="@+id/imPoi"
-            android:textColor="@color/black_soft"
+            android:textColor="@color/trp_black_soft"
             tools:text="Finish Museum of Natural History" />
     </RelativeLayout>
 

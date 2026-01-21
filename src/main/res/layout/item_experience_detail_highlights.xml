@@ -10,7 +10,7 @@
         android:layout_height="5dp"
         android:layout_gravity="center"
         android:background="@drawable/bg_circle_red_full"
-        android:textColor="@color/extra_main"
+        android:textColor="@color/trp_extra_main"
         android:visibility="visible" />
 
     <com.tripian.trpcore.util.widget.TextView
@@ -23,6 +23,6 @@
         android:paddingBottom="@dimen/_4sdp"
         android:gravity="center_vertical"
         android:layout_marginStart="@dimen/_4sdp"
-        android:textColor="@color/body"
+        android:textColor="@color/trp_body"
         tools:text="Soak up the unique party atmosphere of flamenco Soak up the unique party atmosphere of flamenco" />
 </LinearLayout>

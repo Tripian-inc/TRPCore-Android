@@ -17,7 +17,7 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
         android:layout_centerVertical="true"
-        android:textColor="@color/text_primary"
+        android:textColor="@color/trp_text_primary"
         tools:text="Eylül" />
 
 </RelativeLayout>

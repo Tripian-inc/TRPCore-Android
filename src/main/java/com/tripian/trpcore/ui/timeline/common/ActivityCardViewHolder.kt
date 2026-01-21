@@ -59,10 +59,10 @@ class ActivityCardViewHolder(
             Glide.with(binding.ivActivityImage)
                 .load(imageUrl)
                 .transform(CenterCrop(), RoundedCorners(cornerRadius))
-                .placeholder(R.color.grey_10)
+                .placeholder(R.color.trp_grey_10)
                 .into(binding.ivActivityImage)
         } else {
-            binding.ivActivityImage.setImageResource(R.color.grey_10)
+            binding.ivActivityImage.setImageResource(R.color.trp_grey_10)
         }
     }
 
