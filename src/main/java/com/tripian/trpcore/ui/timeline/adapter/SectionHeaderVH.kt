@@ -6,7 +6,7 @@ import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 
 /**
  * SectionHeaderVH
- * Şehir gruplaması için section header
+ * Section header for city grouping
  */
 class SectionHeaderVH(
     private val binding: ItemTimelineSectionHeaderBinding

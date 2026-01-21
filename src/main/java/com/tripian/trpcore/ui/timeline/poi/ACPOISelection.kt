@@ -19,7 +19,7 @@ import com.tripian.trpcore.util.LanguageConst
 
 /**
  * ACPOISelection
- * Manuel POI ekleme için POI seçim ekranı
+ * POI selection screen for manual POI addition
  */
 class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionVM>() {
 

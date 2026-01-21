@@ -8,7 +8,7 @@ import javax.inject.Inject
 
 /**
  * AddStepUseCase
- * Timeline plan'ına yeni step ekler
+ * Adds a new step to a timeline plan
  */
 class AddStepUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -21,7 +21,7 @@ class AddStepUseCase @Inject constructor(
         abstract val order: Int?
 
         /**
-         * POI ID ile step ekle
+         * Add step with POI ID
          */
         data class WithPoi(
             override val planId: Int,
@@ -32,7 +32,7 @@ class AddStepUseCase @Inject constructor(
         ) : Params()
 
         /**
-         * Custom POI ile step ekle
+         * Add step with Custom POI
          */
         data class WithCustomPoi(
             override val planId: Int,

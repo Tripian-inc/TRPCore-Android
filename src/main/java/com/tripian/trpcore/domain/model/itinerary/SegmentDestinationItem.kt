@@ -4,19 +4,19 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
- * Destinasyon/Şehir bilgisi
- * Her seyahatte en az bir destinasyon olmalıdır.
+ * Destination/City information
+ * Each trip must have at least one destination.
  */
 @Parcelize
 data class SegmentDestinationItem(
-    val title: String,                      // Şehir/destinasyon adı (örn: "Barcelona")
-    val coordinate: String,                 // "lat,lon" formatında (örn: "41.3851,2.1734")
-    val cityId: Int? = null,                // Tripian city ID (API'den alınır, opsiyonel)
-    val dates: List<String>? = null         // Bu şehirdeki günler ["yyyy-MM-dd", "yyyy-MM-dd"]
+    val title: String,                      // City/destination name (e.g., "Barcelona")
+    val coordinate: String,                 // "lat,lon" format (e.g., "41.3851,2.1734")
+    val cityId: Int? = null,                // Tripian city ID (retrieved from API, optional)
+    val dates: List<String>? = null         // Days in this city ["yyyy-MM-dd", "yyyy-MM-dd"]
 ) : Parcelable {
 
     /**
-     * Coordinate string'i ItineraryCoordinate'e dönüştür
+     * Convert coordinate string to ItineraryCoordinate
      */
     fun getCoordinateObject(): ItineraryCoordinate? {
         return ItineraryCoordinate.fromString(coordinate)

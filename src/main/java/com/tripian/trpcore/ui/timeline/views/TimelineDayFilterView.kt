@@ -11,7 +11,7 @@ import java.util.*
 
 /**
  * TimelineDayFilterView
- * Horizontal scrollable gün seçici
+ * Horizontal scrollable day selector
  */
 class TimelineDayFilterView @JvmOverloads constructor(
     context: Context,

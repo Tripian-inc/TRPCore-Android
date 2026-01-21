@@ -9,14 +9,14 @@ import com.tripian.trpcore.util.fragment.TransitionType
 import kotlin.reflect.KClass
 
 /**
- * fragmentManager BaseActivity'den ve BaseFragment'dan her bir view'in ViewModel'ine set edilmektedir.
+ * fragmentManager is set to each view's ViewModel from BaseActivity and BaseFragment.
  *
  * @see BaseFragment.onCreateView
  * @see BaseActivity.onCreate
  *
- * Activity supportFragmentManager kullanirken, Fragment'lar childFragmentManager kullanmaktadir.
- * inner fragment kullanim durumunda eğer backstack kullanilmayacak ise fragmentManagerEnable true gonderilmesi gerekmektedir.
- * backPress override manuel pop edilmelidir
+ * Activity uses supportFragmentManager while Fragments use childFragmentManager.
+ * When using inner fragments without backstack, set fragmentManagerEnable to true.
+ * backPress must be manually overridden for pop.
  *
  * @see BaseViewModel.fragmentManager
  */

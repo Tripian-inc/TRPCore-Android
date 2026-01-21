@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 /**
  * WaitForGenerationUseCase
- * Segment oluşturulduktan sonra generation tamamlanana kadar polling yapar
+ * Polls until generation completes after a segment is created
  */
 class WaitForGenerationUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -40,7 +40,7 @@ class WaitForGenerationUseCase @Inject constructor(
                     }
                     .timeout(p.initialDelayMs + (p.maxRetries * p.intervalMs), TimeUnit.MILLISECONDS)
                     .onErrorResumeNext { throwable: Throwable ->
-                        // Timeout durumunda son timeline'ı getir
+                        // On timeout, fetch the latest timeline
                         repository.fetchTimeline(p.tripHash)
                     }
             }

@@ -19,7 +19,7 @@ import dagger.multibindings.IntoMap
 
 /**
  * TimelineVMS
- * Timeline modülündeki ViewModel'ler için Dagger bindings
+ * Dagger bindings for ViewModels in Timeline module
  */
 @Module
 abstract class TimelineVMS {

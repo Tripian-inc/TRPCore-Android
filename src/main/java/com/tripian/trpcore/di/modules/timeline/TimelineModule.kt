@@ -4,7 +4,7 @@ import dagger.Module
 
 /**
  * TimelineModule
- * Timeline modülü için Dagger module
+ * Dagger module for Timeline feature
  */
 @Module(includes = [TimelineVMS::class])
 class TimelineModule

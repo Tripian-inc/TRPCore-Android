@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 /**
  * ACPOISelectionVM
- * POI seçim ekranının ViewModel'i
+ * ViewModel for POI selection screen
  */
 class ACPOISelectionVM @Inject constructor(
     private val poiRepository: PoiRepository

@@ -7,7 +7,7 @@ import javax.inject.Inject
 
 /**
  * FetchTimelineUseCase
- * Timeline'ı trip hash ile getirir
+ * Fetches timeline by trip hash
  */
 class FetchTimelineUseCase @Inject constructor(
     private val repository: TimelineRepository

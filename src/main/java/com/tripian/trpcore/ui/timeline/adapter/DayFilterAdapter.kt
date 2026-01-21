@@ -13,8 +13,8 @@ import java.util.Locale
 
 /**
  * DayFilterAdapter
- * Horizontal gün seçici için adapter
- * Format: "DayName dd/MM" (örn: "Miércoles 13/05")
+ * Adapter for horizontal day selector
+ * Format: "DayName dd/MM" (e.g., "Wednesday 13/05")
  */
 class DayFilterAdapter(
     private val onDaySelected: (Int) -> Unit

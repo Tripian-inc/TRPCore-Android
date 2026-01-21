@@ -6,7 +6,7 @@ import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 
 /**
  * GeneratingStateVH
- * Plan oluşturuluyor gösterimi
+ * View holder for plan generation loading state
  */
 class GeneratingStateVH(
     private val binding: ItemTimelineGeneratingBinding

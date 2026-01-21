@@ -4,7 +4,7 @@ import javax.inject.Scope
 
 /**
  * TimelineScope
- * Timeline modülü için Dagger scope
+ * Dagger scope for Timeline module
  */
 @MustBeDocumented
 @Scope

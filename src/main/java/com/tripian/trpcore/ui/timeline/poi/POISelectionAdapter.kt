@@ -13,7 +13,7 @@ import com.tripian.trpcore.databinding.ItemPoiSelectionBinding
 
 /**
  * POISelectionAdapter
- * POI seçim ekranı için adapter
+ * Adapter for POI selection screen
  */
 class POISelectionAdapter(
     private val onPoiClicked: (Poi) -> Unit

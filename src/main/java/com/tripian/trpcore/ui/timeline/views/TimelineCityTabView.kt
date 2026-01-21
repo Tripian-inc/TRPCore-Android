@@ -10,7 +10,7 @@ import com.tripian.trpcore.databinding.ViewTimelineCityTabBinding
 
 /**
  * TimelineCityTabView
- * Birden fazla şehir olduğunda şehir seçimi için tab view
+ * Tab view for city selection when there are multiple cities
  */
 class TimelineCityTabView @JvmOverloads constructor(
     context: Context,

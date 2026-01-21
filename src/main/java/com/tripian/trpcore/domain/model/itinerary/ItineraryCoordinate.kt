@@ -4,8 +4,8 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
- * Konum bilgisi (lat/lng)
- * TRPOne'daki Coordinate ile uyumlu ancak Parcelable
+ * Location information (lat/lng)
+ * Compatible with TRPOne's Coordinate but Parcelable
  */
 @Parcelize
 data class ItineraryCoordinate(
@@ -14,13 +14,13 @@ data class ItineraryCoordinate(
 ) : Parcelable {
 
     /**
-     * "lat,lng" formatına dönüştür
+     * Convert to "lat,lng" format
      */
     fun toCoordinateString(): String = "$lat,$lng"
 
     companion object {
         /**
-         * "lat,lng" formatından parse et
+         * Parse from "lat,lng" format
          */
         fun fromString(coordinateString: String): ItineraryCoordinate? {
             return try {
