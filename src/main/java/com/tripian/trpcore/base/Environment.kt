@@ -6,6 +6,7 @@ package com.tripian.trpcore.base
 enum class Environment {
     DEV,
     PREDEV,
+    TEST,
     PROD;
 
     /**
@@ -15,6 +16,7 @@ enum class Environment {
         return when (this) {
             DEV -> "dev/"
             PREDEV -> "predev/"
+            TEST -> "test/"
             PROD -> "prod/"
         }
     }
