@@ -301,7 +301,7 @@ class TRPCore {
      * @param canBack Whether to show back button
      * @param appLanguage App language (default: "en")
      *
-     * @throws IllegalArgumentException if destinationItems is empty
+     * @throws IllegalArgumentException if neither destinationItems nor tripItems has data
      */
     fun startWithItinerary(
         context: Context,
@@ -311,9 +311,9 @@ class TRPCore {
         canBack: Boolean = true,
         appLanguage: String = "en"
     ) {
-        // Validation
-        require(itinerary.destinationItems.isNotEmpty()) {
-            "destinationItems cannot be empty. At least one destination is required."
+        // Validation - either destinationItems or tripItems must have data
+        require(itinerary.hasLocationData()) {
+            "Either destinationItems or tripItems must contain at least one item with location data."
         }
 
         val effectiveUniqueId = uniqueId ?: itinerary.uniqueId ?: getDeviceId(context)

@@ -23,5 +23,7 @@ data class SegmentActivityItem(
     val bookingUrl: String? = null,         // Booking URL
     val duration: Double? = null,           // Duration (minutes)
     val price: SegmentActivityPrice? = null,// Price
-    val cityId: Int? = null                 // City ID
+    val cityId: Int? = null,                // City ID (optional - resolved from cityName if not provided)
+    val cityName: String? = null,           // City name (e.g., "Barcelona")
+    val countryName: String? = null         // Country name (e.g., "Spain")
 ) : Parcelable

@@ -18,20 +18,26 @@ data class ItineraryWithActivities(
     val endDatetime: String,                               // Format: "yyyy-MM-dd HH:mm"
     val uniqueId: String,                                  // User unique ID
     val tripianHash: String? = null,                       // Existing timeline hash if available
-    val destinationItems: List<SegmentDestinationItem>,    // REQUIRED - At least 1 destination
+    val destinationItems: List<SegmentDestinationItem> = emptyList(),    // Optional - Can fallback to tripItems
     val favouriteItems: List<SegmentFavoriteItem>? = null, // Favorite activities
     val tripItems: List<SegmentActivityItem>? = null       // Booked/Reserved activities
 ) : Parcelable {
 
     /**
-     * Returns the cityId of the first destination
+     * Returns the cityId of the first destination.
+     * Falls back to tripItems if destinationItems is empty.
      */
-    fun getFirstCityId(): Int? = destinationItems.firstOrNull()?.cityId
+    fun getFirstCityId(): Int? =
+        destinationItems.firstOrNull()?.cityId
+            ?: tripItems?.firstOrNull()?.cityId
 
     /**
-     * Returns the coordinate of the first destination
+     * Returns the coordinate of the first destination.
+     * Falls back to tripItems if destinationItems is empty.
      */
-    fun getFirstCoordinate(): ItineraryCoordinate? = destinationItems.firstOrNull()?.getCoordinateObject()
+    fun getFirstCoordinate(): ItineraryCoordinate? =
+        destinationItems.firstOrNull()?.getCoordinateObject()
+            ?: tripItems?.firstOrNull()?.coordinate
 
     /**
      * Gets adult count from tripItems (from first item or default 1)
@@ -42,6 +48,28 @@ data class ItineraryWithActivities(
      * Gets child count from tripItems (from first item or default 0)
      */
     fun getChildCount(): Int = tripItems?.firstOrNull()?.childCount ?: 0
+
+    /**
+     * Checks if itinerary has any location data (from destinationItems or tripItems)
+     */
+    fun hasLocationData(): Boolean =
+        destinationItems.isNotEmpty() || !tripItems.isNullOrEmpty()
+
+    /**
+     * Returns the city name from first destination or tripItem.
+     * Used for city search when cityId is not available.
+     */
+    fun getFirstCityName(): String? =
+        destinationItems.firstOrNull()?.title
+            ?: tripItems?.firstOrNull()?.cityName
+
+    /**
+     * Returns the country name from first destination or tripItem.
+     * Used for more accurate city search.
+     */
+    fun getFirstCountryName(): String? =
+        destinationItems.firstOrNull()?.countryName
+            ?: tripItems?.firstOrNull()?.countryName
 
     /**
      * Returns favorite activity IDs (for Smart Recommendations)

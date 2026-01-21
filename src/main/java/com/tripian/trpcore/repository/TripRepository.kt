@@ -63,6 +63,30 @@ class TripRepository @Inject constructor(val service: Service) {
         return items.isNotEmpty()
     }
 
+    /**
+     * Find a city by name from the cache.
+     * Optionally filter by country name for more accurate matching.
+     *
+     * @param cityName City name to search (case-insensitive)
+     * @param countryName Optional country name for more precise matching
+     * @return City if found, null otherwise
+     */
+    fun findCityByName(cityName: String, countryName: String? = null): City? {
+        val normalizedCityName = cityName.trim().lowercase()
+
+        return items.find { city ->
+            val cityNameMatches = city.name?.trim()?.lowercase() == normalizedCityName
+
+            if (countryName != null && cityNameMatches) {
+                // If country is provided, also check country match
+                val normalizedCountryName = countryName.trim().lowercase()
+                city.country?.name?.trim()?.lowercase() == normalizedCountryName
+            } else {
+                cityNameMatches
+            }
+        }
+    }
+
     fun getUserTrip(from: String?, to: String?, limit: Int, page: Int?): Observable<TripsResponse> {
         return service.getUserTrip(from, to, limit, page)
     }
