@@ -81,3 +81,8 @@ lint/tmp/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Claude Code
+.claude/
+claude.md
+CLAUDE.md
