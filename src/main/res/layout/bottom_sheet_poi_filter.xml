@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?><!-- POI Filter Bottom Sheet - Category Selection -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_bottom_sheet_white"
+    android:orientation="vertical"
+    android:paddingBottom="32dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_handle_bar" />
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingHorizontal="16dp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/semibold"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="16sp"
+            tools:text="Filters" />
+
+        <ImageView
+            android:id="@+id/ivClose"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:contentDescription="Close"
+            android:src="@drawable/ic_close"
+            app:tint="@color/trp_text_primary" />
+
+    </RelativeLayout>
+
+    <!-- Category List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCategories"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="400dp"
+        android:nestedScrollingEnabled="true"
+        tools:itemCount="5"
+        tools:listitem="@layout/item_category_filter" />
+
+    <!-- Button Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <!-- Clear Selection (left side) -->
+        <TextView
+            android:id="@+id/btnClear"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:fontFamily="@font/medium"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/trp_fgWeak"
+            android:textSize="14sp"
+            android:visibility="gone"
+            tools:text="Clear Selection"
+            tools:visibility="visible" />
+
+        <!-- Continue Button (right side, 48dp) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirm"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:enabled="false"
+            android:fontFamily="@font/semibold"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minWidth="120dp"
+            android:minHeight="48dp"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            app:backgroundTint="@color/trp_btn_continue_bg"
+            app:cornerRadius="24dp"
+            tools:enabled="true"
+            tools:text="Continue" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
+
+    <TextView
+        android:id="@+id/tvDayName"
+        android:layout_width="55dp"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/medium"
+        android:textColor="@color/trp_fgWeak"
+        android:textSize="16sp"
+        tools:text="Wed" />
+
+    <TextView
+        android:id="@+id/tvHours"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/medium"
+        android:textColor="@color/trp_fgWeak"
+        android:textSize="16sp"
+        tools:text="09:00 - 18:00" />
+
+</LinearLayout>

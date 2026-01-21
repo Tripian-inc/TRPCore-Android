@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Activity Category Item with Icon + Text -->
+<!-- iOS Reference: CategoryFilterCell (vertical icon/text layout) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/llCategory"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/_16sdp"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingVertical="@dimen/_8sdp">
+
+    <ImageView
+        android:id="@+id/ivCategoryIcon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        app:tint="@color/category_icon_tint_selector"
+        tools:src="@drawable/ic_all_categories" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvCategoryName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:fontFamily="@font/regular"
+        android:gravity="center"
+        android:maxWidth="@dimen/_72sdp"
+        android:maxLines="2"
+        android:textColor="@color/category_text_selector"
+        android:textSize="12sp"
+        tools:text="All" />
+</LinearLayout>

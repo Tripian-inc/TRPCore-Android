@@ -7,7 +7,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/ultra_light_grey_x">
+        android:background="@color/trp_ultra_light_grey_x">
 
         <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/imClose"

@@ -4,6 +4,6 @@
     android:shape="oval"
     android:useLevel="false">
 
-    <solid android:color="@color/black_soft" />
+    <solid android:color="@color/trp_black_soft" />
 
 </shape>

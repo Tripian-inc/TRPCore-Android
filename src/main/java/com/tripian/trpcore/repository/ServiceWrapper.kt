@@ -435,7 +435,10 @@ class ServiceWrapper @Inject constructor(val app: Application, val tone: TRPRest
         search: String?,
         cityId: Int?,
         mustTryIds: Int?,
-        isAutoPagination: Boolean
+        isAutoPagination: Boolean,
+        sort: String?,
+        order: String?,
+        price: String?
     ): Observable<PoisResponse> {
         return PublishSubject.create {
             tone.getPoi(
@@ -448,9 +451,9 @@ class ServiceWrapper @Inject constructor(val app: Application, val tone: TRPRest
                 categoryIds = categoryIds,
                 distance = distance,
                 boundary = boundary,
-                sort = null,
-                order = null,
-                price = null,
+                sort = sort,
+                order = order,
+                price = price,
                 rating = null,
                 page = page,
                 limit = limit, success = { res ->

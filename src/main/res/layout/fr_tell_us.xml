@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:orientation="vertical">
 
     <View
@@ -15,18 +15,18 @@
         style="@style/TextBody2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center_vertical"
         android:paddingStart="@dimen/_16sdp"
-        android:textColor="@color/white" />
+        android:textColor="@color/trp_white" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvNotLike"
         style="@style/TextBody2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
-        android:background="@color/black_soft"
+        android:background="@color/trp_black_soft"
         android:gravity="center_vertical"
         android:paddingStart="@dimen/_16sdp"
-        android:textColor="@color/white" />
+        android:textColor="@color/trp_white" />
 </LinearLayout>

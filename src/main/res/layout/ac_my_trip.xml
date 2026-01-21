@@ -8,14 +8,14 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:elevation="0dp">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:id="@+id/collapsingToolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:minHeight="48dp"
             app:layout_scrollFlags="scroll|exitUntilCollapsed">
 
@@ -72,15 +72,15 @@
                 android:layout_height="48dp"
                 android:layout_gravity="bottom"
                 android:layout_marginTop="@dimen/_65sdp"
-                android:background="@color/transparent"
+                android:background="@color/trp_transparent"
                 app:layout_collapseMode="pin"
-                app:tabBackground="@color/transparent"
-                app:tabIndicatorColor="@color/primary"
+                app:tabBackground="@color/trp_transparent"
+                app:tabIndicatorColor="@color/trp_primary"
                 app:tabIndicatorFullWidth="false"
                 app:tabIndicatorHeight="@dimen/_2sdp"
                 app:tabMode="fixed"
-                app:tabRippleColor="@color/pink_soft"
-                app:tabSelectedTextColor="@color/primary"
+                app:tabRippleColor="@color/trp_pink_soft"
+                app:tabSelectedTextColor="@color/trp_primary"
                 app:tabTextAppearance="@style/TextSubhead1">
 
                 <com.google.android.material.tabs.TabItem

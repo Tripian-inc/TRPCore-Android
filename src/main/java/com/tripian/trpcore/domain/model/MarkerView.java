@@ -16,7 +16,7 @@ import com.tripian.trpcore.R;
 import com.tripian.trpcore.util.extensions.UtilityKt;
 
 /**
- * Custom map marker viewleri olusturmak icin kullanilir.
+ * Used to create custom map marker views.
  *
  * @author Tripian
  * @version 1.0
@@ -33,7 +33,7 @@ public class MarkerView extends RelativeLayout {
 
         LayoutParams layoutParams = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
         setLayoutParams(layoutParams);
-        setBackgroundColor(ContextCompat.getColor(context, R.color.transparent));
+        setBackgroundColor(ContextCompat.getColor(context, R.color.trp_transparent));
         setGravity(Gravity.CENTER);
         setPadding((int) UtilityKt.dp2Px(3),
                 (int) UtilityKt.dp2Px(3),
@@ -96,9 +96,9 @@ public class MarkerView extends RelativeLayout {
     }
 
     /**
-     * Bu imageviewe eristikten sonra image set edilir.
+     * After accessing this imageview, the image is set.
      *
-     * @return ImageView Bu fonksiyon marker imagei icin set edilmesi gereken imageviewi dondurur.
+     * @return ImageView Returns the imageview that needs to be set for the marker image.
      */
     public ImageView getIconView() {
         return iconView;
@@ -109,9 +109,9 @@ public class MarkerView extends RelativeLayout {
     }
 
     /**
-     * Bu textviewe eristikten sonra route sirasi set edilir.
+     * After accessing this textview, the route order is set.
      *
-     * @return Bu fonksiyon marker texi icin set edilmesi gereken textviewi dondurur.
+     * @return Returns the textview that needs to be set for the marker text.
      */
     public TextView getPoiOrderTv() {
         return poiOrderTv;

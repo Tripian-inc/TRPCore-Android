@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/trp_bgCloudy"
+    android:orientation="vertical"
+    android:paddingTop="20dp"
+    android:paddingHorizontal="16dp">
+
+    <!-- Order-Time Container (130x32, border) -->
+    <LinearLayout
+        android:id="@+id/orderTimeContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_order_time_container"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Order Badge (20x20, fg bg, 6px left margin) -->
+        <TextView
+            android:id="@+id/tvOrder"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_step_order_new"
+            android:fontFamily="@font/semibold"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:textColor="@color/trp_white"
+            android:textSize="16sp"
+            tools:text="1" />
+
+        <!-- Time (startTime - endTime, 10px right margin) -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="10dp"
+            android:gravity="end"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="10:00 - 11:00" />
+
+    </LinearLayout>
+
+    <!-- Vertical Line (1x24, 16px left margin, connected to container) -->
+    <View
+        android:id="@+id/verticalLine"
+        android:layout_width="1dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:background="@color/trp_lineWeak" />
+
+    <!-- Content Row (Image + Details) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Image 80x80, 4dp corner radius -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="0dp">
+
+            <ImageView
+                android:id="@+id/ivImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/trp_bgCloudy"
+                android:contentDescription="POI Image"
+                android:scaleType="centerCrop" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Text Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Title - semibold 16px primaryText -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="@font/semibold"
+                android:maxLines="2"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="15sp"
+                tools:text="Place Name" />
+
+            <!-- Rating Row -->
+            <LinearLayout
+                android:id="@+id/llRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- Rating Value - Bold 14px primaryText -->
+                <TextView
+                    android:id="@+id/tvRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/bold"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="14sp"
+                    tools:text="9,3" />
+
+                <!-- Rating Star - 12x12 -->
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:layout_marginStart="2dp"
+                    android:contentDescription="Rating"
+                    android:src="@drawable/ic_rating_star" />
+
+                <!-- Review Count - Light 14px fgWeak -->
+                <TextView
+                    android:id="@+id/tvReviewCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="@font/regular"
+                    android:textColor="@color/trp_fgWeak"
+                    android:textSize="14sp"
+                    tools:text="74.913 opinions" />
+
+            </LinearLayout>
+
+            <!-- Category Badge -->
+            <TextView
+                android:id="@+id/tvCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_confirmed_badge"
+                android:fontFamily="@font/medium"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="4dp"
+                android:textColor="@color/trp_confirmed_badge_text"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="Restaurant"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+        <!-- Action Buttons (right side, horizontal) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <!-- Change Time Button -->
+            <ImageButton
+                android:id="@+id/btnChangeTime"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Change Time"
+                android:padding="6dp"
+                android:src="@drawable/ic_change_time" />
+
+            <!-- Remove Step Button -->
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Remove Step"
+                android:padding="6dp"
+                android:src="@drawable/ic_remove_step" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

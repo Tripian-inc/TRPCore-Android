@@ -5,7 +5,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:paddingStart="@dimen/_10sdp"
     android:paddingTop="@dimen/_10sdp"
     android:paddingEnd="@dimen/_10sdp"
@@ -23,7 +23,7 @@
             android:layout_height="@dimen/_48sdp"
             android:layout_centerVertical="true"
             android:layout_marginStart="@dimen/_10sdp"
-            app:srcCompat="@color/black_soft" />
+            app:srcCompat="@color/trp_black_soft" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -39,7 +39,7 @@
                 style="@style/TextSubhead1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/black_soft"
+                android:textColor="@color/trp_black_soft"
                 tools:text="Finish Museum of Natural History" />
 
             <LinearLayout
@@ -65,7 +65,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" • "
-                    android:textColor="@color/black_soft"
+                    android:textColor="@color/trp_black_soft"
                     android:textSize="14sp" />
 
                 <com.tripian.trpcore.util.widget.TextView
@@ -73,7 +73,7 @@
                     style="@style/TextCaption1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/grey"
+                    android:textColor="@color/trp_grey"
                     android:textSize="14sp"
                     tools:text="Part of day" />
             </LinearLayout>
@@ -84,7 +84,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"
-                android:textColor="@color/light_grey"
+                android:textColor="@color/trp_light_grey"
                 android:textSize="14sp"
                 android:visibility="gone"
                 tools:text="Restaurants" />

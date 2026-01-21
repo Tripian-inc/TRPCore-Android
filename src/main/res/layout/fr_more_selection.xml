@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:orientation="vertical">
 
     <com.tripian.trpcore.util.widget.TextView
@@ -22,9 +22,9 @@
         style="@style/TextBody3"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:gravity="center_horizontal"
-        android:textColor="@color/body"
+        android:textColor="@color/trp_body"
         tools:text="15 Feb 2021 - 16 Feb 2021" />
 
     <com.tripian.trpcore.util.widget.TextView
@@ -32,14 +32,14 @@
         style="@style/TextBody1"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:gravity="center"
-        android:textColor="@color/body" />
+        android:textColor="@color/trp_body" />
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white">
+        android:background="@color/trp_white">
 
         <com.tripian.trpcore.util.widget.ImageView
             android:layout_width="@dimen/_120sdp"
@@ -54,14 +54,14 @@
         style="@style/TextBody1"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:gravity="center"
-        android:textColor="@color/body" />
+        android:textColor="@color/trp_body" />
 
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white">
+        android:background="@color/trp_white">
 
         <com.tripian.trpcore.util.widget.Button
             android:id="@+id/btnCancel"
@@ -73,6 +73,6 @@
             android:layout_marginEnd="@dimen/_24sdp"
             android:layout_marginBottom="@dimen/_16sdp"
             android:background="@drawable/selector_button_primary"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </FrameLayout>
 </LinearLayout>

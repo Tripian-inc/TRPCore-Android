@@ -21,6 +21,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_12sdp"
-        android:textColor="@color/head"
+        android:textColor="@color/trp_head"
         tools:text="CityName" />
 </LinearLayout>

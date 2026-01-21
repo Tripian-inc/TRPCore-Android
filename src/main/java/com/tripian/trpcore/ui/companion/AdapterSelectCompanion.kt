@@ -47,7 +47,7 @@ abstract class AdapterSelectCompanion(val context: Context, val items: ArrayList
                 cardView.setCardBackgroundColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.main_gray_sidebar
+                        R.color.trp_main_gray_sidebar
                     )
                 )
             } else {
@@ -56,7 +56,7 @@ abstract class AdapterSelectCompanion(val context: Context, val items: ArrayList
                 cardView.setCardBackgroundColor(
                     ContextCompat.getColor(
                         context,
-                        R.color.transparent
+                        R.color.trp_transparent
                     )
                 )
             }

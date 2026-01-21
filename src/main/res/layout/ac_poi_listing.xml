@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/trp_white"
+    android:orientation="vertical">
+
+    <!-- Fixed Header: Back Button + Title -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:paddingTop="@dimen/_10sdp">
+
+        <!-- Back Button -->
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/imBack"
+            android:layout_width="@dimen/_18sdp"
+            android:layout_height="@dimen/_18sdp"
+            android:layout_marginStart="@dimen/_12sdp"
+            android:layout_marginTop="@dimen/_10sdp"
+            android:clickable="true"
+            android:focusable="true"
+            app:srcCompat="@drawable/ic_back" />
+
+        <!-- Title -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTitle"
+                style="@style/TextHeader2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                tools:text="Places of Interest" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Fixed: Search Bar -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_8sdp">
+
+        <com.tripian.trpcore.util.widget.SearchBarView
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
+            android:layout_height="48dp" />
+
+        <ProgressBar
+            android:id="@+id/pbSearchProgress"
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="@dimen/_48sdp"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Separator between Search and Filters -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:background="@color/trp_lineWeak" />
+
+    <!-- Fixed: Filter & Sort Buttons Row -->
+    <LinearLayout
+        android:id="@+id/llFilterSort"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFilters"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_marginEnd="@dimen/_8sdp"
+            android:layout_weight="1"
+            android:minHeight="@dimen/_32sdp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:fontFamily="@font/medium"
+            android:textAllCaps="false"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            app:cornerRadius="@dimen/_16sdp"
+            app:icon="@drawable/ic_filter_activity"
+            app:iconGravity="textStart"
+            app:iconPadding="@dimen/_4sdp"
+            app:iconSize="@dimen/_14sdp"
+            app:iconTint="@color/trp_fgWeak"
+            app:strokeColor="@color/trp_lineWeak"
+            app:strokeWidth="1dp"
+            tools:text="Filters" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSortBy"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/_32sdp"
+            android:layout_weight="1"
+            android:minHeight="@dimen/_32sdp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:fontFamily="@font/medium"
+            android:textAllCaps="false"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            app:cornerRadius="@dimen/_16sdp"
+            app:icon="@drawable/ic_order_activity"
+            app:iconGravity="textStart"
+            app:iconPadding="@dimen/_4sdp"
+            app:iconSize="@dimen/_14sdp"
+            app:iconTint="@color/trp_text_primary"
+            app:strokeColor="@color/trp_lineWeak"
+            app:strokeWidth="1dp"
+            tools:text="Sort by" />
+    </LinearLayout>
+
+    <!-- Fixed: Result Count -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvResultCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:layout_marginBottom="@dimen/_8sdp"
+        android:fontFamily="@font/regular"
+        android:textColor="@color/trp_activity_count_label"
+        android:textSize="12sp"
+        tools:text="150 places found" />
+
+    <!-- Scrollable: POI List Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPOIs"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="@dimen/_16sdp" />
+
+        <!-- Loading Progress -->
+        <ProgressBar
+            android:id="@+id/pbLoading"
+            android:layout_width="@dimen/_48sdp"
+            android:layout_height="@dimen/_48sdp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <!-- Empty State -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvEmpty"
+            style="@style/TextBody1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="@dimen/_24sdp"
+            android:text="No places found"
+            android:textColor="@color/trp_grey_30"
+            android:visibility="gone" />
+
+        <!-- Error State -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvError"
+            style="@style/TextBody1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="@dimen/_24sdp"
+            android:textColor="@color/trp_error"
+            android:visibility="gone"
+            tools:text="An error occurred" />
+    </FrameLayout>
+
+</LinearLayout>

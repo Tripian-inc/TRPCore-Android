@@ -8,14 +8,14 @@
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:elevation="0dp">
 
         <FrameLayout
             android:id="@+id/collapsingToolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             app:layout_scrollFlags="scroll|enterAlwaysCollapsed">
 
             <com.tripian.trpcore.util.widget.ImageView
@@ -40,7 +40,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:includeFontPadding="false"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
             </LinearLayout>
         </FrameLayout>
     </com.google.android.material.appbar.AppBarLayout>
@@ -60,7 +60,7 @@
                 android:id="@+id/rlWarning"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/blue_soft">
+                android:background="@color/trp_blue_soft">
 
                 <com.tripian.trpcore.util.widget.TextView
                     style="@style/TextCaption1"
@@ -69,7 +69,7 @@
                     android:layout_centerVertical="true"
                     android:layout_toStartOf="@+id/imCloseWarning"
                     android:padding="@dimen/_12sdp"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:id="@+id/imCloseWarning"

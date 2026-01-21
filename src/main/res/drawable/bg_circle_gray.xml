@@ -4,7 +4,7 @@
 
     <stroke
         android:width="0.5dp"
-        android:color="@color/extra_main" />
+        android:color="@color/trp_extra_main" />
 
-    <solid android:color="@color/extra_sub" />
+    <solid android:color="@color/trp_extra_sub" />
 </shape>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Activity Sort Bottom Sheet -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_white"
+    android:paddingBottom="32dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_handle_bar"/>
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingHorizontal="16dp">
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            android:fontFamily="@font/semibold"
+            tools:text="Sort by" />
+
+        <ImageView
+            android:id="@+id/ivClose"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close"
+            app:tint="@color/trp_text_primary" />
+
+    </RelativeLayout>
+
+    <!-- Sort Options -->
+    <RadioGroup
+        android:id="@+id/rgSortOptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical">
+
+        <!-- Popularity -->
+        <RadioButton
+            android:id="@+id/rbPopularity"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="16dp"
+            android:button="@null"
+            android:drawableEnd="@drawable/selector_radio_button"
+            android:fontFamily="@font/regular"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            tools:text="Popularity" />
+
+        <!-- Rating -->
+        <RadioButton
+            android:id="@+id/rbRating"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="16dp"
+            android:button="@null"
+            android:drawableEnd="@drawable/selector_radio_button"
+            android:fontFamily="@font/regular"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            tools:text="Rating" />
+
+        <!-- Price: Low to High -->
+        <RadioButton
+            android:id="@+id/rbPriceLowToHigh"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="16dp"
+            android:button="@null"
+            android:drawableEnd="@drawable/selector_radio_button"
+            android:fontFamily="@font/regular"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            tools:text="Price: Low to High" />
+
+        <!-- Duration: Short to Long -->
+        <RadioButton
+            android:id="@+id/rbDurationShortToLong"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="16dp"
+            android:button="@null"
+            android:drawableEnd="@drawable/selector_radio_button"
+            android:fontFamily="@font/regular"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            tools:text="Duration: Short to Long" />
+
+        <!-- Duration: Long to Short -->
+        <RadioButton
+            android:id="@+id/rbDurationLongToShort"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="16dp"
+            android:button="@null"
+            android:drawableEnd="@drawable/selector_radio_button"
+            android:fontFamily="@font/regular"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            tools:text="Duration: Long to Short" />
+
+    </RadioGroup>
+
+</LinearLayout>

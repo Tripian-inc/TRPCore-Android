@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/black_transparent">
+    android:background="@color/trp_black_transparent">
 
     <com.tripian.trpcore.util.widget.CardView
         android:layout_width="match_parent"
@@ -11,7 +11,7 @@
         android:layout_gravity="center"
         android:layout_marginStart="@dimen/_16sdp"
         android:layout_marginEnd="@dimen/_16sdp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:cardCornerRadius="8dp"
         app:cardElevation="8dp">
 
@@ -33,7 +33,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:textColor="@color/black_soft" />
+                    android:textColor="@color/trp_black_soft" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:id="@+id/imClose"
@@ -49,7 +49,7 @@
                 android:id="@+id/rvSteps"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@color/white" />
+                android:background="@color/trp_white" />
 
             <ProgressBar
                 android:id="@+id/pbProgress"
@@ -59,8 +59,8 @@
                 android:layout_gravity="center"
                 android:layout_marginTop="@dimen/_32sdp"
                 android:layout_marginBottom="@dimen/_32sdp"
-                android:background="@color/white"
-                android:progressBackgroundTint="@color/white" />
+                android:background="@color/trp_white"
+                android:progressBackgroundTint="@color/trp_white" />
         </LinearLayout>
     </com.tripian.trpcore.util.widget.CardView>
 </FrameLayout>

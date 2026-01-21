@@ -44,7 +44,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="June" />
 
                 <com.tripian.trpcore.util.widget.TextView
@@ -53,14 +53,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_2sdp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="23" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     android:text="," />
 
                 <com.tripian.trpcore.util.widget.TextView
@@ -69,7 +69,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_4sdp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="2020" />
             </LinearLayout>
 
@@ -78,7 +78,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
-                android:textColor="@color/body" />
+                android:textColor="@color/trp_body" />
 
             <LinearLayout
                 android:id="@+id/llArrivalTime"
@@ -96,7 +96,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="09:00" />
             </LinearLayout>
         </LinearLayout>
@@ -132,7 +132,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="June" />
 
                 <com.tripian.trpcore.util.widget.TextView
@@ -141,14 +141,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_2sdp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="23" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     android:text="," />
 
                 <com.tripian.trpcore.util.widget.TextView
@@ -157,7 +157,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_4sdp"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="2020" />
             </LinearLayout>
 
@@ -166,7 +166,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="-"
-                android:textColor="@color/body" />
+                android:textColor="@color/trp_body" />
 
             <LinearLayout
                 android:id="@+id/llDepartureTime"
@@ -184,7 +184,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/body"
+                    android:textColor="@color/trp_body"
                     tools:text="09:00" />
             </LinearLayout>
         </LinearLayout>
@@ -214,7 +214,7 @@
                 android:paddingTop="@dimen/_12sdp"
                 android:paddingEnd="@dimen/_8sdp"
                 android:paddingBottom="@dimen/_12sdp"
-                android:textColor="@color/body"
+                android:textColor="@color/trp_body"
                 tools:text="1 Adult, No children" />
         </LinearLayout>
 
@@ -236,7 +236,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/extra_main" />
+                    android:textColor="@color/trp_extra_main" />
 
                 <LinearLayout
                     android:id="@+id/llCompanion"
@@ -257,7 +257,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/_8sdp"
-                        android:textColor="@color/body"
+                        android:textColor="@color/trp_body"
                         tools:text="1 Adult, No children" />
                 </LinearLayout>
             </LinearLayout>
@@ -291,7 +291,7 @@
                     style="@style/TextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/extra_main" />
+                    android:textColor="@color/trp_extra_main" />
 
                 <LinearLayout
                     android:id="@+id/llHotel"
@@ -315,7 +315,7 @@
                         android:layout_marginStart="@dimen/_8sdp"
                         android:maxLines="2"
                         android:ellipsize="end"
-                        android:textColor="@color/body"
+                        android:textColor="@color/trp_body"
                         tools:text="1 Adult, No children  1 Adult, No children 1 Adult, No children 1 Adult, No children" />
                 </LinearLayout>
             </LinearLayout>

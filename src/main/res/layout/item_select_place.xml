@@ -4,7 +4,7 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="@dimen/_50sdp"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:minHeight="@dimen/_50sdp"
     android:paddingStart="@dimen/_10sdp"
     android:paddingEnd="@dimen/_10sdp">
@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/body" />
+            android:textColor="@color/trp_body" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvAddress"
@@ -38,7 +38,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:textColor="@color/body" />
+            android:textColor="@color/trp_body" />
     </LinearLayout>
 
     <com.tripian.trpcore.util.widget.ImageView

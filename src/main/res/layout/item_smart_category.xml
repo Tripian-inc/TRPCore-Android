@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Smart Category Grid Item (96dp height) -->
+<!-- iOS Reference: CategorySelection grid items -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/llContent"
+        android:layout_width="match_parent"
+        android:layout_height="96dp"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@drawable/bg_category_item_selector"
+        android:layout_margin="4dp">
+
+        <ImageView
+            android:id="@+id/ivIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:tint="@color/trp_text_primary"
+            tools:src="@drawable/ic_local_experience"/>
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:fontFamily="@font/regular"
+            android:textSize="12sp"
+            android:textColor="@color/trp_text_primary"
+            android:maxLines="2"
+            android:ellipsize="end"
+            tools:text="Guided Tours"/>
+
+    </LinearLayout>
+
+</FrameLayout>

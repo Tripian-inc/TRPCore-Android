@@ -1,69 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-<!--    <color name="purple">#571BCE</color>-->
-<!--    <color name="pink">#FF0078</color>-->
-    <color name="primary">#e9314a</color>
-    <color name="secondary">#FF7171</color>
-    <color name="gold">#FFAA02</color>
-    <color name="gold_transparent">#AAFFAA02</color>
-    <color name="black">#FF000000</color>
-    <color name="black_soft">#222222</color>
-    <color name="text_primary">#434B55</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="light_Red">#FFEEF0</color>
+    <!-- Primary Colors -->
+    <color name="trp_primary">#EA0558</color>
+    <color name="trp_secondary">#FF7171</color>
+    <color name="trp_gold">#FFAA02</color>
+    <color name="trp_gold_transparent">#AAFFAA02</color>
+    <color name="trp_black">#FF000000</color>
+    <color name="trp_black_soft">#222222</color>
+    <color name="trp_text_primary">#333333</color>
+    <color name="trp_white">#FFFFFFFF</color>
+    <color name="trp_light_Red">#FFEEF0</color>
 
-    <color name="transparent">#00FFFFFF</color>
-    <color name="black_transparent">#95000000</color>
+    <color name="trp_transparent">#00FFFFFF</color>
+    <color name="trp_black_transparent">#95000000</color>
 
-    <color name="head">#0B0A1A</color>
-    <color name="body">#8C8E9A</color>
-    <color name="body_dark">#7B7D87</color>
-<!--    <color name="main_violet">@color/purple</color>-->
-    <color name="shade_violet">#DACFF0</color>
-    <color name="extra_main">#C2C4D1</color>
-    <color name="extra_shadow">#E3E4EC</color>
-    <color name="extra_sub">#F7F8FC</color>
+    <color name="trp_head">#0B0A1A</color>
+    <color name="trp_body">#8C8E9A</color>
+    <color name="trp_body_dark">#7B7D87</color>
+    <color name="trp_shade_violet">#DACFF0</color>
+    <color name="trp_extra_main">#C2C4D1</color>
+    <color name="trp_extra_shadow">#E3E4EC</color>
+    <color name="trp_extra_sub">#F7F8FC</color>
 
-    <color name="pink_soft">#f0cfde</color>
-    <color name="blue">#50a4d7</color>
-    <color name="blue_soft">#e0f4fd</color>
-    <color name="ultra_light_grey_x">#fbfbfb</color>
-    <color name="ultra_light_grey">#f0f0f0</color>
-    <color name="light_grey">#c8c7cc</color>
-    <color name="grey">#9a9a9a</color>
-    <color name="dark_grey">#565a5c</color>
-    <color name="darker_grey">#3e4042</color>
-    <color name="green">#42a851</color>
+    <color name="trp_pink_soft">#f0cfde</color>
+    <color name="trp_pink700">#C2033B</color>
+    <color name="trp_blue">#50a4d7</color>
+    <color name="trp_blue_soft">#e0f4fd</color>
+    <color name="trp_ultra_light_grey_x">#fbfbfb</color>
+    <color name="trp_ultra_light_grey">#f0f0f0</color>
+    <color name="trp_light_grey">#c8c7cc</color>
+    <color name="trp_grey">#9a9a9a</color>
+    <color name="trp_dark_grey">#565a5c</color>
+    <color name="trp_darker_grey">#3e4042</color>
+    <color name="trp_green">#42a851</color>
 
-    <color name="black87">#de000000</color>
-    <color name="black56">#8f000000</color>
-    <color name="black12">#1e000000</color>
-    <color name="black8">#14000000</color>
+    <color name="trp_black87">#de000000</color>
+    <color name="trp_black56">#8f000000</color>
+    <color name="trp_black12">#1e000000</color>
+    <color name="trp_black8">#14000000</color>
 
-    <color name="success_message">#8cb840</color>
-    <color name="warning_message">#e7bc01</color>
-    <color name="error_message">#e54e53</color>
-    <color name="info_message">#2dbcff</color>
+    <color name="trp_success_message">#8cb840</color>
+    <color name="trp_warning_message">#e7bc01</color>
+    <color name="trp_error_message">#e54e53</color>
+    <color name="trp_info_message">#2dbcff</color>
 
-    <color name="blue_500">#2196F3</color>
-    <color name="blue_dark">#5086ec</color>
+    <color name="trp_blue_500">#2196F3</color>
+    <color name="trp_blue_dark">#5086ec</color>
 
-    <color name="yellow">#ffd600</color>
+    <color name="trp_yellow">#ffd600</color>
 
-    <color name="colorPrimary">#e9314a</color>
-    <color name="colorPrimaryDark">#212121</color>
-    <color name="colorAccent">@color/black_soft</color>
+    <color name="trp_colorPrimary">#EA0558</color>
+    <color name="trp_colorPrimaryDark">#212121</color>
+    <color name="trp_colorAccent">@color/trp_black_soft</color>
 
-    <color name="additional_orange">#F47104</color>
-    <color name="additional_red">#F41804</color>
-    <color name="additional_yellow_100">#FBD375</color>
-    <color name="additional_blue_100">#0C78C0</color>
-    <color name="main_dark">#242323</color>
-    <color name="main_gray_bg">#F2F2F2</color>
-    <color name="main_gray_sidebar">#EBEBEB</color>
-    <color name="stroke_grey_10">#EBEAEA</color>
-    <color name="stroke_grey_20">#D7D6D6</color>
-    <color name="text_dark_48">#7A242323</color>
-    <color name="text_dark_64">#A3242323</color>
-    <color name="text_dark_80">#CC242323</color>
+    <color name="trp_additional_orange">#F47104</color>
+    <color name="trp_additional_red">#F41804</color>
+    <color name="trp_additional_yellow_100">#FBD375</color>
+    <color name="trp_additional_blue_100">#0C78C0</color>
+    <color name="trp_main_dark">#242323</color>
+    <color name="trp_main_gray_bg">#F2F2F2</color>
+    <color name="trp_main_gray_sidebar">#EBEBEB</color>
+    <color name="trp_stroke_grey_10">#EBEAEA</color>
+    <color name="trp_stroke_grey_20">#D7D6D6</color>
+    <color name="trp_text_dark_48">#7A242323</color>
+    <color name="trp_text_dark_64">#A3242323</color>
+    <color name="trp_text_dark_80">#CC242323</color>
+
+    <!-- Timeline Colors - Design Specs -->
+    <color name="trp_timeline_primary">#EA0558</color>
+    <color name="trp_timeline_secondary">#FF7A8F</color>
+    <color name="trp_timeline_background">#F8F9FA</color>
+    <color name="trp_timeline_surface">#FFFFFF</color>
+    <color name="trp_timeline_text_secondary">#6B7280</color>
+    <color name="trp_timeline_text_tertiary">#9CA3AF</color>
+    <color name="trp_timeline_divider">#E5E7EB</color>
+    <color name="trp_timeline_success">#10B981</color>
+    <color name="trp_timeline_warning">#F59E0B</color>
+    <color name="trp_timeline_error">#EF4444</color>
+    <color name="trp_timeline_info">#3B82F6</color>
+    <color name="trp_timeline_rating">#FBBF24</color>
+    <color name="trp_timeline_card_shadow">#1A000000</color>
+    <color name="trp_timeline_badge_confirmed">#10B981</color>
+    <color name="trp_timeline_badge_pending">#F59E0B</color>
+    <color name="trp_timeline_fab_color">#EA0558</color>
+    <!-- Legacy color mappings for compatibility -->
+    <color name="trp_timeline_title_color">@color/trp_text_primary</color>
+    <color name="trp_timeline_subtitle_color">@color/trp_timeline_text_secondary</color>
+    <color name="trp_timeline_accent">@color/trp_timeline_primary</color>
+    <color name="trp_timeline_rating_color">@color/trp_timeline_rating</color>
+    <color name="trp_timeline_section_header_bg">@color/trp_timeline_surface</color>
+    <color name="trp_timeline_recommendations_header_bg">#F5F7FA</color>
+    <color name="trp_timeline_day_filter_selected">@color/trp_timeline_primary</color>
+    <color name="trp_timeline_day_filter_unselected">#F0F0F0</color>
+    <color name="trp_timeline_day_filter_text_selected">#FFFFFF</color>
+    <color name="trp_timeline_day_filter_text_unselected">@color/trp_text_primary</color>
+    <color name="trp_timeline_price_color">@color/trp_text_primary</color>
+    <color name="trp_timeline_success_color">@color/trp_timeline_success</color>
+
+    <!-- AddPlan Flow Colors -->
+    <color name="trp_bgCloudy">#F7F7F7</color>
+    <color name="trp_bgPink">#FFEAF1</color>
+    <color name="trp_lineWeak">#CFCFCF</color>
+    <color name="trp_fgWeak">#666666</color>
+    <color name="trp_neutral100">#F5F5F5</color>
+    <color name="trp_neutral200">#F5F4F5</color>
+    <color name="trp_neutral300">#CFCFCF</color>
+
+    <!-- Button Colors -->
+    <color name="trp_btn_continue_bg">@color/trp_primary</color>
+    <color name="trp_btn_continue_bg_disabled">#CCCCCC</color>
+    <color name="trp_neutral500">#9E9E9E</color>
+    <color name="trp_addplan_category_selected_bg">#FFEAF1</color>
+    <color name="trp_addplan_category_selected_border">#EA0558</color>
+    <color name="trp_bgDisabled">#CCCCCC</color>
+    <color name="trp_borderActive">#8C8C8C</color>
+
+    <!-- Activity Listing Colors -->
+    <color name="trp_rating_yellow">#FBBF24</color>
+    <color name="trp_text_secondary">#6B7280</color>
+    <color name="trp_grey_10">#E5E7EB</color>
+    <color name="trp_grey_20">#D1D5DB</color>
+    <color name="trp_grey_30">#9CA3AF</color>
+    <color name="trp_error">#EF4444</color>
+
+    <!-- Activity Card Colors -->
+    <color name="trp_activity_title">#333333</color>
+    <color name="trp_activity_rating_count">#666666</color>
+    <color name="trp_activity_count_label">#999999</color>
+
+    <!-- Category Selection Colors -->
+    <color name="trp_category_icon_bg_selected">#FFEAF1</color>
+    <color name="trp_category_icon_bg_unselected">#F5F5F5</color>
+    <color name="trp_category_text_selected">@color/trp_primary</color>
+    <color name="trp_category_text_unselected">#666666</color>
+
+    <!-- Booked Activity Badge Colors -->
+    <color name="trp_confirmed_badge_bg">#DAFAEB</color>
+    <color name="trp_confirmed_badge_text">#075E45</color>
+    <color name="trp_advantage">#00825B</color>
 </resources>

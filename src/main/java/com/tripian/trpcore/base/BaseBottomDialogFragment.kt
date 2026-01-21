@@ -92,6 +92,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
                     BottomSheetBehavior.from(bottomSheet)
                 bottomSheetBehavior.isDraggable = isDragEnable()
                 bottomSheetBehavior.skipCollapsed = true
+                bottomSheetBehavior.isFitToContents = true
                 if (isFullscreen()) {
                     setupFullHeight(it)
                 }
@@ -139,7 +140,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     }
 
     override fun getTheme(): Int {
-        return R.style.AppTheme_BottomSheetDialog
+        return R.style.TrpAppTheme_BottomSheetDialog
     }
 
     private fun hideKeyboard() {

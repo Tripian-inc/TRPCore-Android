@@ -3,5 +3,5 @@
     android:innerRadius="0dp"
     android:shape="oval"
     android:useLevel="false">
-    <solid android:color="@color/primary" />
+    <solid android:color="@color/trp_text_primary" />
 </shape>

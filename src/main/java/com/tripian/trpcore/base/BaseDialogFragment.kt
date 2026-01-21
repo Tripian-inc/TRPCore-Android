@@ -53,7 +53,7 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
     }
 
     override fun getTheme(): Int {
-        return R.style.AppTheme_Transparent
+        return R.style.TrpAppTheme_Transparent
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {

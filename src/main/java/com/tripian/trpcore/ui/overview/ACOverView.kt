@@ -40,14 +40,14 @@ class ACOverView : BaseActivity<AcOverviewBinding, ACOverViewVM>() {
 
             override fun onTabUnselected(p0: TabLayout.Tab) {
                 p0.customView?.findViewById<TextView>(R.id.tvHeader)
-                    ?.setTextColor(ContextCompat.getColor(this@ACOverView, R.color.body))
+                    ?.setTextColor(ContextCompat.getColor(this@ACOverView, R.color.trp_body))
             }
 
             override fun onTabSelected(p0: TabLayout.Tab) {
                 viewModel.onTabSelected(p0.position)
 
                 p0.customView?.findViewById<TextView>(R.id.tvHeader)
-                    ?.setTextColor(ContextCompat.getColor(this@ACOverView, R.color.head))
+                    ?.setTextColor(ContextCompat.getColor(this@ACOverView, R.color.trp_head))
             }
         })
     }

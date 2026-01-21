@@ -15,8 +15,11 @@ import com.tripian.trpcore.repository.Service
 import com.tripian.trpcore.repository.StepRepository
 import com.tripian.trpcore.repository.TripModelRepository
 import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.repository.TimelineRepository
+import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.repository.TripianUserRepository
 import com.tripian.trpcore.repository.UserReactionRepository
+import com.tripian.one.TRPRest
 import com.tripian.trpcore.repository.authorization.AwsAuthorization
 import com.tripian.trpcore.util.Strings
 import dagger.Module
@@ -110,5 +113,17 @@ class RepositoryModule {
         pref: Preferences
     ): MiscRepository {
         return MiscRepository(app = app, service = service, preferences = pref)
+    }
+
+    @Provides
+    @Singleton
+    fun providesTimelineRepository(trpRest: TRPRest): TimelineRepository {
+        return TimelineRepository(trpRest)
+    }
+
+    @Provides
+    @Singleton
+    fun providesTourRepository(trpRest: TRPRest): TourRepository {
+        return TourRepository(trpRest)
     }
 }

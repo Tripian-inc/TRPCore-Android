@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <!-- Card Background - bgCloudy, no border -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/trp_bgCloudy"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="32dp">
+
+            <!-- Title - No Plans Yet -->
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/semibold"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="18sp"
+                tools:text="No Plans Yet" />
+
+            <!-- Description -->
+            <TextView
+                android:id="@+id/tvMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/regular"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/trp_fgWeak"
+                android:textSize="14sp"
+                tools:text="Add must see attractions, restaurants and cafes or block time to rest and recharge." />
+
+            <!-- Add Plans Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddPlans"
+                style="@style/TrpButtonPrimary"
+                android:layout_width="wrap_content"
+                android:layout_marginTop="20dp"
+                android:paddingHorizontal="32dp"
+                tools:text="Add Plans" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>

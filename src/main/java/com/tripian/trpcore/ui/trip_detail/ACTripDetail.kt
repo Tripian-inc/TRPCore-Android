@@ -266,7 +266,7 @@ class ACTripDetail : BaseActivity<AcTripDetailBinding, ACTripDetailVM>() {
                         val str = getPriceSpannableString(
                             color = ContextCompat.getColor(
                                 this@ACTripDetail,
-                                R.color.head
+                                R.color.trp_head
                             ),
                             price = price
                         )

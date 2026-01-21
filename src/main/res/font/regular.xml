@@ -12,7 +12,7 @@
     <!--    900    Extra Black, Fat, Poster or Ultra Black-->
 
     <font
-        app:font="@font/opensans_regular"
+        app:font="@font/montserrat_regular"
         app:fontStyle="normal"
         app:fontWeight="400" />
 </font-family>

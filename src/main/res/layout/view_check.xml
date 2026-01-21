@@ -18,5 +18,5 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_4sdp"
         android:layout_marginEnd="@dimen/_4sdp"
-        android:textColor="@color/body" />
+        android:textColor="@color/trp_body" />
 </LinearLayout>

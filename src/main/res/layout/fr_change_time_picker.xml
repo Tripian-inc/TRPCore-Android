@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:orientation="vertical">
 
     <com.tripian.trpcore.util.widget.TextView
@@ -18,7 +18,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:orientation="horizontal">
 
         <NumberPicker
@@ -27,11 +27,11 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/_5sdp"
             android:layout_weight="1"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:descendantFocusability="blocksDescendants"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:theme="@style/DefaultNumberPickerTheme" />
+            android:theme="@style/TrpDefaultNumberPickerTheme" />
 
         <NumberPicker
             android:id="@+id/npEndTimes"
@@ -39,17 +39,17 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/_5sdp"
             android:layout_weight="1"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:descendantFocusability="blocksDescendants"
             android:focusable="true"
             android:focusableInTouchMode="true"
-            android:theme="@style/DefaultNumberPickerTheme" />
+            android:theme="@style/TrpDefaultNumberPickerTheme" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         android:orientation="vertical"
         android:paddingStart="@dimen/_16sdp"
         android:paddingTop="@dimen/_16sdp"
@@ -62,8 +62,8 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/_16sdp"
             android:background="@drawable/selector_button_primary"
-            android:text="@string/apply"
-            android:textColor="@color/white" />
+            tools:text="Apply"
+            android:textColor="@color/trp_white" />
 
         <LinearLayout
             android:orientation="horizontal"
@@ -81,7 +81,7 @@
                 android:id="@+id/tvEstimatedText"
                 style="@style/TextBody2"
                 android:layout_marginStart="@dimen/_5sdp"
-                android:textColor="@color/grey"
+                android:textColor="@color/trp_grey"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -89,7 +89,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
-                android:textColor="@color/grey"
+                android:textColor="@color/trp_grey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -98,7 +98,7 @@
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvEstimated"
                 style="@style/TextBody2"
-                android:textColor="@color/grey"
+                android:textColor="@color/trp_grey"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"

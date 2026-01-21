@@ -113,7 +113,10 @@ interface Service {
         search: String? = null,
         cityId: Int? = null,
         mustTryIds: Int? = null,
-        isAutoPagination: Boolean = false
+        isAutoPagination: Boolean = false,
+        sort: String? = null,
+        order: String? = null,
+        price: String? = null
     ): Observable<PoisResponse>
 
     fun getPoiInfo(poiId: String): Observable<PoiResponse>

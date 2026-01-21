@@ -6,9 +6,9 @@
 
     <gradient
         android:angle="270"
-        android:centerColor="@color/ultra_light_grey_x"
-        android:endColor="@color/white"
-        android:startColor="@color/ultra_light_grey" />
+        android:centerColor="@color/trp_ultra_light_grey_x"
+        android:endColor="@color/trp_white"
+        android:startColor="@color/trp_ultra_light_grey" />
 
     <corners
         android:topLeftRadius="@dimen/_24sdp"

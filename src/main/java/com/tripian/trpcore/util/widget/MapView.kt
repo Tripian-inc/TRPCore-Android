@@ -45,10 +45,17 @@ import com.mapbox.maps.plugin.LocationPuck2D
 import com.mapbox.maps.plugin.animation.MapAnimationOptions.Companion.mapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.animation.flyTo
+import com.mapbox.maps.plugin.attribution.attribution
 import com.mapbox.maps.plugin.compass.compass
+import com.mapbox.maps.plugin.gestures.OnMoveListener
+import com.mapbox.maps.plugin.gestures.OnScaleListener
 import com.mapbox.maps.plugin.gestures.gestures
+import com.mapbox.android.gestures.MoveGestureDetector
+import com.mapbox.android.gestures.StandardScaleGestureDetector
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
+import com.mapbox.maps.plugin.logo.logo
+import com.mapbox.maps.plugin.scalebar.scalebar
 import com.mapbox.maps.plugin.viewport.viewport
 import com.mapbox.maps.toCameraOptions
 import com.mapbox.turf.TurfConstants
@@ -75,6 +82,7 @@ class MapView : MapView {
     private var mapLoadListener: (() -> Unit)? = null
     private var mapZoomLevelListener: ((Double) -> Unit)? = null
     private var mapItemClickListener: ((MapStep) -> Unit)? = null
+    private var mapInteractionListener: (() -> Unit)? = null
 
     private var mapItems = ArrayList<MapStep>()
 
@@ -102,7 +110,11 @@ class MapView : MapView {
     private fun init() {
         map = mapboxMap
 
+        // Hide map UI controls
         compass.visibility = false
+        scalebar.enabled = false
+        attribution.enabled = false
+        logo.enabled = false
 
         map?.subscribeCameraChanged {
             mapZoomLevelListener?.invoke(it.cameraState.zoom)
@@ -146,6 +158,43 @@ class MapView : MapView {
         }
 
         setOnMapClickListener()
+        setupGestureListeners()
+    }
+
+    /**
+     * Setup gesture listeners for map interactions (pan, zoom).
+     * These are used to hide the bottom item list when user interacts with the map.
+     */
+    private fun setupGestureListeners() {
+        // Pan/Move listener
+        gestures.addOnMoveListener(object : OnMoveListener {
+            override fun onMoveBegin(detector: MoveGestureDetector) {
+                mapInteractionListener?.invoke()
+            }
+
+            override fun onMove(detector: MoveGestureDetector): Boolean {
+                return false
+            }
+
+            override fun onMoveEnd(detector: MoveGestureDetector) {
+                // No action needed
+            }
+        })
+
+        // Scale/Zoom listener
+        gestures.addOnScaleListener(object : OnScaleListener {
+            override fun onScaleBegin(detector: StandardScaleGestureDetector) {
+                mapInteractionListener?.invoke()
+            }
+
+            override fun onScale(detector: StandardScaleGestureDetector) {
+                // No action needed
+            }
+
+            override fun onScaleEnd(detector: StandardScaleGestureDetector) {
+                // No action needed
+            }
+        })
     }
 
     private fun setOnMapClickListener() {
@@ -242,6 +291,10 @@ class MapView : MapView {
 
                     if (item.markerIcon != -1) {
                         view.iconView.setImageResource(item.markerIcon)
+                        view.iconView.visibility = VISIBLE
+                    } else {
+                        // Hide icon view completely when no icon is set
+                        view.iconView.visibility = GONE
                     }
 
                     if (item.isOffer) {
@@ -268,20 +321,24 @@ class MapView : MapView {
                     style?.addImage(uniq, bitmap)
 
                     if (style?.getLayer(uniq) == null) {
+                        val stretchLayer = symbolLayer(uniq, uniq) {
+                            iconImage(uniq)
+                            iconIgnorePlacement(true)
+                            iconAllowOverlap(true)
+                        }
+
                         if (TextUtils.equals(item.group, "step")) {
-                            val stretchLayer = symbolLayer(uniq, uniq) {
-                                iconImage(uniq)
-                                iconIgnorePlacement(true)
-                                iconAllowOverlap(true)
-                            }
+                            // Step items go above route layer
                             style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                         } else {
-                            val stretchLayer = symbolLayer(uniq, uniq) {
-                                iconImage(uniq)
-                                iconIgnorePlacement(true)
-                                iconAllowOverlap(true)
+                            // Non-step items: check if there's a step layer to add below
+                            val firstStepItem = mapItems.firstOrNull { it.group == "step" }
+                            if (firstStepItem != null) {
+                                style?.addLayerBelow(stretchLayer, "step" + firstStepItem.poiId)
+                            } else {
+                                // No step items, just add above route layer
+                                style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                             }
-                            style?.addLayerBelow(stretchLayer, "step" + mapItems[0].poiId)
                         }
                     }
                 }
@@ -306,14 +363,14 @@ class MapView : MapView {
             }
 
             if (latLngList.size > 1) {
-
+                // Use ALL coordinates to fit all points in view
                 val cameraOptionsForCoordinates = map?.awaitCameraForCoordinates(
-                    coordinates = listOf(latLngList.first(), latLngList.last()),
+                    coordinates = latLngList,
                     camera = cameraOptions {
                         zoom(13.0)
                     },
-                    coordinatesPadding = EdgeInsets(50.0, 50.0, 50.0, 50.0),
-                    maxZoom = 13.0,
+                    coordinatesPadding = EdgeInsets(100.0, 100.0, 100.0, 100.0),
+                    maxZoom = 15.0,
                     offset = null
                 )
                 cameraOptionsForCoordinates?.let {
@@ -468,6 +525,14 @@ class MapView : MapView {
         mapItemClickListener = task
     }
 
+    /**
+     * Set listener for map interactions (pan, zoom, etc.).
+     * Called when user begins interacting with the map (not clicking on annotations).
+     */
+    fun setOnMapInteractionListener(listener: () -> Unit) {
+        mapInteractionListener = listener
+    }
+
     @SuppressLint("MissingPermission")
     fun enableLocation() {
         if (PermissionsManager.areLocationPermissionsGranted(context)) {
@@ -527,6 +592,10 @@ class MapView : MapView {
 
         if (item.markerIcon != -1) {
             view.iconView.setImageResource(item.markerIcon)
+            view.iconView.visibility = VISIBLE
+        } else {
+            // Hide icon view completely when no icon is set
+            view.iconView.visibility = GONE
         }
 
         view.iconViewBackground.visibility = GONE

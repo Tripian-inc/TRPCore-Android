@@ -2,7 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:orientation="vertical">
 
     <com.tripian.trpcore.util.widget.TextView
@@ -19,14 +19,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/tvTitle"
-        android:background="@color/white" />
+        android:background="@color/trp_white" />
 
     <FrameLayout
         android:id="@+id/flBottom"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/rvDays"
-        android:background="@color/white">
+        android:background="@color/trp_white">
 
         <com.tripian.trpcore.util.widget.Button
             android:id="@+id/btnCancel"
@@ -38,6 +38,6 @@
             android:layout_marginEnd="@dimen/_24sdp"
             android:layout_marginBottom="@dimen/_16sdp"
             android:background="@drawable/selector_button_primary"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </FrameLayout>
 </RelativeLayout>

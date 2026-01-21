@@ -103,6 +103,54 @@ class PoiRepository @Inject constructor(val service: Service) {
         }
     }
 
+    /**
+     * Search POIs with filter and sort options
+     *
+     * @param cityId City ID for POI search
+     * @param search Optional search query
+     * @param categoryIds Optional list of category IDs to filter by
+     * @param page Page number for pagination (1-indexed)
+     * @param limit Number of items per page
+     * @param sort Sorting field (score, rating, price, duration)
+     * @param order Sort order (asc, desc)
+     * @param minPrice Minimum price filter
+     * @param maxPrice Maximum price filter
+     */
+    fun searchWithFilters(
+        cityId: Int,
+        search: String? = null,
+        categoryIds: List<Int>? = null,
+        page: Int = 1,
+        limit: Int = 30,
+        sort: String? = null,
+        order: String? = null,
+        minPrice: Int? = null,
+        maxPrice: Int? = null
+    ): Observable<PoisResponse> {
+        // Format price parameter as "min,max" if any price filter is set
+        val priceParam = if (minPrice != null || maxPrice != null) {
+            "${minPrice ?: 0},${maxPrice ?: 1500}"
+        } else {
+            null
+        }
+
+        return service.getPoi(
+            cityId = cityId,
+            search = search,
+            categoryIds = categoryIds?.toTypedArray(),
+            page = page,
+            limit = limit,
+            sort = sort,
+            order = order,
+            price = priceParam
+        ).map {
+            it.data?.forEach { poi ->
+                poiIds[poi.id] = poi
+            }
+            it
+        }
+    }
+
     fun getPoiCategories(): Observable<PoiCategoriesResponse> {
         return if (poiCategories != null) {
             Observable.just(PoiCategoriesResponse().apply {

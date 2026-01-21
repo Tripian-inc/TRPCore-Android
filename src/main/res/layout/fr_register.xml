@@ -195,5 +195,5 @@
         android:layout_marginBottom="@dimen/_24sdp"
         android:background="@drawable/selector_button_primary"
         android:textAllCaps="false"
-        android:textColor="@color/white" />
+        android:textColor="@color/trp_white" />
 </RelativeLayout>

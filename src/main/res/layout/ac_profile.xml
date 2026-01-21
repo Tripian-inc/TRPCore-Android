@@ -70,7 +70,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 tools:text="USER"
-                android:textColor="@color/black" />
+                android:textColor="@color/trp_black" />
 
             <RelativeLayout
                 android:id="@+id/rlPersonalInformation"
@@ -95,7 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:layout_toEndOf="@+id/imPersonalInformation"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -128,7 +128,7 @@
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
                     android:layout_toEndOf="@+id/imCompanion"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -145,7 +145,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_16sdp"
-                android:textColor="@color/black" />
+                android:textColor="@color/trp_black" />
 
             <RelativeLayout
                 android:id="@+id/rlTermsOfUse"
@@ -161,7 +161,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -184,7 +184,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -206,7 +206,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -228,7 +228,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:textColor="@color/text_primary" />
+                    android:textColor="@color/trp_text_primary" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="wrap_content"
@@ -246,7 +246,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:layout_marginStart="@dimen/_12sdp"
-                android:textColor="@color/black" />
+                android:textColor="@color/trp_black" />
         </LinearLayout>
 
         <com.tripian.trpcore.util.widget.Button

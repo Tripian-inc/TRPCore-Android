@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppThemeWhite" parent="BaseAppTheme">
-        <item name="android:statusBarColor">@color/white</item>
+    <style name="TrpAppTheme" parent="TrpBaseAppTheme">
+        <!-- Status bar: white background with dark icons -->
+        <item name="android:statusBarColor">@color/trp_white</item>
         <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation bar: white background -->
+        <item name="android:navigationBarColor">@color/trp_white</item>
+    </style>
+
+    <style name="TrpAppThemeWhite" parent="TrpBaseAppTheme">
+        <!-- Status bar: white background with dark icons -->
+        <item name="android:statusBarColor">@color/trp_white</item>
+        <item name="android:windowLightStatusBar">true</item>
+
+        <!-- Navigation bar: white background -->
+        <item name="android:navigationBarColor">@color/trp_white</item>
     </style>
 </resources>

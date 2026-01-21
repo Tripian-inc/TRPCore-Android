@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/transparent">
+    android:background="@color/trp_transparent">
 
     <com.tripian.trpcore.util.widget.ImageView
         android:id="@+id/imageView"
@@ -19,7 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="@dimen/_200sdp"
-        android:background="@color/white"
+        android:background="@color/trp_white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView">
 
@@ -27,7 +27,7 @@
             android:id="@+id/rvList"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/white"
+            android:background="@color/trp_white"
             android:minHeight="@dimen/_200sdp"
             android:nestedScrollingEnabled="false"
             android:paddingHorizontal="@dimen/_16sdp"
@@ -56,7 +56,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/trp_text_primary" />
 
             <com.tripian.trpcore.util.widget.CardView
                 android:id="@+id/cvCreateTraveller"
@@ -64,7 +64,7 @@
                 android:layout_height="@dimen/_30sdp"
                 android:layout_marginTop="@dimen/_24sdp"
                 android:layout_marginBottom="@dimen/_24sdp"
-                app:cardBackgroundColor="@color/white"
+                app:cardBackgroundColor="@color/trp_white"
                 app:cardCornerRadius="@dimen/_15sdp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -98,7 +98,7 @@
             android:layout_height="@dimen/_30sdp"
             android:layout_marginBottom="@dimen/_24sdp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/white"
+            app:cardBackgroundColor="@color/trp_white"
             app:cardCornerRadius="@dimen/_15sdp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -132,7 +132,7 @@
     <!--        android:layout_width="match_parent"-->
     <!--        android:layout_height="wrap_content"-->
     <!--        android:layout_alignParentBottom="true"-->
-    <!--        android:background="@color/white"-->
+    <!--        android:background="@color/trp_white"-->
     <!--        android:orientation="vertical"-->
     <!--        android:paddingStart="@dimen/_16sdp"-->
     <!--        android:paddingTop="@dimen/_16sdp"-->
@@ -147,6 +147,6 @@
     <!--            android:layout_marginBottom="@dimen/_16sdp"-->
     <!--            android:background="@drawable/selector_button_primary"-->
     <!--            android:text="@string/apply"-->
-    <!--            android:textColor="@color/white" />-->
+    <!--            android:textColor="@color/trp_white" />-->
     <!--    </LinearLayout>-->
 </androidx.constraintlayout.widget.ConstraintLayout>

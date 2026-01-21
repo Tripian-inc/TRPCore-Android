@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/transparent"
+    android:background="@color/trp_transparent"
     android:paddingStart="@dimen/_14sdp"
     android:paddingEnd="@dimen/_14sdp"
     android:paddingBottom="@dimen/_64sdp">
@@ -13,7 +13,7 @@
         android:id="@+id/cvItem"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/light_grey"
+        android:background="@color/trp_light_grey"
         app:cardCornerRadius="8dp"
         app:cardElevation="8dp"
         app:contentPaddingBottom="@dimen/_10sdp"
@@ -33,7 +33,7 @@
                 android:layout_height="@dimen/_56sdp"
                 android:layout_centerVertical="true"
                 android:layout_marginStart="@dimen/_10sdp"
-                app:srcCompat="@color/black_soft" />
+                app:srcCompat="@color/trp_black_soft" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
@@ -43,7 +43,7 @@
                 android:layout_marginLeft="@dimen/_8sdp"
                 android:layout_marginTop="@dimen/_4sdp"
                 android:layout_toRightOf="@+id/imPoi"
-                android:textColor="@color/grey"
+                android:textColor="@color/trp_grey"
                 tools:text="Finish Museum of Natural History" />
 
             <com.tripian.trpcore.util.widget.TextView
@@ -58,7 +58,7 @@
                 android:layout_toRightOf="@+id/imPoi"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:textColor="@color/grey"
+                android:textColor="@color/trp_grey"
                 tools:text="@string/change_plan_time" />
 
             <com.tripian.trpcore.util.widget.ImageView
@@ -84,7 +84,7 @@
                 android:layout_marginTop="@dimen/_4sdp"
                 android:layout_toRightOf="@+id/imPoi"
                 android:rating="3.5"
-                android:theme="@style/AppThemeYellow" />
+                android:theme="@style/TrpAppThemeYellow" />
         </RelativeLayout>
     </com.tripian.trpcore.util.widget.CardView>
 </FrameLayout>

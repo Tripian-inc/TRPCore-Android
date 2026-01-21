@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:rating="3.5"
-            android:theme="@style/AppThemeYellow"
+            android:theme="@style/TrpAppThemeYellow"
             android:visibility="visible" />
 
         <com.tripian.trpcore.util.widget.TextView
@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
-            android:textColor="@color/black"
+            android:textColor="@color/trp_black"
             android:visibility="visible"
             tools:text="4.2" />
 
@@ -39,7 +39,7 @@
             android:layout_gravity="center"
             android:layout_marginStart="@dimen/_6sdp"
             android:background="@drawable/bg_circle_black_full"
-            android:textColor="@color/extra_main"
+            android:textColor="@color/trp_extra_main"
             android:visibility="visible" />
 
         <com.tripian.trpcore.util.widget.TextView
@@ -48,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
-            android:textColor="@color/black"
+            android:textColor="@color/trp_black"
             android:visibility="visible"
             tools:text="26 Dec 2021" />
     </LinearLayout>
@@ -60,7 +60,7 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:layout_marginTop="@dimen/_8sdp"
-        android:textColor="@color/body"
+        android:textColor="@color/trp_body"
         tools:text="Such a great experience!" />
 
     <com.tripian.trpcore.util.widget.TextView
@@ -70,6 +70,6 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:layout_marginTop="@dimen/_4sdp"
-        android:textColor="@color/body_dark"
+        android:textColor="@color/trp_body_dark"
         tools:text="GetYourGuide traveler – United Arab Emirates" />
 </LinearLayout>

@@ -71,7 +71,7 @@
                 android:ellipsize="end"
                 android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/white"
+                android:textColor="@color/trp_white"
                 tools:text="01.01" />
         </LinearLayout>
     </RelativeLayout>
@@ -80,7 +80,7 @@
         android:id="@+id/imImage"
         android:layout_width="match_parent"
         android:layout_height="160dp"
-        android:background="@color/blue_soft" />
+        android:background="@color/trp_blue_soft" />
 
     <com.tripian.trpcore.util.widget.ImageView
         android:id="@+id/imDelete"
@@ -145,7 +145,7 @@
     <!--            android:layout_height="wrap_content"-->
     <!--            android:layout_marginStart="@dimen/_16sdp"-->
     <!--            android:layout_marginEnd="@dimen/_16sdp"-->
-    <!--            app:cardBackgroundColor="@color/white"-->
+    <!--            app:cardBackgroundColor="@color/trp_white"-->
     <!--            app:cardCornerRadius="@dimen/_24sdp"-->
     <!--            app:contentPaddingBottom="@dimen/_6sdp"-->
     <!--            app:contentPaddingLeft="@dimen/_12sdp"-->
@@ -193,7 +193,7 @@
     <!--                    android:layout_toEndOf="@+id/imOpen"-->
     <!--                    android:ellipsize="end"-->
     <!--                    android:maxLines="3"-->
-    <!--                    android:textColor="@color/body"-->
+    <!--                    android:textColor="@color/trp_body"-->
     <!--                    tools:text="Integer" />-->
 
     <!--                <com.tripian.trpcore.util.widget.ImageView-->

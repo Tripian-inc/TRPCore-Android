@@ -68,7 +68,7 @@ class FavoriteRepository @Inject constructor(val service: Service) {
 
     fun getUserFavorites(cityId: Int): Observable<FavoritesResponse> {
         return if (!favorites[cityId].isNullOrEmpty()) {
-            // TODO: Cache mekanizması nasil olucak?
+            // TODO: How should the cache mechanism work?
             Observable.just(FavoritesResponse().apply {
                 data = favorites[cityId]
                 status = 200
@@ -76,7 +76,7 @@ class FavoriteRepository @Inject constructor(val service: Service) {
         } else {
             if (internetConnectionAvailable(3000)) {
                 service.getUserFavorites(cityId, null, null).map {
-                    // TODO: limit ne olmalı?
+                    // TODO: What should the limit be?
                     it.data?.let { favorites[cityId] = ArrayList(it) }
 
                     it

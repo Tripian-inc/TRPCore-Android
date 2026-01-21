@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_4sdp"
         android:layout_marginEnd="@dimen/_4sdp"
-        android:textColor="@color/white" />
+        android:textColor="@color/trp_white" />
 
 <!--    <com.tripian.trpcore.util.widget.ImageView-->
 <!--        android:id="@+id/imIcon"-->

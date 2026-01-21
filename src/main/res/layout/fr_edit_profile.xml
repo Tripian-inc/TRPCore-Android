@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -28,7 +29,7 @@
                 android:maxLines="1"
                 android:paddingStart="@dimen/_10sdp"
                 android:paddingEnd="@dimen/_10sdp"
-                android:textColor="@color/body" />
+                android:textColor="@color/trp_body" />
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etFirstName"
@@ -37,7 +38,7 @@
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
                 android:background="@drawable/bg_oval_gray"
-                android:hint="@string/first_name"
+                tools:hint="First name"
                 android:imeOptions="actionNext"
                 android:inputType="textPersonName|textCapWords"
                 android:maxLength="50"
@@ -52,7 +53,7 @@
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
                 android:background="@drawable/bg_oval_gray"
-                android:hint="@string/last_name"
+                tools:hint="Last name"
                 android:imeOptions="actionDone"
                 android:inputType="textPersonName|textCapWords"
                 android:maxLength="50"
@@ -84,7 +85,7 @@
                 android:gravity="center"
                 android:paddingStart="@dimen/_10sdp"
                 android:paddingEnd="@dimen/_10sdp"
-                android:textColor="@color/body" />
+                android:textColor="@color/trp_body" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvList"
@@ -125,6 +126,6 @@
             android:layout_marginBottom="@dimen/_16sdp"
             android:background="@drawable/selector_button_primary"
             android:textAllCaps="false"
-            android:textColor="@color/white" />
+            android:textColor="@color/trp_white" />
     </LinearLayout>
 </RelativeLayout>

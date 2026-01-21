@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Activity Card Item Layout - Flat Design -->
+<!-- iOS Reference: ActivityListingCell -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/_12sdp"
+    android:paddingTop="@dimen/_18sdp"
+    android:paddingBottom="12dp"
+    android:background="@color/trp_white">
+
+    <!-- Activity Image - 80x80 with rounded corners -->
+    <com.tripian.trpcore.util.widget.ImageView
+        android:id="@+id/ivActivityImage"
+        android:layout_width="@dimen/_62sdp"
+        android:layout_height="@dimen/_62sdp"
+        android:scaleType="centerCrop"
+        app:cornerRadius="@dimen/_3sdp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:background="@color/trp_grey_10" />
+
+    <!-- Add Button - Transparent background, only icon visible -->
+
+    <!-- Title - Semibold 16sp #333333 -->
+
+    <ImageView
+        android:id="@+id/btnAdd"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:background="@android:color/transparent"
+        android:padding="6dp"
+        android:src="@drawable/ic_add_to_plan"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_12sdp"
+        android:layout_marginEnd="@dimen/_6sdp"
+        android:ellipsize="end"
+        android:fontFamily="@font/semibold"
+        android:maxLines="2"
+        android:textColor="@color/trp_activity_title"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@id/btnAdd"
+        app:layout_constraintStart_toEndOf="@id/ivActivityImage"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Barcelona &amp; Montjuïc Castle Tour" />
+
+    <!-- Rating Row -->
+    <LinearLayout
+        android:id="@+id/llRatingRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_3sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle">
+
+        <!-- Rating Value - Bold 14sp -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRating"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/bold"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="5.0" />
+
+        <!-- Rating Star -->
+        <ImageView
+            android:id="@+id/ivStar"
+            android:layout_width="@dimen/_9sdp"
+            android:layout_height="@dimen/_9sdp"
+            android:layout_marginStart="@dimen/_2sdp"
+            android:src="@drawable/ic_rating_star" />
+
+        <!-- Rating Count - Medium 14sp #666666 -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvRatingCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:fontFamily="@font/regular"
+            android:textColor="@color/trp_activity_rating_count"
+            android:textSize="14sp"
+            tools:text="9 opinions" />
+    </LinearLayout>
+
+    <!-- Duration Row -->
+    <LinearLayout
+        android:id="@+id/llDurationRow"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_3sdp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/llRatingRow">
+
+        <!-- Duration Icon -->
+        <ImageView
+            android:id="@+id/ivDurationIcon"
+            android:layout_width="@dimen/_14sdp"
+            android:layout_height="@dimen/_14sdp"
+            android:src="@drawable/ic_duration" />
+
+        <!-- Duration Text -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvDuration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_4sdp"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="3h 30m" />
+    </LinearLayout>
+
+    <!-- Free Cancellation - Conditional visibility -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvFreeCancellation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_4sdp"
+        android:fontFamily="@font/regular"
+        android:textColor="@color/trp_timeline_success"
+        android:textSize="14sp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@+id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/llDurationRow"
+        tools:text="Free cancellation"
+        tools:visibility="visible" />
+
+    <!-- Price Row - Bottom Right -->
+    <LinearLayout
+        android:id="@+id/llPriceRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvFreeCancellation">
+
+        <!-- From Label - Medium 14sp -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvFromLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/regular"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="From " />
+
+        <!-- Price - Bold 16sp -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/bold"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="16sp"
+            tools:text="$49" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

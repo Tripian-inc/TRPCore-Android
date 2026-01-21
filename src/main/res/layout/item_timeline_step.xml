@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp">
+
+    <!-- Order-Time Container (130x32, border) -->
+    <LinearLayout
+        android:id="@+id/orderTimeContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:background="@drawable/bg_order_time_container"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <!-- Order Badge (20x20, fg bg, 6px left margin) -->
+        <TextView
+            android:id="@+id/tvOrder"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/bg_step_order_new"
+            android:fontFamily="@font/semibold"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:textColor="@color/trp_white"
+            android:textSize="16sp"
+            tools:text="1" />
+
+        <!-- Time (startTime - endTime, 10px right margin) -->
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginHorizontal="10dp"
+            android:gravity="end"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="09:00 - 11:30" />
+
+    </LinearLayout>
+
+    <!-- Vertical Line (1x24, 16px left margin, connected to container) -->
+    <View
+        android:id="@+id/verticalLine"
+        android:layout_width="1dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:background="@color/trp_lineWeak" />
+
+    <!-- Step Content (connected to line) -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Image -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            app:cardCornerRadius="4dp"
+            app:cardElevation="0dp">
+
+            <ImageView
+                android:id="@+id/ivImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/trp_bgCloudy"
+                android:contentDescription="POI Image"
+                android:scaleType="centerCrop" />
+
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Name Row (Name + Activity Badge) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <!-- Name -->
+                <TextView
+                    android:id="@+id/tvName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/semibold"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="16sp"
+                    tools:text="Place Name" />
+
+                <!-- Remove Step Button -->
+                <ImageButton
+                    android:id="@+id/btnDelete"
+                    android:layout_width="@dimen/_24sdp"
+                    android:layout_height="@dimen/_24sdp"
+                    android:layout_marginStart="8dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Remove"
+                    android:src="@drawable/ic_remove_step" />
+
+            </LinearLayout>
+
+            <!-- Activity Badge (stepType == "activity" only) -->
+            <TextView
+                android:id="@+id/tvActivityBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_activity_badge"
+                android:fontFamily="@font/medium"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:textColor="@color/trp_timeline_primary"
+                android:textSize="10sp"
+                android:visibility="gone"
+                tools:text="Activity"
+                tools:visibility="visible" />
+
+            <!-- Category -->
+            <TextView
+                android:id="@+id/tvCategory"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/trp_text_secondary"
+                android:textSize="12sp"
+                tools:text="Restaurant" />
+
+            <!-- Description (stepType == "activity" only) -->
+            <TextView
+                android:id="@+id/tvDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/regular"
+                android:maxLines="2"
+                android:textColor="@color/trp_text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:text="A wonderful activity description..."
+                tools:visibility="visible" />
+
+            <!-- Address -->
+            <TextView
+                android:id="@+id/tvAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/regular"
+                android:maxLines="1"
+                android:textColor="@color/trp_text_secondary"
+                android:textSize="11sp"
+                android:visibility="gone"
+                tools:text="123 Street Name, City" />
+
+            <!-- Rating -->
+            <LinearLayout
+                android:id="@+id/ratingContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:contentDescription="Rating"
+                    android:src="@drawable/ic_star" />
+
+                <TextView
+                    android:id="@+id/tvRating"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:fontFamily="@font/medium"
+                    android:textColor="@color/trp_timeline_rating_color"
+                    android:textSize="11sp"
+                    tools:text="4.5" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Reservation Button (stepType == "activity" only) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnReservation"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@color/trp_timeline_primary"
+        android:fontFamily="@font/medium"
+        android:textAllCaps="false"
+        android:textColor="@color/trp_white"
+        android:textSize="13sp"
+        android:visibility="gone"
+        app:cornerRadius="8dp"
+        tools:text="Reservation"
+        tools:visibility="visible" />
+
+    <!-- Bottom spacing -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="16dp" />
+
+</LinearLayout>

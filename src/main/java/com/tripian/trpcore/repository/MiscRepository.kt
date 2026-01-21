@@ -16,6 +16,7 @@ import com.tripian.trpcore.util.extensions.thursdayText
 import com.tripian.trpcore.util.extensions.tuesdayText
 import com.tripian.trpcore.util.extensions.wednesdayText
 import io.reactivex.Observable
+import io.reactivex.subjects.BehaviorSubject
 import org.json.JSONObject
 import javax.inject.Inject
 
@@ -30,15 +31,70 @@ class MiscRepository @Inject constructor(
 
     private var configList: ConfigList? = null
 
+    // Flag to track if languages have been loaded
+    @Volatile
+    var isLanguagesLoaded: Boolean = false
+        private set
+
+    // Subject to emit when languages are loaded - multiple subscribers can wait on this
+    private val languagesLoadedSubject = BehaviorSubject.create<Boolean>()
+
+    // Flag to track if a fetch is in progress
+    @Volatile
+    private var isFetchInProgress: Boolean = false
+
+    /**
+     * Fetches language values from API.
+     * If called multiple times while a fetch is in progress, returns the same Observable.
+     * This prevents multiple API calls and allows callers to wait for the ongoing fetch.
+     */
     fun getLanguageValues(): Observable<Boolean> {
+        // If already loaded, return immediately
+        if (isLanguagesLoaded) {
+            return Observable.just(true)
+        }
+
+        // If offline, try to use cached data
         if (app.isConnectedNet().not()) {
             setLanguages(preferences.getString(Preferences.Keys.APP_LANGUAGE_TRANSLATIONS, ""))
             return Observable.just(true)
         }
-        return service.getLanguageValues().map {
-            setLanguages(it.string())
-            true
+
+        // If fetch already in progress, return subject that will emit when done
+        if (isFetchInProgress) {
+            return languagesLoadedSubject.take(1)
         }
+
+        // Start new fetch
+        isFetchInProgress = true
+        return service.getLanguageValues()
+            .map {
+                setLanguages(it.string())
+                true
+            }
+            .doOnNext { success ->
+                languagesLoadedSubject.onNext(success)
+            }
+            .doOnError {
+                isFetchInProgress = false
+                languagesLoadedSubject.onNext(false)
+            }
+            .doFinally {
+                isFetchInProgress = false
+            }
+    }
+
+    /**
+     * Returns an Observable that emits when languages are loaded.
+     * If already loaded, emits immediately.
+     * If fetch is in progress, waits for it to complete.
+     * If no fetch is in progress, starts one.
+     */
+    fun waitForLanguagesLoaded(): Observable<Boolean> {
+        if (isLanguagesLoaded) {
+            return Observable.just(true)
+        }
+        return getLanguageValues()
     }
 
     fun getConfigList(): Observable<ConfigList> {
@@ -67,6 +123,7 @@ class MiscRepository @Inject constructor(
         setCurrentLanguageKeys()
         setDaysTexts()
         Tripian.allText = getLanguageValueForKey("all")
+        isLanguagesLoaded = true
     }
 
     private fun setCurrentLanguageKeys() {

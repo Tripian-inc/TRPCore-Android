@@ -8,6 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
@@ -67,6 +70,13 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         super.onCreate(savedInstanceState)
         _binding = getViewBinding()
         setContentView(binding.root)
+
+        // Apply window insets to handle status bar
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = insets.top)
+            WindowInsetsCompat.CONSUMED
+        }
 
         viewModel = ViewModelProviders.of(this, viewModelFactory)
             .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)
@@ -186,10 +196,10 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
     fun showAlert(type: AlertType, message: String) {
         val color = when (type) {
-            AlertType.SUCCESS -> ContextCompat.getColor(this, R.color.success_message)
-            AlertType.WARNING -> ContextCompat.getColor(this, R.color.warning_message)
-            AlertType.ERROR -> ContextCompat.getColor(this, R.color.error_message)
-            AlertType.INFO -> ContextCompat.getColor(this, R.color.info_message)
+            AlertType.SUCCESS -> ContextCompat.getColor(this, R.color.trp_success_message)
+            AlertType.WARNING -> ContextCompat.getColor(this, R.color.trp_warning_message)
+            AlertType.ERROR -> ContextCompat.getColor(this, R.color.trp_error_message)
+            AlertType.INFO -> ContextCompat.getColor(this, R.color.trp_info_message)
             else -> 0
         }
 

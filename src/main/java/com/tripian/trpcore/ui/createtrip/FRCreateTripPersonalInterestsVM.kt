@@ -8,6 +8,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.TripQuestions
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.CreateTripSteps
 import com.tripian.trpcore.util.QuestionType
 import com.tripian.trpcore.util.event.EventConstants
@@ -53,7 +54,7 @@ class FRCreateTripPersonalInterestsVM @Inject constructor(val questions: TripQue
     }
 
     fun onShowError() {
-        showAlert(AlertType.ERROR, strings.getString(R.string.please_select_field))
+        showAlert(AlertType.ERROR, getLanguageForKey(LanguageConst.PLEASE_SELECT_FIELD))
     }
 
 }

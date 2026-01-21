@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Time Picker Bottom Sheet - iOS Style -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_bottom_sheet_white"
+    android:paddingBottom="32dp">
+
+    <!-- Handle Bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_handle_bar"/>
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:paddingHorizontal="16dp">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            tools:text="Time"
+            android:textSize="16sp"
+            android:textColor="@color/trp_text_primary"
+            android:fontFamily="@font/semibold" />
+
+        <ImageView
+            android:id="@+id/ivClose"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close"
+            app:tint="@color/trp_text_primary" />
+
+    </RelativeLayout>
+
+    <!-- Time Selection Tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <!-- Start Time Tab -->
+        <LinearLayout
+            android:id="@+id/llStartTimeTab"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvStartTimeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/light"
+                android:textSize="12sp"
+                android:textColor="@color/trp_text_primary"
+                tools:text="Start Time"/>
+
+            <FrameLayout
+                android:id="@+id/btnStartTimeTab"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_time_tab_selector"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvStartTimeDisplay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:fontFamily="@font/medium"
+                    android:textSize="14sp"
+                    android:textColor="@color/trp_text_primary"
+                    tools:text="Select Time"/>
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <!-- End Time Tab -->
+        <LinearLayout
+            android:id="@+id/llEndTimeTab"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvEndTimeLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/light"
+                android:textSize="12sp"
+                android:textColor="@color/trp_text_primary"
+                tools:text="End Time"/>
+
+            <FrameLayout
+                android:id="@+id/btnEndTimeTab"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_time_tab_selector"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvEndTimeDisplay"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:fontFamily="@font/medium"
+                    android:textSize="14sp"
+                    android:textColor="@color/trp_text_primary"
+                    tools:text="Select Time"/>
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Number Picker Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="32dp">
+
+        <!-- Hour Picker -->
+        <NumberPicker
+            android:id="@+id/npHour"
+            android:layout_width="80dp"
+            android:layout_height="180dp"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/TrpTimePickerTheme"/>
+
+        <!-- Minute Picker -->
+        <NumberPicker
+            android:id="@+id/npMinute"
+            android:layout_width="80dp"
+            android:layout_height="180dp"
+            android:layout_marginStart="16dp"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/TrpTimePickerTheme"/>
+
+        <!-- AM/PM Picker -->
+        <NumberPicker
+            android:id="@+id/npAmPm"
+            android:layout_width="80dp"
+            android:layout_height="180dp"
+            android:layout_marginStart="16dp"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/TrpTimePickerTheme"/>
+
+    </LinearLayout>
+
+    <!-- Confirm Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnConfirm"
+        style="@style/TrpButtonPrimary"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="16dp"
+        tools:text="Confirm"
+        android:enabled="false"/>
+
+</LinearLayout>
