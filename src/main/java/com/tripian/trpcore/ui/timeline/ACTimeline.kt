@@ -469,17 +469,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 lifecycleScope.launch {
                     binding.mapView.moveCameraTo()
                 }
+                // Show bottom list when entering map mode
+                showMapBottomList()
             }
         } else {
             binding.mapView.clearMap()
-            // Hide bottom list when exiting map mode
-            if (isBottomListVisible) {
-                isBottomListVisible = false
-                binding.rvMapBottomList.visibility = View.GONE
-                binding.rvMapBottomList.translationY = 200f * resources.displayMetrics.density
-                // Reset fabList position
-                binding.fabList.translationY = 0f
-            }
+            // Hide bottom list completely when exiting map mode
+            isBottomListVisible = false
+            binding.rvMapBottomList.visibility = View.GONE
+            binding.rvMapBottomList.translationY = 0f
+            // Reset fabList position
+            binding.fabList.translationY = 0f
         }
     }
 
@@ -515,20 +515,22 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     /**
      * Hide the horizontal item list with slide-down animation.
+     * Keeps 10% of card item visible at the bottom for peek effect.
      * Also moves the fabList button back to its original position.
      */
     private fun hideMapBottomList() {
         if (!isBottomListVisible) return
         isBottomListVisible = false
 
-        val translationY = 200f * resources.displayMetrics.density
+        // Card item height is approximately 104dp (80dp image + 24dp margins)
+        // Show only 10% (~10dp), so translate 90% (~94dp) down
+        val itemHeight = 104f * resources.displayMetrics.density
+        val translationY = itemHeight * 0.9f  // Show only 10% of card
+
         binding.rvMapBottomList.animate()
             .translationY(translationY)
             .setDuration(300)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
-            .withEndAction {
-                binding.rvMapBottomList.visibility = View.GONE
-            }
             .start()
 
         // Move fabList back to original position

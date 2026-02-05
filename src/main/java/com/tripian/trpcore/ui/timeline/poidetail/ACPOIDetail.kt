@@ -48,6 +48,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     private var productAdapter: POIProductCardAdapter? = null
     private var openingHoursAdapter: POIOpeningHoursAdapter? = null
     private var featureTagAdapter: POIFeatureTagAdapter? = null
+    private var cuisinesAdapter: POIFeatureTagAdapter? = null
 
     override fun getViewBinding() = AcPoiDetailBinding.inflate(layoutInflater)
 
@@ -58,6 +59,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         setupProductsRecyclerView()
         setupOpeningHoursRecyclerView()
         setupFeaturesRecyclerView()
+        setupCuisinesRecyclerView()
 
         // Initialize from intent
         @Suppress("DEPRECATION")
@@ -122,6 +124,15 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
 
         viewModel.showFeaturesSection.observe(this) { show ->
             binding.llFeaturesSection.visibility = if (show) View.VISIBLE else View.GONE
+        }
+
+        // Observe cuisines section
+        viewModel.showCuisinesSection.observe(this) { show ->
+            binding.llCuisinesSection.visibility = if (show) View.VISIBLE else View.GONE
+        }
+
+        viewModel.cuisinesList.observe(this) { cuisines ->
+            cuisinesAdapter?.submitList(cuisines)
         }
 
         // Set section header texts
@@ -199,6 +210,18 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
                 justifyContent = JustifyContent.FLEX_START
             }
             adapter = featureTagAdapter
+        }
+    }
+
+    private fun setupCuisinesRecyclerView() {
+        cuisinesAdapter = POIFeatureTagAdapter()
+        binding.rvCuisines.apply {
+            layoutManager = FlexboxLayoutManager(this@ACPOIDetail).apply {
+                flexDirection = FlexDirection.ROW
+                flexWrap = FlexWrap.WRAP
+                justifyContent = JustifyContent.CENTER
+            }
+            adapter = cuisinesAdapter
         }
     }
 

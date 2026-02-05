@@ -53,6 +53,13 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     private val _showOpeningHoursRow = MutableLiveData(false)
     val showOpeningHoursRow: LiveData<Boolean> = _showOpeningHoursRow
 
+    // Cuisines section (for Cafe/Restaurant)
+    private val _showCuisinesSection = MutableLiveData(false)
+    val showCuisinesSection: LiveData<Boolean> = _showCuisinesSection
+
+    private val _cuisinesList = MutableLiveData<List<String>>()
+    val cuisinesList: LiveData<List<String>> = _cuisinesList
+
     // =====================
     // INITIALIZATION
     // =====================
@@ -69,8 +76,9 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     }
 
     private fun processPoi(poi: Poi) {
-        // Activities Section - visible if has products
+        // Activities Section - visible if has products from providerId 15 bookings
         val allProducts = poi.bookings
+            ?.filter { it.providerId == 15 }
             ?.flatMap { it.products ?: emptyList() }
             ?: emptyList()
         _products.value = allProducts
@@ -99,6 +107,22 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
 
         // Features Section - visible if has tags
         _showFeaturesSection.value = !poi.tags.isNullOrEmpty()
+
+        // Cuisines Section - visible for Eat & Drink categories with cuisines data
+        val cuisines = parseCuisines(poi.cuisines)
+        _cuisinesList.value = cuisines
+        _showCuisinesSection.value = isEatAndDrink && cuisines.isNotEmpty()
+    }
+
+    /**
+     * Parse cuisines string to list
+     * Handles comma-separated format: "Italian, Pizza, Pasta"
+     */
+    private fun parseCuisines(cuisinesString: String?): List<String> {
+        if (cuisinesString.isNullOrBlank()) return emptyList()
+        return cuisinesString.split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
     }
 
     // =====================

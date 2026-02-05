@@ -362,31 +362,51 @@ class ACTimelineVM @Inject constructor(
      */
     private fun extractCities(timeline: Timeline): List<City> {
         val cityIds = mutableSetOf<Int>()
+        val cityNames = mutableSetOf<String>()
 
-        // Collect all unique cityIds from timeline
+        // Collect all unique cityIds and names from timeline
         timeline.plans?.forEach { plan ->
-            plan.city?.id?.let { cityIds.add(it) }
+            plan.city?.id?.let { if (it != 0) cityIds.add(it) }
+            plan.city?.name?.let { cityNames.add(it) }
         }
 
-        timeline.city?.id?.let { cityIds.add(it) }
+        timeline.city?.id?.let { if (it != 0) cityIds.add(it) }
+        timeline.city?.name?.let { cityNames.add(it) }
 
         // Also get cityIds from segments
         timeline.tripProfile?.segments?.forEach { segment ->
-            segment.cityId?.let { cityIds.add(it) }
+            segment.cityId?.let { if (it != 0) cityIds.add(it) }
         }
 
         // Map cityIds to full City models from cache
         val cities = mutableListOf<City>()
+        val addedCityIds = mutableSetOf<Int>()
+
+        // First try to get cities by ID
         cityIds.forEach { cityId ->
-            // First try to get from cached cities (has full data including coordinates)
             val cachedCity = tripRepository.getCachedCityById(cityId)
             if (cachedCity != null) {
                 cities.add(cachedCity)
+                addedCityIds.add(cachedCity.id)
             } else {
                 // Fallback to timeline city data if not in cache
                 val timelineCity = timeline.plans?.find { it.city?.id == cityId }?.city
                     ?: if (timeline.city?.id == cityId) timeline.city else null
-                timelineCity?.let { cities.add(it) }
+                timelineCity?.let {
+                    cities.add(it)
+                    addedCityIds.add(it.id)
+                }
+            }
+        }
+
+        // If no cities found by ID, try to find by name from cache
+        if (cities.isEmpty() || cities.all { it.id == 0 }) {
+            cityNames.forEach { name ->
+                val cachedCity = tripRepository.findCityByName(name)
+                if (cachedCity != null && !addedCityIds.contains(cachedCity.id)) {
+                    cities.add(cachedCity)
+                    addedCityIds.add(cachedCity.id)
+                }
             }
         }
 
@@ -701,11 +721,24 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
+        // If city.id is 0, try to find city from cache by name
+        val validCity = if (city.id == 0 && city.name != null) {
+            tripRepository.findCityByName(city.name!!) ?: city
+        } else {
+            city
+        }
+
+        // Final validation - if still no valid cityId, return error
+        if (validCity.id == 0) {
+            _error.value = getLanguageForKey(com.tripian.trpcore.util.LanguageConst.COMMON_ERROR)
+            return
+        }
+
         // Set loading immediately (not postValue) since we're on main thread
         _isLoading.value = true
 
         // Generate unique title ("Recommendations", "Recommendations 2", etc.)
-        val title = generateSegmentTitle(city, selectedDate)
+        val title = generateSegmentTitle(validCity, selectedDate)
 
         // Combine selected date with time strings (HH:mm)
         val dateStr = selectedDate.toApiDateString()
@@ -728,7 +761,7 @@ class ACTimelineVM @Inject constructor(
             params = CreateSegmentUseCase.Params(
                 tripHash = _tripHash,
                 title = title,
-                cityId = city.id,
+                cityId = validCity.id,
                 startDate = startDateTimeStr,
                 endDate = endDateTimeStr,
                 // coordinate is null - don't send when cityId is present
@@ -981,59 +1014,42 @@ class ACTimelineVM @Inject constructor(
                     item.steps.forEach { step ->
                         step.poi?.let { poi ->
                             poi.coordinate?.let { coord ->
-                                mapSteps.add(
-                                    MapStep().apply {
-                                        group = "step"
-                                        poiId = poi.id ?: ""
-                                        name = poi.name ?: ""
-                                        coordinate =
-                                            com.tripian.one.api.pois.model.Coordinate().apply {
-                                                lat = coord.lat
-                                                lng = coord.lng
-                                            }
-                                        // No icon, only show order label
-                                        markerIcon = -1
-                                        this.position = position++
-                                        isOffer = false
-                                    }
-                                )
+                                if (coord.lat != 0.0 && coord.lng != 0.0) {
+                                    mapSteps.add(
+                                        MapStep().apply {
+                                            group = "step"
+                                            poiId = poi.id ?: ""
+                                            name = poi.name ?: ""
+                                            coordinate =
+                                                com.tripian.one.api.pois.model.Coordinate().apply {
+                                                    lat = coord.lat
+                                                    lng = coord.lng
+                                                }
+                                            // No icon, only show order label
+                                            markerIcon = -1
+                                            this.position = position++
+                                            isOffer = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
 
                 is TimelineDisplayItem.BookedActivity -> {
-                    // Get coordinate from additionalData for booked/reserved activities
-                    item.segment.additionalData?.coordinate?.let { coord ->
-                        mapSteps.add(
-                            MapStep().apply {
-                                group = "booked"
-                                poiId = item.segment.additionalData?.activityId ?: "booked_${item.segmentIndex}"
-                                name = item.segment.additionalData?.title ?: item.segment.title ?: ""
-                                coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                                    lat = coord.lat
-                                    lng = coord.lng
-                                }
-                                // No icon, only show order label
-                                markerIcon = -1
-                                this.position = position++
-                                isOffer = false
-                            }
-                        )
-                    }
-                }
-
-                is TimelineDisplayItem.ManualPoi -> {
-                    item.step.poi?.let { poi ->
-                        poi.coordinate?.let { coord ->
+                    // Get coordinate from additionalData first, then fallback to segment.coordinate
+                    val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
+                    coord?.let {
+                        if (it.lat != 0.0 && it.lng != 0.0) {
                             mapSteps.add(
                                 MapStep().apply {
-                                    group = "manual"
-                                    poiId = poi.id ?: ""
-                                    name = poi.name ?: ""
+                                    group = "booked"
+                                    poiId = item.segment.additionalData?.activityId ?: "booked_${item.segmentIndex}"
+                                    name = item.segment.additionalData?.title ?: item.segment.title ?: ""
                                     coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                                        lat = coord.lat
-                                        lng = coord.lng
+                                        lat = it.lat
+                                        lng = it.lng
                                     }
                                     // No icon, only show order label
                                     markerIcon = -1
@@ -1041,6 +1057,30 @@ class ACTimelineVM @Inject constructor(
                                     isOffer = false
                                 }
                             )
+                        }
+                    }
+                }
+
+                is TimelineDisplayItem.ManualPoi -> {
+                    item.step.poi?.let { poi ->
+                        poi.coordinate?.let { coord ->
+                            if (coord.lat != 0.0 && coord.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "manual"
+                                        poiId = poi.id ?: ""
+                                        name = poi.name ?: ""
+                                        coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
+                                            lat = coord.lat
+                                            lng = coord.lng
+                                        }
+                                        // No icon, only show order label
+                                        markerIcon = -1
+                                        this.position = position++
+                                        isOffer = false
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -1205,7 +1245,8 @@ class ACTimelineVM @Inject constructor(
         return _timeline.value?.tripProfile?.segments
             ?.filter {
                 it.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                        it.segmentType == SegmentType.RESERVED_ACTIVITY
+                        it.segmentType == SegmentType.RESERVED_ACTIVITY ||
+                        it.segmentType == SegmentType.MANUAL_POI
             } ?: emptyList()
     }
 

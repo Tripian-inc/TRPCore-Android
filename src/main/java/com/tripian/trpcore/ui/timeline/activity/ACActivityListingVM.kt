@@ -301,6 +301,7 @@ class ACActivityListingVM @Inject constructor(
                 maxPrice = maxPrice,
                 minDuration = minDuration,
                 maxDuration = maxDuration,
+                adults = planData?.travelers ?: 1, // Pass selected travelers count
                 sortingBy = sort.sortingBy,
                 sortingType = sort.sortingType,
                 offset = currentOffset,
