@@ -390,6 +390,41 @@
 
             </LinearLayout>
 
+            <!-- Features Section -->
+            <LinearLayout
+                android:id="@+id/llFeaturesSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:paddingEnd="0dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- Separator -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/trp_lineWeak" />
+
+                <TextView
+                    android:id="@+id/tvFeaturesHeader"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="40dp"
+                    android:fontFamily="@font/semibold"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="18sp"
+                    tools:text="Features" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvFeatures"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp" />
+
+            </LinearLayout>
+
             <!-- Meeting Point Section -->
             <LinearLayout
                 android:id="@+id/llMeetingPointSection"
@@ -477,41 +512,6 @@
                         android:layout_marginStart="16dp"
                         app:srcCompat="@drawable/ic_view_map" />
                 </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- Features Section -->
-            <LinearLayout
-                android:id="@+id/llFeaturesSection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:paddingEnd="0dp"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <!-- Separator -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/trp_lineWeak" />
-
-                <TextView
-                    android:id="@+id/tvFeaturesHeader"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="40dp"
-                    android:fontFamily="@font/semibold"
-                    android:textColor="@color/trp_text_primary"
-                    android:textSize="18sp"
-                    tools:text="Features" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvFeatures"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp" />
 
             </LinearLayout>
 
