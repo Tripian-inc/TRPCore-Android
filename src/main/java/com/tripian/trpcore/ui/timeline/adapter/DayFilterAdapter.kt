@@ -3,6 +3,7 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemDayFilterBinding
@@ -14,7 +15,7 @@ import java.util.Locale
 /**
  * DayFilterAdapter
  * Adapter for horizontal day selector
- * Format: "DayName dd/MM" (e.g., "Wednesday 13/05")
+ * Format: 3 rows - Day letter, Day number, Month abbreviation
  */
 class DayFilterAdapter(
     private val onDaySelected: (Int) -> Unit
@@ -55,33 +56,51 @@ class DayFilterAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(date: Date, position: Int, isSelected: Boolean) {
-            val context = binding.root.context
-
             // Use app language for locale instead of system default
             val locale = Locale.forLanguageTag(appLanguage)
-            val dayFormat = SimpleDateFormat("EEEE dd/MM", locale)
 
-            // Format: "DayName dd/MM" with capitalized first letter
-            val formattedDate = dayFormat.format(date).replaceFirstChar {
-                if (it.isLowerCase()) it.titlecase(locale) else it.toString()
-            }
-            binding.tvDayLabel.text = formattedDate
+            // Day letter (first letter of day name, e.g., "M" for Monday)
+            val dayLetterFormat = SimpleDateFormat("EEEEE", locale)
+            binding.tvDayLetter.text = dayLetterFormat.format(date).uppercase(locale)
 
-            // Selection state
+            // Day number (e.g., "13")
+            val dayNumberFormat = SimpleDateFormat("d", locale)
+            binding.tvDayNumber.text = dayNumberFormat.format(date)
+
+            // Month abbreviation (3 letters, e.g., "may")
+            val monthFormat = SimpleDateFormat("MMM", locale)
+            binding.tvMonth.text = monthFormat.format(date).lowercase(locale)
+
+            val context = binding.root.context
+
+            // Selection state - apply background and text styles
             if (isSelected) {
-                binding.tvDayLabel.setBackgroundResource(R.drawable.bg_day_filter_selected)
-                binding.tvDayLabel.setTextColor(
-                    ContextCompat.getColor(context, R.color.trp_primary)
-                )
+                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_selected)
+                // Selected: all text primary color, day number bold
+                val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
+                binding.tvDayLetter.setTextColor(fgColor)
+                binding.tvDayNumber.setTextColor(fgColor)
+                binding.tvMonth.setTextColor(fgColor)
+                // Day number bold for selected
+                ResourcesCompat.getFont(context, R.font.bold)?.let {
+                    binding.tvDayNumber.typeface = it
+                }
             } else {
-                binding.tvDayLabel.setBackgroundResource(R.drawable.bg_day_filter_unselected)
-                binding.tvDayLabel.setTextColor(
-                    ContextCompat.getColor(context, R.color.trp_borderActive)
-                )
+                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_unselected)
+                // Unselected: day letter fgWeak, others fg, all medium
+                val fgWeakColor = ContextCompat.getColor(context, R.color.trp_fgWeak)
+                val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
+                binding.tvDayLetter.setTextColor(fgWeakColor)
+                binding.tvDayNumber.setTextColor(fgColor)
+                binding.tvMonth.setTextColor(fgColor)
+                // Day number medium for unselected
+                ResourcesCompat.getFont(context, R.font.medium)?.let {
+                    binding.tvDayNumber.typeface = it
+                }
             }
 
             // Click listener
-            binding.tvDayLabel.setOnClickListener {
+            binding.llDayContainer.setOnClickListener {
                 if (position != selectedPosition) {
                     onDaySelected(position)
                 }

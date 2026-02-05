@@ -48,6 +48,7 @@ class FRSelectDay : Fragment() {
         setupModeSelection()
         setupManualCategorySelection()
         setupCitySelection()
+        setupTravelers()
         observeViewModel()
     }
 
@@ -77,6 +78,10 @@ class FRSelectDay : Fragment() {
         binding.tvCatActivities.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES)
         binding.tvCatPlaces.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_PLACES)
         binding.tvCatEatDrink.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK)
+
+        // Travelers section
+        binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
+        binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
     }
 
     private fun setupDayFilterRecyclerView() {
@@ -118,6 +123,16 @@ class FRSelectDay : Fragment() {
     private fun setupCitySelection() {
         binding.btnCitySelection.setOnClickListener {
             showCitySelectionBottomSheet()
+        }
+    }
+
+    private fun setupTravelers() {
+        binding.btnTravelersMinus.setOnClickListener {
+            sharedVM.decrementTravelers()
+        }
+
+        binding.btnTravelersPlus.setOnClickListener {
+            sharedVM.incrementTravelers()
         }
     }
 
@@ -177,6 +192,14 @@ class FRSelectDay : Fragment() {
         sharedVM.selectedManualCategory.observe(viewLifecycleOwner) { category ->
             updateManualCategorySelection(category)
         }
+
+        // Travelers count
+        sharedVM.travelers.observe(viewLifecycleOwner) { count ->
+            binding.tvTravelersCount.text = count.toString()
+            // Disable minus button when count is 1
+            binding.btnTravelersMinus.alpha = if (count <= 1) 0.5f else 1.0f
+            binding.btnTravelersMinus.isEnabled = count > 1
+        }
     }
 
     private fun updateModeSelection(mode: AddPlanMode) {
@@ -193,6 +216,11 @@ class FRSelectDay : Fragment() {
 
         // Show/hide manual categories section
         binding.llManualCategories.visibility = if (manualSelected) View.VISIBLE else View.GONE
+
+        // Hide travelers section when not in manual mode
+        if (!manualSelected) {
+            binding.llTravelersSection.visibility = View.GONE
+        }
     }
 
     private fun updateManualCategorySelection(category: ManualCategory?) {
@@ -213,6 +241,9 @@ class FRSelectDay : Fragment() {
         updateCardSelection(binding.cardManualActivities, category == ManualCategory.ACTIVITIES)
         updateCardSelection(binding.cardManualPlaces, category == ManualCategory.PLACES_OF_INTEREST)
         updateCardSelection(binding.cardManualEatDrink, category == ManualCategory.EAT_AND_DRINK)
+
+        // Show travelers section only for Activities
+        binding.llTravelersSection.visibility = if (category == ManualCategory.ACTIVITIES) View.VISIBLE else View.GONE
     }
 
     private fun updateCardSelection(card: com.google.android.material.card.MaterialCardView, selected: Boolean) {

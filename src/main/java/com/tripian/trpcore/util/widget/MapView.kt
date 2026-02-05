@@ -333,10 +333,12 @@ class MapView : MapView {
                         } else {
                             // Non-step items: check if there's a step layer to add below
                             val firstStepItem = mapItems.firstOrNull { it.group == "step" }
-                            if (firstStepItem != null) {
-                                style?.addLayerBelow(stretchLayer, "step" + firstStepItem.poiId)
+                            val stepLayerId = firstStepItem?.let { "step" + it.poiId }
+                            // Check if the step layer exists before adding below it
+                            if (stepLayerId != null && style?.getLayer(stepLayerId) != null) {
+                                style?.addLayerBelow(stretchLayer, stepLayerId)
                             } else {
-                                // No step items, just add above route layer
+                                // Step layer doesn't exist yet or no step items, add above route layer
                                 style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                             }
                         }
