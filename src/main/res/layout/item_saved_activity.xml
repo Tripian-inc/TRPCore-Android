@@ -22,7 +22,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_location_pin"
+            android:src="@drawable/ic_pin"
             app:tint="@color/trp_text_primary" />
 
     </FrameLayout>
@@ -35,18 +35,17 @@
         android:layout_marginStart="12dp"
         android:layout_marginEnd="16dp"
         android:textSize="16sp"
-        android:fontFamily="@font/semibold"
+        android:fontFamily="@font/medium"
         android:textColor="@color/trp_text_primary"
-        android:maxLines="1"
+        android:maxLines="2"
         android:ellipsize="end"
         app:layout_constraintStart_toEndOf="@id/iconContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/tvLocation"
-        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintBottom_toBottomOf="parent"
         tools:text="Sagrada Familia Tour" />
 
-    <!-- Location -->
+    <!-- Location (hidden - only title is shown) -->
     <TextView
         android:id="@+id/tvLocation"
         android:layout_width="0dp"
@@ -57,10 +56,12 @@
         android:textColor="@color/trp_fgWeak"
         android:maxLines="1"
         android:ellipsize="end"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="@id/tvName"
         app:layout_constraintEnd_toEndOf="@id/tvName"
         app:layout_constraintTop_toBottomOf="@id/tvName"
         app:layout_constraintBottom_toBottomOf="parent"
-        tools:text="Barcelona" />
+        tools:text="Barcelona"
+        tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

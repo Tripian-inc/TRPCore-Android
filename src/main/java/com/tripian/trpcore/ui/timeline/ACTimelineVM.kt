@@ -1245,7 +1245,8 @@ class ACTimelineVM @Inject constructor(
         return _timeline.value?.tripProfile?.segments
             ?.filter {
                 it.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                        it.segmentType == SegmentType.RESERVED_ACTIVITY
+                        it.segmentType == SegmentType.RESERVED_ACTIVITY ||
+                        it.segmentType == SegmentType.MANUAL_POI
             } ?: emptyList()
     }
 
