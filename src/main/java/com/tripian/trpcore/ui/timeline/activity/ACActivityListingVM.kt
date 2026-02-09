@@ -7,6 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseViewModel
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
@@ -297,6 +298,7 @@ class ACActivityListingVM @Inject constructor(
                 tagIds = null, // Not using tagIds - only keywords
                 providerId = 15, // Always use providerId 15 for tour-api
                 date = selectedDateString, // Selected date from AddPlan flow
+                currency = getCurrency(), // Use configured currency
                 minPrice = minPrice,
                 maxPrice = maxPrice,
                 minDuration = minDuration,
@@ -423,9 +425,8 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Get currency for filter display
-     * Defaults to EUR
      */
-    fun getCurrency(): String = "EUR" // TODO: Get from trip settings if available
+    fun getCurrency(): String = TRPCore.core.appConfig.appCurrency
 
     // =====================
     // CLEANUP

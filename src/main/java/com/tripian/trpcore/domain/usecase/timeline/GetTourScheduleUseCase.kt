@@ -16,7 +16,7 @@ class GetTourScheduleUseCase @Inject constructor(
     data class Params(
         val productId: String,
         val date: String,           // Format: "YYYY-MM-DD"
-        val currency: String? = "EUR"
+        val currency: String? = null  // Currency from AppConfig - caller should pass explicitly
     )
 
     override fun on(params: Params?) {
