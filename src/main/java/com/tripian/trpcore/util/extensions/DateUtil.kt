@@ -2,6 +2,7 @@ package com.tripian.trpcore.util.extensions
 
 import android.annotation.SuppressLint
 import android.text.TextUtils
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.OpenHour
 import com.tripian.trpcore.util.extensions.DayOfWeek.values
 import java.text.DateFormat
@@ -475,7 +476,8 @@ var fridayText: String = "Fri"
 var saturdayText: String = "Sat"
 var sundayText: String = "Sun"
 var closedText: String = "Closed"
-var appLanguage: String = "en"
+val appLanguage: String
+    get() = TRPCore.core.appConfig.appLanguage
 
 enum class DayOfWeek(//Getters and Setters
     //Instance Variables

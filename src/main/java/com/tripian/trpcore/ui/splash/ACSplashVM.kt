@@ -22,8 +22,8 @@ import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.repository.UserReactionRepository
 import com.tripian.trpcore.ui.login.ACLogin
 import com.tripian.trpcore.ui.mytrip.ACMyTrip
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.extensions.appLanguage
 import com.tripian.trpcore.util.extensions.hideLoading
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -64,13 +64,19 @@ class ACSplashVM @Inject constructor(
         startTime = System.currentTimeMillis()
 
         val language = arguments?.getString("appLanguage")
-        appLanguage = if (language.isNullOrEmpty().not()) {
-            language
+        TRPCore.core.appConfig.appLanguage = if (language.isNullOrEmpty().not()) {
+            language!!
         } else {
             preferences.getString(
                 Preferences.Keys.APP_LANGUAGE,
                 "en"
-            )
+            ) ?: "en"
+        }
+
+        // Set currency from intent
+        val currency = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
+        if (!currency.isNullOrEmpty()) {
+            TRPCore.core.appConfig.appCurrency = currency
         }
 
         // SDK Initialization order:
@@ -166,7 +172,7 @@ class ACSplashVM @Inject constructor(
     private fun fetchLanguages() {
         saveAppLanguage.on(
             SaveAppLanguage.Params(
-                appLanguage
+                TRPCore.core.appConfig.appLanguage
             )
         )
         fetchLanguages.on(
