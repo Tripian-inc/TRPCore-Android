@@ -33,7 +33,6 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.LanguageConst
-import com.tripian.trpcore.util.extensions.appLanguage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -136,9 +135,17 @@ class ACTimelineVM @Inject constructor(
         // Set app language from intent (important for localization)
         val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
         if (!language.isNullOrEmpty()) {
-            appLanguage = language
+            TRPCore.core.appConfig.appLanguage = language
             // Also update MiscRepository to use correct language for translations
             miscRepository.changeLanguage(language)
+        }
+
+        // Set app currency from intent
+        val currency = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
+        if (!currency.isNullOrEmpty()) {
+            TRPCore.core.appConfig.appCurrency = currency
+            // Also update TRPOne to use correct currency for API calls
+            TRPCore.core.trpRest.setCurrency(currency)
         }
 
         // Also check legacy ARG_TRIP_HASH

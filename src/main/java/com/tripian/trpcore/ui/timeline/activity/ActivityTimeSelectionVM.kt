@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.tour.model.TourScheduleSlot
 import com.tripian.trpcore.base.BaseViewModel
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.usecase.timeline.GetTourScheduleUseCase
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -42,7 +43,7 @@ class ActivityTimeSelectionVM @Inject constructor(
             params = GetTourScheduleUseCase.Params(
                 productId = formattedId,
                 date = dateString,
-                currency = "EUR"
+                currency = TRPCore.core.appConfig.appCurrency
             ),
             success = { response ->
                 _isLoading.value = false

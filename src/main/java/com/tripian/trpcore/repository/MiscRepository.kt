@@ -3,9 +3,9 @@ package com.tripian.trpcore.repository
 import android.app.Application
 import com.tripian.gyg.base.Tripian
 import com.tripian.one.api.misc.model.ConfigList
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.LanguageConst
-import com.tripian.trpcore.util.extensions.appLanguage
 import com.tripian.trpcore.util.extensions.closedText
 import com.tripian.trpcore.util.extensions.fridayText
 import com.tripian.trpcore.util.extensions.isConnectedNet
@@ -132,7 +132,7 @@ class MiscRepository @Inject constructor(
             currentLang = "en"
         }
 
-        appLanguage = currentLang
+        TRPCore.core.appConfig.appLanguage = currentLang
         currentLanguageValues = languageValues.getJSONObject(currentLang).getJSONObject("keys")
     }
 

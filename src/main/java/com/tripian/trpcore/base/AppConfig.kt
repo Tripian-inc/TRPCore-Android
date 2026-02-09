@@ -9,6 +9,7 @@ abstract class AppConfig {
     val SESSION_TIMEOUT: Long = 120
 
     var appLanguage: String = "en"
+    var appCurrency: String = "EUR"
 
     /**
      * Service urls

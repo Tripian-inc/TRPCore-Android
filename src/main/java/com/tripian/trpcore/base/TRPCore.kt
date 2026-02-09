@@ -45,6 +45,7 @@ class TRPCore {
         const val EXTRA_UNIQUE_ID = "extra_unique_id"
         const val EXTRA_CAN_BACK = "extra_can_back"
         const val EXTRA_APP_LANGUAGE = "extra_app_language"
+        const val EXTRA_APP_CURRENCY = "extra_app_currency"
 
         // SDK Listener - For host app callbacks
         private var listener: TRPCoreSDKListener? = null
@@ -137,6 +138,9 @@ class TRPCore {
     @Inject
     lateinit var trpRest: TRPRest
 
+    @Inject
+    lateinit var appConfig: AppConfig
+
     /**
      * Initializes the TRPCore SDK.
      *
@@ -221,13 +225,15 @@ class TRPCore {
     fun startTripianWithEmail(
         context: Context,
         email: String,
-        appLanguage: String = "en"
+        appLanguage: String = "en",
+        appCurrency: String = "EUR"
     ) {
         startTripianCore(
             context = context,
             email = email,
             uniqueId = null,
-            appLanguage = appLanguage
+            appLanguage = appLanguage,
+            appCurrency = appCurrency
         )
     }
 
@@ -241,13 +247,15 @@ class TRPCore {
     fun startTripianWithUniqueId(
         context: Context,
         uniqueId: String,
-        appLanguage: String = "en"
+        appLanguage: String = "en",
+        appCurrency: String = "EUR"
     ) {
         startTripianCore(
             context = context,
             email = null,
             uniqueId = uniqueId,
-            appLanguage = appLanguage
+            appLanguage = appLanguage,
+            appCurrency = appCurrency
         )
     }
 
@@ -256,13 +264,15 @@ class TRPCore {
         context: Context,
         email: String? = null,
         uniqueId: String? = null,
-        appLanguage: String
+        appLanguage: String,
+        appCurrency: String
     ) {
 
         val intent = Intent(context, ACSplash::class.java)
         intent.putExtra("email", email)
         intent.putExtra("uniqueId", uniqueId)
         intent.putExtra("appLanguage", appLanguage)
+        intent.putExtra(EXTRA_APP_CURRENCY, appCurrency)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
@@ -300,6 +310,7 @@ class TRPCore {
      * @param uniqueId User ID (device ID used if null)
      * @param canBack Whether to show back button
      * @param appLanguage App language (default: "en")
+     * @param appCurrency App currency (default: "EUR")
      *
      * @throws IllegalArgumentException if neither destinationItems nor tripItems has data
      */
@@ -309,7 +320,8 @@ class TRPCore {
         tripHash: String? = null,
         uniqueId: String? = null,
         canBack: Boolean = true,
-        appLanguage: String = "en"
+        appLanguage: String = "en",
+        appCurrency: String = "EUR"
     ) {
         // Validation - either destinationItems or tripItems must have data
         require(itinerary.hasLocationData()) {
@@ -327,6 +339,7 @@ class TRPCore {
                 putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
                 putExtra(EXTRA_CAN_BACK, canBack)
                 putExtra(EXTRA_APP_LANGUAGE, appLanguage)
+                putExtra(EXTRA_APP_CURRENCY, appCurrency)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
@@ -341,13 +354,15 @@ class TRPCore {
      * @param uniqueId User ID (device ID used if null)
      * @param canBack Whether to show back button
      * @param appLanguage App language (default: "en")
+     * @param appCurrency App currency (default: "EUR")
      */
     fun startWithTripHash(
         context: Context,
         tripHash: String,
         uniqueId: String? = null,
         canBack: Boolean = true,
-        appLanguage: String = "en"
+        appLanguage: String = "en",
+        appCurrency: String = "EUR"
     ) {
         val effectiveUniqueId = uniqueId ?: getDeviceId(context)
 
@@ -358,6 +373,7 @@ class TRPCore {
                 putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
                 putExtra(EXTRA_CAN_BACK, canBack)
                 putExtra(EXTRA_APP_LANGUAGE, appLanguage)
+                putExtra(EXTRA_APP_CURRENCY, appCurrency)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
