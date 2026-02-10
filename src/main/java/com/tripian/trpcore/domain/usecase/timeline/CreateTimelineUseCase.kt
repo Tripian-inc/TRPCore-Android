@@ -41,7 +41,8 @@ class CreateTimelineUseCase @Inject constructor(
      */
     private fun createTimelineSettings(itinerary: ItineraryWithActivities): TimelineSettings {
         val cityId = resolveCityId(itinerary)
-        val segments = itinerary.createSegmentsFromTripItems()
+        // Pass resolved cityId as default for empty segments
+        val segments = itinerary.createSegmentsFromTripItems(defaultCityId = cityId)
 
         return TimelineSettings().apply {
             this.cityId = cityId

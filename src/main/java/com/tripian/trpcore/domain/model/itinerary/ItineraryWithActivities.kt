@@ -86,11 +86,14 @@ data class ItineraryWithActivities(
      * 1. Create segments from tripItems (booked_activity type)
      * 2. Check if startDate has an activity, if not add empty segment at index 0
      * 3. Check if endDate has an activity, if not add empty segment at end
+     *
+     * @param defaultCityId Fallback cityId to use when segment cityId is null (e.g., from timeline)
      */
-    fun createSegmentsFromTripItems(): List<TimelineSegmentSettings> {
+    fun createSegmentsFromTripItems(defaultCityId: Int? = null): List<TimelineSegmentSettings> {
         val adults = getAdultCount()
         val children = getChildCount()
-        val cityId = getFirstCityId()
+        // Use provided defaultCityId as fallback if getFirstCityId() returns null
+        val cityId = getFirstCityId() ?: defaultCityId
 
         // Create segments from tripItems (booked activities)
         val segments = tripItems?.map { item ->
