@@ -62,6 +62,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
     override fun onCreate(savedInstanceState: Bundle?) {
         TRPCore.inject(this)
+        TRPCore.registerActivity(this)
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
@@ -187,6 +188,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
     }
 
     override fun onDestroy() {
+        TRPCore.unregisterActivity(this)
         viewModel.onDestroy()
 
         super.onDestroy()

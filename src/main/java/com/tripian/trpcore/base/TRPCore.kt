@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
 import com.tripian.gyg.base.Tripian
 import android.provider.Settings
+import java.lang.ref.WeakReference
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
@@ -50,8 +51,53 @@ class TRPCore {
         // SDK Listener - For host app callbacks
         private var listener: TRPCoreSDKListener? = null
 
+        // Activity stack for tracking open SDK activities (WeakReference to avoid memory leaks)
+        private val activityStack = mutableListOf<WeakReference<Activity>>()
+
         fun inject(activity: AppCompatActivity) {
             core.activityInjector().inject(activity)
+        }
+
+        // =====================
+        // ACTIVITY TRACKING
+        // =====================
+
+        /**
+         * Registers an activity to the SDK activity stack.
+         * Called from BaseActivity.onCreate()
+         */
+        internal fun registerActivity(activity: Activity) {
+            // Clean up any null references first
+            activityStack.removeAll { it.get() == null }
+            activityStack.add(WeakReference(activity))
+        }
+
+        /**
+         * Unregisters an activity from the SDK activity stack.
+         * Called from BaseActivity.onDestroy()
+         */
+        internal fun unregisterActivity(activity: Activity) {
+            activityStack.removeAll { it.get() == activity || it.get() == null }
+        }
+
+        /**
+         * Closes the SDK by finishing all open SDK activities.
+         * This method can be called from the host app to dismiss the SDK.
+         *
+         * Usage:
+         * ```
+         * TRPCore.closeSDK()
+         * ```
+         */
+        fun closeSDK() {
+            // Finish all activities in reverse order (last opened first)
+            activityStack.reversed().forEach { ref ->
+                ref.get()?.finish()
+            }
+            activityStack.clear()
+
+            // Notify host app that SDK is dismissed
+            listener?.onSDKDismissed()
         }
 
         /**
