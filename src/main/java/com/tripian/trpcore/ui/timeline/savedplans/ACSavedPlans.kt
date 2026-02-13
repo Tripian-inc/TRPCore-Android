@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.trpcore.base.BaseActivity
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.AcSavedPlansBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
@@ -90,7 +91,13 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
     private fun setupRecyclerView() {
         adapter = AdapterSavedPlans(
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
-            onAddClicked = { favorite -> viewModel.onActivityAddClicked(favorite) }
+            onAddClicked = { favorite -> viewModel.onActivityAddClicked(favorite) },
+            onItemClicked = { favorite ->
+                // Notify host app that user tapped on an activity to see details
+                favorite.activityId?.let { activityId ->
+                    TRPCore.notifyActivityDetailRequested(activityId)
+                }
+            }
         )
 
         binding.rvSavedPlans.apply {

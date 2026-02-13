@@ -311,6 +311,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 // When Add Plans button is clicked from empty state
                 showAddPlanSheet()
             },
+            onReservationClick = { bookedActivity ->
+                // Handle reservation button click for reserved activities
+                bookedActivity.segment.additionalData?.activityId?.let { activityId ->
+                    viewModel.onActivityReservationRequested(activityId)
+                }
+            },
             // Step callbacks for Recommendations
             onStepChangeTimeClick = { step ->
                 // Handle change time for POI step

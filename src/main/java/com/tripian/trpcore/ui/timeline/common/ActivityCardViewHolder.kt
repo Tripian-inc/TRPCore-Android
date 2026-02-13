@@ -21,7 +21,8 @@ import java.util.Locale
 class ActivityCardViewHolder(
     private val binding: ItemActivityCardBinding,
     private val getLanguage: (String) -> String,
-    private val onAddClicked: (ActivityCardData) -> Unit
+    private val onAddClicked: (ActivityCardData) -> Unit,
+    private val onItemClicked: ((ActivityCardData) -> Unit)? = null
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private var currentData: ActivityCardData? = null
@@ -50,6 +51,11 @@ class ActivityCardViewHolder(
         // Add button click
         binding.btnAdd.setOnClickListener {
             currentData?.let { onAddClicked(it) }
+        }
+
+        // Item click (whole card)
+        binding.root.setOnClickListener {
+            currentData?.let { onItemClicked?.invoke(it) }
         }
     }
 
@@ -122,14 +128,15 @@ class ActivityCardViewHolder(
         fun create(
             parent: ViewGroup,
             getLanguage: (String) -> String,
-            onAddClicked: (ActivityCardData) -> Unit
+            onAddClicked: (ActivityCardData) -> Unit,
+            onItemClicked: ((ActivityCardData) -> Unit)? = null
         ): ActivityCardViewHolder {
             val binding = ItemActivityCardBinding.inflate(
                 LayoutInflater.from(parent.context),
                 parent,
                 false
             )
-            return ActivityCardViewHolder(binding, getLanguage, onAddClicked)
+            return ActivityCardViewHolder(binding, getLanguage, onAddClicked, onItemClicked)
         }
 
         /**

@@ -14,7 +14,8 @@ import com.tripian.trpcore.ui.timeline.common.ActivityCardViewHolder
  */
 class AdapterActivityListing(
     private val getLanguage: (String) -> String,
-    private val onAddClicked: (TourProduct) -> Unit
+    private val onAddClicked: (TourProduct) -> Unit,
+    private val onItemClicked: ((TourProduct) -> Unit)? = null
 ) : ListAdapter<TourProduct, ActivityCardViewHolder>(ActivityDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ActivityCardViewHolder {
@@ -25,6 +26,13 @@ class AdapterActivityListing(
                 // Find the original TourProduct by id and pass it to callback
                 currentList.find { it.id == cardData.id || it.productId == cardData.id }
                     ?.let { onAddClicked(it) }
+            },
+            onItemClicked = onItemClicked?.let { callback ->
+                { cardData ->
+                    // Find the original TourProduct by id and pass it to callback
+                    currentList.find { it.id == cardData.id || it.productId == cardData.id }
+                        ?.let { callback(it) }
+                }
             }
         )
     }
@@ -43,8 +51,7 @@ class AdapterActivityListing(
             return oldItem.productId == newItem.productId &&
                     oldItem.title == newItem.title &&
                     oldItem.price == newItem.price &&
-                    oldItem.rating == newItem.rating &&
-                    oldItem.tags == newItem.tags
+                    oldItem.rating == newItem.rating
         }
     }
 }

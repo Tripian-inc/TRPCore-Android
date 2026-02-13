@@ -15,6 +15,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.AcActivityListingBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.LanguageConst
 
 /**
@@ -117,6 +118,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         // Set button texts from language service
         updateFilterButton(viewModel.getCurrentFilter())
         binding.btnSortBy.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SORT_BY)
+
+        // Set empty state text from language service
+        binding.tvEmpty.text = viewModel.getLanguageForKey(LanguageConst.ACTIVITY_LISTING_NO_ACTIVITIES)
     }
 
     /**
@@ -146,7 +150,12 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         // Activity list with language callbacks
         activityAdapter = AdapterActivityListing(
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
-            onAddClicked = { activity -> viewModel.onActivityAddClicked(activity) }
+            onAddClicked = { activity -> viewModel.onActivityAddClicked(activity) },
+            onItemClicked = { activity ->
+                // Notify host app that user tapped on an activity to see details
+                val activityId = activity.productId ?: activity.id ?: return@AdapterActivityListing
+                TRPCore.notifyActivityDetailRequested(activityId)
+            }
         )
         binding.rvActivities.apply {
             layoutManager = LinearLayoutManager(this@ACActivityListing)

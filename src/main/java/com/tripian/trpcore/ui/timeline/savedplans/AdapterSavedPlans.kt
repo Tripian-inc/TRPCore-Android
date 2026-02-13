@@ -17,7 +17,8 @@ import com.tripian.trpcore.ui.timeline.common.ActivityCardViewHolder
  */
 class AdapterSavedPlans(
     private val getLanguage: (String) -> String,
-    private val onAddClicked: (SegmentFavoriteItem) -> Unit
+    private val onAddClicked: (SegmentFavoriteItem) -> Unit,
+    private val onItemClicked: ((SegmentFavoriteItem) -> Unit)? = null
 ) : ListAdapter<SavedPlansListItem, RecyclerView.ViewHolder>(SavedPlansDiffCallback()) {
 
     companion object {
@@ -53,6 +54,16 @@ class AdapterSavedPlans(
                             .find { it.favorite.activityId == cardData.id }
                             ?.favorite
                             ?.let { onAddClicked(it) }
+                    },
+                    onItemClicked = onItemClicked?.let { callback ->
+                        { cardData ->
+                            // Find the original SegmentFavoriteItem by id and pass it to callback
+                            currentList
+                                .filterIsInstance<SavedPlansListItem.ActivityItem>()
+                                .find { it.favorite.activityId == cardData.id }
+                                ?.favorite
+                                ?.let { callback(it) }
+                        }
                     }
                 )
             }
