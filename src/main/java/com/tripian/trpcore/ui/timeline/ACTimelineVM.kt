@@ -141,11 +141,13 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Set app currency from intent
-        val currency = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
-        if (!currency.isNullOrEmpty()) {
-            TRPCore.core.appConfig.appCurrency = currency
+        // Supports both ISO 4217 codes (USD, EUR) and locale format (es-MX, en-US)
+        val currencyInput = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
+        if (!currencyInput.isNullOrEmpty()) {
+            val currencyCode = com.tripian.trpcore.util.CurrencyUtil.resolveCurrencyCode(currencyInput)
+            TRPCore.core.appConfig.appCurrency = currencyCode
             // Also update TRPOne to use correct currency for API calls
-            TRPCore.core.trpRest.setCurrency(currency)
+            TRPCore.core.trpRest.setCurrency(currencyCode)
         }
 
         // Also check legacy ARG_TRIP_HASH

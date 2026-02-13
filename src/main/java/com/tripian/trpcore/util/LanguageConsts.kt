@@ -201,7 +201,7 @@ object LanguageConst {
     const val REMOVE_RECOMMENDATIONS_MESSAGE = "timeline.removeRecommendations.message"
     const val NO_PLANS_YET = "timeline.emptyState.noPlansYet"
     const val NO_PLANS_DESCRIPTION = "timeline.emptyState.noPlansDescription"
-    const val ADD_PLANS = "timeline.emptyState.addPlans"
+    const val ADD_PLANS = "timeline.emptyState.addPlansButton"
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
 
     // =====================

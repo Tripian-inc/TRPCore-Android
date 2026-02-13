@@ -127,13 +127,39 @@ class MiscRepository @Inject constructor(
     }
 
     private fun setCurrentLanguageKeys() {
-        var currentLang = preferences.getString(Preferences.Keys.APP_LANGUAGE)
-        if (currentLang.isNullOrEmpty()) {
-            currentLang = "en"
+        val currentLang = preferences.getString(Preferences.Keys.APP_LANGUAGE)
+
+        // Resolve language code - handle null, empty, and regional locales like "es-MX" → "es"
+        val resolvedLang = resolveLanguageCode(currentLang)
+
+        TRPCore.core.appConfig.appLanguage = resolvedLang
+        currentLanguageValues = languageValues.getJSONObject(resolvedLang).getJSONObject("keys")
+    }
+
+    /**
+     * Resolves a language code to one that exists in available translations.
+     * Handles null/empty values, regional locales (e.g., "es-MX" → "es"),
+     * and falls back to "en" if not found.
+     */
+    private fun resolveLanguageCode(langCode: String?): String {
+        // Handle null or empty
+        if (langCode.isNullOrEmpty()) {
+            return "en"
         }
 
-        TRPCore.core.appConfig.appLanguage = currentLang
-        currentLanguageValues = languageValues.getJSONObject(currentLang).getJSONObject("keys")
+        // If the exact code exists, use it
+        if (languageValues.has(langCode)) {
+            return langCode
+        }
+
+        // Try base language code (e.g., "es-MX" → "es")
+        val baseLang = langCode.split("-", "_").firstOrNull()?.lowercase()
+        if (!baseLang.isNullOrEmpty() && languageValues.has(baseLang)) {
+            return baseLang
+        }
+
+        // Fallback to English
+        return "en"
     }
 
     private fun setDaysTexts() {

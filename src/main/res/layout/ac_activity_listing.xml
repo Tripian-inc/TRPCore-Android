@@ -169,9 +169,9 @@
             android:layout_gravity="center"
             android:gravity="center"
             android:padding="@dimen/_24sdp"
-            android:text="No activities found"
             android:textColor="@color/trp_grey_30"
-            android:visibility="gone" />
+            android:visibility="gone"
+            tools:text="No activities found" />
 
         <!-- Error State -->
         <com.tripian.trpcore.util.widget.TextView
