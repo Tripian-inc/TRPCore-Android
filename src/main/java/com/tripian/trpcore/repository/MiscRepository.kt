@@ -16,6 +16,7 @@ import com.tripian.trpcore.util.extensions.thursdayText
 import com.tripian.trpcore.util.extensions.tuesdayText
 import com.tripian.trpcore.util.extensions.wednesdayText
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.BehaviorSubject
 import org.json.JSONObject
 import javax.inject.Inject
@@ -65,9 +66,10 @@ class MiscRepository @Inject constructor(
             return languagesLoadedSubject.take(1)
         }
 
-        // Start new fetch
+        // Start new fetch - runs on IO thread to avoid blocking main thread (ANR prevention)
         isFetchInProgress = true
         return service.getLanguageValues()
+            .subscribeOn(Schedulers.io())
             .map {
                 setLanguages(it.string())
                 true

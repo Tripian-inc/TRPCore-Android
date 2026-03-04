@@ -9,6 +9,7 @@ import com.tripian.one.api.trip.model.TripResponse
 import com.tripian.one.api.trip.model.TripsResponse
 import com.tripian.trpcore.R
 import io.reactivex.Observable
+import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 /**
@@ -21,18 +22,21 @@ class TripRepository @Inject constructor(val service: Service) {
     /**
      * Pre-fetch cities and cache them.
      * Called at SDK initialization to ensure cities are available throughout the app.
+     * Runs on IO thread to avoid blocking main thread (ANR prevention).
      * @return Observable<Boolean> - true if cities were fetched/cached successfully
      */
     fun prefetchCities(): Observable<Boolean> {
         return if (items.isEmpty()) {
-            service.getCities(null, 1000, null).map { response ->
-                response.data?.let { list ->
-                    val sortedCities = list.sortedBy { it.name }
-                    items.clear()
-                    items.addAll(sortedCities)
+            service.getCities(null, 1000, null)
+                .subscribeOn(Schedulers.io())
+                .map { response ->
+                    response.data?.let { list ->
+                        val sortedCities = list.sortedBy { it.name }
+                        items.clear()
+                        items.addAll(sortedCities)
+                    }
+                    true
                 }
-                true
-            }
         } else {
             Observable.just(true)
         }
