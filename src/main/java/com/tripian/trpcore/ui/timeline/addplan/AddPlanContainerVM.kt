@@ -13,7 +13,10 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
+import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.LanguageConst
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import java.util.Date
 import javax.inject.Inject
 
@@ -22,7 +25,9 @@ import javax.inject.Inject
  * Shared ViewModel for AddPlan flow container and child fragments
  * iOS Reference: AddPlanContainerVC.swift
  */
-class AddPlanContainerVM @Inject constructor() : BaseViewModel() {
+class AddPlanContainerVM @Inject constructor(
+    private val tripRepository: TripRepository
+) : BaseViewModel() {
 
     // =====================
     // PLAN DATA (Shared state)
@@ -74,6 +79,12 @@ class AddPlanContainerVM @Inject constructor() : BaseViewModel() {
 
     private val _cities = MutableLiveData<List<City>>()
     val cities: LiveData<List<City>> = _cities
+
+    private val _isLoadingCities = MutableLiveData(false)
+    val isLoadingCities: LiveData<Boolean> = _isLoadingCities
+
+    // Flag to track if we're using all available cities (no timeline destination)
+    private var isUsingAllCities = false
 
     private val _selectedDayIndex = MutableLiveData(0)
     val selectedDayIndex: LiveData<Int> = _selectedDayIndex
@@ -135,34 +146,80 @@ class AddPlanContainerVM @Inject constructor() : BaseViewModel() {
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
 
         _availableDays.value = days
-        _cities.value = citiesList
         _selectedDayIndex.value = dayIndex
-        _selectedCity.value = city ?: citiesList.firstOrNull()
 
         // Initialize plan data
         planData.availableDays = days
-        planData.cities = citiesList
         planData.tripHash = tripHash
 
         if (dayIndex < days.size) {
             planData.selectedDay = days[dayIndex]
             planData.selectedDayIndex = dayIndex
         }
-        planData.selectedCity = city ?: citiesList.firstOrNull()
 
         // Don't set default times - user should select them
         // _startTime and _endTime remain null, showing "Select" in UI
 
-        // Set default starting point (city center)
-        val selectedCityObj = city ?: citiesList.firstOrNull()
-        planData.startingPointLocation = selectedCityObj?.coordinate ?: Coordinate().apply {
-            lat = 0.0
-            lng = 0.0
+        // If no destination cities from timeline, fetch all available cities
+        if (citiesList.isEmpty()) {
+            isUsingAllCities = true
+            _selectedCity.value = null
+            planData.selectedCity = null
+            fetchAllCities()
+        } else {
+            isUsingAllCities = false
+            _cities.value = citiesList
+            _selectedCity.value = city ?: citiesList.firstOrNull()
+            planData.cities = citiesList
+            planData.selectedCity = city ?: citiesList.firstOrNull()
+
+            // Set default starting point (city center)
+            val selectedCityObj = city ?: citiesList.firstOrNull()
+            planData.startingPointLocation = selectedCityObj?.coordinate ?: Coordinate().apply {
+                lat = 0.0
+                lng = 0.0
+            }
+            _startingPointNameKey.value = LanguageConst.ADD_PLAN_CITY_CENTER
         }
-        _startingPointNameKey.value = LanguageConst.ADD_PLAN_CITY_CENTER
 
         updateUI()
     }
+
+    /**
+     * Fetch all available cities when timeline has no destination cities
+     */
+    private fun fetchAllCities() {
+        _isLoadingCities.value = true
+
+        // First try to get from cache
+        val cachedCities = tripRepository.getCachedCities()
+        if (cachedCities.isNotEmpty()) {
+            _cities.value = cachedCities
+            planData.cities = cachedCities
+            _isLoadingCities.value = false
+            updateContinueButtonState()
+        } else {
+            // Fetch from API if not cached
+            tripRepository.prefetchCities()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({
+                    val cities = tripRepository.getCachedCities()
+                    _cities.value = cities
+                    planData.cities = cities
+                    _isLoadingCities.value = false
+                    updateContinueButtonState()
+                }, {
+                    _isLoadingCities.value = false
+                    updateContinueButtonState()
+                })
+        }
+    }
+
+    /**
+     * Check if city selection should always be shown (when using all cities fallback)
+     */
+    fun shouldAlwaysShowCitySelection(): Boolean = isUsingAllCities
 
     // =====================
     // DAY SELECTION

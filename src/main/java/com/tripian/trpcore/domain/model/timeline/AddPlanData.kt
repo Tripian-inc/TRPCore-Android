@@ -115,8 +115,12 @@ data class AddPlanData(
 
     /**
      * Check if continue button should be enabled on SelectDay screen
+     * City must be selected before proceeding
      */
     fun canContinueFromSelectDay(): Boolean {
+        // City must be selected
+        if (selectedCity == null) return false
+
         return when (selectedMode) {
             AddPlanMode.SMART_RECOMMENDATIONS, AddPlanMode.SMART -> true
             AddPlanMode.MANUAL -> selectedManualCategory != null

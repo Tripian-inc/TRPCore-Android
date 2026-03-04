@@ -1,5 +1,7 @@
 package com.tripian.trpcore.ui.createtrip
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.core.widget.doAfterTextChanged
@@ -12,8 +14,19 @@ import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.hideKeyboard
 import com.tripian.trpcore.util.extensions.observe
 import com.tripian.trpcore.util.extensions.showKeyboard
+import com.tripian.one.api.cities.model.City
 
 class ACSearchAddress : BaseActivity<AcSearchAddressBinding, ACSearchAddressVM>() {
+
+    companion object {
+        const val EXTRA_CITY = "city"
+
+        fun newIntent(context: Context, city: City): Intent {
+            return Intent(context, ACSearchAddress::class.java).apply {
+                putExtra(EXTRA_CITY, city)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
