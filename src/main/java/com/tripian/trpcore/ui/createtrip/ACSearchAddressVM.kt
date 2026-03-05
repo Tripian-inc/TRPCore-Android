@@ -26,7 +26,11 @@ class ACSearchAddressVM @Inject constructor(val searchAddress: SearchAddress, va
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
 
-        city = arguments!!.getSerializable("city") as City
+        city = arguments?.getSerializable(ACSearchAddress.EXTRA_CITY) as? City
+        if (city == null) {
+            goBack()
+            return
+        }
     }
 
     fun onClickedBack() {

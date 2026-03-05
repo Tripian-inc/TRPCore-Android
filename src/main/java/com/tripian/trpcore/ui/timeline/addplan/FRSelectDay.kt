@@ -174,8 +174,19 @@ class FRSelectDay : Fragment() {
 
         // Cities
         sharedVM.cities.observe(viewLifecycleOwner) { cities ->
-            // Show city selection only if multiple cities
-            binding.llCitySelection.visibility = if (cities.size > 1) View.VISIBLE else View.GONE
+            // Show city selection if multiple cities OR if using all cities fallback (no timeline destination)
+            val shouldShow = cities.size > 1 || sharedVM.shouldAlwaysShowCitySelection()
+            binding.llCitySelection.visibility = if (shouldShow) View.VISIBLE else View.GONE
+        }
+
+        // Loading state for cities
+        sharedVM.isLoadingCities.observe(viewLifecycleOwner) { isLoading ->
+            binding.btnCitySelection.isEnabled = !isLoading
+            binding.tvSelectedCity.text = if (isLoading) {
+                "..."
+            } else {
+                sharedVM.selectedCity.value?.name ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
+            }
         }
 
         // Selected city

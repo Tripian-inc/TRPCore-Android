@@ -1,9 +1,7 @@
 package com.tripian.trpcore.ui.createtrip
 
 import android.app.DatePickerDialog
-import android.content.Intent
 import android.graphics.Color
-import android.os.Bundle
 import android.text.TextUtils
 import android.view.View
 import android.widget.DatePicker
@@ -42,18 +40,10 @@ class FRPropertiesSelect :
     override fun setReceivers() {
         super.setReceivers()
 
-        observe(viewModel.onShowSearchListener) {
-            val intent = Intent(context, ACSearchAddress::class.java)
-
-            val data = Bundle()
-            data.putSerializable("city", it!!)
-
-            intent.putExtras(data)
-//
-//            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(activity as Activity, tiSearchAddress as View, "search")
-//            ActivityCompat.startActivityForResult(requireActivity(), intent, 1, options.toBundle())
-
-            startActivity(intent)
+        observe(viewModel.onShowSearchListener) { city ->
+            city?.let {
+                startActivity(ACSearchAddress.newIntent(requireContext(), it))
+            }
         }
 
         observe(viewModel.onSetPlaceListener) {

@@ -24,7 +24,11 @@ import com.tripian.trpprovider.base.ProviderCore
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import com.mapbox.common.MapboxOptions
+import android.os.Handler
+import android.os.Looper
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.schedulers.Schedulers
 import javax.inject.Inject
 
 /**
@@ -209,7 +213,15 @@ class TRPCore {
         apiVersion = environment.getApiVersion()
 
         // Set Mapbox access token programmatically (instead of XML resource)
-        MapboxOptions.accessToken = mapboxApiKey
+        // IMPORTANT: Mapbox native library loading MUST happen on main thread
+        // to avoid UnsatisfiedLinkError when init() is called from background thread
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            MapboxOptions.accessToken = mapboxApiKey
+        } else {
+            Handler(Looper.getMainLooper()).post {
+                MapboxOptions.accessToken = mapboxApiKey
+            }
+        }
 
         ProviderCore().init(app, "")
 
@@ -433,9 +445,12 @@ class TRPCore {
     /**
      * Fetches language values from server.
      * Called automatically during SDK initialization.
+     * Runs on IO thread to avoid blocking main thread (ANR prevention).
      */
     private fun fetchLanguages() {
         miscRepository.getLanguageValues()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { success ->
                     Log.d("TRPCore", "Languages fetched successfully: $success")
@@ -475,9 +490,12 @@ class TRPCore {
      * Pre-fetches cities from server and caches them.
      * Called automatically during SDK initialization.
      * This ensures city data is available throughout the app for all city-related operations.
+     * Runs on IO thread to avoid blocking main thread (ANR prevention).
      */
     private fun prefetchCities() {
         tripRepository.prefetchCities()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
                 { success ->
                     Log.d("TRPCore", "Cities pre-fetched successfully: ${tripRepository.getCachedCities().size} cities cached")
