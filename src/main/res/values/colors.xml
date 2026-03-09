@@ -103,6 +103,8 @@
     <color name="trp_lineWeak">#CFCFCF</color>
     <color name="trp_fgWeak">#666666</color>
     <color name="trp_neutral100">#F5F5F5</color>
+    <color name="trp_grayBg">#EAEAEA</color>
+    <color name="trp_grayFg">#212020</color>
     <color name="trp_neutral200">#F5F4F5</color>
     <color name="trp_neutral300">#CFCFCF</color>
 

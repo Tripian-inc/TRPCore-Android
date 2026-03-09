@@ -105,13 +105,15 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
         // Meeting Point Section - visible if has coordinate
         _showMeetingPointSection.value = poi.coordinate != null
 
-        // Features Section - visible if has tags
-        _showFeaturesSection.value = !poi.tags.isNullOrEmpty()
+        // Features Section - DISABLED: Features görünümü kapatıldı
+        // _showFeaturesSection.value = !poi.tags.isNullOrEmpty()
+        _showFeaturesSection.value = false
 
-        // Cuisines Section - visible for Eat & Drink categories with cuisines data
-        val cuisines = parseCuisines(poi.cuisines)
-        _cuisinesList.value = cuisines
-        _showCuisinesSection.value = isEatAndDrink && cuisines.isNotEmpty()
+        // Cuisines Section - DISABLED: Cuisines görünümü kapatıldı
+        // val cuisines = parseCuisines(poi.cuisines)
+        // _cuisinesList.value = cuisines
+        // _showCuisinesSection.value = isEatAndDrink && cuisines.isNotEmpty()
+        _showCuisinesSection.value = false
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.View
+import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.tripian.one.api.timeline.model.TimelineStep
@@ -77,6 +78,9 @@ class StepPoiVH(
             binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
         }
 
+        // Rating Row - DISABLED: Rating/review görünümleri kapatıldı
+        binding.llRating.visibility = View.GONE
+        /*
         // Rating Row - from poi.rating and poi.ratingCount
         // Rating uses comma as decimal separator (4,2), reviewCount uses dot as thousand separator (49.565)
         val rating = poi?.rating
@@ -96,6 +100,7 @@ class StepPoiVH(
         } else {
             binding.llRating.visibility = View.GONE
         }
+        */
 
         // Category Badge
         poi?.category?.firstOrNull()?.name?.let { category ->
@@ -103,6 +108,14 @@ class StepPoiVH(
             binding.tvCategory.visibility = View.VISIBLE
         } ?: run {
             binding.tvCategory.visibility = View.GONE
+        }
+
+        // Spacing fix: Adjust category badge margin when rating is hidden
+        val density = binding.root.context.resources.displayMetrics.density
+        (binding.tvCategory.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
+            // Rating is always hidden, so use smaller margin (4dp instead of 6dp)
+            params.topMargin = (4 * density).toInt()
+            binding.tvCategory.layoutParams = params
         }
 
         // Click listeners

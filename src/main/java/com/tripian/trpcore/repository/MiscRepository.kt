@@ -4,6 +4,7 @@ import android.app.Application
 import com.tripian.gyg.base.Tripian
 import com.tripian.one.api.misc.model.ConfigList
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.closedText
@@ -180,20 +181,73 @@ class MiscRepository @Inject constructor(
         setCurrentLanguageKeys()
     }
 
+    /**
+     * Changes the app currency and persists it.
+     * The new currency will be used for all subsequent API requests.
+     * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, etc.) or locale format (es-MX, en-US)
+     */
+    fun changeCurrency(currency: String) {
+        val resolvedCurrency = CurrencyUtil.resolveCurrencyCode(currency)
+        preferences.setString(Preferences.Keys.APP_CURRENCY, resolvedCurrency)
+        TRPCore.core.appConfig.appCurrency = resolvedCurrency
+    }
+
+    /**
+     * Gets the current currency code.
+     * @return Current currency code (default: EUR)
+     */
+    fun getCurrentCurrency(): String {
+        return TRPCore.core.appConfig.appCurrency
+    }
+
+    /**
+     * Gets the saved currency code from preferences.
+     * @return Saved currency code or empty string if not set
+     */
+    fun getSavedCurrency(): String {
+        return preferences.getString(Preferences.Keys.APP_CURRENCY, "") ?: ""
+    }
+
     fun getLanguageValueForKey(key: String): String {
         if (key.isEmpty()) return ""
         return try {
-            currentLanguageValues.getString(key)
+            getNestedValue(currentLanguageValues, key)
         } catch (_: Exception) {
             key
         }
+    }
+
+    /**
+     * Gets a value from a JSONObject using dot notation for nested keys.
+     * e.g., "timeline.emptyState.addPlansButton" will navigate:
+     * timeline -> emptyState -> addPlansButton
+     *
+     * Falls back to direct key lookup if nested navigation fails.
+     */
+    private fun getNestedValue(json: JSONObject, key: String): String {
+        // First try direct key lookup (for flat structure)
+        if (json.has(key)) {
+            return json.getString(key)
+        }
+
+        // Try nested key navigation (for dot notation)
+        val parts = key.split(".")
+        if (parts.size == 1) {
+            return json.getString(key)
+        }
+
+        var current: Any = json
+        for (i in 0 until parts.size - 1) {
+            current = (current as JSONObject).getJSONObject(parts[i])
+        }
+        return (current as JSONObject).getString(parts.last())
     }
 
     fun getLanguageValueForKeyWithText(key: String, texts: List<String>): String {
         if (key.isEmpty()) return ""
         if (texts.isEmpty()) return getLanguageValueForKey(key)
         return try {
-            val translatedText = currentLanguageValues.getString(key).replace("%s", "%S")
+            val translatedText = getNestedValue(currentLanguageValues, key).replace("%s", "%S")
 
             return String.format(translatedText, *texts.toTypedArray())
         } catch (_: Exception) {

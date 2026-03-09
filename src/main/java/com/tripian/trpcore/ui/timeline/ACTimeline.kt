@@ -184,7 +184,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 binding.mapView.clearMap()
                 binding.mapView.showMapIcons(mapSteps)
                 lifecycleScope.launch {
-                    binding.mapView.moveCameraTo()
+                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+                }
+                // Handle FAB position based on whether there are items
+                if (mapSteps.isNullOrEmpty()) {
+                    hideMapBottomListCompletely()
                 }
             }
         }
@@ -473,10 +477,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 binding.mapView.clearMap()
                 binding.mapView.showMapIcons(mapSteps)
                 lifecycleScope.launch {
-                    binding.mapView.moveCameraTo()
+                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
                 }
                 // Show bottom list when entering map mode
+                binding.rvMapBottomList.visibility = View.VISIBLE
                 showMapBottomList()
+            } else {
+                // Empty day - center on city, hide bottom list, keep FAB at normal position
+                binding.mapView.clearMap()
+                lifecycleScope.launch {
+                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+                }
+                hideMapBottomListCompletely()
             }
         } else {
             binding.mapView.clearMap()
@@ -545,6 +557,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setDuration(300)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
+    }
+
+    /**
+     * Completely hide the bottom list (for empty days).
+     * Unlike hideMapBottomList, this doesn't show peek effect.
+     * Keeps FAB at its normal position.
+     */
+    private fun hideMapBottomListCompletely() {
+        isBottomListVisible = false
+        binding.rvMapBottomList.visibility = View.GONE
+        binding.fabList.translationY = 0f
     }
 
     /**

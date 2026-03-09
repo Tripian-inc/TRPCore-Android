@@ -16,6 +16,7 @@ class Preferences @Inject constructor(var context: Context) {
 
         const val APP_LANGUAGE = "app_language"
         const val APP_LANGUAGE_TRANSLATIONS = "app_language_translations"
+        const val APP_CURRENCY = "app_currency"
         // TOKEN info
         const val TOKEN_TYPE = "TokenType"
         const val ACCESS_TOKEN = "AccessToken"

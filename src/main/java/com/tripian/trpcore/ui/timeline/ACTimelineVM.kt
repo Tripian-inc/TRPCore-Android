@@ -33,6 +33,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.LanguageConst
+import com.mapbox.geojson.Point
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -140,15 +141,21 @@ class ACTimelineVM @Inject constructor(
             miscRepository.changeLanguage(language)
         }
 
-        // Set app currency from intent
+        // Set app currency - Priority: Intent > Preferences > Default (EUR)
         // Supports both ISO 4217 codes (USD, EUR) and locale format (es-MX, en-US)
-        val currencyInput = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
-        if (!currencyInput.isNullOrEmpty()) {
-            val currencyCode = com.tripian.trpcore.util.CurrencyUtil.resolveCurrencyCode(currencyInput)
-            TRPCore.core.appConfig.appCurrency = currencyCode
-            // Also update TRPOne to use correct currency for API calls
-            TRPCore.core.trpRest.setCurrency(currencyCode)
+        val currencyFromIntent = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
+        val currencyFromPrefs = TRPCore.core.miscRepository.getSavedCurrency()
+
+        val currencyInput = when {
+            !currencyFromIntent.isNullOrEmpty() -> currencyFromIntent
+            currencyFromPrefs.isNotEmpty() -> currencyFromPrefs
+            else -> "EUR"
         }
+
+        val currencyCode = com.tripian.trpcore.util.CurrencyUtil.resolveCurrencyCode(currencyInput)
+        TRPCore.core.appConfig.appCurrency = currencyCode
+        // Also update TRPOne to use correct currency for API calls
+        TRPCore.core.trpRest.setCurrency(currencyCode)
 
         // Also check legacy ARG_TRIP_HASH
         if (_tripHash.isEmpty()) {
@@ -1221,6 +1228,18 @@ class ACTimelineVM @Inject constructor(
     fun hasSingleCity(): Boolean = (_cities.value?.size ?: 0) <= 1
 
     fun getSelectedCity(): City? = _cities.value?.firstOrNull()
+
+    /**
+     * Returns the city coordinate as a Mapbox Point for map centering.
+     * Used when map has no items (empty day) to center on city instead of 0,0.
+     */
+    fun getSelectedDayCityCoordinate(): Point? {
+        val city = _cities.value?.firstOrNull()
+        val coord = city?.coordinate
+        return if (coord != null && coord.lat != 0.0 && coord.lng != 0.0) {
+            Point.fromLngLat(coord.lng, coord.lat)
+        } else null
+    }
 
     fun getItinerary(): ItineraryWithActivities? = itinerary
 

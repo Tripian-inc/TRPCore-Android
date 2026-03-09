@@ -58,8 +58,9 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         setupGallery()
         setupProductsRecyclerView()
         setupOpeningHoursRecyclerView()
-        setupFeaturesRecyclerView()
-        setupCuisinesRecyclerView()
+        // DISABLED: Features ve Cuisines görünümleri kapatıldı
+        // setupFeaturesRecyclerView()
+        // setupCuisinesRecyclerView()
 
         // Initialize from intent
         @Suppress("DEPRECATION")
@@ -122,24 +123,27 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             binding.llMeetingPointSection.visibility = if (show) View.VISIBLE else View.GONE
         }
 
-        viewModel.showFeaturesSection.observe(this) { show ->
-            binding.llFeaturesSection.visibility = if (show) View.VISIBLE else View.GONE
-        }
+        // Features Section - DISABLED: Features görünümü kapatıldı
+        // viewModel.showFeaturesSection.observe(this) { show ->
+        //     binding.llFeaturesSection.visibility = if (show) View.VISIBLE else View.GONE
+        // }
+        binding.llFeaturesSection.visibility = View.GONE
 
-        // Observe cuisines section
-        viewModel.showCuisinesSection.observe(this) { show ->
-            binding.llCuisinesSection.visibility = if (show) View.VISIBLE else View.GONE
-        }
-
-        viewModel.cuisinesList.observe(this) { cuisines ->
-            cuisinesAdapter?.submitList(cuisines)
-        }
+        // Cuisines Section - DISABLED: Cuisines görünümü kapatıldı
+        // viewModel.showCuisinesSection.observe(this) { show ->
+        //     binding.llCuisinesSection.visibility = if (show) View.VISIBLE else View.GONE
+        // }
+        // viewModel.cuisinesList.observe(this) { cuisines ->
+        //     cuisinesAdapter?.submitList(cuisines)
+        // }
+        binding.llCuisinesSection.visibility = View.GONE
 
         // Set section header texts
         binding.tvActivitiesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_ACTIVITIES)
         binding.tvKeyDataHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_KEY_DATA)
         binding.tvMeetingPointHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_MEETING_POINT)
-        binding.tvFeaturesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_FEATURES)
+        // DISABLED: Features görünümü kapatıldı
+        // binding.tvFeaturesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_FEATURES)
         binding.tvPhoneLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_PHONE)
         binding.tvOpeningHoursLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_OPENING_HOURS)
         binding.tvViewMap.text = getLanguageForKey(LanguageConst.POI_DETAIL_VIEW_MAP)
@@ -234,7 +238,9 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         // POI name
         binding.tvPoiName.text = poi.name ?: ""
 
-        // Rating
+        // Rating - DISABLED: Rating/review görünümleri kapatıldı
+        binding.llRating.visibility = View.GONE
+        /*
         val rating = poi.rating
         val reviewCount = poi.ratingCount
         val turkishLocale = Locale("tr", "TR")
@@ -254,6 +260,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         } else {
             binding.llRating.visibility = View.GONE
         }
+        */
 
         // Description
         if (!poi.description.isNullOrBlank()) {
@@ -309,10 +316,10 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             }
         }
 
-        // Features (tags)
-        poi.tags?.let { tags ->
-            featureTagAdapter?.submitList(tags)
-        }
+        // Features (tags) - DISABLED: Features görünümü kapatıldı
+        // poi.tags?.let { tags ->
+        //     featureTagAdapter?.submitList(tags)
+        // }
     }
 
     private fun setupPageIndicators(count: Int) {

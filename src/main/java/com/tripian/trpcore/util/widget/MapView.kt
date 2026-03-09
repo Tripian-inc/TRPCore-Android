@@ -350,7 +350,7 @@ class MapView : MapView {
         }
     }
 
-    suspend fun moveCameraTo() {
+    suspend fun moveCameraTo(fallbackCoordinate: Point? = null) {
         try {
             val latLngList: MutableList<Point> = ArrayList()
             for (i in mapItems.indices) {
@@ -383,19 +383,27 @@ class MapView : MapView {
                         }
                     )
                 }
-            } else {
-                if (latLngList.isNotEmpty()) {
-                    map?.flyTo(
-                        cameraOptions {
-                            center(latLngList[0])
-                            zoom(13.0)
-                        },
-                        mapAnimationOptions {
-                            duration(500L)
-                        }
-
-                    )
-                }
+            } else if (latLngList.isNotEmpty()) {
+                map?.flyTo(
+                    cameraOptions {
+                        center(latLngList[0])
+                        zoom(13.0)
+                    },
+                    mapAnimationOptions {
+                        duration(500L)
+                    }
+                )
+            } else if (fallbackCoordinate != null) {
+                // Empty day - use city coordinate as fallback
+                map?.flyTo(
+                    cameraOptions {
+                        center(fallbackCoordinate)
+                        zoom(12.0)
+                    },
+                    mapAnimationOptions {
+                        duration(500L)
+                    }
+                )
             }
         } catch (_: Exception) {
         }

@@ -73,13 +73,19 @@ class ACSplashVM @Inject constructor(
             ) ?: "en"
         }
 
-        // Set currency from intent
+        // Set currency - Priority: Intent > Preferences > Default (EUR)
         // Supports both ISO 4217 codes (USD, EUR) and locale format (es-MX, en-US)
-        val currencyInput = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
-        if (!currencyInput.isNullOrEmpty()) {
-            val currencyCode = com.tripian.trpcore.util.CurrencyUtil.resolveCurrencyCode(currencyInput)
-            TRPCore.core.appConfig.appCurrency = currencyCode
+        val currencyFromIntent = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
+        val currencyFromPrefs = preferences.getString(Preferences.Keys.APP_CURRENCY, "")
+
+        val currencyInput = when {
+            !currencyFromIntent.isNullOrEmpty() -> currencyFromIntent
+            !currencyFromPrefs.isNullOrEmpty() -> currencyFromPrefs
+            else -> "EUR"
         }
+
+        val currencyCode = com.tripian.trpcore.util.CurrencyUtil.resolveCurrencyCode(currencyInput)
+        TRPCore.core.appConfig.appCurrency = currencyCode
 
         // SDK Initialization order:
         // 1. Fetch cities

@@ -120,6 +120,35 @@ class TRPCore {
         fun getListener(): TRPCoreSDKListener? = listener
 
         // =====================
+        // CURRENCY METHODS
+        // =====================
+
+        /**
+         * Changes the app currency after SDK initialization.
+         * The currency is persisted and will be used for all subsequent API requests.
+         *
+         * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, JPY, AUD, CAD, CHF, MXN)
+         *                 or locale format (es-MX, en-US, de-DE)
+         *
+         * Example usage:
+         * ```kotlin
+         * TRPCore.changeCurrency("USD")
+         * TRPCore.changeCurrency("es-MX")  // Resolves to MXN
+         * ```
+         */
+        fun changeCurrency(currency: String) {
+            core.miscRepository.changeCurrency(currency)
+        }
+
+        /**
+         * Gets the current currency code.
+         * @return Current ISO 4217 currency code
+         */
+        fun getCurrentCurrency(): String {
+            return core.miscRepository.getCurrentCurrency()
+        }
+
+        // =====================
         // CALLBACK HELPER METHODS
         // =====================
 
