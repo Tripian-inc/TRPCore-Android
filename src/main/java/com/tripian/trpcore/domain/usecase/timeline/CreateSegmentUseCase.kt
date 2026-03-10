@@ -4,6 +4,7 @@ import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
@@ -42,7 +43,8 @@ class CreateSegmentUseCase @Inject constructor(
                 adults = p.adults,
                 children = p.children,
                 answerIds = emptyList(),  // Empty list instead of null
-                accommodation = p.accommodation  // Starting point (Google Place)
+                accommodation = p.accommodation,  // Starting point (Google Place)
+                currency = TRPCore.getCurrentCurrency()
             ).apply {
                 smartRecommendation = p.smartRecommendation
                 activityFreeText = p.activityFreeText

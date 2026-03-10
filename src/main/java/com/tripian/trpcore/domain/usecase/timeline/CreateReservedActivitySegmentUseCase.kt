@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
@@ -69,6 +70,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 this.additionalData = additionalData
                 available = false
                 distinctPlan = true
+                currency = TRPCore.getCurrentCurrency()
             }
 
             addObservable {

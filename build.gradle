@@ -162,7 +162,7 @@ dependencies {
     implementation 'com.github.Tripian-inc:TRPGyg-Android:1.0.0'
     implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
 
-    implementation 'com.github.Tripian-inc:TRPOne-Android:1.3.2'
+    implementation 'com.github.Tripian-inc:TRPOne-Android:1.3.3'
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
     implementation 'com.google.firebase:firebase-crashlytics-ktx'

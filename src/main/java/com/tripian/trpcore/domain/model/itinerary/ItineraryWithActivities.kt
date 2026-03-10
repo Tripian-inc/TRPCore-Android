@@ -3,6 +3,7 @@ package com.tripian.trpcore.domain.model.itinerary
 import android.os.Parcelable
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
+import com.tripian.trpcore.base.TRPCore
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -155,6 +156,7 @@ data class ItineraryWithActivities(
             adults = item.adultCount
             children = item.childCount
             doNotGenerate = 1
+            currency = TRPCore.getCurrentCurrency()
 
             // Coordinate
             item.coordinate.let { coord ->
@@ -212,6 +214,7 @@ data class ItineraryWithActivities(
             this.adults = adults
             this.children = children
             this.doNotGenerate = 1
+            this.currency = TRPCore.getCurrentCurrency()
         }
     }
 

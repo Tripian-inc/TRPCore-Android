@@ -3,6 +3,7 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
@@ -45,6 +46,7 @@ class CreateManualPoiSegmentUseCase @Inject constructor(
                 includePoiIds = listOf(p.poi.id)
                 available = false
                 distinctPlan = true
+                currency = TRPCore.getCurrentCurrency()
             }
 
             addObservable {

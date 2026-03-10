@@ -2,6 +2,7 @@ package com.tripian.trpcore.repository
 
 import com.tripian.one.TRPRest
 import com.tripian.one.api.timeline.model.*
+import com.tripian.trpcore.base.TRPCore
 import io.reactivex.Completable
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -22,6 +23,7 @@ class TimelineRepository @Inject constructor(
         return Single.create<Timeline> { emitter ->
             trpRest.getTimeline(
                 hash = tripHash,
+                currency = TRPCore.getCurrentCurrency(),
                 success = { response ->
                     response.data?.let { timeline ->
                         emitter.onSuccess(timeline)

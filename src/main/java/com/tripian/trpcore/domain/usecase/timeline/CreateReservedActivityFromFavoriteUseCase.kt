@@ -4,6 +4,7 @@ import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.repository.TimelineRepository
@@ -84,6 +85,7 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                 this.coordinate = coordinate
                 available = false
                 distinctPlan = true
+                currency = TRPCore.getCurrentCurrency()
             }
 
             addObservable {
