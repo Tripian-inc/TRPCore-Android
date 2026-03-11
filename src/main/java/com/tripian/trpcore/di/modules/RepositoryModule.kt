@@ -47,8 +47,8 @@ class RepositoryModule {
 
     @Provides
     @Singleton
-    fun providesTripRepository(service: Service): TripRepository {
-        return TripRepository(service)
+    fun providesTripRepository(service: Service, preferences: Preferences): TripRepository {
+        return TripRepository(service, preferences)
     }
 
     @Provides

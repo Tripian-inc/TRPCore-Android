@@ -59,6 +59,11 @@ class TRPCore {
         private val activityStack = mutableListOf<WeakReference<Activity>>()
 
         fun inject(activity: AppCompatActivity) {
+            if (!::core.isInitialized) {
+                throw IllegalStateException(
+                    "TRPCore is not initialized. Call TRPCore().init() before using SDK activities."
+                )
+            }
             core.activityInjector().inject(activity)
         }
 
@@ -192,6 +197,13 @@ class TRPCore {
          */
         internal fun notifySDKDismissed() {
             listener?.onSDKDismissed()
+        }
+
+        /**
+         * Triggers activity added callback
+         */
+        internal fun notifyActivityAdded(activityId: String) {
+            listener?.onActivityAdded(activityId)
         }
 
         /**

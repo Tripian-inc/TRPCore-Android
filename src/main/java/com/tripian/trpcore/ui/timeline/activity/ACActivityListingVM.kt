@@ -376,6 +376,8 @@ class ACActivityListingVM @Inject constructor(
             success = { _ ->
                 _isCreatingSegment.value = false
                 _segmentCreated.value = true
+                // Notify host app that activity was added
+                tour.productId?.let { TRPCore.notifyActivityAdded(it) }
             },
             error = { error ->
                 _isCreatingSegment.value = false

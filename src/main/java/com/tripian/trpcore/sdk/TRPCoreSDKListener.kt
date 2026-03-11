@@ -17,7 +17,7 @@ interface TRPCoreSDKListener {
      * Called when user taps on an activity card.
      * Host app should open activity detail screen in this callback.
      *
-     * @param activityId ID of the tapped activity (e.g., "C_15423_15" or product ID)
+     * @param activityId ID of the tapped activity (e.g., "15423" or product ID)
      *
      * iOS equivalent: trpCoreKitDidRequestActivityDetail(activityId:)
      */
@@ -65,4 +65,12 @@ interface TRPCoreSDKListener {
      * Optional callback - default implementation is empty.
      */
     fun onSDKDismissed() {}
+
+    /**
+     * Called when an activity is successfully added to the timeline.
+     * Host app can use this to track manually added activities.
+     *
+     * @param activityId ID of the added activity (productId)
+     */
+    fun onActivityAdded(activityId: String) {}
 }

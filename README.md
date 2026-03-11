@@ -322,7 +322,7 @@ User's favorite activities for Smart Recommendations:
 
 ```kotlin
 data class SegmentFavoriteItem(
-    val activityId: String? = null,         // Format: "C_15423_15"
+    val activityId: String? = null,         // Activity ID (e.g., "15423")
     val title: String,
     val cityName: String,
     val cityId: Int? = null,
@@ -376,7 +376,7 @@ Called when user taps on an activity card. Open your activity detail screen.
 
 ```kotlin
 override fun onRequestActivityDetail(activityId: String) {
-    // activityId format: "C_15423_15" or product ID
+    // activityId: Activity ID (e.g., "15423") or product ID
     Log.d("SDK", "Activity detail requested: $activityId")
 
     // Open your activity detail screen
@@ -452,6 +452,17 @@ override fun onSDKDismissed() {
 }
 ```
 
+#### onActivityAdded(activityId: String)
+
+Called when an activity is successfully added to the timeline. Optional callback.
+
+```kotlin
+override fun onActivityAdded(activityId: String) {
+    Log.d("SDK", "Activity added: $activityId")
+    // Track manually added activities
+}
+```
+
 ### Listener Methods Summary
 
 | Method | Required | Description |
@@ -462,6 +473,7 @@ override fun onSDKDismissed() {
 | `onTimelineLoaded(tripHash)` | No | Timeline loaded successfully |
 | `onError(error)` | No | Error occurred in SDK |
 | `onSDKDismissed()` | No | User exited the SDK |
+| `onActivityAdded(activityId)` | No | Activity added to timeline |
 
 ---
 
@@ -612,6 +624,11 @@ class MainActivity : AppCompatActivity(), TRPCoreSDKListener {
 
     override fun onSDKDismissed() {
         // SDK closed
+    }
+
+    override fun onActivityAdded(activityId: String) {
+        // Activity added to timeline
+        Toast.makeText(this, "Activity added: $activityId", Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroy() {
