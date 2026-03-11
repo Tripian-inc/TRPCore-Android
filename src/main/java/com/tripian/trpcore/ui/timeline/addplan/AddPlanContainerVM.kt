@@ -71,6 +71,13 @@ class AddPlanContainerVM @Inject constructor(
     private val _showClearSelection = MutableLiveData(false)
     val showClearSelection: LiveData<Boolean> = _showClearSelection
 
+    private val _expandBottomSheet = MutableLiveData(false)
+    val expandBottomSheet: LiveData<Boolean> = _expandBottomSheet
+
+    fun setExpandBottomSheet(expand: Boolean) {
+        _expandBottomSheet.value = expand
+    }
+
     // =====================
     // DATA SOURCES
     // =====================

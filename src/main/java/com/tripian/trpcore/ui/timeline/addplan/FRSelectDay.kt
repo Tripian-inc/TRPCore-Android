@@ -254,7 +254,11 @@ class FRSelectDay : Fragment() {
         updateCardSelection(binding.cardManualEatDrink, category == ManualCategory.EAT_AND_DRINK)
 
         // Show travelers section only for Activities
-        binding.llTravelersSection.visibility = if (category == ManualCategory.ACTIVITIES) View.VISIBLE else View.GONE
+        val showTravelers = category == ManualCategory.ACTIVITIES
+        binding.llTravelersSection.visibility = if (showTravelers) View.VISIBLE else View.GONE
+
+        // Notify BottomSheet to expand/collapse based on travelers visibility
+        sharedVM.setExpandBottomSheet(showTravelers)
     }
 
     private fun updateCardSelection(card: com.google.android.material.card.MaterialCardView, selected: Boolean) {
