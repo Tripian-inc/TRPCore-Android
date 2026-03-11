@@ -43,7 +43,9 @@
 
         <!-- ==================== -->
         <!-- CITY SELECTION       -->
+        <!-- (Commented out - may be needed later) -->
         <!-- ==================== -->
+        <!--
         <LinearLayout
             android:id="@+id/llCitySelection"
             android:layout_width="match_parent"
@@ -66,9 +68,9 @@
             <FrameLayout
                 android:id="@+id/btnCitySelection"
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="40dp"
                 android:layout_marginTop="4dp"
-                android:background="@drawable/bg_input_field"
+                android:background="@drawable/bg_selection_field"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -78,23 +80,24 @@
                     android:layout_height="match_parent"
                     android:gravity="center_vertical"
                     android:paddingStart="16dp"
-                    android:paddingEnd="40dp"
+                    android:paddingEnd="48dp"
                     android:fontFamily="@font/medium"
                     android:textSize="14sp"
                     android:textColor="@color/trp_text_primary"
                     tools:text="Barcelona"/>
 
                 <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
                     android:layout_gravity="center_vertical|end"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_chevron_down"
-                    android:tint="@color/trp_text_primary"/>
+                    android:src="@drawable/ic_next"
+                    app:tint="@color/trp_fgWeak"/>
 
             </FrameLayout>
 
         </LinearLayout>
+        -->
 
         <!-- Separator -->
         <View
@@ -119,11 +122,11 @@
             android:textColor="@color/trp_text_primary"
             tools:text="Select a Starting Point"/>
 
-        <!-- Starting Point Button (48dp) -->
+        <!-- Starting Point Button (40dp) -->
         <FrameLayout
             android:id="@+id/btnStartingPoint"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="40dp"
             android:layout_marginTop="16dp"
             android:layout_marginHorizontal="16dp"
             android:background="@drawable/bg_selection_field"
@@ -136,7 +139,7 @@
                 android:layout_height="match_parent"
                 android:gravity="center_vertical"
                 android:paddingStart="16dp"
-                android:paddingEnd="40dp"
+                android:paddingEnd="48dp"
                 android:fontFamily="@font/light"
                 android:textSize="16sp"
                 android:textColor="@color/trp_fgWeak"
@@ -145,8 +148,8 @@
             <!-- Next Icon -->
             <ImageView
                 android:id="@+id/ivStartingPointNext"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:layout_gravity="center_vertical|end"
                 android:layout_marginEnd="16dp"
                 android:src="@drawable/ic_next"
@@ -212,7 +215,7 @@
                 <FrameLayout
                     android:id="@+id/btnStartTime"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:background="@drawable/bg_selection_field"
                     android:clickable="true"
@@ -224,15 +227,15 @@
                         android:layout_height="match_parent"
                         android:gravity="center_vertical"
                         android:paddingStart="16dp"
-                        android:paddingEnd="40dp"
+                        android:paddingEnd="48dp"
                         android:fontFamily="@font/light"
                         android:textSize="16sp"
                         android:textColor="@color/trp_fgWeak"
                         tools:text="Select"/>
 
                     <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_gravity="center_vertical|end"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_next"
@@ -262,7 +265,7 @@
                 <FrameLayout
                     android:id="@+id/btnEndTime"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="40dp"
                     android:layout_marginTop="4dp"
                     android:background="@drawable/bg_selection_field"
                     android:clickable="true"
@@ -274,15 +277,15 @@
                         android:layout_height="match_parent"
                         android:gravity="center_vertical"
                         android:paddingStart="16dp"
-                        android:paddingEnd="40dp"
+                        android:paddingEnd="48dp"
                         android:fontFamily="@font/light"
                         android:textSize="16sp"
                         android:textColor="@color/trp_fgWeak"
                         tools:text="Select"/>
 
                     <ImageView
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:layout_gravity="center_vertical|end"
                         android:layout_marginEnd="16dp"
                         android:src="@drawable/ic_next"
