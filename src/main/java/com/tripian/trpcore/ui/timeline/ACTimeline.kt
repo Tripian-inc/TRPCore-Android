@@ -504,9 +504,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // FAB visibility
         if (isMapMode) {
-            // Map view: only List FAB visible
+            // Map view: List + AddPlan FABs visible
             binding.fabMap.visibility = View.GONE
-            binding.fabAddPlan.visibility = View.GONE
+            binding.fabAddPlan.visibility = View.VISIBLE
             binding.fabList.visibility = View.VISIBLE
         } else {
             // List view: Map + AddPlan FABs visible
@@ -541,8 +541,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             isBottomListVisible = false
             binding.rvMapBottomList.visibility = View.GONE
             binding.rvMapBottomList.translationY = 0f
-            // Reset fabList position
+            // Reset FAB positions
             binding.fabList.translationY = 0f
+            binding.fabAddPlan.translationY = 0f
             // Hide Main View button
             binding.btnMainView.visibility = View.GONE
         }
@@ -581,9 +582,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
 
-        // Move fabList above the bottom list (list height ~104dp + 16dp spacing)
+        // Move FABs above the bottom list (list height ~104dp + 16dp spacing)
         val fabOffset = -120f * resources.displayMetrics.density
         binding.fabList.animate()
+            .translationY(fabOffset)
+            .setDuration(300)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+        binding.fabAddPlan.animate()
             .translationY(fabOffset)
             .setDuration(300)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
@@ -610,8 +616,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
 
-        // Move fabList back to original position
+        // Move FABs back to original position
         binding.fabList.animate()
+            .translationY(0f)
+            .setDuration(300)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .start()
+        binding.fabAddPlan.animate()
             .translationY(0f)
             .setDuration(300)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
@@ -627,6 +638,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         isBottomListVisible = false
         binding.rvMapBottomList.visibility = View.GONE
         binding.fabList.translationY = 0f
+        binding.fabAddPlan.translationY = 0f
     }
 
     /**

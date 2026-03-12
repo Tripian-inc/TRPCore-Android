@@ -293,13 +293,13 @@
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />
 
-    <!-- List Toggle FAB - Map gorunumunde gorunur (Add Plan yerine) -->
+    <!-- List Toggle FAB - Map gorunumunde gorunur (fabAddPlan ustunde) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabList"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="16dp"
         android:contentDescription="List"
         android:src="@drawable/ic_list"
         android:visibility="gone"
@@ -307,7 +307,7 @@
         app:elevation="4dp"
         app:fabCustomSize="56dp"
         app:maxImageSize="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/fabAddPlan"
         app:layout_constraintEnd_toEndOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />
