@@ -59,6 +59,11 @@ class TRPCore {
         private val activityStack = mutableListOf<WeakReference<Activity>>()
 
         fun inject(activity: AppCompatActivity) {
+            if (!::core.isInitialized) {
+                throw IllegalStateException(
+                    "TRPCore is not initialized. Call TRPCore().init() before using SDK activities."
+                )
+            }
             core.activityInjector().inject(activity)
         }
 
@@ -195,6 +200,13 @@ class TRPCore {
         }
 
         /**
+         * Triggers activity added callback
+         */
+        internal fun notifyActivityAdded(activityId: String) {
+            listener?.onActivityAdded(activityId)
+        }
+
+        /**
          * Returns the device ID (fallback for uniqueId)
          */
         private fun getDeviceId(context: Context): String {
@@ -242,13 +254,15 @@ class TRPCore {
         apiVersion = environment.getApiVersion()
 
         // Set Mapbox access token programmatically (instead of XML resource)
-        // IMPORTANT: Mapbox native library loading MUST happen on main thread
-        // to avoid UnsatisfiedLinkError when init() is called from background thread
+        // IMPORTANT: Mapbox native library loading and AppCompatDelegate MUST happen on main thread
+        // to avoid UnsatisfiedLinkError and IllegalStateException when init() is called from background thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             MapboxOptions.accessToken = mapboxApiKey
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         } else {
             Handler(Looper.getMainLooper()).post {
                 MapboxOptions.accessToken = mapboxApiKey
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             }
         }
 
@@ -257,8 +271,6 @@ class TRPCore {
         Tripian.setGetLanguage {
             miscRepository.getLanguageValueForKey(it)
         }
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         RxJavaPlugins.setErrorHandler {
 //            FirebaseCrashlytics.getInstance().recordException(it)

@@ -88,8 +88,8 @@ class FRTimeAndTravelers : Fragment() {
         // Add to Day section
         binding.tvAddToDayLabel.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
 
-        // City section
-        binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_CITY)
+        // City section (commented out - may be needed later)
+        // binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_CITY)
 
         // Starting Point section
         binding.tvSelectStartingPointLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_STARTING_POINT)
@@ -179,18 +179,19 @@ class FRTimeAndTravelers : Fragment() {
         }
     }
 
+    // City selection commented out - may be needed later
     private fun setupCitySelection() {
-        binding.btnCitySelection.setOnClickListener {
-            val cities = sharedVM.cities.value ?: return@setOnClickListener
-            val selectedCity = sharedVM.selectedCity.value
-
-            CitySelectionBottomSheet.newInstance(
-                cities = cities,
-                selectedCity = selectedCity
-            ) { city ->
-                sharedVM.selectCity(city)
-            }.show(childFragmentManager, CitySelectionBottomSheet.TAG)
-        }
+        // binding.btnCitySelection.setOnClickListener {
+        //     val cities = sharedVM.cities.value ?: return@setOnClickListener
+        //     val selectedCity = sharedVM.selectedCity.value
+        //
+        //     CitySelectionBottomSheet.newInstance(
+        //         cities = cities,
+        //         selectedCity = selectedCity
+        //     ) { city ->
+        //         sharedVM.selectCity(city)
+        //     }.show(childFragmentManager, CitySelectionBottomSheet.TAG)
+        // }
     }
 
     /**
@@ -225,10 +226,10 @@ class FRTimeAndTravelers : Fragment() {
             dayFilterAdapter?.setSelectedPosition(index)
         }
 
-        // Cities
-        sharedVM.cities.observe(viewLifecycleOwner) { cities ->
-            binding.llCitySelection.visibility = if (cities.size > 1) View.VISIBLE else View.GONE
-        }
+        // Cities (commented out - may be needed later)
+        // sharedVM.cities.observe(viewLifecycleOwner) { cities ->
+        //     binding.llCitySelection.visibility = if (cities.size > 1) View.VISIBLE else View.GONE
+        // }
 
         // Starting point name (custom)
         sharedVM.startingPointName.observe(viewLifecycleOwner) { name ->
@@ -254,7 +255,7 @@ class FRTimeAndTravelers : Fragment() {
 
         // Update starting point when city changes (if using default)
         sharedVM.selectedCity.observe(viewLifecycleOwner) { city ->
-            binding.tvSelectedCity.text = city?.name ?: ""
+            // binding.tvSelectedCity.text = city?.name ?: ""  // Commented out - may be needed later
             // Update starting point text if using default (city center)
             val key = sharedVM.startingPointNameKey.value
             if (key != null && sharedVM.startingPointName.value == null) {

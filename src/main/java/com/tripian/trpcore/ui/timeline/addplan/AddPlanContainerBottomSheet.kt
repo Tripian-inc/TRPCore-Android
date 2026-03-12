@@ -4,10 +4,13 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.WindowManager
+import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
@@ -170,6 +173,11 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                 onAddPlanCompleteListener?.invoke(it)
             }
         }
+
+        // Expand/collapse bottom sheet based on travelers visibility
+        sharedVM.expandBottomSheet.observe(viewLifecycleOwner) { expand ->
+            expandBottomSheet(expand)
+        }
     }
 
     private fun navigateToStep(step: AddPlanStep) {
@@ -197,6 +205,48 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         }
 
         transaction.commit()
+    }
+
+    /**
+     * Expand or collapse the bottom sheet based on travelers visibility
+     */
+    private fun expandBottomSheet(expand: Boolean) {
+        val bottomSheet = dialog?.findViewById<FrameLayout>(
+            com.google.android.material.R.id.design_bottom_sheet
+        ) ?: return
+
+        // Update bottom sheet height
+        val bottomSheetParams = bottomSheet.layoutParams
+        bottomSheetParams.height = if (expand) {
+            WindowManager.LayoutParams.MATCH_PARENT
+        } else {
+            WindowManager.LayoutParams.WRAP_CONTENT
+        }
+        bottomSheet.layoutParams = bottomSheetParams
+
+        // Update root container height
+        val rootParams = binding.root.layoutParams
+        rootParams.height = if (expand) {
+            WindowManager.LayoutParams.MATCH_PARENT
+        } else {
+            WindowManager.LayoutParams.WRAP_CONTENT
+        }
+        binding.root.layoutParams = rootParams
+
+        // Update fragmentContainer to fill remaining space when expanded
+        val fragmentParams = binding.fragmentContainer.layoutParams as android.widget.LinearLayout.LayoutParams
+        if (expand) {
+            fragmentParams.height = 0
+            fragmentParams.weight = 1f
+        } else {
+            fragmentParams.height = WindowManager.LayoutParams.WRAP_CONTENT
+            fragmentParams.weight = 0f
+        }
+        binding.fragmentContainer.layoutParams = fragmentParams
+
+        // Re-expand the sheet to apply new height
+        val behavior = BottomSheetBehavior.from(bottomSheet)
+        behavior.state = BottomSheetBehavior.STATE_EXPANDED
     }
 
     private fun openManualListingActivity(category: ManualCategory) {

@@ -6,12 +6,10 @@ import kotlinx.parcelize.Parcelize
 /**
  * Activities that the user has added to favorites
  * Used as activityIds when creating Smart Recommendations.
- *
- * ID Format: "C_{customId}_{providerId}" (e.g., "C_15423_15")
  */
 @Parcelize
 data class SegmentFavoriteItem(
-    val activityId: String? = null,         // Format: "C_15423_15"
+    val activityId: String? = null,         // Activity ID (e.g., "15423")
     val title: String,                      // Activity title
     val cityName: String,                   // City name
     val cityId: Int? = null,                // City ID

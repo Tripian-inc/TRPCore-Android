@@ -137,6 +137,32 @@
         android:background="@color/trp_transparent"
         app:layout_constraintTop_toBottomOf="@id/btnSavedPlans" />
 
+    <!-- Main View Button - Returns map to initial zoom when multiple cities -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnMainView"
+        android:layout_width="wrap_content"
+        android:layout_height="32dp"
+        android:layout_marginTop="24dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingVertical="0dp"
+        android:paddingHorizontal="16dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:textAllCaps="false"
+        android:textColor="@color/trp_primary"
+        android:textSize="16sp"
+        android:fontFamily="@font/medium"
+        android:visibility="gone"
+        app:backgroundTint="@color/trp_white"
+        app:cornerRadius="16dp"
+        app:elevation="4dp"
+        app:layout_constraintTop_toBottomOf="@id/dayFilterView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Main View"
+        tools:visibility="visible" />
+
     <!-- SwipeRefreshLayout with RecyclerView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
@@ -267,13 +293,13 @@
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />
 
-    <!-- List Toggle FAB - Map gorunumunde gorunur (Add Plan yerine) -->
+    <!-- List Toggle FAB - Map gorunumunde gorunur (fabAddPlan ustunde) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabList"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="32dp"
+        android:layout_marginBottom="16dp"
         android:contentDescription="List"
         android:src="@drawable/ic_list"
         android:visibility="gone"
@@ -281,7 +307,7 @@
         app:elevation="4dp"
         app:fabCustomSize="56dp"
         app:maxImageSize="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/fabAddPlan"
         app:layout_constraintEnd_toEndOf="parent"
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />

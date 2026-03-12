@@ -85,6 +85,8 @@ class MapView : MapView {
     private var mapInteractionListener: (() -> Unit)? = null
 
     private var mapItems = ArrayList<MapStep>()
+    // Track selected marker per city: cityIndex -> markerId
+    private var selectedMarkerIds = mutableMapOf<Int, String>()
 
     private lateinit var routeLayer: LineLayer
     private lateinit var returnRouteLayer: LineLayer
@@ -305,20 +307,25 @@ class MapView : MapView {
 
                     if (item.position != -1) {
                         view.poiOrderTv.text = item.position.toString()
-//                        if (item.position == 1) {
-//                            view.poiOrderTv.background = ContextCompat.getDrawable(
-//                                context,
-//                                R.drawable.bg_marker_green
-//                            )
-//                        }
                         view.poiOrderTv.visibility = VISIBLE
                     } else {
                         view.poiOrderTv.visibility = GONE
                     }
 
+                    // Set city index for marker color (0 = first city, 1+ = secondary cities)
+                    view.setCityIndex(item.cityIndex)
+
+                    // Set marker selection state
+                    view.setSelected(item.isSelected)
+
                     val bitmap: Bitmap = view.getBitmap()
 
                     style?.addImage(uniq, bitmap)
+
+                    // Track initially selected marker per city
+                    if (item.isSelected) {
+                        selectedMarkerIds[item.cityIndex] = uniq
+                    }
 
                     if (style?.getLayer(uniq) == null) {
                         val stretchLayer = symbolLayer(uniq, uniq) {
@@ -439,6 +446,7 @@ class MapView : MapView {
         }
 
         mapItems.clear()
+        selectedMarkerIds.clear()
     }
 
     private fun clearItem(uniq: String) {
@@ -665,6 +673,100 @@ class MapView : MapView {
         }
 
         routesLayers.clear()
+    }
+
+    /**
+     * Focuses the camera on a specific marker by its poiId.
+     *
+     * @param poiId The poiId of the marker to focus on
+     */
+    fun focusOnMarker(poiId: String) {
+        val item = mapItems.find { it.poiId == poiId } ?: return
+        val coordinate = item.coordinate ?: return
+
+        map?.flyTo(
+            cameraOptions {
+                center(Point.fromLngLat(coordinate.lng, coordinate.lat))
+                zoom(15.0)
+            },
+            mapAnimationOptions {
+                duration(500L)
+            }
+        )
+    }
+
+    /**
+     * Selects a marker on the map by its poiId.
+     * Deselects the previously selected marker in the same city and selects the new one.
+     * Each city can have its own selected marker.
+     *
+     * @param poiId The poiId of the marker to select
+     */
+    fun selectMarker(poiId: String) {
+        // Find the marker item
+        val newSelectedItem = mapItems.find { it.poiId == poiId } ?: return
+
+        // If same marker is clicked, do nothing
+        val newUniq = newSelectedItem.group + newSelectedItem.poiId
+        val cityIndex = newSelectedItem.cityIndex
+        if (selectedMarkerIds[cityIndex] == newUniq) {
+            return
+        }
+
+        // Deselect previous marker in the same city if exists
+        selectedMarkerIds[cityIndex]?.let { prevUniq ->
+            val prevItem = mapItems.find { (it.group + it.poiId) == prevUniq }
+            prevItem?.let {
+                it.isSelected = false
+                updateMarkerImage(it)
+            }
+        }
+
+        // Select new marker
+        newSelectedItem.isSelected = true
+        updateMarkerImage(newSelectedItem)
+        selectedMarkerIds[cityIndex] = newUniq
+    }
+
+    /**
+     * Updates the marker image on the map for the given MapStep.
+     * This is called when selection state changes.
+     */
+    private fun updateMarkerImage(item: MapStep) {
+        val uniq = item.group + item.poiId
+
+        val view = MarkerView(context)
+
+        if (item.markerIcon != -1) {
+            view.iconView.setImageResource(item.markerIcon)
+            view.iconView.visibility = VISIBLE
+        } else {
+            view.iconView.visibility = GONE
+        }
+
+        if (item.isOffer) {
+            view.iconViewBackground.visibility = VISIBLE
+        } else {
+            view.iconViewBackground.visibility = GONE
+        }
+
+        if (item.position != -1) {
+            view.poiOrderTv.text = item.position.toString()
+            view.poiOrderTv.visibility = VISIBLE
+        } else {
+            view.poiOrderTv.visibility = GONE
+        }
+
+        // Set city index for marker color (0 = first city, 1+ = secondary cities)
+        view.setCityIndex(item.cityIndex)
+
+        // Set marker selection state
+        view.setSelected(item.isSelected)
+
+        val bitmap: Bitmap = view.getBitmap()
+
+        // Update the image in the style
+        style?.addImage(uniq, bitmap)
     }
 }
 

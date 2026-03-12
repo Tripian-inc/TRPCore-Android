@@ -34,6 +34,8 @@ class MapStep : BaseModel() {
     var bookingProducts: List<Booking>? = null
     var isCustomPoi: Boolean = false
     var planDate: String? = null
+    var isSelected: Boolean = false
+    var cityIndex: Int = 0  // 0 = first city, 1+ = secondary cities (for different marker colors)
 
     fun isRatingAvailable(): Boolean {
         return rating != -1f && ratingCount > 0

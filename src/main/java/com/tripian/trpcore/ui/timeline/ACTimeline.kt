@@ -3,9 +3,14 @@ package com.tripian.trpcore.ui.timeline
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.pois.model.Poi
@@ -129,6 +134,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.mapView.setOnMapInteractionListener {
             hideMapBottomList()
         }
+
+        // Main View button - returns map to initial zoom
+        binding.btnMainView.setOnClickListener {
+            // Reset map to initial view (all markers visible)
+            lifecycleScope.launch {
+                binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+            }
+            viewModel.onMainViewClicked()
+            // Fade out animation
+            binding.btnMainView.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction { binding.btnMainView.visibility = View.GONE }
+                .start()
+        }
     }
 
     override fun setReceivers() {
@@ -245,6 +265,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 viewModel.clearRouteInfoUpdate()
             }
         }
+
+        // Main View button visibility (multi-city map mode)
+        viewModel.showMainViewButton.observe(this) { show ->
+            if (show) {
+                // Fade in
+                binding.btnMainView.alpha = 0f
+                binding.btnMainView.visibility = View.VISIBLE
+                binding.btnMainView.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+            } else {
+                binding.btnMainView.visibility = View.GONE
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -273,6 +308,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Near Me button
         binding.btnNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
+
+        // Main View button
+        binding.btnMainView.text = getLanguageForKey(LanguageConst.TIMELINE_MAIN_VIEW)
 
         // Empty state texts
         binding.tvEmptyTitle.text = getLanguageForKey(LanguageConst.NO_PLANS_YET)
@@ -357,26 +395,38 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      */
     private fun setupMapBottomList() {
         mapBottomListAdapter = MapBottomListAdapter { item ->
-            // Handle item click - navigate to detail
-            when {
-                // Booked or reserved activities
-                item.type == "booked" || item.type == "reserved" -> {
-                    viewModel.onActivityDetailRequested(item.id)
-                }
-                // Step with activity type - treat like reserved
-                item.type == "step" && item.stepType == "activity" -> {
-                    // Get productId from POI additionalData
-                    findPoiById(item.id)?.let { poi ->
-                        val activityId = poi.additionalData?.productId ?: poi.id ?: item.id
-                        viewModel.onActivityDetailRequested(activityId)
+            // Always focus on the marker
+            binding.mapView.focusOnMarker(item.id)
+
+            // Show Main View button when focusing on a marker (multi-city mode)
+            viewModel.onMarkerFocused()
+
+            if (item.isSelected) {
+                // Item is already selected - navigate to detail
+                when {
+                    // Booked or reserved activities
+                    item.type == "booked" || item.type == "reserved" -> {
+                        viewModel.onActivityDetailRequested(item.id)
+                    }
+                    // Step with activity type - treat like reserved
+                    item.type == "step" && item.stepType == "activity" -> {
+                        // Get productId from POI additionalData
+                        findPoiById(item.id)?.let { poi ->
+                            val activityId = poi.additionalData?.productId ?: poi.id ?: item.id
+                            viewModel.onActivityDetailRequested(activityId)
+                        }
+                    }
+                    // POI types (step with poi stepType, manual)
+                    else -> {
+                        findPoiById(item.id)?.let { poi ->
+                            startActivity(ACPOIDetail.launch(this, poi))
+                        }
                     }
                 }
-                // POI types (step with poi stepType, manual)
-                else -> {
-                    findPoiById(item.id)?.let { poi ->
-                        startActivity(ACPOIDetail.launch(this, poi))
-                    }
-                }
+            } else {
+                // Item is not selected - select it
+                mapBottomListAdapter?.selectItem(item.id)
+                binding.mapView.selectMarker(item.id)
             }
         }
 
@@ -434,6 +484,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.swipeRefresh.visibility = if (isMapMode) View.GONE else View.VISIBLE
         binding.mapContainer.visibility = if (isMapMode) View.VISIBLE else View.GONE
 
+        // Hide/show status bar for fullscreen map
+        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+        if (isMapMode) {
+            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+
         // Hide savedPlans in map mode
         if (isMapMode) {
             binding.btnSavedPlans.visibility = View.GONE
@@ -445,23 +504,47 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Header and DayFilter elevation + background for map mode
         val elevationDp = 8f * resources.displayMetrics.density
+        val defaultPadding = (16 * resources.displayMetrics.density).toInt()
+
+        // Get status bar height from system resource
+        val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
+            .takeIf { it > 0 }
+            ?.let { resources.getDimensionPixelSize(it) }
+            ?: (24 * resources.displayMetrics.density).toInt() // fallback 24dp
+
         if (isMapMode) {
             // Transparent background and elevation for map overlay
             binding.headerContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             binding.headerContainer.elevation = elevationDp
             binding.dayFilterView.elevation = elevationDp
+
+            // Add status bar height as top padding to keep header in place
+            binding.headerContainer.setPadding(
+                binding.headerContainer.paddingLeft,
+                statusBarHeight + defaultPadding,
+                binding.headerContainer.paddingRight,
+                binding.headerContainer.paddingBottom
+            )
         } else {
             // White background and no elevation for list mode
             binding.headerContainer.setBackgroundColor(android.graphics.Color.WHITE)
             binding.headerContainer.elevation = 0f
             binding.dayFilterView.elevation = 0f
+
+            // Reset top padding to default
+            binding.headerContainer.setPadding(
+                binding.headerContainer.paddingLeft,
+                defaultPadding,
+                binding.headerContainer.paddingRight,
+                binding.headerContainer.paddingBottom
+            )
         }
 
         // FAB visibility
         if (isMapMode) {
-            // Map view: only List FAB visible
+            // Map view: List + AddPlan FABs visible
             binding.fabMap.visibility = View.GONE
-            binding.fabAddPlan.visibility = View.GONE
+            binding.fabAddPlan.visibility = View.VISIBLE
             binding.fabList.visibility = View.VISIBLE
         } else {
             // List view: Map + AddPlan FABs visible
@@ -496,12 +579,27 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             isBottomListVisible = false
             binding.rvMapBottomList.visibility = View.GONE
             binding.rvMapBottomList.translationY = 0f
-            // Reset fabList position
+            // Reset FAB positions
             binding.fabList.translationY = 0f
+            binding.fabAddPlan.translationY = 0f
+            // Hide Main View button
+            binding.btnMainView.visibility = View.GONE
         }
     }
 
     private fun handleMapItemClick(mapStep: MapStep) {
+        // Select the clicked marker (changes visual appearance)
+        binding.mapView.selectMarker(mapStep.poiId)
+
+        // Select the corresponding item in bottom list
+        mapBottomListAdapter?.selectItem(mapStep.poiId)
+
+        // Focus on the marker
+        binding.mapView.focusOnMarker(mapStep.poiId)
+
+        // Show Main View button when focusing on a marker (multi-city mode)
+        viewModel.onMarkerFocused()
+
         // Show bottom list and scroll to clicked item
         showMapBottomList()
         scrollToMapBottomItem(mapStep.position)
@@ -522,9 +620,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
 
-        // Move fabList above the bottom list (list height ~104dp + 16dp spacing)
+        // Move FABs above the bottom list (list height ~104dp + 16dp spacing)
         val fabOffset = -120f * resources.displayMetrics.density
         binding.fabList.animate()
+            .translationY(fabOffset)
+            .setDuration(300)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
+        binding.fabAddPlan.animate()
             .translationY(fabOffset)
             .setDuration(300)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
@@ -551,8 +654,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
 
-        // Move fabList back to original position
+        // Move FABs back to original position
         binding.fabList.animate()
+            .translationY(0f)
+            .setDuration(300)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .start()
+        binding.fabAddPlan.animate()
             .translationY(0f)
             .setDuration(300)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
@@ -568,6 +676,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         isBottomListVisible = false
         binding.rvMapBottomList.visibility = View.GONE
         binding.fabList.translationY = 0f
+        binding.fabAddPlan.translationY = 0f
     }
 
     /**

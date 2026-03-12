@@ -33,7 +33,10 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.one.api.pois.model.Coordinate
 import com.mapbox.geojson.Point
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -104,6 +107,10 @@ class ACTimelineVM @Inject constructor(
 
     private val _selectedCity = MutableLiveData<City?>()
 
+    // Main View button visibility (for multi-city map mode)
+    private val _showMainViewButton = MutableLiveData(false)
+    val showMainViewButton: LiveData<Boolean> = _showMainViewButton
+
     // Route info cache - maps segmentIndex to route info list
     private val _routeInfoCache = mutableMapOf<Int, List<StepRouteInfo>>()
 
@@ -120,6 +127,7 @@ class ACTimelineVM @Inject constructor(
     private var itinerary: ItineraryWithActivities? = null
     private var uniqueId: String? = null
     private var isLoggedIn: Boolean = false
+    private var hasMultipleCitiesInSelectedDay: Boolean = false
 
     // =====================
     // LIFECYCLE
@@ -137,8 +145,6 @@ class ACTimelineVM @Inject constructor(
         val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
         if (!language.isNullOrEmpty()) {
             TRPCore.core.appConfig.appLanguage = language
-            // Also update MiscRepository to use correct language for translations
-            miscRepository.changeLanguage(language)
         }
 
         // Set app currency - Priority: Intent > Preferences > Default (EUR)
@@ -161,6 +167,48 @@ class ACTimelineVM @Inject constructor(
         if (_tripHash.isEmpty()) {
             _tripHash = arguments?.getString(ARG_TRIP_HASH) ?: ""
         }
+
+        // Wait for languages to be loaded before proceeding with timeline operations
+        // This ensures all UI texts are available
+        ensureLanguagesLoadedThenProceed()
+    }
+
+    /**
+     * Ensures languages are loaded before proceeding with timeline operations.
+     * Shows loading indicator while waiting.
+     */
+    private fun ensureLanguagesLoadedThenProceed() {
+        _isLoading.value = true
+
+        miscRepository.waitForLanguagesLoaded()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { _ ->
+                    // Languages loaded, now proceed with timeline operations
+                    proceedAfterLanguagesLoaded()
+                },
+                { error ->
+                    // Even if language fetch fails, proceed (will use cached/fallback)
+                    proceedAfterLanguagesLoaded()
+                }
+            )
+    }
+
+    /**
+     * Called after languages are loaded.
+     * Sets language, resolves cities and starts login flow.
+     */
+    private fun proceedAfterLanguagesLoaded() {
+        // Apply language change after languages are loaded
+        val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
+        if (!language.isNullOrEmpty()) {
+            miscRepository.changeLanguage(language)
+        }
+
+        // Resolve destination cities early (background) - doesn't block UI
+        // This ensures cities are available for Add Plan even before timeline is fetched
+        resolveDestinationCities()
 
         // First, perform light login before any timeline operations
         performLightLogin()
@@ -375,8 +423,31 @@ class ACTimelineVM @Inject constructor(
      * Extract cities from timeline, using cached cities for full City model data.
      * This ensures we have complete City information (including coordinates)
      * by matching cityIds with pre-fetched cities from getCities API.
+     *
+     * Priority:
+     * 1. First, add cities from destinationItems (SDK input - always included)
+     * 2. Then, add cities from Timeline (API response)
+     * 3. Deduplicate by city ID
      */
     private fun extractCities(timeline: Timeline): List<City> {
+        val cities = mutableListOf<City>()
+        val addedCityIds = mutableSetOf<Int>()
+
+        // PRIORITY 1: Always include cities from destinationItems (SDK input)
+        itinerary?.destinationItems?.forEach { item ->
+            val city = item.cityId?.let { tripRepository.getCachedCityById(it) }
+                ?: item.getCoordinateObject()?.let { coord ->
+                    tripRepository.findCityByCoordinate(coord.lat, coord.lng)
+                }
+                ?: tripRepository.findCityByName(item.title, item.countryName)
+
+            if (city != null && !addedCityIds.contains(city.id)) {
+                cities.add(city)
+                addedCityIds.add(city.id)
+            }
+        }
+
+        // PRIORITY 2: Add cities from Timeline
         val cityIds = mutableSetOf<Int>()
         val cityNames = mutableSetOf<String>()
 
@@ -394,28 +465,26 @@ class ACTimelineVM @Inject constructor(
             segment.cityId?.let { if (it != 0) cityIds.add(it) }
         }
 
-        // Map cityIds to full City models from cache
-        val cities = mutableListOf<City>()
-        val addedCityIds = mutableSetOf<Int>()
-
-        // First try to get cities by ID
+        // Add timeline cities by ID (skip already added)
         cityIds.forEach { cityId ->
-            val cachedCity = tripRepository.getCachedCityById(cityId)
-            if (cachedCity != null) {
-                cities.add(cachedCity)
-                addedCityIds.add(cachedCity.id)
-            } else {
-                // Fallback to timeline city data if not in cache
-                val timelineCity = timeline.plans?.find { it.city?.id == cityId }?.city
-                    ?: if (timeline.city?.id == cityId) timeline.city else null
-                timelineCity?.let {
-                    cities.add(it)
-                    addedCityIds.add(it.id)
+            if (!addedCityIds.contains(cityId)) {
+                val cachedCity = tripRepository.getCachedCityById(cityId)
+                if (cachedCity != null) {
+                    cities.add(cachedCity)
+                    addedCityIds.add(cachedCity.id)
+                } else {
+                    // Fallback to timeline city data if not in cache
+                    val timelineCity = timeline.plans?.find { it.city?.id == cityId }?.city
+                        ?: if (timeline.city?.id == cityId) timeline.city else null
+                    timelineCity?.let {
+                        cities.add(it)
+                        addedCityIds.add(it.id)
+                    }
                 }
             }
         }
 
-        // If no cities found by ID, try to find by name from cache
+        // Add timeline cities by name (if not already added by ID)
         if (cities.isEmpty() || cities.all { it.id == 0 }) {
             cityNames.forEach { name ->
                 val cachedCity = tripRepository.findCityByName(name)
@@ -427,6 +496,77 @@ class ACTimelineVM @Inject constructor(
         }
 
         return cities
+    }
+
+    /**
+     * Resolves cities from itinerary destinationItems.
+     * First tries cache (by cityId, coordinate, or name), then resolves via API if needed.
+     * Runs on background thread to avoid blocking UI.
+     *
+     * Flow:
+     * 1. For each destinationItem, try to find city from cache
+     * 2. If some cities not found in cache, call resolveCitiesByCoordinates API
+     * 3. Update _cities LiveData with resolved cities
+     */
+    private fun resolveDestinationCities() {
+        val destinationItems = itinerary?.destinationItems
+        if (destinationItems.isNullOrEmpty()) return
+
+        // Step 1: Try to find cities from cache
+        val resolvedCities = mutableListOf<City>()
+        val unresolvedCoordinates = mutableListOf<Coordinate>()
+
+        destinationItems.forEach { item ->
+            // 1. cityId varsa cache'den bul
+            val city = item.cityId?.let { tripRepository.getCachedCityById(it) }
+                ?: item.getCoordinateObject()?.let { coord ->
+                    // 2. Koordinattan cache'de ara
+                    tripRepository.findCityByCoordinate(coord.lat, coord.lng)
+                }
+                ?: tripRepository.findCityByName(item.title, item.countryName)
+
+            if (city != null) {
+                resolvedCities.add(city)
+            } else {
+                // Cache'de bulunamadı, API'den resolve edilecek
+                item.getCoordinateObject()?.let { coord ->
+                    unresolvedCoordinates.add(Coordinate().apply {
+                        lat = coord.lat
+                        lng = coord.lng
+                    })
+                }
+            }
+        }
+
+        // Step 2: If all cities resolved from cache, update LiveData
+        if (unresolvedCoordinates.isEmpty()) {
+            val uniqueCities = resolvedCities.distinctBy { it.id }
+            if (uniqueCities.isNotEmpty()) {
+                _cities.value = uniqueCities
+            }
+            return
+        }
+
+        // Step 3: Resolve remaining cities via API (background)
+        tripRepository.resolveCitiesByCoordinates(unresolvedCoordinates)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { apiCities ->
+                    resolvedCities.addAll(apiCities)
+                    val uniqueCities = resolvedCities.distinctBy { it.id }
+                    if (uniqueCities.isNotEmpty()) {
+                        _cities.value = uniqueCities
+                    }
+                },
+                { error ->
+                    // API failed, use what we have from cache
+                    val uniqueCities = resolvedCities.distinctBy { it.id }
+                    if (uniqueCities.isNotEmpty()) {
+                        _cities.value = uniqueCities
+                    }
+                }
+            )
     }
 
     private fun calculateAvailableDays(timeline: Timeline): List<Date> {
@@ -983,6 +1123,24 @@ class ACTimelineVM @Inject constructor(
         _launchPoiSelection.value = null
     }
 
+    /**
+     * Called when a marker is focused (user taps on bottom list item or marker).
+     * Shows Main View button if there are multiple cities in the selected day.
+     */
+    fun onMarkerFocused() {
+        if (hasMultipleCitiesInSelectedDay) {
+            _showMainViewButton.value = true
+        }
+    }
+
+    /**
+     * Called when Main View button is clicked.
+     * Hides the button (camera will be reset by the Activity).
+     */
+    fun onMainViewClicked() {
+        _showMainViewButton.value = false
+    }
+
     // =====================
     // SDK CALLBACKS - Host App Communication
     // =====================
@@ -1022,9 +1180,29 @@ class ACTimelineVM @Inject constructor(
     private fun updateMapSteps() {
         val items = _displayItems.value ?: return
         val mapSteps = mutableListOf<MapStep>()
-        var position = 1
+
+        // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
+        val cityOrder = mutableMapOf<Int, Int>()
+        // Track position per city: cityId -> current position
+        val cityPositions = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+
+        // Helper function to get next position for a city
+        fun getNextPosition(cityId: Int): Int {
+            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
+            cityPositions[cityId] = pos
+            return pos
+        }
 
         items.forEach { item ->
+            // Get city index for this item
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
@@ -1043,8 +1221,9 @@ class ACTimelineVM @Inject constructor(
                                                 }
                                             // No icon, only show order label
                                             markerIcon = -1
-                                            this.position = position++
+                                            this.position = getNextPosition(cityId)
                                             isOffer = false
+                                            this.cityIndex = currentCityIndex
                                         }
                                     )
                                 }
@@ -1069,8 +1248,9 @@ class ACTimelineVM @Inject constructor(
                                     }
                                     // No icon, only show order label
                                     markerIcon = -1
-                                    this.position = position++
+                                    this.position = getNextPosition(cityId)
                                     isOffer = false
+                                    this.cityIndex = currentCityIndex
                                 }
                             )
                         }
@@ -1092,8 +1272,9 @@ class ACTimelineVM @Inject constructor(
                                         }
                                         // No icon, only show order label
                                         markerIcon = -1
-                                        this.position = position++
+                                        this.position = getNextPosition(cityId)
                                         isOffer = false
+                                        this.cityIndex = currentCityIndex
                                     }
                                 )
                             }
@@ -1105,6 +1286,21 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
+        // Select first item of each city by default
+        val selectedCities = mutableSetOf<Int>()
+        mapSteps.forEach { step ->
+            if (!selectedCities.contains(step.cityIndex)) {
+                step.isSelected = true
+                selectedCities.add(step.cityIndex)
+            }
+        }
+
+        // Track if there are multiple cities in selected day (for Main View button)
+        hasMultipleCitiesInSelectedDay = cityOrder.size > 1
+
+        // Hide Main View button when map steps are updated (reset state)
+        _showMainViewButton.value = false
+
         _mapSteps.value = mapSteps
 
         // Also update map bottom items
@@ -1114,11 +1310,24 @@ class ACTimelineVM @Inject constructor(
     /**
      * Updates the map bottom items for horizontal list display.
      * Converts TimelineDisplayItems to MapBottomItem format.
+     * Each city has its own order starting from 1 and its own selected item.
      */
     private fun updateMapBottomItems() {
         val items = _displayItems.value ?: return
         val bottomItems = mutableListOf<MapBottomItem>()
-        var order = 1
+
+        // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
+        val cityOrder = mutableMapOf<Int, Int>()
+        // Track position per city: cityId -> current position
+        val cityPositions = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+
+        // Helper function to get next position for a city
+        fun getNextPosition(cityId: Int): Int {
+            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
+            cityPositions[cityId] = pos
+            return pos
+        }
 
         // Date formatters for display
         val inputDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -1126,6 +1335,14 @@ class ACTimelineVM @Inject constructor(
         val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         items.forEach { item ->
+            // Get city index for this item
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
@@ -1140,13 +1357,14 @@ class ACTimelineVM @Inject constructor(
                         bottomItems.add(
                             MapBottomItem(
                                 id = step.poi?.id ?: "step_${step.id}",
-                                order = order++,
+                                order = getNextPosition(cityId),
                                 title = step.poi?.name ?: "",
                                 imageUrl = step.poi?.image?.url,
                                 date = dateTime?.let { outputDateFormat.format(it) },
                                 time = dateTime?.let { outputTimeFormat.format(it) },
                                 type = "step",
-                                stepType = step.stepType  // "poi" or "activity"
+                                stepType = step.stepType,  // "poi" or "activity"
+                                cityIndex = currentCityIndex
                             )
                         )
                     }
@@ -1165,12 +1383,13 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = data?.activityId ?: "booked_${item.segmentIndex}",
-                            order = order++,
+                            order = getNextPosition(cityId),
                             title = data?.title ?: item.segment.title ?: "",
                             imageUrl = data?.imageUrl,
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
-                            type = if (item.isReserved) "reserved" else "booked"
+                            type = if (item.isReserved) "reserved" else "booked",
+                            cityIndex = currentCityIndex
                         )
                     )
                 }
@@ -1188,12 +1407,13 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = step.poi?.id ?: "manual_${step.id}",
-                            order = order++,
+                            order = getNextPosition(cityId),
                             title = step.poi?.name ?: "",
                             imageUrl = step.poi?.image?.url,
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
-                            type = "manual"
+                            type = "manual",
+                            cityIndex = currentCityIndex
                         )
                     )
                 }
@@ -1204,7 +1424,18 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        _mapBottomItems.value = bottomItems
+        // Select first item of each city by default
+        val selectedCities = mutableSetOf<Int>()
+        val itemsWithSelection = bottomItems.map { item ->
+            if (!selectedCities.contains(item.cityIndex)) {
+                selectedCities.add(item.cityIndex)
+                item.copy(isSelected = true)
+            } else {
+                item
+            }
+        }
+
+        _mapBottomItems.value = itemsWithSelection
     }
 
     // =====================
