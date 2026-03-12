@@ -3,9 +3,14 @@ package com.tripian.trpcore.ui.timeline
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.pois.model.Poi
@@ -479,6 +484,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.swipeRefresh.visibility = if (isMapMode) View.GONE else View.VISIBLE
         binding.mapContainer.visibility = if (isMapMode) View.VISIBLE else View.GONE
 
+        // Hide/show status bar for fullscreen map
+        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+        if (isMapMode) {
+            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
+            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+
         // Hide savedPlans in map mode
         if (isMapMode) {
             binding.btnSavedPlans.visibility = View.GONE
@@ -490,16 +504,40 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Header and DayFilter elevation + background for map mode
         val elevationDp = 8f * resources.displayMetrics.density
+        val defaultPadding = (16 * resources.displayMetrics.density).toInt()
+
+        // Get status bar height from system resource
+        val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
+            .takeIf { it > 0 }
+            ?.let { resources.getDimensionPixelSize(it) }
+            ?: (24 * resources.displayMetrics.density).toInt() // fallback 24dp
+
         if (isMapMode) {
             // Transparent background and elevation for map overlay
             binding.headerContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             binding.headerContainer.elevation = elevationDp
             binding.dayFilterView.elevation = elevationDp
+
+            // Add status bar height as top padding to keep header in place
+            binding.headerContainer.setPadding(
+                binding.headerContainer.paddingLeft,
+                statusBarHeight + defaultPadding,
+                binding.headerContainer.paddingRight,
+                binding.headerContainer.paddingBottom
+            )
         } else {
             // White background and no elevation for list mode
             binding.headerContainer.setBackgroundColor(android.graphics.Color.WHITE)
             binding.headerContainer.elevation = 0f
             binding.dayFilterView.elevation = 0f
+
+            // Reset top padding to default
+            binding.headerContainer.setPadding(
+                binding.headerContainer.paddingLeft,
+                defaultPadding,
+                binding.headerContainer.paddingRight,
+                binding.headerContainer.paddingBottom
+            )
         }
 
         // FAB visibility
