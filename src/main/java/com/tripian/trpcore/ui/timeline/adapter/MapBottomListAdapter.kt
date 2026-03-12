@@ -3,6 +3,7 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -23,7 +24,9 @@ data class MapBottomItem(
     val date: String?,
     val time: String?,
     val type: String,  // "step", "booked", "reserved", "manual"
-    val stepType: String? = null  // "poi" or "activity" - only for step type items
+    val stepType: String? = null,  // "poi" or "activity" - only for step type items
+    val isSelected: Boolean = false,
+    val cityIndex: Int = 0  // 0 = first city, 1+ = secondary cities (for different badge colors)
 )
 
 /**
@@ -33,6 +36,46 @@ data class MapBottomItem(
 class MapBottomListAdapter(
     private val onItemClicked: (MapBottomItem) -> Unit
 ) : ListAdapter<MapBottomItem, MapBottomListAdapter.ViewHolder>(MapBottomItemDiffCallback()) {
+
+    // Track selected item per city: cityIndex -> itemId
+    private var selectedItemIds = mutableMapOf<Int, String>()
+
+    /**
+     * Submits a new list and tracks the initially selected items per city.
+     */
+    override fun submitList(list: List<MapBottomItem>?) {
+        selectedItemIds.clear()
+        // Track initially selected items per city
+        list?.filter { it.isSelected }?.forEach {
+            selectedItemIds[it.cityIndex] = it.id
+        }
+        super.submitList(list)
+    }
+
+    /**
+     * Selects an item by its ID and updates the list.
+     * Only deselects the previously selected item in the same city.
+     * Each city can have its own selected item.
+     *
+     * @param itemId The ID of the item to select
+     */
+    fun selectItem(itemId: String) {
+        val targetItem = currentList.find { it.id == itemId } ?: return
+        val cityIndex = targetItem.cityIndex
+
+        if (selectedItemIds[cityIndex] == itemId) return
+
+        val prevSelectedId = selectedItemIds[cityIndex]
+        val updatedList = currentList.map { item ->
+            when {
+                item.id == itemId -> item.copy(isSelected = true)
+                item.id == prevSelectedId -> item.copy(isSelected = false)
+                else -> item
+            }
+        }
+        selectedItemIds[cityIndex] = itemId
+        super.submitList(updatedList)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemMapBottomCardBinding.inflate(
@@ -54,6 +97,47 @@ class MapBottomListAdapter(
         fun bind(item: MapBottomItem) {
             // Order badge
             binding.tvOrderBadge.text = item.order.toString()
+
+            // Apply selection styling to badge based on city index
+            if (item.cityIndex == 0) {
+                // First city: black/white style
+                if (item.isSelected) {
+                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                        binding.root.context,
+                        R.drawable.bg_marker_red
+                    )
+                    binding.tvOrderBadge.setTextColor(
+                        ContextCompat.getColor(binding.root.context, R.color.trp_white)
+                    )
+                } else {
+                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                        binding.root.context,
+                        R.drawable.bg_marker_white
+                    )
+                    binding.tvOrderBadge.setTextColor(
+                        ContextCompat.getColor(binding.root.context, R.color.trp_black_soft)
+                    )
+                }
+            } else {
+                // Secondary cities: primary color style
+                if (item.isSelected) {
+                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                        binding.root.context,
+                        R.drawable.bg_marker_primary
+                    )
+                    binding.tvOrderBadge.setTextColor(
+                        ContextCompat.getColor(binding.root.context, R.color.trp_white)
+                    )
+                } else {
+                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                        binding.root.context,
+                        R.drawable.bg_marker_white_primary
+                    )
+                    binding.tvOrderBadge.setTextColor(
+                        ContextCompat.getColor(binding.root.context, R.color.trp_primary)
+                    )
+                }
+            }
 
             // Title
             binding.tvTitle.text = item.title

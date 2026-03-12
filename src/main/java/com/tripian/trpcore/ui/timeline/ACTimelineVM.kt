@@ -1157,9 +1157,29 @@ class ACTimelineVM @Inject constructor(
     private fun updateMapSteps() {
         val items = _displayItems.value ?: return
         val mapSteps = mutableListOf<MapStep>()
-        var position = 1
+
+        // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
+        val cityOrder = mutableMapOf<Int, Int>()
+        // Track position per city: cityId -> current position
+        val cityPositions = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+
+        // Helper function to get next position for a city
+        fun getNextPosition(cityId: Int): Int {
+            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
+            cityPositions[cityId] = pos
+            return pos
+        }
 
         items.forEach { item ->
+            // Get city index for this item
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
@@ -1178,8 +1198,9 @@ class ACTimelineVM @Inject constructor(
                                                 }
                                             // No icon, only show order label
                                             markerIcon = -1
-                                            this.position = position++
+                                            this.position = getNextPosition(cityId)
                                             isOffer = false
+                                            this.cityIndex = currentCityIndex
                                         }
                                     )
                                 }
@@ -1204,8 +1225,9 @@ class ACTimelineVM @Inject constructor(
                                     }
                                     // No icon, only show order label
                                     markerIcon = -1
-                                    this.position = position++
+                                    this.position = getNextPosition(cityId)
                                     isOffer = false
+                                    this.cityIndex = currentCityIndex
                                 }
                             )
                         }
@@ -1227,8 +1249,9 @@ class ACTimelineVM @Inject constructor(
                                         }
                                         // No icon, only show order label
                                         markerIcon = -1
-                                        this.position = position++
+                                        this.position = getNextPosition(cityId)
                                         isOffer = false
+                                        this.cityIndex = currentCityIndex
                                     }
                                 )
                             }
@@ -1237,6 +1260,15 @@ class ACTimelineVM @Inject constructor(
                 }
 
                 else -> {}
+            }
+        }
+
+        // Select first item of each city by default
+        val selectedCities = mutableSetOf<Int>()
+        mapSteps.forEach { step ->
+            if (!selectedCities.contains(step.cityIndex)) {
+                step.isSelected = true
+                selectedCities.add(step.cityIndex)
             }
         }
 
@@ -1249,11 +1281,24 @@ class ACTimelineVM @Inject constructor(
     /**
      * Updates the map bottom items for horizontal list display.
      * Converts TimelineDisplayItems to MapBottomItem format.
+     * Each city has its own order starting from 1 and its own selected item.
      */
     private fun updateMapBottomItems() {
         val items = _displayItems.value ?: return
         val bottomItems = mutableListOf<MapBottomItem>()
-        var order = 1
+
+        // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
+        val cityOrder = mutableMapOf<Int, Int>()
+        // Track position per city: cityId -> current position
+        val cityPositions = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+
+        // Helper function to get next position for a city
+        fun getNextPosition(cityId: Int): Int {
+            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
+            cityPositions[cityId] = pos
+            return pos
+        }
 
         // Date formatters for display
         val inputDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
@@ -1261,6 +1306,14 @@ class ACTimelineVM @Inject constructor(
         val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
         items.forEach { item ->
+            // Get city index for this item
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
@@ -1275,13 +1328,14 @@ class ACTimelineVM @Inject constructor(
                         bottomItems.add(
                             MapBottomItem(
                                 id = step.poi?.id ?: "step_${step.id}",
-                                order = order++,
+                                order = getNextPosition(cityId),
                                 title = step.poi?.name ?: "",
                                 imageUrl = step.poi?.image?.url,
                                 date = dateTime?.let { outputDateFormat.format(it) },
                                 time = dateTime?.let { outputTimeFormat.format(it) },
                                 type = "step",
-                                stepType = step.stepType  // "poi" or "activity"
+                                stepType = step.stepType,  // "poi" or "activity"
+                                cityIndex = currentCityIndex
                             )
                         )
                     }
@@ -1300,12 +1354,13 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = data?.activityId ?: "booked_${item.segmentIndex}",
-                            order = order++,
+                            order = getNextPosition(cityId),
                             title = data?.title ?: item.segment.title ?: "",
                             imageUrl = data?.imageUrl,
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
-                            type = if (item.isReserved) "reserved" else "booked"
+                            type = if (item.isReserved) "reserved" else "booked",
+                            cityIndex = currentCityIndex
                         )
                     )
                 }
@@ -1323,12 +1378,13 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = step.poi?.id ?: "manual_${step.id}",
-                            order = order++,
+                            order = getNextPosition(cityId),
                             title = step.poi?.name ?: "",
                             imageUrl = step.poi?.image?.url,
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
-                            type = "manual"
+                            type = "manual",
+                            cityIndex = currentCityIndex
                         )
                     )
                 }
@@ -1339,7 +1395,18 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        _mapBottomItems.value = bottomItems
+        // Select first item of each city by default
+        val selectedCities = mutableSetOf<Int>()
+        val itemsWithSelection = bottomItems.map { item ->
+            if (!selectedCities.contains(item.cityIndex)) {
+                selectedCities.add(item.cityIndex)
+                item.copy(isSelected = true)
+            } else {
+                item
+            }
+        }
+
+        _mapBottomItems.value = itemsWithSelection
     }
 
     // =====================

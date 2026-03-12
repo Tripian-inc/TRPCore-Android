@@ -357,26 +357,35 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      */
     private fun setupMapBottomList() {
         mapBottomListAdapter = MapBottomListAdapter { item ->
-            // Handle item click - navigate to detail
-            when {
-                // Booked or reserved activities
-                item.type == "booked" || item.type == "reserved" -> {
-                    viewModel.onActivityDetailRequested(item.id)
-                }
-                // Step with activity type - treat like reserved
-                item.type == "step" && item.stepType == "activity" -> {
-                    // Get productId from POI additionalData
-                    findPoiById(item.id)?.let { poi ->
-                        val activityId = poi.additionalData?.productId ?: poi.id ?: item.id
-                        viewModel.onActivityDetailRequested(activityId)
+            // Always focus on the marker
+            binding.mapView.focusOnMarker(item.id)
+
+            if (item.isSelected) {
+                // Item is already selected - navigate to detail
+                when {
+                    // Booked or reserved activities
+                    item.type == "booked" || item.type == "reserved" -> {
+                        viewModel.onActivityDetailRequested(item.id)
+                    }
+                    // Step with activity type - treat like reserved
+                    item.type == "step" && item.stepType == "activity" -> {
+                        // Get productId from POI additionalData
+                        findPoiById(item.id)?.let { poi ->
+                            val activityId = poi.additionalData?.productId ?: poi.id ?: item.id
+                            viewModel.onActivityDetailRequested(activityId)
+                        }
+                    }
+                    // POI types (step with poi stepType, manual)
+                    else -> {
+                        findPoiById(item.id)?.let { poi ->
+                            startActivity(ACPOIDetail.launch(this, poi))
+                        }
                     }
                 }
-                // POI types (step with poi stepType, manual)
-                else -> {
-                    findPoiById(item.id)?.let { poi ->
-                        startActivity(ACPOIDetail.launch(this, poi))
-                    }
-                }
+            } else {
+                // Item is not selected - select it
+                mapBottomListAdapter?.selectItem(item.id)
+                binding.mapView.selectMarker(item.id)
             }
         }
 
@@ -502,6 +511,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     private fun handleMapItemClick(mapStep: MapStep) {
+        // Select the clicked marker (changes visual appearance)
+        binding.mapView.selectMarker(mapStep.poiId)
+
+        // Select the corresponding item in bottom list
+        mapBottomListAdapter?.selectItem(mapStep.poiId)
+
         // Show bottom list and scroll to clicked item
         showMapBottomList()
         scrollToMapBottomItem(mapStep.position)

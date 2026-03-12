@@ -27,6 +27,8 @@ public class MarkerView extends RelativeLayout {
     private ImageView iconView;
     private ImageView iconViewBackground;
     private TextView poiOrderTv;
+    private boolean isSelected = false;
+    private int cityIndex = 0;  // 0 = first city (black), 1+ = secondary cities (primary color)
 
     public MarkerView(Context context) {
         super(context);
@@ -79,20 +81,77 @@ public class MarkerView extends RelativeLayout {
         orderFrameLayout.setLayoutParams(orderFrameLayoutParams);
 
         poiOrderTv = new TextView(context);
-        LayoutParams poiOrderTvParams = new LayoutParams((int) UtilityKt.dp2Px(20), (int) UtilityKt.dp2Px(20f));
+        LayoutParams poiOrderTvParams = new LayoutParams((int) UtilityKt.dp2Px(30), (int) UtilityKt.dp2Px(30f));
         poiOrderTv.setLayoutParams(poiOrderTvParams);
         poiOrderTv.setGravity(Gravity.CENTER);
-        poiOrderTv.setTextSize(12);
+        poiOrderTv.setTextSize(18);
         poiOrderTv.setTypeface(poiOrderTv.getTypeface(), Typeface.BOLD);
         poiOrderTv.setBackground(ContextCompat.getDrawable(context, R.drawable.bg_marker_red));
 
         orderFrameLayout.addView(poiOrderTv);
 
-        poiOrderTv.setTextColor(Color.WHITE);
+        // Default state: white background with black text
+        setSelected(false);
 
         addView(imageViewRelativeLyt);
         addView(orderFrameLayout);
 
+    }
+
+    /**
+     * Sets the city index for the marker.
+     * cityIndex 0 = first city (black/white style)
+     * cityIndex 1+ = secondary cities (primary color style)
+     *
+     * @param index the city index (0-based)
+     */
+    public void setCityIndex(int index) {
+        this.cityIndex = index;
+        // Re-apply selection state with new city index
+        setSelected(isSelected);
+    }
+
+    /**
+     * Sets the selection state of the marker.
+     * For first city (cityIndex == 0):
+     *   - Selected: black background with white text
+     *   - Unselected: white background with black border and black text
+     * For secondary cities (cityIndex > 0):
+     *   - Selected: primary color background with white text
+     *   - Unselected: white background with primary border and primary text
+     *
+     * @param selected true if marker is selected, false otherwise
+     */
+    public void setSelected(boolean selected) {
+        this.isSelected = selected;
+        if (cityIndex == 0) {
+            // First city: black/white style
+            if (selected) {
+                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_red));
+                poiOrderTv.setTextColor(Color.WHITE);
+            } else {
+                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white));
+                poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_black_soft));
+            }
+        } else {
+            // Secondary cities: primary color style
+            if (selected) {
+                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_primary));
+                poiOrderTv.setTextColor(Color.WHITE);
+            } else {
+                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white_primary));
+                poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_primary));
+            }
+        }
+    }
+
+    /**
+     * Returns the current selection state of the marker.
+     *
+     * @return true if marker is selected, false otherwise
+     */
+    public boolean isMarkerSelected() {
+        return isSelected;
     }
 
     /**
