@@ -129,6 +129,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.mapView.setOnMapInteractionListener {
             hideMapBottomList()
         }
+
+        // Main View button - returns map to initial zoom
+        binding.btnMainView.setOnClickListener {
+            // Reset map to initial view (all markers visible)
+            lifecycleScope.launch {
+                binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+            }
+            viewModel.onMainViewClicked()
+            // Fade out animation
+            binding.btnMainView.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction { binding.btnMainView.visibility = View.GONE }
+                .start()
+        }
     }
 
     override fun setReceivers() {
@@ -245,6 +260,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 viewModel.clearRouteInfoUpdate()
             }
         }
+
+        // Main View button visibility (multi-city map mode)
+        viewModel.showMainViewButton.observe(this) { show ->
+            if (show) {
+                // Fade in
+                binding.btnMainView.alpha = 0f
+                binding.btnMainView.visibility = View.VISIBLE
+                binding.btnMainView.animate()
+                    .alpha(1f)
+                    .setDuration(200)
+                    .start()
+            } else {
+                binding.btnMainView.visibility = View.GONE
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -273,6 +303,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Near Me button
         binding.btnNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
+
+        // Main View button
+        binding.btnMainView.text = getLanguageForKey(LanguageConst.TIMELINE_MAIN_VIEW)
 
         // Empty state texts
         binding.tvEmptyTitle.text = getLanguageForKey(LanguageConst.NO_PLANS_YET)
@@ -359,6 +392,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         mapBottomListAdapter = MapBottomListAdapter { item ->
             // Always focus on the marker
             binding.mapView.focusOnMarker(item.id)
+
+            // Show Main View button when focusing on a marker (multi-city mode)
+            viewModel.onMarkerFocused()
 
             if (item.isSelected) {
                 // Item is already selected - navigate to detail
@@ -507,6 +543,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             binding.rvMapBottomList.translationY = 0f
             // Reset fabList position
             binding.fabList.translationY = 0f
+            // Hide Main View button
+            binding.btnMainView.visibility = View.GONE
         }
     }
 
@@ -516,6 +554,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Select the corresponding item in bottom list
         mapBottomListAdapter?.selectItem(mapStep.poiId)
+
+        // Focus on the marker
+        binding.mapView.focusOnMarker(mapStep.poiId)
+
+        // Show Main View button when focusing on a marker (multi-city mode)
+        viewModel.onMarkerFocused()
 
         // Show bottom list and scroll to clicked item
         showMapBottomList()

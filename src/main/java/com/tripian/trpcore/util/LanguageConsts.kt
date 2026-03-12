@@ -203,6 +203,7 @@ object LanguageConst {
     const val NO_PLANS_DESCRIPTION = "timeline.emptyState.noPlansDescription"
     const val ADD_PLANS = "timeline.emptyState.addPlansButton"
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
+    const val TIMELINE_MAIN_VIEW = "timeline.map.mainView"
 
     // =====================
     // ADD PLAN FLOW

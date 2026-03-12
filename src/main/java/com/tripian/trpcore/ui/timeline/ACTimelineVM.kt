@@ -107,6 +107,10 @@ class ACTimelineVM @Inject constructor(
 
     private val _selectedCity = MutableLiveData<City?>()
 
+    // Main View button visibility (for multi-city map mode)
+    private val _showMainViewButton = MutableLiveData(false)
+    val showMainViewButton: LiveData<Boolean> = _showMainViewButton
+
     // Route info cache - maps segmentIndex to route info list
     private val _routeInfoCache = mutableMapOf<Int, List<StepRouteInfo>>()
 
@@ -123,6 +127,7 @@ class ACTimelineVM @Inject constructor(
     private var itinerary: ItineraryWithActivities? = null
     private var uniqueId: String? = null
     private var isLoggedIn: Boolean = false
+    private var hasMultipleCitiesInSelectedDay: Boolean = false
 
     // =====================
     // LIFECYCLE
@@ -1118,6 +1123,24 @@ class ACTimelineVM @Inject constructor(
         _launchPoiSelection.value = null
     }
 
+    /**
+     * Called when a marker is focused (user taps on bottom list item or marker).
+     * Shows Main View button if there are multiple cities in the selected day.
+     */
+    fun onMarkerFocused() {
+        if (hasMultipleCitiesInSelectedDay) {
+            _showMainViewButton.value = true
+        }
+    }
+
+    /**
+     * Called when Main View button is clicked.
+     * Hides the button (camera will be reset by the Activity).
+     */
+    fun onMainViewClicked() {
+        _showMainViewButton.value = false
+    }
+
     // =====================
     // SDK CALLBACKS - Host App Communication
     // =====================
@@ -1271,6 +1294,12 @@ class ACTimelineVM @Inject constructor(
                 selectedCities.add(step.cityIndex)
             }
         }
+
+        // Track if there are multiple cities in selected day (for Main View button)
+        hasMultipleCitiesInSelectedDay = cityOrder.size > 1
+
+        // Hide Main View button when map steps are updated (reset state)
+        _showMainViewButton.value = false
 
         _mapSteps.value = mapSteps
 
