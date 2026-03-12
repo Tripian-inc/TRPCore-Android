@@ -148,8 +148,44 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     // =====================
 
     /**
+     * Multi-language day name mappings to English abbreviations.
+     * Supports: English, Spanish, German, French, Turkish, Italian, Portuguese
+     */
+    private val dayNameMappings = mapOf(
+        // English
+        "Mon" to "Mon", "Tue" to "Tue", "Wed" to "Wed", "Thu" to "Thu", "Fri" to "Fri", "Sat" to "Sat", "Sun" to "Sun",
+        "Monday" to "Mon", "Tuesday" to "Tue", "Wednesday" to "Wed", "Thursday" to "Thu", "Friday" to "Fri", "Saturday" to "Sat", "Sunday" to "Sun",
+        // Spanish
+        "Lun" to "Mon", "Mar" to "Tue", "Mié" to "Wed", "Mie" to "Wed", "Jue" to "Thu", "Vie" to "Fri", "Sáb" to "Sat", "Sab" to "Sat", "Dom" to "Sun",
+        "Lunes" to "Mon", "Martes" to "Tue", "Miércoles" to "Wed", "Miercoles" to "Wed", "Jueves" to "Thu", "Viernes" to "Fri", "Sábado" to "Sat", "Sabado" to "Sat", "Domingo" to "Sun",
+        // German
+        "Mo" to "Mon", "Di" to "Tue", "Mi" to "Wed", "Do" to "Thu", "Fr" to "Fri", "Sa" to "Sat", "So" to "Sun",
+        "Montag" to "Mon", "Dienstag" to "Tue", "Mittwoch" to "Wed", "Donnerstag" to "Thu", "Freitag" to "Fri", "Samstag" to "Sat", "Sonntag" to "Sun",
+        // French
+        "Lun" to "Mon", "Mar" to "Tue", "Mer" to "Wed", "Jeu" to "Thu", "Ven" to "Fri", "Sam" to "Sat", "Dim" to "Sun",
+        "Lundi" to "Mon", "Mardi" to "Tue", "Mercredi" to "Wed", "Jeudi" to "Thu", "Vendredi" to "Fri", "Samedi" to "Sat", "Dimanche" to "Sun",
+        // Turkish
+        "Pzt" to "Mon", "Sal" to "Tue", "Çar" to "Wed", "Car" to "Wed", "Per" to "Thu", "Cum" to "Fri", "Cmt" to "Sat", "Paz" to "Sun",
+        "Pazartesi" to "Mon", "Salı" to "Tue", "Sali" to "Tue", "Çarşamba" to "Wed", "Carsamba" to "Wed", "Perşembe" to "Thu", "Persembe" to "Thu", "Cuma" to "Fri", "Cumartesi" to "Sat", "Pazar" to "Sun",
+        // Italian
+        "Lun" to "Mon", "Mar" to "Tue", "Mer" to "Wed", "Gio" to "Thu", "Ven" to "Fri", "Sab" to "Sat", "Dom" to "Sun",
+        "Lunedì" to "Mon", "Lunedi" to "Mon", "Martedì" to "Tue", "Martedi" to "Tue", "Mercoledì" to "Wed", "Mercoledi" to "Wed", "Giovedì" to "Thu", "Giovedi" to "Thu", "Venerdì" to "Fri", "Venerdi" to "Fri", "Sabato" to "Sat", "Domenica" to "Sun",
+        // Portuguese
+        "Seg" to "Mon", "Ter" to "Tue", "Qua" to "Wed", "Qui" to "Thu", "Sex" to "Fri", "Sáb" to "Sat", "Sab" to "Sat", "Dom" to "Sun",
+        "Segunda" to "Mon", "Terça" to "Tue", "Terca" to "Tue", "Quarta" to "Wed", "Quinta" to "Thu", "Sexta" to "Fri", "Sábado" to "Sat", "Sabado" to "Sat", "Domingo" to "Sun"
+    )
+
+    /**
+     * Get all recognized day names (for finding day parts in string)
+     */
+    private val allDayNames: List<String> by lazy {
+        dayNameMappings.keys.sortedByDescending { it.length } // Longer names first to match "Monday" before "Mon"
+    }
+
+    /**
      * Parse opening hours string to list of OpeningHourItem
      * Input format: "Sun, Sat: 9:00 AM - 1:00 AM | Mon-Fri: 8:30 AM - 1:00 AM"
+     * Also supports localized formats: "Lun, Mar: 9:00 - 17:00 | Mié-Vie: 8:30 - 18:00"
      * Output: List of day-based entries with 24h format
      */
     private fun parseOpeningHours(hoursString: String): List<OpeningHourItem> {
@@ -168,6 +204,8 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
             // Find the first colon that separates days from time
             // Days part might contain commas and hyphens
             val daysPart = findDaysPart(group)
+            if (daysPart.isEmpty()) continue // Skip if no day names found
+
             val timePart = group.substring(daysPart.length).trim().removePrefix(":").trim()
 
             val days = parseDays(daysPart)
@@ -196,15 +234,19 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     /**
      * Find the days part of the group string
      * e.g., "Sun, Sat: 9:00 AM - 1:00 AM" -> "Sun, Sat"
+     * e.g., "Lun, Mar: 9:00 - 17:00" -> "Lun, Mar"
+     * Supports multiple languages
      */
     private fun findDaysPart(group: String): String {
-        val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         var lastDayEnd = 0
 
         for (i in group.indices) {
-            for (dayName in dayNames) {
-                if (group.startsWith(dayName, i)) {
-                    lastDayEnd = i + dayName.length
+            for (dayName in allDayNames) {
+                if (group.startsWith(dayName, i, ignoreCase = true)) {
+                    val endPos = i + dayName.length
+                    if (endPos > lastDayEnd) {
+                        lastDayEnd = endPos
+                    }
                 }
             }
         }
@@ -213,8 +255,24 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     }
 
     /**
-     * Parse days string to list of day abbreviations
+     * Normalize a localized day name to English abbreviation
+     * e.g., "Lun" -> "Mon", "Montag" -> "Mon"
+     */
+    private fun normalizeDayName(localizedDay: String): String? {
+        val trimmed = localizedDay.trim()
+        // Check exact match first (case-insensitive)
+        for ((key, value) in dayNameMappings) {
+            if (key.equals(trimmed, ignoreCase = true)) {
+                return value
+            }
+        }
+        return null
+    }
+
+    /**
+     * Parse days string to list of day abbreviations (English)
      * Handles formats like: "Mon-Fri", "Sun, Sat", "Mon, Wed, Fri"
+     * Also supports localized: "Lun-Vie", "Sáb, Dom"
      */
     private fun parseDays(daysString: String): List<String> {
         val result = mutableListOf<String>()
@@ -225,31 +283,37 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
 
         for (part in parts) {
             if (part.contains("-")) {
-                // Range like "Mon-Fri"
+                // Range like "Mon-Fri" or "Lun-Vie"
                 val rangeParts = part.split("-").map { it.trim() }
                 if (rangeParts.size == 2) {
-                    val startIdx = dayOrder.indexOf(rangeParts[0])
-                    val endIdx = dayOrder.indexOf(rangeParts[1])
-                    if (startIdx >= 0 && endIdx >= 0) {
-                        if (startIdx <= endIdx) {
-                            for (i in startIdx..endIdx) {
-                                result.add(dayOrder[i])
-                            }
-                        } else {
-                            // Wrap around (e.g., Fri-Mon)
-                            for (i in startIdx until dayOrder.size) {
-                                result.add(dayOrder[i])
-                            }
-                            for (i in 0..endIdx) {
-                                result.add(dayOrder[i])
+                    val startDay = normalizeDayName(rangeParts[0])
+                    val endDay = normalizeDayName(rangeParts[1])
+
+                    if (startDay != null && endDay != null) {
+                        val startIdx = dayOrder.indexOf(startDay)
+                        val endIdx = dayOrder.indexOf(endDay)
+                        if (startIdx >= 0 && endIdx >= 0) {
+                            if (startIdx <= endIdx) {
+                                for (i in startIdx..endIdx) {
+                                    result.add(dayOrder[i])
+                                }
+                            } else {
+                                // Wrap around (e.g., Fri-Mon)
+                                for (i in startIdx until dayOrder.size) {
+                                    result.add(dayOrder[i])
+                                }
+                                for (i in 0..endIdx) {
+                                    result.add(dayOrder[i])
+                                }
                             }
                         }
                     }
                 }
             } else {
                 // Single day
-                if (dayOrder.contains(part)) {
-                    result.add(part)
+                val normalizedDay = normalizeDayName(part)
+                if (normalizedDay != null && dayOrder.contains(normalizedDay)) {
+                    result.add(normalizedDay)
                 }
             }
         }
