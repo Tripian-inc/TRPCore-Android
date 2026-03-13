@@ -85,7 +85,7 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                 this.coordinate = coordinate
                 available = false
                 distinctPlan = true
-                currency = TRPCore.getCurrentCurrency()
+                currency = TRPCore.core.getCurrentCurrency()
             }
 
             addObservable {

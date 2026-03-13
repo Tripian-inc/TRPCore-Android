@@ -23,7 +23,7 @@ class TimelineRepository @Inject constructor(
         return Single.create<Timeline> { emitter ->
             trpRest.getTimeline(
                 hash = tripHash,
-                currency = TRPCore.getCurrentCurrency(),
+                currency = TRPCore.core.getCurrentCurrency(),
                 success = { response ->
                     response.data?.let { timeline ->
                         emitter.onSuccess(timeline)

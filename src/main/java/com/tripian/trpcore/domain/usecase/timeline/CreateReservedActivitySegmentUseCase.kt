@@ -70,7 +70,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 this.additionalData = additionalData
                 available = false
                 distinctPlan = true
-                currency = TRPCore.getCurrentCurrency()
+                currency = TRPCore.core.getCurrentCurrency()
             }
 
             addObservable {

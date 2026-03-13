@@ -44,7 +44,7 @@ class CreateSegmentUseCase @Inject constructor(
                 children = p.children,
                 answerIds = emptyList(),  // Empty list instead of null
                 accommodation = p.accommodation,  // Starting point (Google Place)
-                currency = TRPCore.getCurrentCurrency()
+                currency = TRPCore.core.getCurrentCurrency()
             ).apply {
                 smartRecommendation = p.smartRecommendation
                 activityFreeText = p.activityFreeText

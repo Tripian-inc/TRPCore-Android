@@ -46,7 +46,7 @@ class CreateManualPoiSegmentUseCase @Inject constructor(
                 includePoiIds = listOf(p.poi.id)
                 available = false
                 distinctPlan = true
-                currency = TRPCore.getCurrentCurrency()
+                currency = TRPCore.core.getCurrentCurrency()
             }
 
             addObservable {

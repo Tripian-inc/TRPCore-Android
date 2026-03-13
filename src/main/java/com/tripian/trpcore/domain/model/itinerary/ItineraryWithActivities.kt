@@ -156,7 +156,7 @@ data class ItineraryWithActivities(
             adults = item.adultCount
             children = item.childCount
             doNotGenerate = 1
-            currency = TRPCore.getCurrentCurrency()
+            currency = TRPCore.core.getCurrentCurrency()
 
             // Coordinate
             item.coordinate.let { coord ->
@@ -214,7 +214,7 @@ data class ItineraryWithActivities(
             this.adults = adults
             this.children = children
             this.doNotGenerate = 1
-            this.currency = TRPCore.getCurrentCurrency()
+            this.currency = TRPCore.core.getCurrentCurrency()
         }
     }
 

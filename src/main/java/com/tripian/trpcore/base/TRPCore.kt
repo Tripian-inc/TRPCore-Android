@@ -15,6 +15,7 @@ import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.repository.authorization.AwsConfig
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
 import com.tripian.trpcore.ui.splash.ACSplash
@@ -125,35 +126,6 @@ class TRPCore {
         fun getListener(): TRPCoreSDKListener? = listener
 
         // =====================
-        // CURRENCY METHODS
-        // =====================
-
-        /**
-         * Changes the app currency after SDK initialization.
-         * The currency is persisted and will be used for all subsequent API requests.
-         *
-         * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, JPY, AUD, CAD, CHF, MXN)
-         *                 or locale format (es-MX, en-US, de-DE)
-         *
-         * Example usage:
-         * ```kotlin
-         * TRPCore.changeCurrency("USD")
-         * TRPCore.changeCurrency("es-MX")  // Resolves to MXN
-         * ```
-         */
-        fun changeCurrency(currency: String) {
-            core.miscRepository.changeCurrency(currency)
-        }
-
-        /**
-         * Gets the current currency code.
-         * @return Current ISO 4217 currency code
-         */
-        fun getCurrentCurrency(): String {
-            return core.miscRepository.getCurrentCurrency()
-        }
-
-        // =====================
         // CALLBACK HELPER METHODS
         // =====================
 
@@ -231,6 +203,95 @@ class TRPCore {
 
     @Inject
     lateinit var appConfig: AppConfig
+
+    // =====================
+    // CURRENCY METHODS (Instance)
+    // =====================
+
+    /**
+     * Changes the app currency after SDK initialization.
+     * The currency is persisted and will be used for all subsequent API requests.
+     *
+     * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, JPY, AUD, CAD, CHF, MXN)
+     *                 or locale format (es-MX, en-US, de-DE)
+     *
+     * Example usage:
+     * ```kotlin
+     * TRPCore.core.changeCurrency("USD")
+     * TRPCore.core.changeCurrency("es-MX")  // Resolves to MXN
+     * ```
+     */
+    fun changeCurrency(currency: String) {
+        miscRepository.changeCurrency(currency)
+    }
+
+    /**
+     * Gets the current currency code.
+     * @return Current ISO 4217 currency code
+     */
+    fun getCurrentCurrency(): String {
+        return miscRepository.getCurrentCurrency()
+    }
+
+    /**
+     * Gets the saved currency code from preferences.
+     * @return Saved currency code or empty string if not set
+     */
+    fun getSavedCurrency(): String {
+        return miscRepository.getSavedCurrency()
+    }
+
+    /**
+     * Returns the currency symbol for the given currency code.
+     *
+     * @param currencyCode The ISO 4217 currency code (e.g., "EUR", "USD")
+     * @return The currency symbol, or the currency code itself if not found
+     *
+     * Example:
+     * ```kotlin
+     * TRPCore.core.getCurrencySymbol("EUR")  // Returns "€"
+     * TRPCore.core.getCurrencySymbol("USD")  // Returns "$"
+     * ```
+     */
+    fun getCurrencySymbol(currencyCode: String): String {
+        return CurrencyUtil.getSymbol(currencyCode)
+    }
+
+    /**
+     * Formats a price with the appropriate currency symbol.
+     *
+     * @param amount The price amount
+     * @param currencyCode The currency code (uses current appCurrency if null)
+     * @return Formatted price string (e.g., "€19.99")
+     *
+     * Example:
+     * ```kotlin
+     * TRPCore.core.formatPrice(19.99)        // Uses current currency
+     * TRPCore.core.formatPrice(19.99, "USD") // Returns "$19.99"
+     * ```
+     */
+    fun formatPrice(amount: Double, currencyCode: String? = null): String {
+        return CurrencyUtil.formatPrice(amount, currencyCode)
+    }
+
+    /**
+     * Formats a price with the appropriate currency symbol (Int version).
+     *
+     * @param amount The price amount
+     * @param currencyCode The currency code (uses current appCurrency if null)
+     * @return Formatted price string (e.g., "€19")
+     */
+    fun formatPrice(amount: Int, currencyCode: String? = null): String {
+        return CurrencyUtil.formatPrice(amount, currencyCode)
+    }
+
+    /**
+     * Returns a list of all supported currency codes.
+     * @return List of ISO 4217 currency codes (EUR, USD, GBP, TRY, JPY, AUD, CAD, CHF, MXN)
+     */
+    fun getSupportedCurrencies(): List<String> {
+        return CurrencyUtil.getSupportedCurrencies()
+    }
 
     /**
      * Initializes the TRPCore SDK.
