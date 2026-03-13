@@ -79,7 +79,7 @@ class FRChangeTimeVM @Inject constructor(
 
                 if (startTimePos >= endTimePos) {
                     if (startTimePos == hours.size - 1) {
-                        // 23:00 ise endTime 23:59 olmali
+                        // If 23:00, endTime should be 23:59
 
                         endTimePos = startTimePos
 

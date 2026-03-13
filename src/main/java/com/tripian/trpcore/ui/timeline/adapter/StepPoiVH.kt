@@ -78,7 +78,7 @@ class StepPoiVH(
             binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
         }
 
-        // Rating Row - DISABLED: Rating/review görünümleri kapatıldı
+        // Rating Row - DISABLED: Rating/review views disabled
         binding.llRating.visibility = View.GONE
         /*
         // Rating Row - from poi.rating and poi.ratingCount

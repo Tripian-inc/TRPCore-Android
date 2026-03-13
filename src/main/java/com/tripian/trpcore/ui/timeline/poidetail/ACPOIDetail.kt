@@ -58,7 +58,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         setupGallery()
         setupProductsRecyclerView()
         setupOpeningHoursRecyclerView()
-        // DISABLED: Features ve Cuisines görünümleri kapatıldı
+        // DISABLED: Features and Cuisines views disabled
         // setupFeaturesRecyclerView()
         // setupCuisinesRecyclerView()
 
@@ -123,13 +123,13 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             binding.llMeetingPointSection.visibility = if (show) View.VISIBLE else View.GONE
         }
 
-        // Features Section - DISABLED: Features görünümü kapatıldı
+        // Features Section - DISABLED: Features view disabled
         // viewModel.showFeaturesSection.observe(this) { show ->
         //     binding.llFeaturesSection.visibility = if (show) View.VISIBLE else View.GONE
         // }
         binding.llFeaturesSection.visibility = View.GONE
 
-        // Cuisines Section - DISABLED: Cuisines görünümü kapatıldı
+        // Cuisines Section - DISABLED: Cuisines view disabled
         // viewModel.showCuisinesSection.observe(this) { show ->
         //     binding.llCuisinesSection.visibility = if (show) View.VISIBLE else View.GONE
         // }
@@ -142,7 +142,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         binding.tvActivitiesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_ACTIVITIES)
         binding.tvKeyDataHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_KEY_DATA)
         binding.tvMeetingPointHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_MEETING_POINT)
-        // DISABLED: Features görünümü kapatıldı
+        // DISABLED: Features view disabled
         // binding.tvFeaturesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_FEATURES)
         binding.tvPhoneLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_PHONE)
         binding.tvOpeningHoursLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_OPENING_HOURS)
@@ -238,7 +238,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         // POI name
         binding.tvPoiName.text = poi.name ?: ""
 
-        // Rating - DISABLED: Rating/review görünümleri kapatıldı
+        // Rating - DISABLED: Rating/review views disabled
         binding.llRating.visibility = View.GONE
         /*
         val rating = poi.rating
@@ -316,7 +316,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             }
         }
 
-        // Features (tags) - DISABLED: Features görünümü kapatıldı
+        // Features (tags) - DISABLED: Features view disabled
         // poi.tags?.let { tags ->
         //     featureTagAdapter?.submitList(tags)
         // }

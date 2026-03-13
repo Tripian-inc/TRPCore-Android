@@ -98,7 +98,7 @@ class FavoriteRepository @Inject constructor(val service: Service) {
         return getUserFavorites(cityId).map {
             return@map FavoriteResponse().apply {
                 data = it.data?.find { it.poiId == poiId }
-                data?.isFavorite = true // Eger data null degilse favoridir
+                data?.isFavorite = true // If data is not null, it is a favorite
 
                 status = 200
             }

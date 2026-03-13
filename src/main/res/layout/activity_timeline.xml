@@ -257,7 +257,7 @@
 
     </LinearLayout>
 
-    <!-- Map Toggle FAB - Liste gorunumunde gorunur -->
+    <!-- Map Toggle FAB - Visible in list view -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabMap"
         android:layout_width="wrap_content"
@@ -275,7 +275,7 @@
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />
 
-    <!-- Add Plan FAB - Liste gorunumunde gorunur -->
+    <!-- Add Plan FAB - Visible in list view -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddPlan"
         android:layout_width="wrap_content"
@@ -293,7 +293,7 @@
         app:shapeAppearanceOverlay="@style/ShapeAppearanceOverlay.MaterialComponents.FloatingActionButton"
         app:tint="@color/trp_white" />
 
-    <!-- List Toggle FAB - Map gorunumunde gorunur (fabAddPlan ustunde) -->
+    <!-- List Toggle FAB - Visible in map view (above fabAddPlan) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabList"
         android:layout_width="wrap_content"

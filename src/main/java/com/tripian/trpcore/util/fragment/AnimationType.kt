@@ -17,7 +17,7 @@ enum class AnimationType {
 
     companion object {
         fun getAnimation(type: AnimationType): List<Int> {
-            // TODO: animasyonlarin simdilik hepsi eklenmedi kullanildica eklenebilir
+            // TODO: Not all animations are added yet, can be added as needed
             when (type) {
                 ENTER_FROM_LEFT -> return listOf(R.anim.anim_horizontal_fragment_in_from_pop, R.anim.anim_horizontal_fragment_out_from_pop, R.anim.anim_horizontal_fragment_in, R.anim.anim_horizontal_fragment_out)
                 ENTER_FROM_RIGHT -> return listOf(R.anim.anim_horizontal_fragment_in, R.anim.anim_horizontal_fragment_out, R.anim.anim_horizontal_fragment_in_from_pop, R.anim.anim_horizontal_fragment_out_from_pop)

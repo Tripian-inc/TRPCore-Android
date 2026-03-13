@@ -340,7 +340,7 @@ class ACTripModeVM @Inject constructor(
     }
 
     /**
-     * LocationManager'da gerekli durumlar
+     * Required states for LocationManager
      * - Permission,
      * - Open Location,
      * - LifecycleOwner

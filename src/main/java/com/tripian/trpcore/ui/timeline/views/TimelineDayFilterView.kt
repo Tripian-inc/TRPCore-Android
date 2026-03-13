@@ -7,7 +7,7 @@ import android.widget.FrameLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.trpcore.databinding.ViewTimelineDayFilterBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
-import java.util.*
+import java.util.Date
 
 /**
  * TimelineDayFilterView
@@ -19,12 +19,12 @@ class TimelineDayFilterView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
-    private val binding: ViewTimelineDayFilterBinding
+    private val binding: ViewTimelineDayFilterBinding =
+        ViewTimelineDayFilterBinding.inflate(LayoutInflater.from(context), this, true)
     private val adapter: DayFilterAdapter
     private var onDaySelectedListener: ((Int) -> Unit)? = null
 
     init {
-        binding = ViewTimelineDayFilterBinding.inflate(LayoutInflater.from(context), this, true)
 
         adapter = DayFilterAdapter { position ->
             onDaySelectedListener?.invoke(position)
