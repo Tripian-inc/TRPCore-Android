@@ -336,8 +336,15 @@ class ACTimelineVM @Inject constructor(
                     // Use cached cities and continue
                     _cities.value = cachedCities.distinctBy { it.id }
                     performLightLogin()
+                } else if (_tripHash.isNotEmpty()) {
+                    // EXISTING TRIP: Show warning but continue with fetchTimeline
+                    // User added new destination that's not supported - warn but proceed
+                    val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                        .replace("%s", fallbackCityNames.joinToString(", "))
+                    showAlert(AlertType.WARNING, warningMsg)
+                    performLightLogin()
                 } else {
-                    // No cities at all - show NoCityView instead of closing SDK
+                    // NEW TRIP: No cities at all - show NoCityView (blocking)
                     _isLoading.value = false
                     _noCitiesAvailable.value = true
                 }
