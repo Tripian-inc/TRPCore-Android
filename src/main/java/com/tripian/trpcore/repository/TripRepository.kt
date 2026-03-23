@@ -188,20 +188,47 @@ class TripRepository @Inject constructor(
      * Resolve cities by coordinates using API.
      * Used when city is not found in cache.
      *
+     * Returns CityResolveResult which can be:
+     * - Success: All cities resolved
+     * - PartialSuccess: Some cities resolved, some not found (cityId = 0)
+     * - AllFailed: No cities could be resolved
+     *
      * @param coordinates List of coordinates to resolve
-     * @return Observable list of resolved City objects
+     * @return Observable with CityResolveResult
      */
-    fun resolveCitiesByCoordinates(coordinates: List<Coordinate>): Observable<List<City>> {
+    fun resolveCitiesByCoordinates(coordinates: List<Coordinate>): Observable<CityResolveResult> {
         return Observable.create { emitter ->
             TRPCore.core.trpRest.resolveCitiesByCoordinates(
                 coordinates = coordinates,
                 success = { response ->
-                    val cities = response.data?.mapNotNull { resolveData ->
-                        resolveData.cityId?.let { cityId ->
-                            getCachedCityById(cityId)
+                    val resolvedCities = mutableListOf<City>()
+                    val unresolvedCityNames = mutableListOf<String>()
+
+                    response.data?.forEach { resolveData ->
+                        if (resolveData.cityId == null || resolveData.cityId == 0) {
+                            // City not found in database (cityId = 0 means not supported)
+                            resolveData.cityName?.let { unresolvedCityNames.add(it) }
+                        } else {
+                            getCachedCityById(resolveData.cityId!!)?.let {
+                                resolvedCities.add(it)
+                            }
                         }
-                    } ?: emptyList()
-                    emitter.onNext(cities)
+                    }
+
+                    val result = when {
+                        // Case 1: No cities resolved at all (regardless of unresolvedCityNames)
+                        // This handles cityId=0 with null cityName case
+                        resolvedCities.isEmpty() ->
+                            CityResolveResult.AllFailed(unresolvedCityNames)
+                        // Case 2: Some cities resolved, some failed
+                        unresolvedCityNames.isNotEmpty() ->
+                            CityResolveResult.PartialSuccess(resolvedCities, unresolvedCityNames)
+                        // Case 3: All cities resolved successfully
+                        else ->
+                            CityResolveResult.Success(resolvedCities)
+                    }
+
+                    emitter.onNext(result)
                     emitter.onComplete()
                 },
                 error = { error ->

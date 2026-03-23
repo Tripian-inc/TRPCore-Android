@@ -26,11 +26,10 @@ data class ItineraryWithActivities(
 
     /**
      * Returns the cityId of the first destination.
-     * Falls back to tripItems if destinationItems is empty.
+     * NOTE: Always returns null - cityId from itinerary model is NOT used.
+     * Host app sends garbage/invalid cityIds, so we resolve from coordinates instead.
      */
-    fun getFirstCityId(): Int? =
-        destinationItems.firstOrNull()?.cityId
-            ?: tripItems?.firstOrNull()?.cityId
+    fun getFirstCityId(): Int? = null
 
     /**
      * Returns the coordinate of the first destination.
@@ -152,7 +151,8 @@ data class ItineraryWithActivities(
             endDate = item.endDatetime
             segmentType = "booked_activity"
             available = true
-            cityId = item.cityId
+            // NOTE: cityId is NOT set - host app sends garbage/invalid cityIds
+            // Server will resolve cityId from coordinate instead
             adults = item.adultCount
             children = item.childCount
             doNotGenerate = 1

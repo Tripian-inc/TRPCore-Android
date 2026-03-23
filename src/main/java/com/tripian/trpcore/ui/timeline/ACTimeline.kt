@@ -3,11 +3,8 @@ package com.tripian.trpcore.ui.timeline
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.view.WindowInsets
-import android.view.WindowInsetsController
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -15,6 +12,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.base.BaseActivity
+import com.tripian.trpcore.base.FRWarning
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ActivityTimelineBinding
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -27,6 +26,7 @@ import com.tripian.trpcore.ui.timeline.addplan.TimePickerBottomSheet
 import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
+import com.tripian.trpcore.ui.timeline.views.NoCityView
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
@@ -188,6 +188,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         viewModel.error.observe(this) { error ->
             error?.let {
                 showAlert(AlertType.ERROR, it)
+            }
+        }
+
+        // No cities available - show NoCityView
+        viewModel.noCitiesAvailable.observe(this) { noCities ->
+            if (noCities == true) {
+                showNoCityState()
+            }
+        }
+
+        // Partial unavailable cities alert
+        viewModel.showPartialUnavailableAlert.observe(this) { cityNames ->
+            cityNames?.let {
+                showPartialUnavailableAlert(it)
+                viewModel.clearPartialUnavailableAlert()
             }
         }
 
@@ -892,6 +907,72 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         addPlanSheet?.show(supportFragmentManager, AddPlanContainerBottomSheet.TAG)
+    }
+
+    // =====================
+    // NO CITY AVAILABLE
+    // =====================
+
+    /**
+     * Shows the NoCityView when all destination cities are unavailable.
+     * Hides all timeline UI elements and displays the no city state.
+     */
+    private fun showNoCityState() {
+        // Hide all timeline UI elements
+        binding.dayFilterView.visibility = View.GONE
+        binding.btnSavedPlans.visibility = View.GONE
+        binding.swipeRefresh.visibility = View.GONE
+        binding.mapContainer.visibility = View.GONE
+        binding.fabMap.visibility = View.GONE
+        binding.fabList.visibility = View.GONE
+        binding.fabAddPlan.visibility = View.GONE
+        binding.emptyStateView.visibility = View.GONE
+        binding.btnNearMe.visibility = View.GONE
+
+        // Show no city view
+        binding.noCityView.visibility = View.VISIBLE
+        binding.noCityView.setup(
+            title = getLanguageForKey(LanguageConst.TIMELINE_NO_CITY_TITLE),
+            description = getLanguageForKey(LanguageConst.TIMELINE_NO_CITY_DESCRIPTION),
+            buttonText = getLanguageForKey(LanguageConst.TIMELINE_NO_CITY_BUTTON)
+        )
+        binding.noCityView.listener = object : NoCityView.Listener {
+            override fun onGoToMyTripClicked() {
+                TRPCore.notifySDKDismissed()
+                finish()
+            }
+        }
+    }
+
+    /**
+     * Shows an alert when some destination cities are unavailable.
+     * The timeline continues to create with available cities.
+     */
+    private fun showPartialUnavailableAlert(cityNames: List<String>) {
+        val cityList = cityNames.joinToString(", ")
+        if (cityList.isEmpty()) return
+
+        val titleTemplate = getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_TITLE)
+        val title = titleTemplate.replace("%@", cityList)
+
+        val description = getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_DESCRIPTION)
+        val buttonText = getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_BUTTON)
+
+        val dialog = FRWarning.newInstance(
+            title = title,
+            contentText = description,
+            positiveBtn = buttonText,
+            negativeBtn = null,
+            isCloseEnable = false
+        )
+
+        dialog.positiveListener = object : DGActionListener {
+            override fun onClicked(o: Any?) {
+                dialog.dismiss()
+            }
+        }
+
+        dialog.show(supportFragmentManager, "PartialUnavailableAlert")
     }
 
     // =====================
