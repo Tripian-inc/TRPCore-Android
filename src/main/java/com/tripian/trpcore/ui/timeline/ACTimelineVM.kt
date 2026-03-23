@@ -290,8 +290,15 @@ class ACTimelineVM @Inject constructor(
                         // Use cached cities and continue
                         _cities.value = resolvedCities.distinctBy { it.id }
                         performLightLogin()
+                    } else if (_tripHash.isNotEmpty()) {
+                        // EXISTING TRIP: API failed but we have tripHash - continue anyway
+                        // Timeline will be fetched, city data comes from API response
+                        val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                            .replace("%s", unresolvedCityNames.joinToString(", "))
+                        showAlert(AlertType.WARNING, warningMsg)
+                        performLightLogin()
                     } else {
-                        // No cities at all - fatal error
+                        // NEW TRIP: No cities at all - fatal error, close SDK
                         _isLoading.value = false
                         val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
                             .replace("%s", unresolvedCityNames.joinToString(", "))
