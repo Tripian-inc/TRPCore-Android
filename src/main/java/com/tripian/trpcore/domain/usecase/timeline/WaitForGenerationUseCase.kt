@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.BaseUseCase
 import com.tripian.trpcore.repository.TimelineRepository
 import io.reactivex.Observable
+import retrofit2.HttpException
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -33,15 +34,28 @@ class WaitForGenerationUseCase @Inject constructor(
                             .take(p.maxRetries.toLong())
                             .flatMap {
                                 repository.fetchTimeline(p.tripHash)
-                                    .onErrorResumeNext(Observable.empty())
+                                    .onErrorResumeNext { throwable: Throwable ->
+                                        // For 4xx client errors, stop polling and propagate error
+                                        if (throwable is HttpException && throwable.code() in 400..499) {
+                                            Observable.error(throwable)
+                                        } else {
+                                            // For other errors (network, 5xx), continue polling
+                                            Observable.empty()
+                                        }
+                                    }
                             }
                             .filter { timeline -> timeline.isTimelineGenerated() }
                             .take(1)
                     }
                     .timeout(p.initialDelayMs + (p.maxRetries * p.intervalMs), TimeUnit.MILLISECONDS)
                     .onErrorResumeNext { throwable: Throwable ->
-                        // On timeout, fetch the latest timeline
-                        repository.fetchTimeline(p.tripHash)
+                        // For 4xx errors, propagate the error (don't fetch again)
+                        if (throwable is HttpException && throwable.code() in 400..499) {
+                            Observable.error(throwable)
+                        } else {
+                            // On timeout or other errors, fetch the latest timeline
+                            repository.fetchTimeline(p.tripHash)
+                        }
                     }
             }
         }

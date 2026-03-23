@@ -31,6 +31,7 @@ object LanguageConst {
     const val NIGHTLIFE = "trips.myTrips.exploreMore.categories.nightlife"
     const val MUST_TRY = "trips.myTrips.itinerary.step.poi.mustTry.title"
     const val COMMON_ERROR = "trips.toursAndTickets.error.anErrorOccured"
+    const val CITY_NOT_SUPPORTED = "timeline.error.cityNotSupported"
     const val NO_NETWORK = "no_network"
     const val LANGUAGE = "language"
     const val NAME_REQUIRED = "name_is_required"
@@ -204,6 +205,16 @@ object LanguageConst {
     const val ADD_PLANS = "timeline.emptyState.addPlansButton"
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
     const val TIMELINE_MAIN_VIEW = "timeline.map.mainView"
+
+    // No City Available
+    const val TIMELINE_NO_CITY_TITLE = "timeline.noCity.title"
+    const val TIMELINE_NO_CITY_DESCRIPTION = "timeline.noCity.description"
+    const val TIMELINE_NO_CITY_BUTTON = "timeline.noCity.button"
+
+    // Partial Unavailable Cities
+    const val TIMELINE_PARTIAL_UNAVAILABLE_TITLE = "timeline.partialUnavailable.title"
+    const val TIMELINE_PARTIAL_UNAVAILABLE_DESCRIPTION = "timeline.partialUnavailable.description"
+    const val TIMELINE_PARTIAL_UNAVAILABLE_BUTTON = "timeline.partialUnavailable.button"
 
     // =====================
     // ADD PLAN FLOW

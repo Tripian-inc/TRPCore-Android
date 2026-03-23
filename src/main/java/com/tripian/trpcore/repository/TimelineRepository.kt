@@ -1,6 +1,8 @@
 package com.tripian.trpcore.repository
 
 import com.tripian.one.TRPRest
+import com.tripian.one.api.cities.model.CityResolveData
+import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.*
 import com.tripian.trpcore.base.TRPCore
 import io.reactivex.Completable
@@ -266,6 +268,27 @@ class TimelineRepository @Inject constructor(
                 },
                 error = { throwable ->
                     emitter.onError(throwable ?: Exception("Unknown error"))
+                }
+            )
+        }.toObservable()
+    }
+
+    /**
+     * Resolve city IDs from coordinates
+     * Calls cities/resolve API to get cityIds for given coordinates
+     *
+     * @param coordinates List of Coordinate objects to resolve
+     * @return Observable with list of CityResolveData containing cityIds
+     */
+    fun resolveCities(coordinates: List<Coordinate>): Observable<List<CityResolveData>> {
+        return Single.create<List<CityResolveData>> { emitter ->
+            trpRest.resolveCitiesByCoordinates(
+                coordinates = coordinates,
+                success = { response ->
+                    emitter.onSuccess(response.data ?: emptyList())
+                },
+                error = { throwable ->
+                    emitter.onError(throwable ?: Exception("City resolve failed"))
                 }
             )
         }.toObservable()

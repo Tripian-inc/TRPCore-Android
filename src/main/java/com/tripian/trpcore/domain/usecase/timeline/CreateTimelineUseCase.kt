@@ -54,15 +54,15 @@ class CreateTimelineUseCase @Inject constructor(
 
     /**
      * Resolves city ID from itinerary using fallback chain:
-     * 1. destinationItems.cityId or tripItems.cityId
-     * 2. Search by cityName + countryName from cache
-     * 3. Find nearest city by coordinate from cache
+     * NOTE: Do NOT use getFirstCityId() - itinerary cityIds are garbage from host app
+     * 1. Search by cityName + countryName from cache
+     * 2. Find nearest city by coordinate from cache
      */
     private fun resolveCityId(itinerary: ItineraryWithActivities): Int {
-        // 1. Try direct cityId from model (already has fallback in getFirstCityId)
-        itinerary.getFirstCityId()?.let { return it }
+        // NOTE: Do NOT use getFirstCityId() - itinerary cityIds are garbage
+        // Only resolve from coordinates or city name
 
-        // 2. Search by cityName + countryName in cached cities
+        // 1. Search by cityName + countryName in cached cities
         val cityName = itinerary.getFirstCityName()
         if (cityName != null) {
             val countryName = itinerary.getFirstCountryName()

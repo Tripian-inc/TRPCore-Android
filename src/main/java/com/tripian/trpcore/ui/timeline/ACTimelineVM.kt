@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.cities.model.City
+import com.tripian.one.api.cities.model.CityResolveData
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelinePlan
@@ -15,6 +16,8 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.DoLightLogin
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
+import com.tripian.trpcore.repository.CityResolveResult
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
@@ -29,9 +32,11 @@ import com.tripian.trpcore.domain.usecase.timeline.DeleteSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.DeleteStepUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.one.api.pois.model.Coordinate
 import com.mapbox.geojson.Point
@@ -56,6 +61,7 @@ class ACTimelineVM @Inject constructor(
     private val deleteStepUseCase: DeleteStepUseCase,
     private val updateStepTimeUseCase: UpdateStepTimeUseCase,
     private val getTimelineStepRoutesUseCase: GetTimelineStepRoutesUseCase,
+    private val resolveCitiesUseCase: ResolveCitiesUseCase,
     private val tripRepository: com.tripian.trpcore.repository.TripRepository
 ) : BaseViewModel() {
 
@@ -117,6 +123,14 @@ class ACTimelineVM @Inject constructor(
     // LiveData to notify UI when route info is updated for a segment
     private val _routeInfoUpdated = MutableLiveData<Int?>()
     val routeInfoUpdated: LiveData<Int?> = _routeInfoUpdated
+
+    // No cities available state - shown when all destinations have invalid cityId
+    private val _noCitiesAvailable = MutableLiveData<Boolean>()
+    val noCitiesAvailable: LiveData<Boolean> = _noCitiesAvailable
+
+    // Partial unavailable alert event - contains list of invalid city names
+    private val _showPartialUnavailableAlert = MutableLiveData<List<String>?>()
+    val showPartialUnavailableAlert: LiveData<List<String>?> = _showPartialUnavailableAlert
 
     // =====================
     // STATE
@@ -206,12 +220,129 @@ class ACTimelineVM @Inject constructor(
             miscRepository.changeLanguage(language)
         }
 
-        // Resolve destination cities early (background) - doesn't block UI
-        // This ensures cities are available for Add Plan even before timeline is fetched
-        resolveDestinationCities()
+        // Resolve destination cities BEFORE proceeding with timeline operations
+        // This ensures we can validate city support before creating timeline
+        resolveDestinationCitiesAndProceed()
+    }
 
-        // First, perform light login before any timeline operations
-        performLightLogin()
+    /**
+     * Resolves destination cities and proceeds with login/timeline operations.
+     * If city resolution fails (cityId=0), shows error and closes SDK.
+     */
+    private fun resolveDestinationCitiesAndProceed() {
+        val destinationItems = itinerary?.destinationItems
+
+        // If no destination items, proceed directly (will use tripHash)
+        if (destinationItems.isNullOrEmpty()) {
+            performLightLogin()
+            return
+        }
+
+        _isLoading.value = true
+
+        // Step 1: Try to find cities from cache
+        val resolvedCities = mutableListOf<City>()
+        val unresolvedCoordinates = mutableListOf<Coordinate>()
+        val unresolvedCityNames = mutableListOf<String>()
+
+        destinationItems.forEach { item ->
+            // NOTE: Do NOT use item.cityId - host app sends garbage/invalid cityIds
+            // Only use coordinates and city name for resolution
+            val city = item.getCoordinateObject()?.let { coord ->
+                tripRepository.findCityByCoordinate(coord.lat, coord.lng)
+            } ?: tripRepository.findCityByName(item.title, item.countryName)
+
+            if (city != null) {
+                resolvedCities.add(city)
+            } else {
+                // Not found in cache, need API resolution
+                item.getCoordinateObject()?.let { coord ->
+                    unresolvedCoordinates.add(Coordinate().apply {
+                        lat = coord.lat
+                        lng = coord.lng
+                    })
+                }
+                item.title?.let { unresolvedCityNames.add(it) }
+            }
+        }
+
+        // Step 2: If all cities resolved from cache, proceed
+        if (unresolvedCoordinates.isEmpty()) {
+            val uniqueCities = resolvedCities.distinctBy { it.id }
+            if (uniqueCities.isNotEmpty()) {
+                _cities.value = uniqueCities
+            }
+            performLightLogin()
+            return
+        }
+
+        // Step 3: Resolve remaining cities via API (blocking before timeline creation)
+        tripRepository.resolveCitiesByCoordinates(unresolvedCoordinates)
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { result ->
+                    handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
+                },
+                { error ->
+                    // API failed
+                    if (resolvedCities.isNotEmpty()) {
+                        // Use cached cities and continue
+                        _cities.value = resolvedCities.distinctBy { it.id }
+                        performLightLogin()
+                    } else {
+                        // No cities at all - fatal error
+                        _isLoading.value = false
+                        val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                            .replace("%s", unresolvedCityNames.joinToString(", "))
+                        TRPCore.notifyError(errorMsg)
+                        TRPCore.closeSDK()
+                    }
+                }
+            )
+    }
+
+    /**
+     * Handles city resolve result and decides whether to proceed or show error.
+     */
+    private fun handleCityResolveResult(
+        result: CityResolveResult,
+        cachedCities: MutableList<City>,
+        fallbackCityNames: List<String>
+    ) {
+        when (result) {
+            is CityResolveResult.Success -> {
+                cachedCities.addAll(result.cities)
+                val uniqueCities = cachedCities.distinctBy { it.id }
+                _cities.value = uniqueCities
+                performLightLogin()
+            }
+            is CityResolveResult.PartialSuccess -> {
+                // Some cities resolved, some not found - show warning and continue
+                cachedCities.addAll(result.cities)
+                val uniqueCities = cachedCities.distinctBy { it.id }
+                _cities.value = uniqueCities
+
+                // Show warning for unsupported cities
+                val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                    .replace("%s", result.unresolvedCityNames.joinToString(", "))
+                showAlert(AlertType.WARNING, warningMsg)
+
+                performLightLogin()
+            }
+            is CityResolveResult.AllFailed -> {
+                // No cities could be resolved from API
+                if (cachedCities.isNotEmpty()) {
+                    // Use cached cities and continue
+                    _cities.value = cachedCities.distinctBy { it.id }
+                    performLightLogin()
+                } else {
+                    // No cities at all - show NoCityView instead of closing SDK
+                    _isLoading.value = false
+                    _noCitiesAvailable.value = true
+                }
+            }
+        }
     }
 
     /**
@@ -241,7 +372,7 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Continues with timeline operations after login.
-     * Fetches if tripHash exists, creates from itinerary otherwise.
+     * Fetches if tripHash exists, resolves cities and creates from itinerary otherwise.
      */
     private fun proceedWithTimelineOperations() {
         // Update saved plans count from itinerary favourites
@@ -249,11 +380,13 @@ class ACTimelineVM @Inject constructor(
 
         when {
             _tripHash.isNotEmpty() -> {
+                // Existing trip - just fetch it
                 fetchTimeline()
             }
 
             itinerary != null -> {
-                createTimelineFromItinerary()
+                // New timeline - FIRST resolve cityIds from coordinates
+                resolveCitiesAndCreateTimeline()
             }
 
             else -> {
@@ -261,6 +394,150 @@ class ACTimelineVM @Inject constructor(
                 _error.value = "No trip hash or itinerary provided"
             }
         }
+    }
+
+    /**
+     * Resolves city IDs from destination coordinates, then validates and creates timeline.
+     * Flow:
+     * 1. Extract coordinates from destinations
+     * 2. Call cities/resolve API
+     * 3. Update destinations with resolved cityIds
+     * 4. Validate and proceed with timeline creation
+     */
+    private fun resolveCitiesAndCreateTimeline() {
+        // IMPORTANT: Clear cityIds from host app - they may be invalid/garbage
+        // We will resolve fresh cityIds from coordinates via cities/resolve API
+        val destinations = itinerary!!.destinationItems.map { it.copy(cityId = null) }
+
+        // Extract coordinates from destinations
+        val coordinates = destinations.mapNotNull { destination ->
+            destination.getCoordinateObject()?.let { coord ->
+                Coordinate().apply {
+                    lat = coord.lat
+                    lng = coord.lng
+                }
+            }
+        }
+
+        if (coordinates.isEmpty()) {
+            _isLoading.value = false
+            _error.value = "No valid coordinates found"
+            return
+        }
+
+        _isLoading.value = true
+
+        // Call cities/resolve API
+        resolveCitiesUseCase.on(
+            params = ResolveCitiesUseCase.Params(coordinates),
+            success = { resolvedCities ->
+                // Update destinations with resolved cityIds
+                val updatedDestinations = updateDestinationsWithCityIds(destinations, resolvedCities)
+
+                // Update itinerary with resolved cityIds
+                itinerary = itinerary!!.copy(destinationItems = updatedDestinations)
+
+                // Now validate and proceed
+                validateAndCreateTimeline(updatedDestinations)
+            },
+            error = { errorModel ->
+                _isLoading.value = false
+                _error.value = errorModel.errorDesc ?: "City resolve failed"
+                TRPCore.notifyError(errorModel.errorDesc ?: "City resolve failed")
+            }
+        )
+    }
+
+    /**
+     * Match resolved cityIds back to destinations.
+     * API returns cities in same order as request coordinates.
+     */
+    private fun updateDestinationsWithCityIds(
+        destinations: List<SegmentDestinationItem>,
+        resolvedCities: List<CityResolveData>
+    ): List<SegmentDestinationItem> {
+        return destinations.mapIndexed { index, destination ->
+            // API returns cities in same order as request coordinates
+            val resolvedCity = resolvedCities.getOrNull(index)
+            destination.copy(cityId = resolvedCity?.cityId)
+        }
+    }
+
+    /**
+     * Validates destinations and creates timeline with valid ones.
+     */
+    private fun validateAndCreateTimeline(destinations: List<SegmentDestinationItem>) {
+        val (validDestinations, invalidDestinations) = validateDestinations(destinations)
+
+        when {
+            // Case 1: ALL cities invalid - show NoCityView
+            validDestinations.isEmpty() -> {
+                _isLoading.value = false
+                _noCitiesAvailable.value = true
+            }
+
+            // Case 2: SOME cities invalid - show alert and continue with valid
+            invalidDestinations.isNotEmpty() -> {
+                val invalidCityNames = invalidDestinations.map { it.title }
+                _showPartialUnavailableAlert.value = invalidCityNames
+                createTimelineWithValidDestinations(validDestinations)
+            }
+
+            // Case 3: ALL cities valid - normal flow
+            else -> {
+                createTimelineFromItinerary()
+            }
+        }
+    }
+
+    /**
+     * Validates destination cityIds.
+     * Returns Pair(validDestinations, invalidDestinations)
+     */
+    private fun validateDestinations(
+        destinations: List<SegmentDestinationItem>
+    ): Pair<List<SegmentDestinationItem>, List<SegmentDestinationItem>> {
+        val valid = destinations.filter { it.cityId != null && it.cityId > 0 }
+        val invalid = destinations.filter { it.cityId == null || it.cityId <= 0 }
+        return Pair(valid, invalid)
+    }
+
+    /**
+     * Creates timeline with only valid destinations.
+     * Called when some destinations have invalid cityId.
+     */
+    private fun createTimelineWithValidDestinations(validDestinations: List<SegmentDestinationItem>) {
+        val modifiedItinerary = itinerary!!.copy(destinationItems = validDestinations)
+
+        _isLoading.value = true
+        _error.value = null
+
+        createTimelineUseCase.on(
+            params = CreateTimelineUseCase.Params(modifiedItinerary),
+            success = { timeline ->
+                _tripHash = timeline.tripHash ?: ""
+                if (_tripHash.isNotEmpty()) {
+                    TRPCore.notifyTimelineCreated(_tripHash)
+                    waitForTimelineGeneration()
+                } else {
+                    processTimeline(timeline)
+                    _isLoading.value = false
+                }
+            },
+            error = { errorModel ->
+                _error.value = errorModel.errorDesc
+                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
+                _isLoading.value = false
+            }
+        )
+    }
+
+    /**
+     * Clears the partial unavailable alert event.
+     * Should be called after the alert is shown to prevent re-showing on configuration change.
+     */
+    fun clearPartialUnavailableAlert() {
+        _showPartialUnavailableAlert.value = null
     }
 
     /**
@@ -337,10 +614,10 @@ class ACTimelineVM @Inject constructor(
                 processTimeline(timeline)
                 _isLoading.value = false
             },
-            error = {
+            error = { errorModel ->
                 _isLoading.value = false
-                // Show current timeline even if generation is not complete
-                fetchTimeline()
+                _error.value = errorModel.errorDesc ?: "Timeline generation failed"
+                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
             }
         )
     }
@@ -434,12 +711,12 @@ class ACTimelineVM @Inject constructor(
         val addedCityIds = mutableSetOf<Int>()
 
         // PRIORITY 1: Always include cities from destinationItems (SDK input)
+        // NOTE: Do NOT use item.cityId - host app sends garbage/invalid cityIds
+        // Only use coordinates and city name for resolution
         itinerary?.destinationItems?.forEach { item ->
-            val city = item.cityId?.let { tripRepository.getCachedCityById(it) }
-                ?: item.getCoordinateObject()?.let { coord ->
-                    tripRepository.findCityByCoordinate(coord.lat, coord.lng)
-                }
-                ?: tripRepository.findCityByName(item.title, item.countryName)
+            val city = item.getCoordinateObject()?.let { coord ->
+                tripRepository.findCityByCoordinate(coord.lat, coord.lng)
+            } ?: tripRepository.findCityByName(item.title, item.countryName)
 
             if (city != null && !addedCityIds.contains(city.id)) {
                 cities.add(city)
@@ -496,77 +773,6 @@ class ACTimelineVM @Inject constructor(
         }
 
         return cities
-    }
-
-    /**
-     * Resolves cities from itinerary destinationItems.
-     * First tries cache (by cityId, coordinate, or name), then resolves via API if needed.
-     * Runs on background thread to avoid blocking UI.
-     *
-     * Flow:
-     * 1. For each destinationItem, try to find city from cache
-     * 2. If some cities not found in cache, call resolveCitiesByCoordinates API
-     * 3. Update _cities LiveData with resolved cities
-     */
-    private fun resolveDestinationCities() {
-        val destinationItems = itinerary?.destinationItems
-        if (destinationItems.isNullOrEmpty()) return
-
-        // Step 1: Try to find cities from cache
-        val resolvedCities = mutableListOf<City>()
-        val unresolvedCoordinates = mutableListOf<Coordinate>()
-
-        destinationItems.forEach { item ->
-            // 1. cityId varsa cache'den bul
-            val city = item.cityId?.let { tripRepository.getCachedCityById(it) }
-                ?: item.getCoordinateObject()?.let { coord ->
-                    // 2. Koordinattan cache'de ara
-                    tripRepository.findCityByCoordinate(coord.lat, coord.lng)
-                }
-                ?: tripRepository.findCityByName(item.title, item.countryName)
-
-            if (city != null) {
-                resolvedCities.add(city)
-            } else {
-                // Cache'de bulunamadı, API'den resolve edilecek
-                item.getCoordinateObject()?.let { coord ->
-                    unresolvedCoordinates.add(Coordinate().apply {
-                        lat = coord.lat
-                        lng = coord.lng
-                    })
-                }
-            }
-        }
-
-        // Step 2: If all cities resolved from cache, update LiveData
-        if (unresolvedCoordinates.isEmpty()) {
-            val uniqueCities = resolvedCities.distinctBy { it.id }
-            if (uniqueCities.isNotEmpty()) {
-                _cities.value = uniqueCities
-            }
-            return
-        }
-
-        // Step 3: Resolve remaining cities via API (background)
-        tripRepository.resolveCitiesByCoordinates(unresolvedCoordinates)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { apiCities ->
-                    resolvedCities.addAll(apiCities)
-                    val uniqueCities = resolvedCities.distinctBy { it.id }
-                    if (uniqueCities.isNotEmpty()) {
-                        _cities.value = uniqueCities
-                    }
-                },
-                { error ->
-                    // API failed, use what we have from cache
-                    val uniqueCities = resolvedCities.distinctBy { it.id }
-                    if (uniqueCities.isNotEmpty()) {
-                        _cities.value = uniqueCities
-                    }
-                }
-            )
     }
 
     private fun calculateAvailableDays(timeline: Timeline): List<Date> {
