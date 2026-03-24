@@ -733,6 +733,8 @@ class ACTimelineVM @Inject constructor(
             } ?: tripRepository.findCityByName(item.title, item.countryName)
 
             if (city != null && !addedCityIds.contains(city.id)) {
+                // Use destination title as city name (localized by host app)
+                city.name = item.title
                 cities.add(city)
                 addedCityIds.add(city.id)
             }
