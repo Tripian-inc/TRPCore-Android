@@ -187,6 +187,45 @@ class TRPCore {
                 Settings.Secure.ANDROID_ID
             ) ?: "unknown_device"
         }
+
+        // =====================
+        // STATIC CURRENCY WRAPPERS (Backward Compatibility)
+        // =====================
+
+        /**
+         * Changes the app currency after SDK initialization.
+         * Static wrapper for backward compatibility.
+         *
+         * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, etc.)
+         *
+         * Usage:
+         * ```kotlin
+         * TRPCore.changeCurrency("USD")
+         * ```
+         */
+        fun changeCurrency(currency: String) {
+            core.changeCurrency(currency)
+        }
+
+        /**
+         * Gets the current currency code.
+         * Static wrapper for backward compatibility.
+         *
+         * @return Current ISO 4217 currency code
+         */
+        fun getCurrentCurrency(): String {
+            return core.getCurrentCurrency()
+        }
+
+        /**
+         * Gets the saved currency code from preferences.
+         * Static wrapper for backward compatibility.
+         *
+         * @return Saved currency code or empty string if not set
+         */
+        fun getSavedCurrency(): String {
+            return core.getSavedCurrency()
+        }
     }
 
     @Inject
