@@ -145,10 +145,17 @@ data class ItineraryWithActivities(
      * Creates a booked activity segment from SegmentActivityItem
      */
     private fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
+        // Calculate endDatetime if not provided (use startDatetime + duration)
+        val calculatedEndDatetime = calculateEndDatetime(
+            item.startDatetime,
+            item.endDatetime,
+            item.duration
+        )
+
         return TimelineSegmentSettings().apply {
             title = item.title
             startDate = item.startDatetime
-            endDate = item.endDatetime
+            endDate = calculatedEndDatetime
             segmentType = "booked_activity"
             available = true
             // NOTE: cityId is NOT set - host app sends garbage/invalid cityIds
@@ -174,7 +181,7 @@ data class ItineraryWithActivities(
                 imageUrl = item.imageUrl
                 description = item.description
                 startDatetime = item.startDatetime
-                endDatetime = item.endDatetime
+                endDatetime = calculatedEndDatetime
                 cancellation = item.cancellation
                 duration = item.duration
                 item.price?.let { price ->
@@ -224,5 +231,45 @@ data class ItineraryWithActivities(
     private fun extractDateString(datetime: String): String? {
         val parts = datetime.split(" ")
         return parts.firstOrNull()
+    }
+
+    /**
+     * Calculates endDatetime from startDatetime and duration.
+     * If endDatetime is already provided, returns it as-is.
+     * If endDatetime is null but startDatetime and duration exist, calculates it.
+     *
+     * @param startDatetime Start time in "yyyy-MM-dd HH:mm" format
+     * @param endDatetime End time in "yyyy-MM-dd HH:mm" format (nullable)
+     * @param durationMinutes Duration in minutes (nullable)
+     * @return Calculated or existing endDatetime, or null if cannot calculate
+     */
+    private fun calculateEndDatetime(
+        startDatetime: String?,
+        endDatetime: String?,
+        durationMinutes: Double?
+    ): String? {
+        // If endDatetime exists, use it
+        if (!endDatetime.isNullOrBlank()) {
+            return endDatetime
+        }
+
+        // If no startDatetime or duration, cannot calculate
+        if (startDatetime.isNullOrBlank() || durationMinutes == null || durationMinutes <= 0) {
+            return null
+        }
+
+        return try {
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+            val startDate = formatter.parse(startDatetime) ?: return null
+
+            // Add duration (in minutes) to start time
+            val calendar = java.util.Calendar.getInstance()
+            calendar.time = startDate
+            calendar.add(java.util.Calendar.MINUTE, durationMinutes.toInt())
+
+            formatter.format(calendar.time)
+        } catch (e: Exception) {
+            null
+        }
     }
 }
