@@ -897,13 +897,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 // Post to next main loop to allow dismiss animation to complete
                 binding.root.postDelayed({
                     viewModel.onAddPlanComplete(data)
+                    // Auto-select the day for which the segment was created
+                    viewModel.selectDay(data.selectedDayIndex)
                 }, 300) // Wait for dismiss animation
             }
         }
 
-        addPlanSheet?.setOnSegmentCreatedListener {
-            // Segment was created from manual listing (ACActivityListing), re-fetch timeline
+        addPlanSheet?.setOnSegmentCreatedListener { selectedDayIndex ->
+            // Segment was created from manual listing (ACActivityListing/ACPOIListing), re-fetch timeline
             viewModel.refreshTimeline()
+            // Auto-select the day for which the segment was created
+            viewModel.selectDay(selectedDayIndex)
         }
 
         addPlanSheet?.show(supportFragmentManager, AddPlanContainerBottomSheet.TAG)

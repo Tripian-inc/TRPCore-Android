@@ -79,6 +79,7 @@ class ACActivityListingVM @Inject constructor(
     private var planData: AddPlanData? = null
     private var tripHash: String = ""
     private var cityId: Int = 0
+    private var selectedDayIndex: Int = 0
     private var cityLat: Double = 0.0
     private var cityLng: Double = 0.0
     private var selectedDateString: String? = null  // Format: "yyyy-MM-dd"
@@ -99,6 +100,7 @@ class ACActivityListingVM @Inject constructor(
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
+        this.selectedDayIndex = planData.selectedDayIndex
 
         // Extract city coordinate - required for tour search
         val cityCoordinate = planData.selectedCity?.coordinate
@@ -422,6 +424,8 @@ class ACActivityListingVM @Inject constructor(
     fun getSelectedDate(): Date? = planData?.selectedDay
 
     fun getAvailableDays(): List<Date> = planData?.availableDays ?: emptyList()
+
+    fun getSelectedDayIndex(): Int = selectedDayIndex
 
     fun getSdkLanguage(): String = appLanguage
 

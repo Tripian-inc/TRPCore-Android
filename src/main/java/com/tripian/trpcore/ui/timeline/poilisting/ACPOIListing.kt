@@ -91,8 +91,11 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         // Observe segment creation
         viewModel.segmentCreated.observe(this) { created ->
             if (created) {
-                // Return success result
-                setResult(Activity.RESULT_OK)
+                // Return success result with selectedDayIndex for auto-selecting the day
+                val resultIntent = Intent().apply {
+                    putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
+                }
+                setResult(Activity.RESULT_OK, resultIntent)
                 finish()
             }
         }
@@ -248,6 +251,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         const val EXTRA_PLAN_DATA = "plan_data"
         const val EXTRA_TRIP_HASH = "trip_hash"
         const val EXTRA_LISTING_TYPE = "listing_type"
+        const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"
 
         fun launch(
             context: Context,

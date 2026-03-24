@@ -87,6 +87,7 @@ class ACPOIListingVM @Inject constructor(
     private var tripHash: String = ""
     private var cityId: Int = 0
     private var listingType: POIListingType = POIListingType.PLACES_OF_INTEREST
+    private var selectedDayIndex: Int = 0
     private var currentSearchQuery: String = ""
     private var currentPage: Int = 1
     private val pageLimit: Int = 30
@@ -107,6 +108,7 @@ class ACPOIListingVM @Inject constructor(
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
         this.listingType = listingType
+        this.selectedDayIndex = planData.selectedDayIndex
 
         // Fetch categories for filter UI
         fetchCategories()
@@ -342,6 +344,8 @@ class ACPOIListingVM @Inject constructor(
     fun getAvailableDays(): List<Date> = planData?.availableDays ?: emptyList()
 
     fun getListingType(): POIListingType = listingType
+
+    fun getSelectedDayIndex(): Int = selectedDayIndex
 
     // =====================
     // CLEANUP

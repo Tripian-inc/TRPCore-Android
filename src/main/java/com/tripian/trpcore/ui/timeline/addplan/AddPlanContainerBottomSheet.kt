@@ -36,7 +36,7 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 ) {
 
     private var onAddPlanCompleteListener: ((AddPlanData) -> Unit)? = null
-    private var onSegmentCreatedListener: (() -> Unit)? = null
+    private var onSegmentCreatedListener: ((Int) -> Unit)? = null
     private var isResetting = false
 
     // Shared ViewModel accessible by child fragments
@@ -48,8 +48,13 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     private val manualListingLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                // Segment was created successfully, notify and dismiss
-                onSegmentCreatedListener?.invoke()
+                // Extract selectedDayIndex from result for auto-selecting the day in timeline
+                val selectedDayIndex = result.data?.getIntExtra(
+                    ACActivityListing.RESULT_SELECTED_DAY_INDEX,
+                    sharedVM.planData.selectedDayIndex
+                ) ?: 0
+                // Segment was created successfully, notify with selectedDayIndex and dismiss
+                onSegmentCreatedListener?.invoke(selectedDayIndex)
                 dismiss()
             }
             // If cancelled, the bottom sheet remains open for user to try again
@@ -291,7 +296,7 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         onAddPlanCompleteListener = listener
     }
 
-    fun setOnSegmentCreatedListener(listener: () -> Unit) {
+    fun setOnSegmentCreatedListener(listener: (Int) -> Unit) {
         onSegmentCreatedListener = listener
     }
 
