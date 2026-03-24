@@ -328,7 +328,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:fontFamily="@font/medium"
-                android:textSize="14sp"
+                android:textSize="16sp"
                 android:textColor="@color/trp_text_primary"
                 tools:text="Travelers"/>
 

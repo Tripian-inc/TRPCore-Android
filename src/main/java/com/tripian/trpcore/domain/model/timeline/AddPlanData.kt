@@ -293,11 +293,11 @@ enum class SmartCategory(
         iconRes = R.drawable.ic_cat_shows,
         titleKey = LanguageConst.ADD_PLAN_CAT_SHOWS
     ),
-    TRANSPORT(
-        apiValue = "transfer service, transportation",
-        iconRes = R.drawable.ic_cat_transfers,
-        titleKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT
-    )
+//    TRANSPORT(
+//        apiValue = "transfer service, transportation",
+//        iconRes = R.drawable.ic_cat_transfers,
+//        titleKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT
+//    )
 }
 
 /**

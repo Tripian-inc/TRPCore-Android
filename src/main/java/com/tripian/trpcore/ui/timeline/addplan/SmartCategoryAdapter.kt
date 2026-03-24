@@ -4,9 +4,9 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemSmartCategoryBinding
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
-import com.tripian.trpcore.R
 
 /**
  * SmartCategoryAdapter
@@ -18,7 +18,7 @@ class SmartCategoryAdapter(
     private val onCategoryClicked: (SmartCategory) -> Unit
 ) : RecyclerView.Adapter<SmartCategoryAdapter.CategoryViewHolder>() {
 
-    private val categories = SmartCategory.values().toList()
+    private val categories = SmartCategory.entries
     private val selectedCategories = mutableSetOf<SmartCategory>()
     private val spanCount = 3
 
