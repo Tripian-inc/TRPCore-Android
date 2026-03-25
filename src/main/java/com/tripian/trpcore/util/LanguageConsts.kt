@@ -372,4 +372,20 @@ object LanguageConst {
     const val I_AM_OUT = "common.button.iAmOut"
     const val PLEASE_SELECT_FIELD = "common.validation.pleaseSelectField"
 
+    // =====================
+    // ONBOARDING
+    // =====================
+    const val ONBOARDING_TITLE = "onboarding.title"
+    const val ONBOARDING_BADGE_BETA = "onboarding.badge.beta"
+    const val ONBOARDING_FEATURE1_TITLE = "onboarding.feature1.title"
+    const val ONBOARDING_FEATURE1_DESC = "onboarding.feature1.description"
+    const val ONBOARDING_FEATURE2_TITLE = "onboarding.feature2.title"
+    const val ONBOARDING_FEATURE2_DESC = "onboarding.feature2.description"
+    const val ONBOARDING_FEATURE3_TITLE = "onboarding.feature3.title"
+    const val ONBOARDING_FEATURE3_DESC = "onboarding.feature3.description"
+    const val ONBOARDING_FOOTER_LINE1 = "onboarding.footer.line1"
+    const val ONBOARDING_FOOTER_LINE2 = "onboarding.footer.line2"
+    const val ONBOARDING_BUTTON_CONTINUE = "onboarding.button.continue"
+    const val ONBOARDING_BUTTON_SKIP = "onboarding.button.skip"
+
 }

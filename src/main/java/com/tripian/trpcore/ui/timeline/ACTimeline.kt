@@ -19,6 +19,7 @@ import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
 import com.tripian.trpcore.ui.timeline.adapter.TimelineAdapter
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
@@ -152,6 +153,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     override fun setReceivers() {
+        // Onboarding
+        android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline.setReceivers() called, setting up onboarding observer")
+        viewModel.showOnboarding.observe(this) { shouldShow ->
+            android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline onboarding observer triggered, shouldShow=$shouldShow")
+            if (shouldShow) {
+                showOnboardingBottomSheet()
+            }
+        }
+
         // Timeline data
         viewModel.timeline.observe(this) { timeline ->
             binding.swipeRefresh.isRefreshing = false
@@ -977,6 +987,25 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         dialog.show(supportFragmentManager, "PartialUnavailableAlert")
+    }
+
+    // =====================
+    // ONBOARDING
+    // =====================
+
+    /**
+     * Shows the onboarding bottom sheet.
+     * Called when SDK starts and onboarding should be shown.
+     */
+    private fun showOnboardingBottomSheet() {
+        android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline.showOnboardingBottomSheet() called")
+        val bottomSheet = OnboardingBottomSheet.newInstance()
+        bottomSheet.setOnCompleteListener {
+            android.util.Log.d("ONBOARDING_DEBUG", "Onboarding completed, calling viewModel.onOnboardingComplete()")
+            viewModel.onOnboardingComplete()
+        }
+        bottomSheet.show(supportFragmentManager, "onboarding")
+        android.util.Log.d("ONBOARDING_DEBUG", "OnboardingBottomSheet.show() called")
     }
 
     // =====================

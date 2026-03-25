@@ -24,6 +24,11 @@ class Preferences @Inject constructor(var context: Context) {
         const val REFRESH_TOKEN = "RefreshToken"
         const val SOCIAL_PROVIDER = "SocialProvider"
 
+        // Onboarding
+        const val ONBOARDING_HAS_SEEN = "trp_onboarding_has_seen"
+        const val ONBOARDING_CONTINUE_COUNT = "trp_onboarding_continue_count"
+        const val ONBOARDING_DISMISSED_PERMANENTLY = "trp_onboarding_dismissed_permanently"
+
         // Shared preferences file name
         const val PREFER_NAME = "tone-preferences"
     }

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_rounded_top_white"
+    android:paddingHorizontal="24dp"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- Close Button -->
+    <ImageView
+        android:id="@+id/ivClose"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:padding="13dp"
+        android:src="@drawable/ic_close"
+        android:contentDescription="Close"
+        app:tint="@color/trp_text_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Header Image -->
+    <ImageView
+        android:id="@+id/ivHeaderImage"
+        android:layout_width="198dp"
+        android:layout_height="148dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/ic_onboarding"
+        android:contentDescription="Onboarding"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivClose" />
+
+    <!-- Title + Beta Badge Row -->
+    <LinearLayout
+        android:id="@+id/llTitleRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivHeaderImage">
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/bold"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="16sp"
+            tools:text="Visualiza tus itinerarios" />
+
+        <TextView
+            android:id="@+id/tvBetaBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_onboarding_beta_badge"
+            android:fontFamily="@font/medium"
+            android:gravity="center"
+            android:minWidth="49dp"
+            android:paddingHorizontal="8dp"
+            android:textColor="@color/trp_white"
+            android:textSize="12sp"
+            tools:text="BETA" />
+
+    </LinearLayout>
+
+    <!-- Features Container -->
+    <LinearLayout
+        android:id="@+id/llFeatures"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/llTitleRow">
+
+        <!-- Feature 1 -->
+        <LinearLayout
+            android:id="@+id/llFeature1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivFeature1Icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_onboarding_route"
+                android:contentDescription="Route" />
+
+            <TextView
+                android:id="@+id/tvFeature1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="14sp"
+                tools:text="Diseña tus rutas → Todos los planes ordenados cronológicamente y por días." />
+
+        </LinearLayout>
+
+        <!-- Feature 2 -->
+        <LinearLayout
+            android:id="@+id/llFeature2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivFeature2Icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_onboarding_calendar"
+                android:contentDescription="Calendar" />
+
+            <TextView
+                android:id="@+id/tvFeature2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="14sp"
+                tools:text="Crea tu agenda → Organiza todo lo que quieres hacer desde cero o déjate inspirar por nuestras recomendaciones." />
+
+        </LinearLayout>
+
+        <!-- Feature 3 -->
+        <LinearLayout
+            android:id="@+id/llFeature3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/ivFeature3Icon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_onboarding_heart"
+                android:contentDescription="Heart" />
+
+            <TextView
+                android:id="@+id/tvFeature3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="14sp"
+                tools:text="Tus planes guardados → Añádelos al itinerario para tenerlos a mano, de un vistazo." />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- Footer Text -->
+    <LinearLayout
+        android:id="@+id/llFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/llFeatures">
+
+        <TextView
+            android:id="@+id/tvFooterLine1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/light"
+            android:gravity="center"
+            android:textColor="@color/trp_fgWeak"
+            android:textSize="14sp"
+            tools:text="No disponible en todos los destinos aún..." />
+
+        <TextView
+            android:id="@+id/tvFooterLine2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/light"
+            android:gravity="center"
+            android:textColor="@color/trp_fgWeak"
+            android:textSize="14sp"
+            tools:text="¡Pero estamos trabajando en ello!" />
+
+    </LinearLayout>
+
+    <!-- Continue Button (Primary) -->
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnContinue"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_oval_primary"
+        android:fontFamily="@font/montserrat_bold"
+        android:textAllCaps="false"
+        android:textColor="@color/trp_white"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/llFooter"
+        tools:text="Continuar" />
+
+    <!-- Skip Button (Text) -->
+    <TextView
+        android:id="@+id/btnSkip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:fontFamily="@font/montserrat_medium"
+        android:padding="8dp"
+        android:textColor="@color/trp_primary"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnContinue"
+        tools:text="Omitir" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

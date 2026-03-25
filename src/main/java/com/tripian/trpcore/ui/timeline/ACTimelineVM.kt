@@ -3,21 +3,21 @@ package com.tripian.trpcore.ui.timeline
 import android.os.Bundle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.mapbox.geojson.Point
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.cities.model.CityResolveData
+import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelinePlan
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.isGenerated
-import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.DoLightLogin
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
-import com.tripian.trpcore.repository.CityResolveResult
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
@@ -35,11 +35,11 @@ import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
+import com.tripian.trpcore.repository.CityResolveResult
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
-import com.tripian.one.api.pois.model.Coordinate
-import com.mapbox.geojson.Point
+import com.tripian.trpcore.util.Preferences
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.text.SimpleDateFormat
@@ -62,7 +62,8 @@ class ACTimelineVM @Inject constructor(
     private val updateStepTimeUseCase: UpdateStepTimeUseCase,
     private val getTimelineStepRoutesUseCase: GetTimelineStepRoutesUseCase,
     private val resolveCitiesUseCase: ResolveCitiesUseCase,
-    private val tripRepository: com.tripian.trpcore.repository.TripRepository
+    private val tripRepository: com.tripian.trpcore.repository.TripRepository,
+    private val preferences: Preferences
 ) : BaseViewModel() {
 
     // =====================
@@ -132,6 +133,11 @@ class ACTimelineVM @Inject constructor(
     private val _showPartialUnavailableAlert = MutableLiveData<List<String>?>()
     val showPartialUnavailableAlert: LiveData<List<String>?> = _showPartialUnavailableAlert
 
+    // Onboarding
+    private val _showOnboarding = MutableLiveData<Boolean>()
+    val showOnboarding: LiveData<Boolean> = _showOnboarding
+    private var onboardingCompleted = false
+
     // =====================
     // STATE
     // =====================
@@ -141,6 +147,7 @@ class ACTimelineVM @Inject constructor(
     private var itinerary: ItineraryWithActivities? = null
     private var uniqueId: String? = null
     private var isLoggedIn: Boolean = false
+    private var isLoginInProgress: Boolean = false
     private var hasMultipleCitiesInSelectedDay: Boolean = false
 
     // =====================
@@ -182,6 +189,10 @@ class ACTimelineVM @Inject constructor(
             _tripHash = arguments?.getString(ARG_TRIP_HASH) ?: ""
         }
 
+        // Start LightLogin immediately in background
+        // This runs in parallel with language loading and onboarding
+        performLightLoginInBackground()
+
         // Wait for languages to be loaded before proceeding with timeline operations
         // This ensures all UI texts are available
         ensureLanguagesLoadedThenProceed()
@@ -211,7 +222,7 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Called after languages are loaded.
-     * Sets language, resolves cities and starts login flow.
+     * Sets language, checks onboarding, then resolves cities and starts login flow.
      */
     private fun proceedAfterLanguagesLoaded() {
         // Apply language change after languages are loaded
@@ -220,13 +231,17 @@ class ACTimelineVM @Inject constructor(
             miscRepository.changeLanguage(language)
         }
 
-        // Resolve destination cities BEFORE proceeding with timeline operations
-        // This ensures we can validate city support before creating timeline
-        resolveDestinationCitiesAndProceed()
+        // Hide loading before showing onboarding
+        _isLoading.value = false
+
+        // Check and show onboarding if needed
+        // onOnboardingComplete() will be called to continue with city resolution
+        checkAndShowOnboarding()
     }
 
     /**
-     * Resolves destination cities and proceeds with login/timeline operations.
+     * Resolves destination cities and proceeds with timeline operations.
+     * Called after login is complete (login runs in background when ACTimeline opens).
      * If city resolution fails (cityId=0), shows error and closes SDK.
      */
     private fun resolveDestinationCitiesAndProceed() {
@@ -234,7 +249,7 @@ class ACTimelineVM @Inject constructor(
 
         // If no destination items, proceed directly (will use tripHash)
         if (destinationItems.isNullOrEmpty()) {
-            performLightLogin()
+            proceedWithTimelineOperations()
             return
         }
 
@@ -271,8 +286,10 @@ class ACTimelineVM @Inject constructor(
             val uniqueCities = resolvedCities.distinctBy { it.id }
             if (uniqueCities.isNotEmpty()) {
                 _cities.value = uniqueCities
+                // Update itinerary.destinationItems with resolved cityIds
+                updateItineraryWithResolvedCities(resolvedCities)
             }
-            performLightLogin()
+            proceedWithTimelineOperations()
             return
         }
 
@@ -289,14 +306,16 @@ class ACTimelineVM @Inject constructor(
                     if (resolvedCities.isNotEmpty()) {
                         // Use cached cities and continue
                         _cities.value = resolvedCities.distinctBy { it.id }
-                        performLightLogin()
+                        // Update itinerary.destinationItems with cached cityIds
+                        updateItineraryWithResolvedCities(resolvedCities)
+                        proceedWithTimelineOperations()
                     } else if (_tripHash.isNotEmpty()) {
                         // EXISTING TRIP: API failed but we have tripHash - continue anyway
                         // Timeline will be fetched, city data comes from API response
                         val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
                             .replace("%s", unresolvedCityNames.joinToString(", "))
                         showAlert(AlertType.WARNING, warningMsg)
-                        performLightLogin()
+                        proceedWithTimelineOperations()
                     } else {
                         // NEW TRIP: No cities at all - fatal error, close SDK
                         _isLoading.value = false
@@ -322,34 +341,40 @@ class ACTimelineVM @Inject constructor(
                 cachedCities.addAll(result.cities)
                 val uniqueCities = cachedCities.distinctBy { it.id }
                 _cities.value = uniqueCities
-                performLightLogin()
+                // Update itinerary.destinationItems with resolved cityIds
+                updateItineraryWithResolvedCities(cachedCities)
+                proceedWithTimelineOperations()
             }
             is CityResolveResult.PartialSuccess -> {
                 // Some cities resolved, some not found - show warning and continue
                 cachedCities.addAll(result.cities)
                 val uniqueCities = cachedCities.distinctBy { it.id }
                 _cities.value = uniqueCities
+                // Update itinerary.destinationItems with resolved cityIds
+                updateItineraryWithResolvedCities(cachedCities)
 
                 // Show warning for unsupported cities
                 val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
                     .replace("%s", result.unresolvedCityNames.joinToString(", "))
                 showAlert(AlertType.WARNING, warningMsg)
 
-                performLightLogin()
+                proceedWithTimelineOperations()
             }
             is CityResolveResult.AllFailed -> {
                 // No cities could be resolved from API
                 if (cachedCities.isNotEmpty()) {
                     // Use cached cities and continue
                     _cities.value = cachedCities.distinctBy { it.id }
-                    performLightLogin()
+                    // Update itinerary.destinationItems with resolved cityIds
+                    updateItineraryWithResolvedCities(cachedCities)
+                    proceedWithTimelineOperations()
                 } else if (_tripHash.isNotEmpty()) {
                     // EXISTING TRIP: Show warning but continue with fetchTimeline
                     // User added new destination that's not supported - warn but proceed
                     val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
                         .replace("%s", fallbackCityNames.joinToString(", "))
                     showAlert(AlertType.WARNING, warningMsg)
-                    performLightLogin()
+                    proceedWithTimelineOperations()
                 } else {
                     // NEW TRIP: No cities at all - show NoCityView (blocking)
                     _isLoading.value = false
@@ -360,11 +385,44 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Performs light login.
-     * Proceeds with timeline operations on success.
+     * Updates itinerary.destinationItems with resolved cityIds.
+     * This ensures that when resolveCitiesAndCreateTimeline() is called later,
+     * it will find valid cityIds instead of null/0.
      */
-    private fun performLightLogin() {
-        _isLoading.value = true
+    private fun updateItineraryWithResolvedCities(resolvedCities: List<City>) {
+        val currentItinerary = itinerary ?: return
+
+        val updatedDestinations = currentItinerary.destinationItems.map { item ->
+            // Find matching city by coordinate (within 0.01 degree tolerance)
+            val matchingCity = item.getCoordinateObject()?.let { coord ->
+                resolvedCities.find { city ->
+                    city.coordinate?.let { c ->
+                        kotlin.math.abs(c.lat - coord.lat) < 0.01 &&
+                        kotlin.math.abs(c.lng - coord.lng) < 0.01
+                    } ?: false
+                }
+            } ?: resolvedCities.find { it.name == item.title }
+
+            if (matchingCity != null) {
+                item.copy(cityId = matchingCity.id)
+            } else {
+                item
+            }
+        }
+
+        itinerary = currentItinerary.copy(destinationItems = updatedDestinations)
+        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds")
+    }
+
+    /**
+     * Performs light login in background immediately when ACTimeline opens.
+     * This runs in parallel with language loading and onboarding.
+     * Does NOT proceed with timeline operations - that's done after onboarding completes.
+     */
+    private fun performLightLoginInBackground() {
+        if (isLoginInProgress || isLoggedIn) return
+
+        isLoginInProgress = true
         _error.value = null
 
         doLightLogin.on(
@@ -373,15 +431,42 @@ class ACTimelineVM @Inject constructor(
             ),
             success = { response ->
                 isLoggedIn = true
-                // Login successful, now proceed with timeline operations
-                proceedWithTimelineOperations()
+                isLoginInProgress = false
+                android.util.Log.d("TIMELINE_DEBUG", "LightLogin completed successfully")
             },
             error = { errorModel ->
-                _isLoading.value = false
+                isLoginInProgress = false
                 _error.value = errorModel.errorDesc ?: "Login failed"
                 TRPCore.notifyError(errorModel.errorDesc ?: "Login failed")
+                android.util.Log.e("TIMELINE_DEBUG", "LightLogin failed: ${errorModel.errorDesc}")
             }
         )
+    }
+
+    /**
+     * Waits for light login to complete, then executes the callback.
+     * If already logged in, executes immediately.
+     * If login failed, still executes (error already shown).
+     */
+    private fun waitForLoginThenProceed(onLoginComplete: () -> Unit) {
+        if (isLoggedIn) {
+            onLoginComplete()
+            return
+        }
+
+        if (!isLoginInProgress) {
+            // Login not started or failed, try again
+            performLightLoginInBackground()
+        }
+
+        // Poll for login completion
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            if (isLoggedIn || !isLoginInProgress) {
+                onLoginComplete()
+            } else {
+                waitForLoginThenProceed(onLoginComplete)
+            }
+        }, 100)
     }
 
     /**
@@ -1812,6 +1897,59 @@ class ACTimelineVM @Inject constructor(
      */
     private fun clearRouteInfoCache() {
         _routeInfoCache.clear()
+    }
+
+    // =====================
+    // ONBOARDING
+    // =====================
+
+    /**
+     * Checks if onboarding should be shown based on user preferences.
+     */
+    fun shouldShowOnboarding(): Boolean {
+        if (onboardingCompleted) return false
+
+        val dismissed = preferences.getBoolean(Preferences.Keys.ONBOARDING_DISMISSED_PERMANENTLY, false)
+        val hasSeen = preferences.getBoolean(Preferences.Keys.ONBOARDING_HAS_SEEN, false)
+        val count = preferences.getInt(Preferences.Keys.ONBOARDING_CONTINUE_COUNT, 0)
+
+        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.shouldShowOnboarding: dismissed=$dismissed, hasSeen=$hasSeen, count=$count")
+
+        if (dismissed) return false
+        if (!hasSeen) return true
+        return count < 3
+    }
+
+    /**
+     * Triggers showing onboarding if needed.
+     * Called after languages are loaded.
+     */
+    fun checkAndShowOnboarding() {
+        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.checkAndShowOnboarding called")
+        if (shouldShowOnboarding()) {
+            android.util.Log.d("ONBOARDING_DEBUG", "Setting _showOnboarding.value = true")
+            _showOnboarding.value = true
+        } else {
+            android.util.Log.d("ONBOARDING_DEBUG", "Onboarding not needed, proceeding with timeline")
+            onOnboardingComplete()
+        }
+    }
+
+    /**
+     * Called when onboarding is completed (either by Continue or Skip).
+     * Waits for login to complete, then continues with city resolution and timeline.
+     */
+    fun onOnboardingComplete() {
+        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.onOnboardingComplete called")
+        onboardingCompleted = true
+
+        // Wait for login to complete (should already be done in background)
+        // Then proceed with city resolution
+        _isLoading.value = true
+        waitForLoginThenProceed {
+            android.util.Log.d("TIMELINE_DEBUG", "Login complete, proceeding with city resolution")
+            resolveDestinationCitiesAndProceed()
+        }
     }
 
     companion object {

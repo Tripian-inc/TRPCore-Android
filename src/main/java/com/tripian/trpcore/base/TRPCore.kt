@@ -4,32 +4,33 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
+import com.mapbox.common.MapboxOptions
 import com.tripian.gyg.base.Tripian
-import android.provider.Settings
-import java.lang.ref.WeakReference
+import com.tripian.one.TRPRest
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
-import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.repository.authorization.AwsConfig
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
 import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
-import com.tripian.one.TRPRest
+import com.tripian.trpcore.util.CurrencyUtil
+import com.tripian.trpcore.util.Preferences
 import com.tripian.trpprovider.base.ProviderCore
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
-import com.mapbox.common.MapboxOptions
-import android.os.Handler
-import android.os.Looper
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
+import java.lang.ref.WeakReference
 import javax.inject.Inject
 
 /**
@@ -226,6 +227,28 @@ class TRPCore {
         fun getSavedCurrency(): String {
             return core.getSavedCurrency()
         }
+
+        // =====================
+        // ONBOARDING
+        // =====================
+
+        /**
+         * Resets the onboarding state, allowing it to be shown again.
+         * Call this if you want to show the onboarding to the user again.
+         *
+         * Usage:
+         * ```kotlin
+         * TRPCore.resetOnboarding(context)
+         * ```
+         *
+         * @param context Application or Activity context
+         */
+        fun resetOnboarding(context: Context) {
+            val prefs = Preferences(context)
+            prefs.setBoolean(Preferences.Keys.ONBOARDING_HAS_SEEN, false)
+            prefs.setInt(Preferences.Keys.ONBOARDING_CONTINUE_COUNT, 0)
+            prefs.setBoolean(Preferences.Keys.ONBOARDING_DISMISSED_PERMANENTLY, false)
+        }
     }
 
     @Inject
@@ -354,8 +377,6 @@ class TRPCore {
         apiVersion = environment.getApiVersion()
 
         // Set Mapbox access token programmatically (instead of XML resource)
-        // IMPORTANT: Mapbox native library loading and AppCompatDelegate MUST happen on main thread
-        // to avoid UnsatisfiedLinkError and IllegalStateException when init() is called from background thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             MapboxOptions.accessToken = mapboxApiKey
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
@@ -527,7 +548,7 @@ class TRPCore {
             "Either destinationItems or tripItems must contain at least one item with location data."
         }
 
-        val effectiveUniqueId = uniqueId ?: itinerary.uniqueId ?: getDeviceId(context)
+        val effectiveUniqueId = uniqueId ?: itinerary.uniqueId
         val effectiveTripHash = tripHash ?: itinerary.tripianHash
 
         // Ensure languages are loaded before opening timeline

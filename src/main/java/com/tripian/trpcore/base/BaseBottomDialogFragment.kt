@@ -52,7 +52,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
                 left = insets.left,
                 top = 0,
                 right = insets.right,
-                bottom = -100
+                bottom = insets.bottom
             )
             WindowInsetsCompat.CONSUMED
         }

@@ -14,6 +14,7 @@ import com.tripian.trpcore.ui.trip.favorite.ACFavoriteVM
 import com.tripian.trpcore.ui.trip.my_offers.ACMyOffersVM
 import com.tripian.trpcore.ui.trip.places.ACMustTryVM
 import com.tripian.trpcore.ui.trip_detail.ACTripDetailVM
+import com.tripian.trpcore.ui.onboarding.OnboardingVM
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -107,4 +108,12 @@ abstract class ViewModels {
     @IntoMap
     @ViewModelKey(ACMyOffersVM::class)
     abstract fun bindACMyOffersVM(repoViewModel: ACMyOffersVM): ViewModel
+
+    /**
+     * ONBOARDING
+     */
+    @Binds
+    @IntoMap
+    @ViewModelKey(OnboardingVM::class)
+    abstract fun bindOnboardingVM(repoViewModel: OnboardingVM): ViewModel
 }

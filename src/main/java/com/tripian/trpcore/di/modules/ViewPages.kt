@@ -46,6 +46,7 @@ import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
 import com.tripian.trpcore.ui.trip_detail.ACTripDetail
 import com.tripian.trpcore.ui.user.ACEditProfile
+import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import dagger.Module
 import dagger.android.AndroidInjectionModule
 import dagger.android.ContributesAndroidInjector
@@ -153,6 +154,12 @@ abstract class ViewPages {
      */
     @ContributesAndroidInjector
     abstract fun bindACSplash(): ACSplash
+
+    /**
+     * ONBOARDING
+     */
+    @ContributesAndroidInjector
+    abstract fun bindOnboardingBottomSheet(): OnboardingBottomSheet
 
     /**
      * LOGIN

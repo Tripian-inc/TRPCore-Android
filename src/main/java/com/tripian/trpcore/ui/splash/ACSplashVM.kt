@@ -1,6 +1,8 @@
 package com.tripian.trpcore.ui.splash
 
 import android.os.Bundle
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.base.BaseViewModel
@@ -57,6 +59,11 @@ class ACSplashVM @Inject constructor(
     private var isLogon = false
     private var goLogin = false
     private var goHome = false
+
+    // Onboarding
+    private val _showOnboarding = MutableLiveData<Boolean>()
+    val showOnboarding: LiveData<Boolean> = _showOnboarding
+    private var pendingNavigationBundle: Bundle? = null
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
@@ -158,8 +165,15 @@ class ACSplashVM @Inject constructor(
     }
 
     private fun startHome() {
+        android.util.Log.d("ONBOARDING_DEBUG", "startHome() called")
+        android.util.Log.d("ONBOARDING_DEBUG", "isLanguageFetched=$isLanguageFetched, isCitiesFetched=$isCitiesFetched")
+
         // Wait for all required data: cities, languages
-        if (isLanguageFetched.not() || isCitiesFetched.not()) return
+        if (isLanguageFetched.not() || isCitiesFetched.not()) {
+            android.util.Log.d("ONBOARDING_DEBUG", "Not ready yet, setting goHome=true")
+            goHome = true
+            return
+        }
         val data = Bundle()
         clearCache()
 
@@ -173,7 +187,50 @@ class ACSplashVM @Inject constructor(
             }
         }
 
-        startActivity(ACMyTrip::class, data)
+        // Check if onboarding should be shown
+        val shouldShow = shouldShowOnboarding()
+        android.util.Log.d("ONBOARDING_DEBUG", "shouldShowOnboarding()=$shouldShow")
+
+        if (shouldShow) {
+            android.util.Log.d("ONBOARDING_DEBUG", "Setting _showOnboarding.value = true")
+            pendingNavigationBundle = data
+            _showOnboarding.value = true
+        } else {
+            android.util.Log.d("ONBOARDING_DEBUG", "Going to ACMyTrip directly")
+            startActivity(ACMyTrip::class, data)
+            finishActivity()
+        }
+    }
+
+    /**
+     * Checks if onboarding should be shown based on user preferences.
+     */
+    private fun shouldShowOnboarding(): Boolean {
+        val dismissed = preferences.getBoolean(Preferences.Keys.ONBOARDING_DISMISSED_PERMANENTLY, false)
+        val hasSeen = preferences.getBoolean(Preferences.Keys.ONBOARDING_HAS_SEEN, false)
+        val count = preferences.getInt(Preferences.Keys.ONBOARDING_CONTINUE_COUNT, 0)
+
+        android.util.Log.d("ONBOARDING_DEBUG", "shouldShowOnboarding: dismissed=$dismissed, hasSeen=$hasSeen, count=$count")
+
+        if (dismissed) {
+            android.util.Log.d("ONBOARDING_DEBUG", "Returning false - dismissed permanently")
+            return false
+        }
+        if (!hasSeen) {
+            android.util.Log.d("ONBOARDING_DEBUG", "Returning true - not seen before")
+            return true
+        }
+        val result = count < 3
+        android.util.Log.d("ONBOARDING_DEBUG", "Returning $result - count=$count < 3")
+        return result
+    }
+
+    /**
+     * Called when onboarding is completed (either by Continue or Skip).
+     * Navigates to the main screen.
+     */
+    fun onOnboardingComplete() {
+        startActivity(ACMyTrip::class, pendingNavigationBundle)
         finishActivity()
     }
 
