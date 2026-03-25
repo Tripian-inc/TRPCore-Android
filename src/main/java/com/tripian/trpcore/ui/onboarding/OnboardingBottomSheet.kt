@@ -2,14 +2,16 @@ package com.tripian.trpcore.ui.onboarding
 
 import android.app.Dialog
 import android.content.DialogInterface
+import android.graphics.Paint
 import android.graphics.Typeface
 import android.os.Bundle
 import android.text.SpannableString
 import android.text.Spanned
-import android.text.style.StyleSpan
-import android.view.LayoutInflater
-import android.view.ViewGroup
+import android.text.TextPaint
+import android.text.style.MetricAffectingSpan
+import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseBottomDialogFragment
 import com.tripian.trpcore.databinding.BottomSheetOnboardingBinding
 import com.tripian.trpcore.util.LanguageConst
@@ -119,21 +121,43 @@ class OnboardingBottomSheet : BaseBottomDialogFragment<BottomSheetOnboardingBind
     /**
      * Creates a SpannableString with bold title and regular description.
      * Example: "Diseña tus rutas → Todos los planes ordenados..."
-     * Where "Diseña tus rutas →" is bold and the rest is regular.
+     * Where "Diseña tus rutas →" is bold (using Montserrat Bold) and the rest is regular.
      */
     private fun createFeatureSpannable(title: String, description: String): SpannableString {
         val fullText = "$title $description"
         val spannable = SpannableString(fullText)
 
-        // Make the title portion bold
-        spannable.setSpan(
-            StyleSpan(Typeface.BOLD),
-            0,
-            title.length,
-            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-        )
+        // Get Montserrat Bold typeface
+        val boldTypeface = ResourcesCompat.getFont(requireContext(), R.font.montserrat_bold)
+
+        // Make the title portion bold with Montserrat Bold font
+        boldTypeface?.let { typeface ->
+            spannable.setSpan(
+                CustomTypefaceSpan(typeface),
+                0,
+                title.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+        }
 
         return spannable
+    }
+
+    /**
+     * Custom span that applies a specific Typeface to text.
+     */
+    private class CustomTypefaceSpan(private val typeface: Typeface) : MetricAffectingSpan() {
+        override fun updateDrawState(paint: TextPaint) {
+            applyTypeface(paint)
+        }
+
+        override fun updateMeasureState(paint: TextPaint) {
+            applyTypeface(paint)
+        }
+
+        private fun applyTypeface(paint: Paint) {
+            paint.typeface = typeface
+        }
     }
 
     fun setOnCompleteListener(listener: () -> Unit) {

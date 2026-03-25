@@ -1,13 +1,19 @@
 package com.tripian.trpcore.ui.timeline
 
+import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.doOnLayout
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.pois.model.Poi
@@ -31,6 +37,7 @@ import com.tripian.trpcore.ui.timeline.views.NoCityView
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.extensions.dp
 import kotlinx.coroutines.launch
 
 /**
@@ -44,6 +51,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var pendingAddPlanData: AddPlanData? = null
     private var mapBottomListAdapter: MapBottomListAdapter? = null
     private var isBottomListVisible = false
+    private var isBottomListCompletelyHidden = true
+    private var navigationBarInsetBottom = 0
+    private var bottomListHeight = 0
+    private var fabAddInitialBottomMargin = 0
+    private var fabListInitialBottomMargin = 0
+    private var contentInitialBottomPadding = 0
 
     // POI Selection launcher
     private val poiSelectionLauncher = registerForActivityResult(
@@ -78,6 +91,35 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     override fun getViewBinding() = ActivityTimelineBinding.inflate(layoutInflater)
 
     override fun setListeners() {
+        // Handle navigation bar insets for FAB
+
+        fabAddInitialBottomMargin =
+            (binding.fabAddPlan.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+        val rvMapBottomListBottomMargin =
+            (binding.rvMapBottomList.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+
+        val extraFabSpacing = 16.dp
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, insets ->
+            navigationBarInsetBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+
+//            binding.fabAddPlan.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+//                bottomMargin = maxOf(fabAddInitialBottomMargin, bottomInset + extraFabSpacing)
+//            }
+//
+            binding.rvMapBottomList.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = maxOf(rvMapBottomListBottomMargin, navigationBarInsetBottom)
+            }
+            updateFabPositions()
+
+            insets
+        }
+
+        binding.rvMapBottomList.doOnLayout {
+            bottomListHeight = it.height
+            updateFabPositions()
+        }
+
         // Back button
         binding.ivBack.setOnClickListener {
             viewModel.onSDKDismissed()
@@ -516,6 +558,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         } else {
             windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
+
+            hideMapBottomListCompletely()
         }
 
         // Hide savedPlans in map mode
@@ -637,26 +681,36 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun showMapBottomList() {
         if (isBottomListVisible) return
         isBottomListVisible = true
+        isBottomListCompletelyHidden = false
 
         binding.rvMapBottomList.visibility = View.VISIBLE
+
+
+//        binding.rvMapBottomList.post {
+//            bottomListHeight = binding.rvMapBottomList.height
+//            updateFabPositions()
+//        }
+//
+//        binding.rvMapBottomList.translationY = binding.rvMapBottomList.height.toFloat()
+//        binding.rvMapBottomList.animate()
+//            .translationY(0f)
+//            .setDuration(300)
+//            .setInterpolator(DecelerateInterpolator())
+//            .start()
         binding.rvMapBottomList.animate()
             .translationY(0f)
             .setDuration(300)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
+        updateFabPositions()
 
         // Move FABs above the bottom list (list height ~104dp + 16dp spacing)
-        val fabOffset = -120f * resources.displayMetrics.density
-        binding.fabList.animate()
-            .translationY(fabOffset)
-            .setDuration(300)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
-            .start()
-        binding.fabAddPlan.animate()
-            .translationY(fabOffset)
-            .setDuration(300)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
-            .start()
+//        val fabOffset = -120f * resources.displayMetrics.density
+//        binding.fabAddPlan.animate()
+//            .translationY(fabOffset + bottomListHeight)
+//            .setDuration(300)
+//            .setInterpolator(android.view.animation.DecelerateInterpolator())
+//            .start()
     }
 
     /**
@@ -667,6 +721,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun hideMapBottomList() {
         if (!isBottomListVisible) return
         isBottomListVisible = false
+        isBottomListCompletelyHidden = false
+
+//        binding.rvMapBottomList.animate()
+//            .translationY(binding.rvMapBottomList.height.toFloat() * 0.9f)
+//            .setDuration(300)
+//            .setInterpolator(DecelerateInterpolator())
+//            .withEndAction {
+//                binding.rvMapBottomList.visibility = View.GONE
+//                updateFabPositions()
+//            }
+//            .start()
+//
+//        updateFabPositions()
 
         // Card item height is approximately 104dp (80dp image + 24dp margins)
         // Show only 10% (~10dp), so translate 90% (~94dp) down
@@ -678,18 +745,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setDuration(300)
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
+        updateFabPositions()
 
-        // Move FABs back to original position
-        binding.fabList.animate()
-            .translationY(0f)
-            .setDuration(300)
-            .setInterpolator(android.view.animation.AccelerateInterpolator())
-            .start()
-        binding.fabAddPlan.animate()
-            .translationY(0f)
-            .setDuration(300)
-            .setInterpolator(android.view.animation.AccelerateInterpolator())
-            .start()
+//        // Move FABs back to original position
+//        binding.fabList.animate()
+//            .translationY(0f)
+//            .setDuration(300)
+//            .setInterpolator(android.view.animation.AccelerateInterpolator())
+//            .start()
+//        binding.fabAddPlan.animate()
+//            .translationY(0f)
+//            .setDuration(300)
+//            .setInterpolator(android.view.animation.AccelerateInterpolator())
+//            .start()
     }
 
     /**
@@ -699,11 +767,70 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      */
     private fun hideMapBottomListCompletely() {
         isBottomListVisible = false
+        isBottomListCompletelyHidden = true
         binding.rvMapBottomList.visibility = View.GONE
         binding.fabList.translationY = 0f
         binding.fabAddPlan.translationY = 0f
+        updateFabPositions()
     }
 
+    private fun updateFabPositions() {
+        val extraFabSpacing = 16.dp
+        val extraListSpacing = 24.dp
+
+        val safeBottomForAddFab = maxOf(
+            fabAddInitialBottomMargin,
+            navigationBarInsetBottom + extraFabSpacing
+        )
+
+        val listExtra = if (isBottomListVisible) {
+            bottomListHeight
+        } else if (!isBottomListCompletelyHidden) {
+            extraListSpacing
+        } else {
+            0
+        }
+        animateBottomMargin(
+            view = binding.fabAddPlan,
+            targetMargin = safeBottomForAddFab + listExtra,
+            animated = true
+        )
+//        binding.fabAddPlan.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+//            bottomMargin = safeBottomForAddFab + listExtra
+//        }
+    }
+
+
+    private fun animateBottomMargin(
+        view: View,
+        targetMargin: Int,
+        animated: Boolean
+    ) {
+        val params = view.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        val currentMargin = params.bottomMargin
+
+        if (currentMargin == targetMargin) return
+
+        if (!animated) {
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = targetMargin
+            }
+            return
+        }
+
+        val animator = ValueAnimator.ofInt(currentMargin, targetMargin).apply {
+            duration = 300L
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { valueAnimator ->
+                val animatedMargin = valueAnimator.animatedValue as Int
+                view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = animatedMargin
+                }
+            }
+        }
+
+        animator.start()
+    }
     /**
      * Scroll the bottom list to show the item at the given position (order number).
      */

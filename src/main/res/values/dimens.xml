@@ -28,4 +28,8 @@
     <dimen name="poi_indicator_inactive_size">8dp</dimen>
     <dimen name="poi_indicator_margin">4dp</dimen>
     <dimen name="poi_product_card_corner_radius">8dp</dimen>
+
+    <!-- Timeline FAB and Bottom List -->
+    <dimen name="fab_bottom_margin">32dp</dimen>
+    <dimen name="map_bottom_list_padding">32dp</dimen>
 </resources>

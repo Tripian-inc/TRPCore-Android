@@ -18,6 +18,7 @@ import android.provider.Settings
 import android.text.TextUtils
 import android.util.DisplayMetrics
 import android.util.Patterns
+import android.util.TypedValue
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
@@ -36,9 +37,9 @@ import com.google.android.gms.maps.model.LatLngBounds
 import com.google.common.base.Splitter
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
-import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
+import com.tripian.trpcore.util.Preferences
 import java.net.InetAddress
 import java.net.URLEncoder
 import java.net.UnknownHostException
@@ -648,3 +649,10 @@ fun Int.getCompactValue(): String {
         this.toString()
     }
 }
+
+val Int.dp: Int
+    get() = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        toFloat(),
+        Resources.getSystem().displayMetrics
+    ).toInt()
