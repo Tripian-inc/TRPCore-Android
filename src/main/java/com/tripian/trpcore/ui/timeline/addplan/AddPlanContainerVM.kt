@@ -462,32 +462,43 @@ class AddPlanContainerVM @Inject constructor(
     val resetToFirstStep: LiveData<Boolean> = _resetToFirstStep
 
     fun clearSelection() {
-        // Reset mode and categories
+        // Clear only current step's selections - stay on the same step
+        when (_currentStep.value) {
+            AddPlanStep.SELECT_DAY_AND_CITY -> clearSelectDayStep()
+            AddPlanStep.TIME_AND_TRAVELERS -> clearTimeAndTravelersStep()
+            AddPlanStep.CATEGORY_SELECTION -> clearCategorySelectionStep()
+            else -> clearSelectDayStep()
+        }
+        updateUI()
+    }
+
+    private fun clearSelectDayStep() {
+        // Reset mode and manual category only - day and city remain unchanged
         _selectedMode.value = AddPlanMode.NONE
         _selectedManualCategory.value = null
-        _selectedSmartCategories.value = emptyList()
+        planData.selectedMode = AddPlanMode.NONE
+        planData.selectedManualCategory = null
+    }
 
+    private fun clearTimeAndTravelersStep() {
         // Reset time selections
         _startTime.value = null
         _endTime.value = null
         planData.startTime = null
         planData.endTime = null
 
-        // Reset travelers
+        // Reset travelers to default
         _travelers.value = 1
         planData.travelers = 1
 
-        // Reset starting point to default (city center)
+        // Reset starting point to city center
         clearStartingPoint()
+    }
 
-        // Clear plan data selection
-        planData.clearSelection()
-
-        // Go back to first step
-        _currentStep.value = AddPlanStep.SELECT_DAY_AND_CITY
-        _resetToFirstStep.value = true
-
-        updateUI()
+    private fun clearCategorySelectionStep() {
+        // Reset smart categories only
+        _selectedSmartCategories.value = emptyList()
+        planData.selectedSmartCategories.clear()
     }
 
     fun clearResetToFirstStep() {
