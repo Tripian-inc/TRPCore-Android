@@ -70,32 +70,20 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:fontFamily="@font/medium"
+            android:fontFamily="@font/semibold"
             android:gravity="center"
             android:paddingHorizontal="16dp"
             android:textColor="@color/trp_fgWeak"
             android:textSize="14sp"
-            android:visibility="gone"
-            tools:text="Clear Selection"
-            tools:visibility="visible" />
+            tools:text="Clear Selection"/>
 
         <!-- Continue Button (right side, 48dp) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            style="@style/TrpButtonPrimary"
             android:layout_weight="1"
             android:enabled="false"
-            android:fontFamily="@font/semibold"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="120dp"
-            android:minHeight="48dp"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            app:backgroundTint="@color/trp_btn_continue_bg"
-            app:cornerRadius="24dp"
             tools:enabled="true"
             tools:text="Continue" />
 

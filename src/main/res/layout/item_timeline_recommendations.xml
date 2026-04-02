@@ -130,7 +130,7 @@
                 android:id="@+id/ivStartingPointPin"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_pin" />
+                android:src="@drawable/ic_starting_point_pin" />
 
             <!-- Starting Point Name - Medium 14px primaryText -->
             <TextView

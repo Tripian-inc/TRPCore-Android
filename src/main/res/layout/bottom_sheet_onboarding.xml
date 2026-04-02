@@ -205,16 +205,12 @@
     </LinearLayout>
 
     <!-- Continue Button (Primary) -->
-    <androidx.appcompat.widget.AppCompatButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        style="@style/TrpButtonPrimary"
         android:layout_marginTop="24dp"
-        android:background="@drawable/bg_oval_primary"
-        android:fontFamily="@font/montserrat_bold"
-        android:textAllCaps="false"
-        android:textColor="@color/trp_white"
-        android:textSize="16sp"
+        android:paddingHorizontal="32dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/llFooter"
@@ -227,7 +223,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="8dp"
-        android:fontFamily="@font/montserrat_medium"
+        android:fontFamily="@font/semibold"
         android:padding="8dp"
         android:textColor="@color/trp_primary"
         android:textSize="16sp"

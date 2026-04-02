@@ -496,7 +496,7 @@
                 <com.tripian.trpcore.util.widget.ImageView
                     android:layout_width="@dimen/_16sdp"
                     android:layout_height="@dimen/_16sdp"
-                    app:srcCompat="@drawable/ic_pin" />
+                    app:srcCompat="@drawable/ic_starting_point_pin" />
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvAddress"

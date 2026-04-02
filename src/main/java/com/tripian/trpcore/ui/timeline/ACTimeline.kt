@@ -122,8 +122,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Back button
         binding.ivBack.setOnClickListener {
-            viewModel.onSDKDismissed()
-            finish()
+            handleBackNavigation()
         }
 
         // Map FAB - switches to map mode
@@ -358,8 +357,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
+        handleBackNavigation()
+    }
+
+    /**
+     * Handles back navigation logic.
+     * If map mode is active, switches to list mode.
+     * Otherwise, closes the SDK and finishes the activity.
+     */
+    private fun handleBackNavigation() {
+        if (viewModel.isMapMode.value == true) {
+            viewModel.toggleMapMode()
+            return
+        }
         viewModel.onSDKDismissed()
-        super.onBackPressed()
+        finish()
     }
 
     // =====================
