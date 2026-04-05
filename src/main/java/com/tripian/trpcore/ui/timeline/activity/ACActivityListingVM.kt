@@ -13,6 +13,7 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
 import com.tripian.trpcore.util.AlertType
+import android.util.Log
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.appLanguage
 import java.text.SimpleDateFormat
@@ -21,8 +22,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
- * ACActivityListingVM
- * ViewModel for Activity/Tour listing screen
+ *  * ACActivityListingVM
+ *  * ViewModel for Activity/Tour listing screen
  * iOS Reference: ActivityListingVC
  */
 class ACActivityListingVM @Inject constructor(
@@ -51,6 +52,7 @@ class ACActivityListingVM @Inject constructor(
     val selectedCategoryIndices: LiveData<Set<Int>> = _selectedCategoryIndices
 
     private val _hasMorePages = MutableLiveData<Boolean>()
+    private val _isLoadingMore = MutableLiveData<Boolean>(false)
 
     private val _showTimeSelection = MutableLiveData<TourProduct?>()
     val showTimeSelection: LiveData<TourProduct?> = _showTimeSelection
@@ -170,7 +172,8 @@ class ACActivityListingVM @Inject constructor(
     /**
      * Get current filter data
      */
-    fun getCurrentFilter(): ActivityFilterData = _currentFilter.value ?: ActivityFilterData.default()
+    fun getCurrentFilter(): ActivityFilterData =
+        _currentFilter.value ?: ActivityFilterData.default()
 
     /**
      * Check if any filter is currently active
@@ -265,8 +268,13 @@ class ACActivityListingVM @Inject constructor(
         // Validate required parameter: cityId
         if (cityId <= 0) return
 
+        // Prevent duplicate pagination requests
+        if (currentOffset > 0 && _isLoadingMore.value == true) return
+
         if (currentOffset == 0) {
             _isLoading.value = true
+        } else {
+            _isLoadingMore.value = true
         }
         _isSearching.value = currentSearchQuery.isNotEmpty()
 
@@ -313,10 +321,16 @@ class ACActivityListingVM @Inject constructor(
             ),
             success = { response ->
                 _isLoading.value = false
+                _isLoadingMore.value = false
                 _isSearching.value = false
 
                 val newProducts = response.data?.products ?: emptyList()
                 val total = response.data?.total ?: 0
+
+                Log.d(
+                    "ACActivityListingVM",
+                    "loadActivities success - newProducts: ${newProducts.size}, total: $total, currentOffset: $currentOffset"
+                )
 
                 if (currentOffset == 0) {
                     allActivities.clear()
@@ -325,12 +339,21 @@ class ACActivityListingVM @Inject constructor(
 
                 _activities.value = allActivities.toList()
                 _activityCount.value = total
-                _hasMorePages.value = allActivities.size < total
+                // Check if more pages exist based on returned items count, not total (API may return incorrect total)
+                _hasMorePages.value = newProducts.size >= pageLimit
+                Log.d(
+                    "ACActivityListingVM",
+                    "loadActivities - allActivities.size: ${allActivities.size}, newProducts.size: ${newProducts.size}, hasMorePages: ${_hasMorePages.value}"
+                )
             },
             error = { error ->
                 _isLoading.value = false
+                _isLoadingMore.value = false
                 _isSearching.value = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(
+                    AlertType.ERROR,
+                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                )
                 _activities.value = emptyList()
                 _activityCount.value = 0
             }
@@ -338,8 +361,16 @@ class ACActivityListingVM @Inject constructor(
     }
 
     fun loadMoreActivities() {
-        if (_hasMorePages.value == true && _isLoading.value != true) {
+        Log.d(
+            "ACActivityListingVM",
+            "loadMoreActivities called - hasMorePages: ${_hasMorePages.value}, isLoading: ${_isLoading.value}, isLoadingMore: ${_isLoadingMore.value}, currentOffset: $currentOffset, allActivities.size: ${allActivities.size}"
+        )
+        if (_hasMorePages.value == true && _isLoading.value != true && _isLoadingMore.value != true) {
             currentOffset += pageLimit
+            Log.d(
+                "ACActivityListingVM",
+                "loadMoreActivities - loading next page with offset: $currentOffset"
+            )
             loadActivities()
         }
     }
@@ -383,7 +414,10 @@ class ACActivityListingVM @Inject constructor(
             },
             error = { error ->
                 _isCreatingSegment.value = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(
+                    AlertType.ERROR,
+                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                )
             }
         )
     }
@@ -415,6 +449,7 @@ class ACActivityListingVM @Inject constructor(
         return when {
             currentSearchQuery.isNotBlank() && categoryKeywords.isNotBlank() ->
                 "$currentSearchQuery, $categoryKeywords"
+
             currentSearchQuery.isNotBlank() -> currentSearchQuery
             categoryKeywords.isNotBlank() -> categoryKeywords
             else -> null

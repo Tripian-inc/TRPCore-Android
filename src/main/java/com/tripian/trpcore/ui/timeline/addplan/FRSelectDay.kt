@@ -228,6 +228,13 @@ class FRSelectDay : Fragment() {
         // Show/hide manual categories section
         binding.llManualCategories.visibility = if (manualSelected) View.VISIBLE else View.GONE
 
+        // Scroll to show categories when manual mode is selected
+        if (manualSelected) {
+            binding.root.post {
+                (binding.root as? androidx.core.widget.NestedScrollView)?.fullScroll(View.FOCUS_DOWN)
+            }
+        }
+
         // Hide travelers section when not in manual mode
         if (!manualSelected) {
             binding.llTravelersSection.visibility = View.GONE
@@ -256,6 +263,13 @@ class FRSelectDay : Fragment() {
         // Show travelers section only for Activities
         val showTravelers = category == ManualCategory.ACTIVITIES
         binding.llTravelersSection.visibility = if (showTravelers) View.VISIBLE else View.GONE
+
+        // Scroll to bottom when travelers section becomes visible
+        if (showTravelers) {
+            binding.root.post {
+                (binding.root as? androidx.core.widget.NestedScrollView)?.fullScroll(View.FOCUS_DOWN)
+            }
+        }
 
         // Notify BottomSheet to expand/collapse based on travelers visibility
         sharedVM.setExpandBottomSheet(showTravelers)
