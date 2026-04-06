@@ -62,22 +62,6 @@ data class ActivityFilterData(
     }
 
     /**
-     * Format duration in minutes to display string (e.g., "2h 30m", "0h", "24h")
-     */
-    fun formatDuration(minutes: Float): String {
-        val totalMinutes = minutes.toInt()
-        val hours = totalMinutes / 60
-        val mins = totalMinutes % 60
-
-        return when {
-            hours > 0 && mins > 0 -> "${hours}h ${mins}m"
-            hours > 0 -> "${hours}h"
-            mins > 0 -> "${mins}m"
-            else -> "0h"
-        }
-    }
-
-    /**
      * Format price with currency symbol based on SDK language
      * @param price Price value
      * @param currency Currency code (EUR, USD, etc.)

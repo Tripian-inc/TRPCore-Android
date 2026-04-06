@@ -84,8 +84,7 @@ class ReservedActivityVH(
         // Duration Row - from additionalData
         val duration = item.duration
         if (duration != null && duration > 0) {
-            val durationText = formatDuration(duration)
-            binding.tvDuration.text = durationText
+            binding.tvDuration.text = FormatUtils.formatDuration(duration)
             binding.llDuration.visibility = View.VISIBLE
         } else {
             binding.llDuration.visibility = View.GONE
@@ -120,22 +119,6 @@ class ReservedActivityVH(
 
         binding.btnReservation.setOnClickListener {
             onReservationClick(item)
-        }
-    }
-
-    /**
-     * Format duration from minutes to hours/minutes display
-     * Example: 210 minutes -> "3h 30m"
-     */
-    private fun formatDuration(durationInMinutes: Double): String {
-        val totalMinutes = durationInMinutes.toInt()
-        val hours = totalMinutes / 60
-        val minutes = totalMinutes % 60
-
-        return when {
-            hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
-            hours > 0 -> "${hours}h"
-            else -> "${minutes}m"
         }
     }
 }

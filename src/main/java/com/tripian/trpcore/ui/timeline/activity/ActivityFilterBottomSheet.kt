@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetActivityFilterBinding
+import com.tripian.trpcore.util.FormatUtils
 
 /**
  * ActivityFilterBottomSheet
@@ -146,8 +147,8 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     }
 
     private fun updateDurationLabels() {
-        binding.tvDurationMin.text = currentFilter.formatDuration(currentFilter.minDuration)
-        binding.tvDurationMax.text = currentFilter.formatDuration(currentFilter.maxDuration)
+        binding.tvDurationMin.text = FormatUtils.formatDuration(currentFilter.minDuration)
+        binding.tvDurationMax.text = FormatUtils.formatDuration(currentFilter.maxDuration)
     }
 
     private fun formatPrice(price: Float): String {
