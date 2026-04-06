@@ -11,11 +11,11 @@
 
     <!-- Handle Bar -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_handle_bar"/>
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_drag_handle"/>
 
     <!-- Header -->
     <RelativeLayout
@@ -28,15 +28,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:textSize="16sp"
-            android:textColor="@color/trp_text_primary"
-            android:fontFamily="@font/semibold"
+            style="@style/TextHeader2"
             tools:text="Sort by" />
 
         <ImageView
             android:id="@+id/ivClose"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_close"

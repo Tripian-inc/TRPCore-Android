@@ -26,7 +26,8 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         val selectedDate: Date,
         val startTime: String?,  // Format: "HH:mm" (null = use default 10:00)
         val endTime: String?,    // Format: "HH:mm" (null = calculate from duration)
-        val adults: Int = 1
+        val adults: Int = 1,
+        val resolvedCityId: Int? = null  // Our system's cityId (resolved from cityName mapping)
     )
 
     companion object {
@@ -76,7 +77,8 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
             // Build segment settings
             val segment = TimelineSegmentSettings().apply {
                 title = p.favorite.title
-                cityId = p.favorite.cityId
+                // Use resolved cityId (our system's ID) if available, fallback to favorite.cityId
+                cityId = p.resolvedCityId ?: p.favorite.cityId
                 startDate = startDatetime
                 endDate = endDatetime
                 adults = p.adults

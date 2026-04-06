@@ -150,6 +150,10 @@ class ACTimelineVM @Inject constructor(
     private var isLoginInProgress: Boolean = false
     private var hasMultipleCitiesInSelectedDay: Boolean = false
 
+    // City name to ID mapping - maps resolved city names (lowercase) to our cityIds
+    // Used to convert host app cityIds to our system's cityIds
+    private val cityNameToIdMap = mutableMapOf<String, Int>()
+
     // =====================
     // LIFECYCLE
     // =====================
@@ -411,7 +415,16 @@ class ACTimelineVM @Inject constructor(
         }
 
         itinerary = currentItinerary.copy(destinationItems = updatedDestinations)
-        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds")
+
+        // Build cityName -> cityId mapping for favorites/tripItems city resolution
+        // This allows us to convert host app cityIds to our system's cityIds
+        resolvedCities.forEach { city ->
+            city.name?.lowercase()?.trim()?.let { name ->
+                cityNameToIdMap[name] = city.id
+            }
+        }
+
+        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds, cityNameToIdMap size: ${cityNameToIdMap.size}")
     }
 
     /**
@@ -1783,6 +1796,7 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Returns favorites that haven't been added as reserved_activity yet
+     * and have a valid city mapping (cityName matches a resolved destination)
      * Used when opening SavedPlans screen
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
@@ -1795,11 +1809,31 @@ class ACTimelineVM @Inject constructor(
             ?.mapNotNull { it.additionalData?.activityId }
             ?.toSet() ?: emptySet()
 
-        // Return only favourites that are NOT in timeline as reserved_activity
+        // Return only favourites that:
+        // 1. Are NOT in timeline as reserved_activity
+        // 2. Have a valid city mapping (cityName matches a resolved destination)
         return favourites.filter { favourite ->
-            favourite.activityId !in reservedActivityIds
+            favourite.activityId !in reservedActivityIds &&
+            getResolvedCityId(favourite.cityName) != null
         }
     }
+
+    /**
+     * Returns the resolved cityId for a given cityName.
+     * Uses the cityNameToIdMap built from resolved destinations.
+     * @param cityName The city name from host app data
+     * @return Our system's cityId, or null if not found
+     */
+    fun getResolvedCityId(cityName: String?): Int? {
+        if (cityName.isNullOrBlank()) return null
+        return cityNameToIdMap[cityName.lowercase().trim()]
+    }
+
+    /**
+     * Returns a copy of the cityName to cityId mapping.
+     * Used to pass resolved city mappings to other screens (e.g., SavedPlans)
+     */
+    fun getCityNameToIdMap(): Map<String, Int> = cityNameToIdMap.toMap()
 
     fun getSelectedDate(): Date? {
         val days = _availableDays.value ?: return null

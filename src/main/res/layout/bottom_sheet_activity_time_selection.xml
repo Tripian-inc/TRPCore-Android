@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Activity Time Selection Bottom Sheet -->
+<?xml version="1.0" encoding="utf-8"?><!-- Activity Time Selection Bottom Sheet -->
 <!-- iOS Reference: ActivityTimeSelectionView -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -29,13 +28,11 @@
         <!-- Title -->
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvTitle"
-            android:textSize="18sp"
-            android:fontFamily="@font/bold"
+            style="@style/TextHeader2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            tools:text="Add Plan"
-            android:textColor="@color/trp_text_primary" />
+            tools:text="Add Plan" />
 
     </RelativeLayout>
 
@@ -53,26 +50,26 @@
     <!-- Time Slot Section Label -->
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvSelectTime"
-        android:fontFamily="@font/semibold"
-        android:textSize="16sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_24sdp"
-        tools:text="Select Time"
-        android:textColor="@color/trp_text_primary"/>
+        android:fontFamily="@font/semibold"
+        android:textColor="@color/trp_text_primary"
+        android:textSize="16sp"
+        tools:text="Select Time" />
 
     <!-- Time Slots (Horizontal wrap layout using FlexboxLayout) -->
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/flexTimeSlots"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_12sdp"
-        app:flexWrap="wrap"
+        android:layout_weight="1"
         android:nestedScrollingEnabled="true"
         app:alignItems="flex_start"
+        app:flexWrap="wrap"
         app:justifyContent="flex_start" />
 
     <!-- Loading Progress -->
@@ -93,9 +90,9 @@
         android:layout_marginHorizontal="@dimen/_24sdp"
         android:layout_marginTop="@dimen/_16sdp"
         android:gravity="center"
-        tools:text="No time slots available"
         android:textColor="@color/trp_grey_30"
-        android:visibility="gone" />
+        android:visibility="gone"
+        tools:text="No time slots available" />
 
     <!-- Continue Button -->
     <com.google.android.material.button.MaterialButton

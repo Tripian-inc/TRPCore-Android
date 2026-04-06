@@ -10,11 +10,11 @@
 
     <!-- Handle Bar -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_handle_bar" />
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_drag_handle" />
 
     <!-- Header -->
     <RelativeLayout
@@ -27,20 +27,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:fontFamily="@font/semibold"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="16sp"
+            style="@style/TextHeader2"
             tools:text="Filters" />
 
-        <ImageView
+        <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/ivClose"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:contentDescription="Close"
-            android:src="@drawable/ic_close"
-            app:tint="@color/trp_text_primary" />
+            android:src="@drawable/ic_close" />
 
     </RelativeLayout>
 

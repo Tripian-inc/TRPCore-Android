@@ -11,17 +11,17 @@
 
     <!-- Handle Bar -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_handle_bar"/>
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_drag_handle"/>
 
     <!-- Header -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:paddingHorizontal="16dp">
+        android:paddingHorizontal="8dp">
 
         <TextView
             android:id="@+id/tvTitle"
@@ -29,14 +29,13 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             tools:text="Time"
-            android:textSize="16sp"
-            android:textColor="@color/trp_text_primary"
-            android:fontFamily="@font/semibold" />
+            style="@style/TextHeader2" />
 
         <ImageView
             android:id="@+id/ivClose"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:src="@drawable/ic_close"

@@ -10,10 +10,10 @@
 
     <!-- Drag Handle -->
     <View
-        android:layout_width="@dimen/_40sdp"
-        android:layout_height="@dimen/_4sdp"
+        android:layout_width="32dp"
+        android:layout_height="@dimen/_3sdp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="@dimen/_8sdp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/bg_drag_handle" />
 
     <!-- Header: Title + Close Button -->
@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_16sdp"
-        android:paddingHorizontal="@dimen/_16sdp">
+        android:paddingHorizontal="8dp">
 
         <!-- Title -->
         <com.tripian.trpcore.util.widget.TextView
@@ -29,9 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:fontFamily="@font/semibold"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="18sp"
+            style="@style/TextHeader2"
             tools:text="Filters" />
 
         <!-- Close Button -->
@@ -39,6 +37,7 @@
             android:id="@+id/ivClose"
             android:layout_width="@dimen/_24sdp"
             android:layout_height="@dimen/_24sdp"
+            android:padding="7dp"
             android:layout_gravity="end|center_vertical"
             android:src="@drawable/ic_close" />
     </FrameLayout>
@@ -180,7 +179,7 @@
         <!-- Clear Selection (left side) -->
         <TextView
             android:id="@+id/tvClearSelection"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
@@ -196,7 +195,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
             style="@style/TrpButtonPrimary"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_weight="1"
             tools:text="Confirm" />
     </LinearLayout>

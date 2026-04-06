@@ -51,6 +51,9 @@ class ACSavedPlansVM @Inject constructor(
     private var selectedDate: Date? = null
     private var pendingFavorite: SegmentFavoriteItem? = null
 
+    // City name to ID mapping - maps cityName (lowercase) to our system's cityId
+    private var cityNameToIdMap: Map<String, Int> = emptyMap()
+
     // =====================
     // INITIALIZATION
     // =====================
@@ -58,16 +61,19 @@ class ACSavedPlansVM @Inject constructor(
     /**
      * Initialize with pre-filtered favorites from ACTimeline
      * No need to fetch timeline - favorites are already filtered
+     * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
      */
     fun initialize(
         favorites: List<SegmentFavoriteItem>,
         tripHash: String,
-        availableDays: List<Date>
+        availableDays: List<Date>,
+        cityNameToIdMap: Map<String, Int> = emptyMap()
     ) {
         this.favorites = favorites
         this.tripHash = tripHash
         this.availableDays = availableDays
         this.selectedDate = availableDays.firstOrNull()
+        this.cityNameToIdMap = cityNameToIdMap
 
         // Process and display items directly
         processAndDisplayItems()
@@ -136,13 +142,17 @@ class ACSavedPlansVM @Inject constructor(
         // Calculate end time from duration
         val endTime = calculateEndTime(startTime, favorite.duration)
 
+        // Get resolved cityId from mapping (our system's ID)
+        val resolvedCityId = getResolvedCityId(favorite.cityName)
+
         createReservedActivityFromFavoriteUseCase.on(
             params = CreateReservedActivityFromFavoriteUseCase.Params(
                 tripHash = tripHash,
                 favorite = favorite,
                 selectedDate = selectedDate,
                 startTime = startTime,
-                endTime = endTime
+                endTime = endTime,
+                resolvedCityId = resolvedCityId
             ),
             success = {
                 // Wait for generation to complete
@@ -214,4 +224,15 @@ class ACSavedPlansVM @Inject constructor(
      * Get selected date
      */
     fun getSelectedDate(): Date? = selectedDate
+
+    /**
+     * Returns the resolved cityId for a given cityName.
+     * Uses the cityNameToIdMap passed from ACTimeline.
+     * @param cityName The city name from host app data
+     * @return Our system's cityId, or null if not found
+     */
+    fun getResolvedCityId(cityName: String?): Int? {
+        if (cityName.isNullOrBlank()) return null
+        return cityNameToIdMap[cityName.lowercase().trim()]
+    }
 }

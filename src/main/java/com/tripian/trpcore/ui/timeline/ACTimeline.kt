@@ -1008,11 +1008,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         val availableDays = viewModel.availableDays.value ?: emptyList()
 
+        // Get city name to ID mapping for resolving host app cityIds to our system's cityIds
+        val cityMap = viewModel.getCityNameToIdMap()
+
         val intent = ACSavedPlans.launch(
             context = this,
             favorites = filteredFavorites,
             tripHash = viewModel.tripHash,
-            availableDays = availableDays
+            availableDays = availableDays,
+            cityNameToIdMap = cityMap
         )
         savedPlansLauncher.launch(intent)
     }
