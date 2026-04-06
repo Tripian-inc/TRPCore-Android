@@ -11,12 +11,10 @@ import com.tripian.trpcore.domain.GetPoiCategories
 import com.tripian.trpcore.domain.manager.POICategoryManager
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.FilterData
-import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
-import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import java.text.SimpleDateFormat
@@ -75,9 +73,13 @@ class ACPOIListingVM @Inject constructor(
     private val _categoryGroups = MutableLiveData<List<PoiCategoryGroup>>()
     val categoryGroups: LiveData<List<PoiCategoryGroup>> = _categoryGroups
 
-    // Scroll to top signal (triggered when page 1 is loaded)
+    // Scroll to top signal (triggered when page 1 is loaded or sort changes)
     private val _scrollToTop = MutableLiveData<Boolean>()
     val scrollToTop: LiveData<Boolean> = _scrollToTop
+
+    fun clearScrollToTop() {
+        _scrollToTop.value = false
+    }
 
     // =====================
     // STATE
@@ -194,7 +196,7 @@ class ACPOIListingVM @Inject constructor(
         }
         _isSearching.value = currentSearchQuery.isNotEmpty()
 
-        // Get current filter and sort options
+        // Get current filter and sort
         val filter = _currentFilter.value ?: FilterData()
         val sort = _currentSort.value ?: SortOption.DEFAULT
 
@@ -213,15 +215,20 @@ class ACPOIListingVM @Inject constructor(
         // Calculate page to fetch
         val pageToFetch = if (isPagination) currentPage + 1 else 1
 
+        // For POPULARITY, don't send sorting params (API default is popularity)
+        // For other options, send sorting params
+        val sortingBy = if (sort == SortOption.POPULARITY) null else sort.sortingBy
+        val sortingType = if (sort == SortOption.POPULARITY) null else sort.sortingType
+
         searchPOIsUseCase.on(
             params = SearchPOIsUseCase.Params(
                 cityId = cityId,
-                search = if (currentSearchQuery.isNotBlank()) currentSearchQuery else null,
+                search = currentSearchQuery.ifBlank { null },
                 categoryIds = categoryIds,
                 page = pageToFetch,
                 limit = pageLimit,
-                sortingBy = sort.sortingBy,
-                sortingType = sort.sortingType
+                sortingBy = sortingBy,
+                sortingType = sortingType
             ),
             success = { response ->
                 _isLoading.value = false
@@ -233,7 +240,7 @@ class ACPOIListingVM @Inject constructor(
 
                 if (!isPagination) {
                     allPois.clear()
-                    // Scroll to top when page 1 is loaded (filter, sort, or search change)
+                    // Scroll to top when page 1 is loaded
                     _scrollToTop.value = true
                 }
                 allPois.addAll(newPois)
@@ -290,7 +297,9 @@ class ACPOIListingVM @Inject constructor(
     }
 
     /**
-     * Apply sort option and reload POIs
+     * Apply sort option and reload POIs from API
+     * POPULARITY: no sorting params sent (API default)
+     * RATING: sends sorting params to API
      */
     fun applySort(sort: SortOption) {
         _currentSort.value = sort

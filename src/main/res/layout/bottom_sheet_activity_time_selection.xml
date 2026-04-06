@@ -66,10 +66,12 @@
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/flexTimeSlots"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_12sdp"
         app:flexWrap="wrap"
+        android:nestedScrollingEnabled="true"
         app:alignItems="flex_start"
         app:justifyContent="flex_start" />
 

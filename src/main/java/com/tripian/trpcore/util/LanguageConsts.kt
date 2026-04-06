@@ -247,7 +247,7 @@ object LanguageConst {
     const val ADD_PLAN_SELECT_STARTING_POINT = "addPlan.label.selectStartingPoint"
     const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectDateAndTime"
-    const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.label.noTimeSlots"
+    const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
 
     // Categories (Smart Mode)

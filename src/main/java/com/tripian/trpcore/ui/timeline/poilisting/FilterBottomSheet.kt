@@ -51,7 +51,7 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
     private fun setupUI() {
         // Set localized texts
         binding.tvTitle.text = getLanguageText(LanguageConst.ADD_PLAN_FILTERS)
-        binding.btnClear.text = getLanguageText(LanguageConst.ADD_PLAN_FILTER_CLEAR)
+        binding.btnClear.text = getLanguageText(LanguageConst.ADD_PLAN_CLEAR_SELECTION)
         binding.btnConfirm.text = getLanguageText(LanguageConst.ADD_PLAN_CONFIRM)
 
         // Setup RecyclerView

@@ -68,7 +68,7 @@ class ACActivityListingVM @Inject constructor(
     val currentFilter: LiveData<ActivityFilterData> = _currentFilter
 
     // Sort state
-    private val _currentSort = MutableLiveData(SortOption.SCORE)
+    private val _currentSort = MutableLiveData(SortOption.POPULARITY)
 
     // Scroll to top event
     private val _scrollToTop = MutableLiveData<Boolean>()

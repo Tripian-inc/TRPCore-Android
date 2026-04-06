@@ -56,6 +56,13 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
      */
     open fun isFullscreen(): Boolean = false
 
+    /**
+     * Override to disable automatic system bar insets handling.
+     * Set to false if layout already handles its own padding.
+     * Default is false.
+     */
+    open fun applySystemBarInsets(): Boolean = false
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val bottomSheetDialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         isCancelable = true
@@ -97,7 +104,9 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        setupWindowInsets()
+        if (applySystemBarInsets()) {
+            setupWindowInsets()
+        }
     }
 
     /**
