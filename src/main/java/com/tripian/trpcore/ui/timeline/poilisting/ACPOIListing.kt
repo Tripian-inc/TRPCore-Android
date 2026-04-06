@@ -67,16 +67,6 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             updateEmptyState(pois.isEmpty())
         }
 
-        // Observe loading state
-        viewModel.isLoading.observe(this) { isLoading ->
-            binding.pbLoading.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
-        // Observe searching state
-        viewModel.isSearching.observe(this) { isSearching ->
-            binding.pbSearchProgress.visibility = if (isSearching) View.VISIBLE else View.GONE
-        }
-
         // Observe POI count
         viewModel.poiCount.observe(this) { count ->
             val placesText =
@@ -222,8 +212,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
-        val isLoading = viewModel.isLoading.value == true
-        binding.tvEmpty.visibility = if (isEmpty && !isLoading) View.VISIBLE else View.GONE
+        binding.tvEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.rvPOIs.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 

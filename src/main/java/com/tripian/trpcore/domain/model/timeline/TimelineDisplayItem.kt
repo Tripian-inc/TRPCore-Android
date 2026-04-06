@@ -47,13 +47,16 @@ sealed class TimelineDisplayItem : Serializable {
 
     /**
      * Booked Activity - Activity with completed reservation
+     *
+     * @param hasConflict Whether this activity has a time conflict with another item
      */
     data class BookedActivity(
         val segment: TimelineSegment,
         val isReserved: Boolean,
         override val segmentIndex: Int? = null,
         override val city: City? = null,
-        override val order: Int = 1
+        override val order: Int = 1,
+        val hasConflict: Boolean = false
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -94,6 +97,8 @@ sealed class TimelineDisplayItem : Serializable {
 
     /**
      * Recommendations - Plan containing AI recommendations
+     *
+     * @param conflictingStepIds Set of step IDs that have time conflicts
      */
     data class Recommendations(
         val plan: TimelinePlan,
@@ -104,7 +109,9 @@ sealed class TimelineDisplayItem : Serializable {
         override val order: Int = 1,
         val startingOrder: Int = 1,  // Starting order for steps (sequential numbering)
         var routeInfoList: List<StepRouteInfo> = emptyList(),  // Route info between steps
-        val cachedCity: City? = null  // City from cache with full coordinate data
+        val cachedCity: City? = null,  // City from cache with full coordinate data
+        val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
+        val conflictingStepIds: Set<Int> = emptySet()  // Step IDs with time conflicts
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = plan.startDate.toDate()
@@ -113,7 +120,10 @@ sealed class TimelineDisplayItem : Serializable {
             get() = cachedCity ?: plan.city
 
         val title: String
-            get() = segment?.title ?: plan.name ?: "Recommendations"
+            get() {
+                val baseTitle = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RECOMMENDATIONS)
+                return if (recommendationIndex <= 1) baseTitle else "$baseTitle $recommendationIndex"
+            }
 
         val isGenerating: Boolean
             get() = plan.generatedStatus == 0
@@ -181,13 +191,18 @@ sealed class TimelineDisplayItem : Serializable {
 
     /**
      * Manual POI - Place manually added by user
+     *
+     * @param hasConflict Whether this POI has a time conflict with another item
+     * @param showTimeOverlapText Whether to show "Time Overlap" text next to time
      */
     data class ManualPoi(
         val step: TimelineStep,
         val segment: TimelineSegment? = null,
         override val segmentIndex: Int? = null,
         override val city: City? = null,
-        override val order: Int = 1
+        override val order: Int = 1,
+        val hasConflict: Boolean = false,
+        val showTimeOverlapText: Boolean = false
     ) : TimelineDisplayItem() {
         // Use step.startDateTimes first, fallback to segment.startDate
         override val startTime: Date?

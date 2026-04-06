@@ -16,7 +16,8 @@ import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.hideLoading
+import com.tripian.trpcore.util.extensions.showLoading
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,12 +41,6 @@ class ACPOIListingVM @Inject constructor(
 
     private val _pois = MutableLiveData<List<Poi>>()
     val pois: LiveData<List<Poi>> = _pois
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _isSearching = MutableLiveData<Boolean>()
-    val isSearching: LiveData<Boolean> = _isSearching
 
     private val _poiCount = MutableLiveData<Int>()
     val poiCount: LiveData<Int> = _poiCount
@@ -191,10 +186,9 @@ class ACPOIListingVM @Inject constructor(
         // isLoadingMore = true means pagination, false means fresh load
         val isPagination = isLoadingMore
         if (!isPagination) {
-            _isLoading.value = true
+            showLoading()
             currentPage = 1
         }
-        _isSearching.value = currentSearchQuery.isNotEmpty()
 
         // Get current filter and sort
         val filter = _currentFilter.value ?: FilterData()
@@ -231,8 +225,7 @@ class ACPOIListingVM @Inject constructor(
                 sortingType = sortingType
             ),
             success = { response ->
-                _isLoading.value = false
-                _isSearching.value = false
+                hideLoading()
                 isLoadingMore = false
 
                 val newPois = response.data ?: emptyList()
@@ -253,10 +246,9 @@ class ACPOIListingVM @Inject constructor(
                 _hasMorePages.value = allPois.size < totalCount
             },
             error = { error ->
-                _isLoading.value = false
-                _isSearching.value = false
+                hideLoading()
                 isLoadingMore = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(AlertType.ERROR, error.errorDesc)
                 if (!isPagination) {
                     _pois.value = emptyList()
                     _poiCount.value = 0
@@ -266,7 +258,7 @@ class ACPOIListingVM @Inject constructor(
     }
 
     fun loadMorePOIs() {
-        if (_hasMorePages.value == true && !isLoadingMore && _isLoading.value != true) {
+        if (_hasMorePages.value == true && !isLoadingMore) {
             isLoadingMore = true
             loadPOIs()
         }
@@ -339,7 +331,7 @@ class ACPOIListingVM @Inject constructor(
             },
             error = { error ->
                 _isCreatingSegment.value = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(AlertType.ERROR, error.errorDesc)
             }
         )
     }

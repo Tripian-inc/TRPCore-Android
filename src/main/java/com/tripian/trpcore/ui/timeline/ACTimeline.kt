@@ -230,11 +230,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             updateMapMode(isMapMode)
         }
 
-        // Loading
-        viewModel.isLoading.observe(this) { isLoading ->
-            if (isLoading) showLoading() else hideLoading()
-        }
-
         // Error
         viewModel.error.observe(this) { error ->
             error?.let {
@@ -320,14 +315,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Route info updated - refresh the adapter when route calculations complete
+        // Route info updated - DiffUtil will handle partial updates via payload
         viewModel.routeInfoUpdated.observe(this) { segmentIndex ->
             segmentIndex?.let {
-                // Re-submit the display items to refresh route info in UI
-                viewModel.displayItems.value?.let { items ->
-                    timelineAdapter.submitList(null) // Clear first
-                    timelineAdapter.submitList(items) // Re-submit to trigger rebind
-                }
                 viewModel.clearRouteInfoUpdate()
             }
         }
@@ -917,11 +907,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleExpandClick(item: TimelineDisplayItem) {
         if (item is TimelineDisplayItem.Recommendations) {
-            // Toggle expansion
+            // Toggle expansion - find by plan.id since item reference may have changed due to route info updates
             val currentItems = timelineAdapter.currentList.toMutableList()
-            val position = currentItems.indexOf(item)
+            val position = currentItems.indexOfFirst {
+                it is TimelineDisplayItem.Recommendations && it.plan.id == item.plan.id
+            }
             if (position != -1) {
-                currentItems[position] = item.copy(isExpanded = !item.isExpanded)
+                val currentItem = currentItems[position] as TimelineDisplayItem.Recommendations
+                currentItems[position] = currentItem.copy(isExpanded = !currentItem.isExpanded)
                 timelineAdapter.submitList(currentItems)
             }
         }

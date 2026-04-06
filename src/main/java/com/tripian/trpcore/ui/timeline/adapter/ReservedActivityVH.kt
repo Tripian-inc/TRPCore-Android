@@ -35,10 +35,19 @@ class ReservedActivityVH(
         // Order badge
         binding.tvOrder.text = item.order.toString()
 
+        // Apply conflict styling (no "Time Overlap" text for reserved activities)
+        if (item.hasConflict) {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+        } else {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        }
+
         // Title - semibold 16px
         binding.tvTitle.text = item.title
 
-        // Time (startTime - endTime format)
+        // Time (startTime - endTime format) - No "Time Overlap" text for reserved activities
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {

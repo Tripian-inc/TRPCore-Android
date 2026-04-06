@@ -44,18 +44,35 @@ class StepPoiVH(
         order: Int,
         onStepClick: ((TimelineStep) -> Unit)?,
         onChangeTimeClick: ((TimelineStep) -> Unit)?,
-        onDeleteClick: ((TimelineStep) -> Unit)?
+        onDeleteClick: ((TimelineStep) -> Unit)?,
+        hasConflict: Boolean = false,
+        showTimeOverlapText: Boolean = false
     ) {
         val poi = step.poi
 
         // Order badge
         binding.tvOrder.text = order.toString()
 
+        // Apply conflict styling
+        if (hasConflict) {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+        } else {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        }
+
         // Time (startTime - endTime format)
         val startTime = step.startDateTimes?.toDate()
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
-            binding.tvTime.text = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            if (showTimeOverlapText) {
+                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
+                binding.tvTime.text = "$timeText $overlapText"
+            } else {
+                binding.tvTime.text = timeText
+            }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)

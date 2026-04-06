@@ -75,14 +75,18 @@ class TimelineStepsAdapter(
                         order = item.order,
                         onStepClick = onStepClick,
                         onChangeTimeClick = onChangeTimeClick,
-                        onDeleteClick = onDeleteClick
+                        onDeleteClick = onDeleteClick,
+                        hasConflict = item.hasConflict,
+                        showTimeOverlapText = item.showTimeOverlapText
                     )
                     is StepActivityVH -> holder.bind(
                         step = item.step,
                         order = item.order,
                         onStepClick = onStepClick,
                         onDeleteClick = onDeleteClick,
-                        onReservationClick = onReservationClick
+                        onReservationClick = onReservationClick,
+                        hasConflict = item.hasConflict,
+                        showTimeOverlapText = item.showTimeOverlapText
                     )
                 }
             }

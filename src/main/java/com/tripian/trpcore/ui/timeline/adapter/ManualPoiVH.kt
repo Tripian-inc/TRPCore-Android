@@ -25,6 +25,17 @@ class ManualPoiVH(
     private val turkishLocale = Locale("tr", "TR")
     private val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
 
+    /**
+     * Helper function for localization
+     */
+    private fun getLanguage(key: String): String {
+        return try {
+            TRPCore.core.miscRepository.getLanguageValueForKey(key)
+        } catch (e: Exception) {
+            key
+        }
+    }
+
     fun bind(
         item: TimelineDisplayItem.ManualPoi,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -34,6 +45,15 @@ class ManualPoiVH(
         // Order badge
         binding.tvOrder.text = item.order.toString()
 
+        // Apply conflict styling
+        if (item.hasConflict) {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+        } else {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        }
+
         // Title - semibold 16px primaryText
         binding.tvTitle.text = item.title
 
@@ -41,7 +61,13 @@ class ManualPoiVH(
         val startTime = item.startTime
         val endTime = item.endTime
         if (startTime != null && endTime != null) {
-            binding.tvTime.text = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            if (item.showTimeOverlapText) {
+                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
+                binding.tvTime.text = "$timeText $overlapText"
+            } else {
+                binding.tvTime.text = timeText
+            }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)
