@@ -137,6 +137,13 @@ class ACTimelineVM @Inject constructor(
     val showOnboarding: LiveData<Boolean> = _showOnboarding
     private var onboardingCompleted = false
 
+    // Scroll to new segment event - contains plan.id to scroll to
+    private val _scrollToNewSegmentPlanId = MutableLiveData<String?>()
+    val scrollToNewSegmentPlanId: LiveData<String?> = _scrollToNewSegmentPlanId
+
+    // Track existing plan IDs before creating new segment
+    private var existingPlanIds: Set<String> = emptySet()
+
     // =====================
     // STATE
     // =====================
@@ -652,6 +659,13 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
+     * Clear scroll to new segment event after scrolling is done.
+     */
+    fun clearScrollToNewSegment() {
+        _scrollToNewSegmentPlanId.value = null
+    }
+
+    /**
      * Updates the saved plans count from itinerary favouriteItems
      * Filters out items that are already added as reserved_activity in the timeline
      */
@@ -922,10 +936,27 @@ class ACTimelineVM @Inject constructor(
 
         if (selectedIndex >= days.size) return
 
+        // Preserve existing collapse states (plan.id -> isExpanded)
+        val existingExpandStates = _displayItems.value
+            ?.filterIsInstance<TimelineDisplayItem.Recommendations>()
+            ?.associate { it.plan.id to it.isExpanded }
+            ?: emptyMap()
+
         val selectedDate = days[selectedIndex]
         val items = generateDisplayItemsForDay(timeline, selectedDate)
 
-        _displayItems.value = items
+        // Apply preserved collapse states to new items
+        val itemsWithPreservedState = items.map { item ->
+            if (item is TimelineDisplayItem.Recommendations) {
+                existingExpandStates[item.plan.id]?.let { savedExpanded ->
+                    item.copy(isExpanded = savedExpanded)
+                } ?: item
+            } else {
+                item
+            }
+        }
+
+        _displayItems.value = itemsWithPreservedState
 
         // Always update map steps so they're ready when user switches to map mode
         updateMapSteps()
@@ -1302,31 +1333,22 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Update items with conflict flags
+        // IMPORTANT: Always explicitly set conflict flags to ensure they are cleared when no conflicts exist
         return items.mapIndexed { index, item ->
             when (item) {
                 is TimelineDisplayItem.BookedActivity -> {
-                    if (index in conflictingItemIndices) {
-                        item.copy(hasConflict = true)
-                    } else {
-                        item
-                    }
+                    val hasConflict = index in conflictingItemIndices
+                    item.copy(hasConflict = hasConflict)
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
-                    if (index in conflictingItemIndices) {
-                        item.copy(hasConflict = true, showTimeOverlapText = true)
-                    } else {
-                        item
-                    }
+                    val hasConflict = index in conflictingItemIndices
+                    item.copy(hasConflict = hasConflict, showTimeOverlapText = hasConflict)
                 }
 
                 is TimelineDisplayItem.Recommendations -> {
-                    val stepIds = conflictingStepIds[index]
-                    if (!stepIds.isNullOrEmpty()) {
-                        item.copy(conflictingStepIds = stepIds)
-                    } else {
-                        item
-                    }
+                    val stepIds = conflictingStepIds[index] ?: emptySet()
+                    item.copy(conflictingStepIds = stepIds)
                 }
 
                 else -> item
@@ -1358,6 +1380,12 @@ class ACTimelineVM @Inject constructor(
             _error.value = getLanguageForKey(com.tripian.trpcore.util.LanguageConst.COMMON_ERROR)
             return
         }
+
+        // Track existing plan IDs before creating new segment (for scroll after creation)
+        existingPlanIds = _timeline.value?.plans
+            ?.map { it.id }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet() ?: emptySet()
 
         // Set loading immediately (not postValue) since we're on main thread
         showLoading()
@@ -1411,7 +1439,22 @@ class ACTimelineVM @Inject constructor(
         waitForGenerationUseCase.on(
             params = WaitForGenerationUseCase.Params(_tripHash),
             success = { timeline ->
+                // Find newly added plan ID (not in existingPlanIds)
+                val newPlanId = try {
+                    timeline.plans?.find { plan ->
+                        plan.id.isNotEmpty() && plan.id !in existingPlanIds
+                    }?.id
+                } catch (e: Exception) {
+                    null
+                }
+
                 processTimeline(timeline)
+
+                // Trigger scroll to new segment after list is updated
+                if (!newPlanId.isNullOrEmpty()) {
+                    _scrollToNewSegmentPlanId.value = newPlanId
+                }
+
                 hideLoading()
             },
             error = {

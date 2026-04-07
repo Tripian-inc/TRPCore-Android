@@ -237,21 +237,24 @@ class RecommendationsVH(
     /**
      * Updates only route info without full rebind.
      * Prevents flash/flicker when distance calculations complete.
+     *
+     * @param newItem The updated item with fresh route info and conflict data
      */
-    fun updateRouteInfo(routeInfoList: List<StepRouteInfo>) {
-        val item = currentItem ?: return
+    fun updateRouteInfo(newItem: TimelineDisplayItem.Recommendations) {
+        // Update currentItem to ensure we have fresh conflict data
+        currentItem = newItem
 
         // Update starting point route info
-        val startingPointRoute = routeInfoList.find { it.fromStepId == null }
-        if (item.isExpanded && startingPointRoute != null && item.steps.isNotEmpty()) {
+        val startingPointRoute = newItem.routeInfoList.find { it.fromStepId == null }
+        if (newItem.isExpanded && startingPointRoute != null && newItem.steps.isNotEmpty()) {
             binding.startingPointRouteContainer.visibility = View.VISIBLE
             binding.tvStartingPointRouteInfo.text = startingPointRoute.formatWithTemplate(currentDistanceFormat)
         }
 
-        // Update steps adapter with new route info
-        if (item.steps.isNotEmpty() && item.isExpanded) {
-            val stepRoutes = routeInfoList.filter { it.fromStepId != null }
-            val stepItems = buildStepItemsWithRoutes(item.steps, stepRoutes, item.conflictingStepIds)
+        // Update steps adapter with new route info and conflict data
+        if (newItem.steps.isNotEmpty() && newItem.isExpanded) {
+            val stepRoutes = newItem.routeInfoList.filter { it.fromStepId != null }
+            val stepItems = buildStepItemsWithRoutes(newItem.steps, stepRoutes, newItem.conflictingStepIds)
             stepsAdapter?.submitStepItemList(stepItems)
         }
     }

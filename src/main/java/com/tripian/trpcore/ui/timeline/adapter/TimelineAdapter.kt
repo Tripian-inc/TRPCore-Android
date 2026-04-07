@@ -104,7 +104,8 @@ class TimelineAdapter(
         if (payloads.isNotEmpty() && payloads[0] == PAYLOAD_ROUTE_INFO_UPDATE) {
             val item = getItem(position)
             if (holder is RecommendationsVH && item is TimelineDisplayItem.Recommendations) {
-                holder.updateRouteInfo(item.routeInfoList)
+                // Pass full item to ensure fresh conflict data is used
+                holder.updateRouteInfo(item)
                 return
             }
         }
