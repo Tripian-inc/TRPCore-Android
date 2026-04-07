@@ -10,10 +10,10 @@
 
     <!-- Drag Handle -->
     <View
-        android:layout_width="@dimen/_40sdp"
-        android:layout_height="@dimen/_4sdp"
+        android:layout_width="32dp"
+        android:layout_height="@dimen/_3sdp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="@dimen/_8sdp"
+        android:layout_marginTop="8dp"
         android:background="@drawable/bg_drag_handle" />
 
     <!-- Header: Title + Close Button -->
@@ -21,7 +21,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_16sdp"
-        android:paddingHorizontal="@dimen/_16sdp">
+        android:paddingHorizontal="8dp">
 
         <!-- Title -->
         <com.tripian.trpcore.util.widget.TextView
@@ -29,9 +29,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:fontFamily="@font/semibold"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="18sp"
+            style="@style/TextHeader2"
             tools:text="Filters" />
 
         <!-- Close Button -->
@@ -39,6 +37,7 @@
             android:id="@+id/ivClose"
             android:layout_width="@dimen/_24sdp"
             android:layout_height="@dimen/_24sdp"
+            android:padding="7dp"
             android:layout_gravity="end|center_vertical"
             android:src="@drawable/ic_close" />
     </FrameLayout>
@@ -93,16 +92,16 @@
             android:id="@+id/sliderPrice"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:stepSize="10"
             android:valueFrom="0"
             android:valueTo="1500"
-            android:stepSize="10"
             app:labelBehavior="gone"
+            app:tickColorActive="@android:color/transparent"
+            app:tickColorInactive="@android:color/transparent"
             app:trackColorActive="@color/trp_primary"
             app:trackColorInactive="@color/trp_lineWeak"
             app:trackHeight="8dp"
-            app:trackStopIndicatorSize="0dp"
-            app:tickColorActive="@android:color/transparent"
-            app:tickColorInactive="@android:color/transparent" />
+            app:trackStopIndicatorSize="0dp" />
     </LinearLayout>
 
     <!-- Duration Section -->
@@ -155,16 +154,16 @@
             android:id="@+id/sliderDuration"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:stepSize="30"
             android:valueFrom="0"
             android:valueTo="1440"
-            android:stepSize="30"
             app:labelBehavior="gone"
+            app:tickColorActive="@android:color/transparent"
+            app:tickColorInactive="@android:color/transparent"
             app:trackColorActive="@color/trp_primary"
             app:trackColorInactive="@color/trp_lineWeak"
             app:trackHeight="8dp"
-            app:trackStopIndicatorSize="0dp"
-            app:tickColorActive="@android:color/transparent"
-            app:tickColorInactive="@android:color/transparent" />
+            app:trackStopIndicatorSize="0dp" />
     </LinearLayout>
 
     <!-- Bottom Buttons -->
@@ -180,36 +179,25 @@
         <!-- Clear Selection (left side) -->
         <TextView
             android:id="@+id/tvClearSelection"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="48dp"
-            android:gravity="center"
             android:layout_weight="1"
-            android:paddingHorizontal="16dp"
-            tools:text="Clear Selection"
-            android:textSize="14sp"
-            android:fontFamily="@font/medium"
-            android:textColor="@color/trp_fgWeak"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:visibility="visible" />
+            android:fontFamily="@font/medium"
+            android:gravity="center"
+            android:paddingHorizontal="16dp"
+            android:textColor="@color/trp_fgWeak"
+            android:textSize="14sp"
+            android:visibility="visible"
+            tools:text="Clear Selection" />
 
         <!-- Confirm Button (right side, 48dp) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:minHeight="48dp"
-            android:minWidth="120dp"
+            style="@style/TrpButtonPrimary"
+            android:layout_width="0dp"
             android:layout_weight="1"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            tools:text="Confirm"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:fontFamily="@font/semibold"
-            android:textColor="@android:color/white"
-            app:backgroundTint="@color/trp_primary"
-            app:cornerRadius="24dp"
-            android:enabled="true" />
+            tools:text="Confirm" />
     </LinearLayout>
 
 </LinearLayout>

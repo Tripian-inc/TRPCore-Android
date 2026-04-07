@@ -11,14 +11,13 @@ import com.tripian.trpcore.domain.GetPoiCategories
 import com.tripian.trpcore.domain.manager.POICategoryManager
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.FilterData
-import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
-import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.hideLoading
+import com.tripian.trpcore.util.extensions.showLoading
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,12 +41,6 @@ class ACPOIListingVM @Inject constructor(
 
     private val _pois = MutableLiveData<List<Poi>>()
     val pois: LiveData<List<Poi>> = _pois
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _isSearching = MutableLiveData<Boolean>()
-    val isSearching: LiveData<Boolean> = _isSearching
 
     private val _poiCount = MutableLiveData<Int>()
     val poiCount: LiveData<Int> = _poiCount
@@ -75,9 +68,13 @@ class ACPOIListingVM @Inject constructor(
     private val _categoryGroups = MutableLiveData<List<PoiCategoryGroup>>()
     val categoryGroups: LiveData<List<PoiCategoryGroup>> = _categoryGroups
 
-    // Scroll to top signal (triggered when page 1 is loaded)
+    // Scroll to top signal (triggered when page 1 is loaded or sort changes)
     private val _scrollToTop = MutableLiveData<Boolean>()
     val scrollToTop: LiveData<Boolean> = _scrollToTop
+
+    fun clearScrollToTop() {
+        _scrollToTop.value = false
+    }
 
     // =====================
     // STATE
@@ -189,12 +186,11 @@ class ACPOIListingVM @Inject constructor(
         // isLoadingMore = true means pagination, false means fresh load
         val isPagination = isLoadingMore
         if (!isPagination) {
-            _isLoading.value = true
+            showLoading()
             currentPage = 1
         }
-        _isSearching.value = currentSearchQuery.isNotEmpty()
 
-        // Get current filter and sort options
+        // Get current filter and sort
         val filter = _currentFilter.value ?: FilterData()
         val sort = _currentSort.value ?: SortOption.DEFAULT
 
@@ -213,19 +209,23 @@ class ACPOIListingVM @Inject constructor(
         // Calculate page to fetch
         val pageToFetch = if (isPagination) currentPage + 1 else 1
 
+        // For POPULARITY, don't send sorting params (API default is popularity)
+        // For other options, send sorting params
+        val sortingBy = if (sort == SortOption.POPULARITY) null else sort.sortingBy
+        val sortingType = if (sort == SortOption.POPULARITY) null else sort.sortingType
+
         searchPOIsUseCase.on(
             params = SearchPOIsUseCase.Params(
                 cityId = cityId,
-                search = if (currentSearchQuery.isNotBlank()) currentSearchQuery else null,
+                search = currentSearchQuery.ifBlank { null },
                 categoryIds = categoryIds,
                 page = pageToFetch,
                 limit = pageLimit,
-                sortingBy = sort.sortingBy,
-                sortingType = sort.sortingType
+                sortingBy = sortingBy,
+                sortingType = sortingType
             ),
             success = { response ->
-                _isLoading.value = false
-                _isSearching.value = false
+                hideLoading()
                 isLoadingMore = false
 
                 val newPois = response.data ?: emptyList()
@@ -233,7 +233,7 @@ class ACPOIListingVM @Inject constructor(
 
                 if (!isPagination) {
                     allPois.clear()
-                    // Scroll to top when page 1 is loaded (filter, sort, or search change)
+                    // Scroll to top when page 1 is loaded
                     _scrollToTop.value = true
                 }
                 allPois.addAll(newPois)
@@ -246,10 +246,9 @@ class ACPOIListingVM @Inject constructor(
                 _hasMorePages.value = allPois.size < totalCount
             },
             error = { error ->
-                _isLoading.value = false
-                _isSearching.value = false
+                hideLoading()
                 isLoadingMore = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(AlertType.ERROR, error.errorDesc)
                 if (!isPagination) {
                     _pois.value = emptyList()
                     _poiCount.value = 0
@@ -259,7 +258,7 @@ class ACPOIListingVM @Inject constructor(
     }
 
     fun loadMorePOIs() {
-        if (_hasMorePages.value == true && !isLoadingMore && _isLoading.value != true) {
+        if (_hasMorePages.value == true && !isLoadingMore) {
             isLoadingMore = true
             loadPOIs()
         }
@@ -290,7 +289,9 @@ class ACPOIListingVM @Inject constructor(
     }
 
     /**
-     * Apply sort option and reload POIs
+     * Apply sort option and reload POIs from API
+     * POPULARITY: no sorting params sent (API default)
+     * RATING: sends sorting params to API
      */
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
@@ -330,7 +331,7 @@ class ACPOIListingVM @Inject constructor(
             },
             error = { error ->
                 _isCreatingSegment.value = false
-                showAlert(AlertType.ERROR, error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                showAlert(AlertType.ERROR, error.errorDesc)
             }
         )
     }

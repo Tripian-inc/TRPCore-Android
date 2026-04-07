@@ -6,9 +6,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.one.api.pois.model.PoiCategoryGroup
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetPoiFilterBinding
 import com.tripian.trpcore.databinding.ItemCategoryFilterBinding
 import com.tripian.trpcore.domain.model.timeline.FilterData
@@ -19,10 +19,9 @@ import com.tripian.trpcore.util.LanguageConst
  * Bottom sheet for filtering POI list by category groups
  * iOS Reference: POIFilterVC
  */
-class FilterBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetPoiFilterBinding? = null
-    private val binding get() = _binding!!
+class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
+    BottomSheetPoiFilterBinding::inflate
+) {
 
     private var categoryAdapter: CategoryFilterAdapter? = null
     private var categoryGroups: List<PoiCategoryGroup> = emptyList()
@@ -31,15 +30,6 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
     private var getLanguage: ((String) -> String)? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetPoiFilterBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -61,7 +51,7 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
     private fun setupUI() {
         // Set localized texts
         binding.tvTitle.text = getLanguageText(LanguageConst.ADD_PLAN_FILTERS)
-        binding.btnClear.text = getLanguageText(LanguageConst.ADD_PLAN_FILTER_CLEAR)
+        binding.btnClear.text = getLanguageText(LanguageConst.ADD_PLAN_CLEAR_SELECTION)
         binding.btnConfirm.text = getLanguageText(LanguageConst.ADD_PLAN_CONFIRM)
 
         // Setup RecyclerView
@@ -121,10 +111,6 @@ class FilterBottomSheet : BottomSheetDialogFragment() {
         getLanguage = provider
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
-    }
 
     companion object {
         const val TAG = "FilterBottomSheet"

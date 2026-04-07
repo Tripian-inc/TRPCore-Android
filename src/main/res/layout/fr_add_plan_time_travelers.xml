@@ -155,19 +155,6 @@
                 android:src="@drawable/ic_next"
                 app:tint="@color/trp_fgWeak"/>
 
-            <!-- Clear Button (X) -->
-            <ImageButton
-                android:id="@+id/btnClearStartingPoint"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center_vertical|end"
-                android:layout_marginEnd="12dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_close"
-                android:tint="@color/trp_fgWeak"
-                android:visibility="gone"
-                android:contentDescription="Clear"/>
-
         </FrameLayout>
 
         <!-- ==================== -->
@@ -339,8 +326,8 @@
                 android:layout_height="32dp"
                 android:background="@drawable/bg_circle_button"
                 android:src="@drawable/ic_minus"
-                android:tint="@color/trp_fgWeak"
-                android:contentDescription="Decrease"/>
+                android:contentDescription="Decrease"
+                app:tint="@color/trp_fgWeak" />
 
             <!-- Count -->
             <TextView
@@ -360,8 +347,8 @@
                 android:layout_height="32dp"
                 android:background="@drawable/bg_circle_button"
                 android:src="@drawable/ic_increase"
-                android:tint="@color/trp_fgWeak"
-                android:contentDescription="Increase"/>
+                android:contentDescription="Increase"
+                app:tint="@color/trp_fgWeak" />
 
         </LinearLayout>
 

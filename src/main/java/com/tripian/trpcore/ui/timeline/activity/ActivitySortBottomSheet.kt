@@ -1,11 +1,9 @@
 package com.tripian.trpcore.ui.timeline.activity
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetActivitySortBinding
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.util.LanguageConst
@@ -15,25 +13,15 @@ import com.tripian.trpcore.util.LanguageConst
  * Bottom sheet for sorting Activity list
  * iOS Reference: ActivitySortVC
  */
-class ActivitySortBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetActivitySortBinding? = null
-    private val binding get() = _binding!!
+class ActivitySortBottomSheet : BaseSimpleBottomSheet<BottomSheetActivitySortBinding>(
+    BottomSheetActivitySortBinding::inflate
+) {
 
     private var currentSort: SortOption = SortOption.DEFAULT
     private var onSortSelected: ((SortOption) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetActivitySortBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -100,7 +88,7 @@ class ActivitySortBottomSheet : BottomSheetDialogFragment() {
     fun setLanguageProvider(provider: (String) -> String) {
         getLanguage = provider
         // Update UI if view is already created
-        if (_binding != null) {
+        if (view != null) {
             updateTexts()
         }
     }
@@ -112,11 +100,6 @@ class ActivitySortBottomSheet : BottomSheetDialogFragment() {
         binding.rbPriceLowToHigh.text = getLanguageText(SortOption.PRICE_LOW_TO_HIGH.languageKey, "Price: Low to High")
         binding.rbDurationShortToLong.text = getLanguageText(SortOption.DURATION_SHORT_TO_LONG.languageKey, "Duration: Short to Long")
         binding.rbDurationLongToShort.text = getLanguageText(SortOption.DURATION_LONG_TO_SHORT.languageKey, "Duration: Long to Short")
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     companion object {

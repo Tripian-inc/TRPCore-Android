@@ -118,10 +118,6 @@ class FRTimeAndTravelers : Fragment() {
         binding.btnStartingPoint.setOnClickListener {
             openStartingPointSelection()
         }
-
-        binding.btnClearStartingPoint.setOnClickListener {
-            sharedVM.clearStartingPoint()
-        }
     }
 
     private fun openStartingPointSelection() {
@@ -235,7 +231,6 @@ class FRTimeAndTravelers : Fragment() {
         sharedVM.startingPointName.observe(viewLifecycleOwner) { name ->
             if (name != null) {
                 binding.tvStartingPoint.text = name
-                binding.btnClearStartingPoint.visibility = View.VISIBLE
             }
         }
 
@@ -249,7 +244,6 @@ class FRTimeAndTravelers : Fragment() {
                 } else {
                     cityCenterLabel
                 }
-                binding.btnClearStartingPoint.visibility = View.GONE
             }
         }
 

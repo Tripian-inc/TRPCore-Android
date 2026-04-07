@@ -96,7 +96,7 @@ class ActivityCardViewHolder(
     private fun bindDuration(duration: Double?) {
         if (duration != null && duration > 0) {
             binding.llDurationRow.visibility = View.VISIBLE
-            binding.tvDuration.text = formatDuration(duration)
+            binding.tvDuration.text = FormatUtils.formatDuration(duration)
         } else {
             binding.llDurationRow.visibility = View.GONE
         }
@@ -137,22 +137,6 @@ class ActivityCardViewHolder(
                 false
             )
             return ActivityCardViewHolder(binding, getLanguage, onAddClicked, onItemClicked)
-        }
-
-        /**
-         * Format duration from minutes to hours and minutes
-         * Example: 210 minutes → "3h 30m"
-         */
-        fun formatDuration(minutes: Double): String {
-            val totalMinutes = minutes.toInt()
-            val hours = totalMinutes / 60
-            val mins = totalMinutes % 60
-
-            return when {
-                hours > 0 && mins > 0 -> "${hours}h ${mins}m"
-                hours > 0 -> "${hours}h"
-                else -> "${mins}m"
-            }
         }
 
         /**

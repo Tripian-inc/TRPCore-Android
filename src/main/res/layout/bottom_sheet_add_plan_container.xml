@@ -5,17 +5,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:animateLayoutChanges="true"
     android:orientation="vertical"
     android:background="@drawable/bg_bottom_sheet">
 
     <!-- Handle Bar -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_bottom_sheet_handle"/>
+        android:background="@drawable/bg_drag_handle"/>
 
     <!-- ==================== -->
     <!-- HEADER (44dp)        -->
@@ -47,20 +46,19 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:fontFamily="@font/semibold"
-            android:textSize="18sp"
-            android:textColor="@color/trp_text_primary"
+            style="@style/TextHeader2"
             android:text="Add Activity"
             tools:text="Add Activity"/>
 
         <!-- Close Button (24x24, end:16) -->
         <ImageButton
             android:id="@+id/ivClose"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="@dimen/_24sdp"
+            android:layout_height="@dimen/_24sdp"
+            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="16dp"
+            android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/ic_close"
             android:contentDescription="Close"/>
@@ -70,7 +68,7 @@
     <!-- ==================== -->
     <!-- CONTENT CONTAINER    -->
     <!-- ==================== -->
-    <FrameLayout
+    <com.tripian.trpcore.ui.common.MaxHeightFrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
@@ -81,13 +79,11 @@
     <LinearLayout
         android:id="@+id/footerContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="80dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:background="@android:color/white"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="16dp">
+        android:paddingHorizontal="16dp">
 
         <!-- Clear Selection (left side) -->
         <TextView

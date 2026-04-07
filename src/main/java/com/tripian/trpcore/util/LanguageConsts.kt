@@ -184,7 +184,7 @@ object LanguageConst {
     const val PLEASE_SELECT = "trips.myTrips.localExperiences.tourDetails.pleaseSelect"
 
     // Timeline
-    const val RECOMMENDATIONS = "recommendations"
+    const val RECOMMENDATIONS = "timeline.label.recommendations"
     const val NO_PLANS_FOR_DAY = "no_plans_for_day"
     const val CONFIRMED = "timeline.bookedActivity.confirmed"
     const val RESERVATION = "timeline.bookedActivity.reservation"
@@ -205,6 +205,7 @@ object LanguageConst {
     const val ADD_PLANS = "timeline.emptyState.addPlansButton"
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
     const val TIMELINE_MAIN_VIEW = "timeline.map.mainView"
+    const val TIME_OVERLAP = "timeline.timeOverlap"
 
     // No City Available
     const val TIMELINE_NO_CITY_TITLE = "timeline.noCity.title"
@@ -247,7 +248,7 @@ object LanguageConst {
     const val ADD_PLAN_SELECT_STARTING_POINT = "addPlan.label.selectStartingPoint"
     const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectDateAndTime"
-    const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.label.noTimeSlots"
+    const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
 
     // Categories (Smart Mode)
@@ -352,7 +353,7 @@ object LanguageConst {
     const val SORT_BY_PRICE_LOW_HIGH = "addPlan.sort.priceLowToHigh"
     const val SORT_BY_PRICE_HIGH_LOW = "addPlan.sort.priceHighToLow"
     const val SORT_BY_NEWEST = "addPlan.sort.newest"
-    const val SORT_BY_DURATION = "addPlan.sort.duration"
+    const val SORT_BY_DURATION = "addPlan.sort.durationShortToLong"
     const val SORT_BY_DURATION_LONG_SHORT = "addPlan.sort.durationLongToShort"
 
     // =====================

@@ -41,7 +41,7 @@ class SavedItemsAdapter(
         }
 
         fun bind(item: SavedItem) {
-            binding.ivIcon.setImageResource(R.drawable.ic_pin)
+            binding.ivIcon.setImageResource(R.drawable.ic_starting_point_pin)
             binding.tvName.text = item.title
             // Location is hidden - only title is shown (max 2 lines)
             binding.tvLocation.visibility = android.view.View.GONE

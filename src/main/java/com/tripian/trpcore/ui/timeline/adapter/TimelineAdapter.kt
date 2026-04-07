@@ -44,6 +44,9 @@ class TimelineAdapter(
         private const val TYPE_GENERATING = 5
         private const val TYPE_SECTION_FOOTER = 6
         private const val TYPE_RESERVED_ACTIVITY = 7
+
+        // Payload constants for partial updates
+        const val PAYLOAD_ROUTE_INFO_UPDATE = "route_info_update"
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -90,6 +93,24 @@ class TimelineAdapter(
             )
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
+    }
+
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        // Handle partial updates via payload
+        if (payloads.isNotEmpty() && payloads[0] == PAYLOAD_ROUTE_INFO_UPDATE) {
+            val item = getItem(position)
+            if (holder is RecommendationsVH && item is TimelineDisplayItem.Recommendations) {
+                // Pass full item to ensure fresh conflict data is used
+                holder.updateRouteInfo(item)
+                return
+            }
+        }
+        // Fall back to full bind
+        super.onBindViewHolder(holder, position, payloads)
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
@@ -163,5 +184,22 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
         newItem: TimelineDisplayItem
     ): Boolean {
         return oldItem == newItem
+    }
+
+    override fun getChangePayload(
+        oldItem: TimelineDisplayItem,
+        newItem: TimelineDisplayItem
+    ): Any? {
+        // Return payload for partial updates when only route info changed
+        if (oldItem is TimelineDisplayItem.Recommendations &&
+            newItem is TimelineDisplayItem.Recommendations) {
+            // Same item, only routeInfoList changed
+            if (oldItem.plan.id == newItem.plan.id &&
+                oldItem.routeInfoList != newItem.routeInfoList &&
+                oldItem.copy(routeInfoList = newItem.routeInfoList) == newItem) {
+                return TimelineAdapter.PAYLOAD_ROUTE_INFO_UPDATE
+            }
+        }
+        return null
     }
 }

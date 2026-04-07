@@ -8,9 +8,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.one.api.cities.model.City
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.BottomSheetCitySelectionBinding
 import com.tripian.trpcore.databinding.ItemCitySelectionBinding
@@ -20,25 +20,15 @@ import com.tripian.trpcore.util.LanguageConst
  * CitySelectionBottomSheet
  * Bottom sheet for selecting a city from the available cities list
  */
-class CitySelectionBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetCitySelectionBinding? = null
-    private val binding get() = _binding!!
+class CitySelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetCitySelectionBinding>(
+    BottomSheetCitySelectionBinding::inflate
+) {
 
     private var cities: List<City> = emptyList()
     private var selectedCityId: Int? = null
     private var onCitySelected: ((City) -> Unit)? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetCitySelectionBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -70,11 +60,6 @@ class CitySelectionBottomSheet : BottomSheetDialogFragment() {
                 dismiss()
             }
         }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     companion object {

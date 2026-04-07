@@ -1,13 +1,12 @@
 package com.tripian.trpcore.ui.timeline.activity
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetActivityFilterBinding
+import com.tripian.trpcore.util.FormatUtils
 
 /**
  * ActivityFilterBottomSheet
@@ -20,10 +19,9 @@ import com.tripian.trpcore.databinding.BottomSheetActivityFilterBinding
  * - Confirm to apply filters
  * - Persists filter state when reopened
  */
-class ActivityFilterBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetActivityFilterBinding? = null
-    private val binding get() = _binding!!
+class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilterBinding>(
+    BottomSheetActivityFilterBinding::inflate
+) {
 
     private var currentFilter: ActivityFilterData = ActivityFilterData.default()
     private var currency: String = "EUR"
@@ -32,15 +30,6 @@ class ActivityFilterBottomSheet : BottomSheetDialogFragment() {
     private var getLanguageForKey: ((String) -> String)? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetActivityFilterBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -158,8 +147,8 @@ class ActivityFilterBottomSheet : BottomSheetDialogFragment() {
     }
 
     private fun updateDurationLabels() {
-        binding.tvDurationMin.text = currentFilter.formatDuration(currentFilter.minDuration)
-        binding.tvDurationMax.text = currentFilter.formatDuration(currentFilter.maxDuration)
+        binding.tvDurationMin.text = FormatUtils.formatDuration(currentFilter.minDuration)
+        binding.tvDurationMax.text = FormatUtils.formatDuration(currentFilter.maxDuration)
     }
 
     private fun formatPrice(price: Float): String {
@@ -219,11 +208,6 @@ class ActivityFilterBottomSheet : BottomSheetDialogFragment() {
 
     fun setLanguageProvider(provider: (String) -> String) {
         getLanguageForKey = provider
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     companion object {

@@ -12,11 +12,10 @@ enum class SortOption(
     val sortingBy: String,
     val sortingType: String
 ) {
-    SCORE(LanguageConst.SORT_BY_POPULARITY, "score", "desc"),
     /**
-     * Sort by popularity/rating (default)
+     * Sort by popularity score (default)
      */
-    POPULARITY(LanguageConst.SORT_BY_POPULARITY, "rating", "desc"),
+    POPULARITY(LanguageConst.SORT_BY_POPULARITY, "score", "desc"),
 
     /**
      * Sort by rating (highest first)

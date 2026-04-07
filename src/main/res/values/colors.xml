@@ -140,4 +140,6 @@
     <color name="trp_confirmed_badge_bg">#DAFAEB</color>
     <color name="trp_confirmed_badge_text">#075E45</color>
     <color name="trp_advantage">#00825B</color>
+    <color name="trp_error_icon">#E74A41</color>
+    <color name="trp_error_bg">#FFF6F7</color>
 </resources>

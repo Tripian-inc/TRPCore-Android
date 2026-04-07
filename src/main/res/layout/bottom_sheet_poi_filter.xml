@@ -10,11 +10,11 @@
 
     <!-- Handle Bar -->
     <View
-        android:layout_width="40dp"
+        android:layout_width="32dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bg_handle_bar" />
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_drag_handle" />
 
     <!-- Header -->
     <RelativeLayout
@@ -27,20 +27,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:fontFamily="@font/semibold"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="16sp"
+            style="@style/TextHeader2"
             tools:text="Filters" />
 
-        <ImageView
+        <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/ivClose"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:contentDescription="Close"
-            android:src="@drawable/ic_close"
-            app:tint="@color/trp_text_primary" />
+            android:src="@drawable/ic_close" />
 
     </RelativeLayout>
 
@@ -48,16 +45,17 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvCategories"
         android:layout_width="match_parent"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:maxHeight="400dp"
+        android:maxHeight="200dp"
         android:nestedScrollingEnabled="true"
-        tools:itemCount="5"
+        tools:itemCount="30"
         tools:listitem="@layout/item_category_filter" />
 
     <!-- Button Row -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="48dp"
         android:layout_marginHorizontal="16dp"
         android:layout_marginTop="16dp"
         android:orientation="horizontal"
@@ -66,36 +64,24 @@
         <!-- Clear Selection (left side) -->
         <TextView
             android:id="@+id/btnClear"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:fontFamily="@font/medium"
+            android:fontFamily="@font/semibold"
             android:gravity="center"
             android:paddingHorizontal="16dp"
             android:textColor="@color/trp_fgWeak"
             android:textSize="14sp"
-            android:visibility="gone"
-            tools:text="Clear Selection"
-            tools:visibility="visible" />
+            tools:text="Clear Selection"/>
 
         <!-- Continue Button (right side, 48dp) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_width="0dp"
+            style="@style/TrpButtonPrimary"
             android:layout_weight="1"
             android:enabled="false"
-            android:fontFamily="@font/semibold"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:minWidth="120dp"
-            android:minHeight="48dp"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            app:backgroundTint="@color/trp_btn_continue_bg"
-            app:cornerRadius="24dp"
             tools:enabled="true"
             tools:text="Continue" />
 

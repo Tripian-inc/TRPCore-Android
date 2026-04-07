@@ -15,9 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
-        android:fontFamily="@font/semibold"
-        android:textSize="16sp"
-        android:textColor="@color/trp_text_primary"
+        style="@style/TextHeader2"
         tools:text="Select Categories"/>
 
     <!-- Category Grid RecyclerView -->

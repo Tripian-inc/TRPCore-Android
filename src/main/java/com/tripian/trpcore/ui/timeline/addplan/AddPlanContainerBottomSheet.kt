@@ -4,13 +4,10 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
-import android.widget.FrameLayout
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
@@ -61,11 +58,13 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         }
 
     override fun isFullscreen() = false
-    override fun isDragEnable() = false
     override fun isCancelable() = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Set max height on fragmentContainer to ensure footer stays fixed
+        setupFragmentContainerMaxHeight()
 
         // Initialize from arguments
         arguments?.let { args ->
@@ -74,6 +73,28 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 
         // Show first fragment
         showFragment(FRSelectDay())
+    }
+
+    /**
+     * Set max height on fragmentContainer to ensure content scrolls and footer stays fixed.
+     * Uses MaxHeightFrameLayout's maxHeight property.
+     */
+    private fun setupFragmentContainerMaxHeight() {
+        val displayMetrics = resources.displayMetrics
+        val screenHeight = displayMetrics.heightPixels
+
+        // Calculate available height for content:
+        // Screen height - header (44dp + 8dp margin) - footer (80dp) - handle (4dp + 8dp margin) - status bar (~24dp)
+        val density = displayMetrics.density
+        val headerHeight = (52 * density).toInt()  // 44dp + 8dp margin
+        val footerHeight = (80 * density).toInt()  // 80dp
+        val handleHeight = (12 * density).toInt()  // 4dp + 8dp margin
+        val statusBarHeight = (24 * density).toInt()  // ~24dp status bar
+        val padding = (16 * density).toInt()  // extra padding
+
+        val maxHeight = screenHeight - headerHeight - footerHeight - handleHeight - statusBarHeight - padding
+
+        binding.fragmentContainer.maxHeight = maxHeight
     }
 
     override fun setListeners() {
@@ -214,44 +235,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 
     /**
      * Expand or collapse the bottom sheet based on travelers visibility
+     * Note: No-op - MaxHeightFrameLayout handles content height, footer stays fixed
      */
     private fun expandBottomSheet(expand: Boolean) {
-        val bottomSheet = dialog?.findViewById<FrameLayout>(
-            com.google.android.material.R.id.design_bottom_sheet
-        ) ?: return
-
-        // Update bottom sheet height
-        val bottomSheetParams = bottomSheet.layoutParams
-        bottomSheetParams.height = if (expand) {
-            WindowManager.LayoutParams.MATCH_PARENT
-        } else {
-            WindowManager.LayoutParams.WRAP_CONTENT
-        }
-        bottomSheet.layoutParams = bottomSheetParams
-
-        // Update root container height
-        val rootParams = binding.root.layoutParams
-        rootParams.height = if (expand) {
-            WindowManager.LayoutParams.MATCH_PARENT
-        } else {
-            WindowManager.LayoutParams.WRAP_CONTENT
-        }
-        binding.root.layoutParams = rootParams
-
-        // Update fragmentContainer to fill remaining space when expanded
-        val fragmentParams = binding.fragmentContainer.layoutParams as android.widget.LinearLayout.LayoutParams
-        if (expand) {
-            fragmentParams.height = 0
-            fragmentParams.weight = 1f
-        } else {
-            fragmentParams.height = WindowManager.LayoutParams.WRAP_CONTENT
-            fragmentParams.weight = 0f
-        }
-        binding.fragmentContainer.layoutParams = fragmentParams
-
-        // Re-expand the sheet to apply new height
-        val behavior = BottomSheetBehavior.from(bottomSheet)
-        behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        // No-op: MaxHeightFrameLayout caps content height, footer is fixed, content scrolls internally
     }
 
     private fun openManualListingActivity(category: ManualCategory) {

@@ -22,7 +22,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_pin"
+            android:src="@drawable/ic_starting_point_pin"
             app:tint="@color/trp_text_primary" />
 
     </FrameLayout>

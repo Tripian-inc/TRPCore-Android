@@ -122,8 +122,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Back button
         binding.ivBack.setOnClickListener {
-            viewModel.onSDKDismissed()
-            finish()
+            handleBackNavigation()
         }
 
         // Map FAB - switches to map mode
@@ -231,11 +230,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             updateMapMode(isMapMode)
         }
 
-        // Loading
-        viewModel.isLoading.observe(this) { isLoading ->
-            if (isLoading) showLoading() else hideLoading()
-        }
-
         // Error
         viewModel.error.observe(this) { error ->
             error?.let {
@@ -321,14 +315,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Route info updated - refresh the adapter when route calculations complete
+        // Route info updated - DiffUtil will handle partial updates via payload
         viewModel.routeInfoUpdated.observe(this) { segmentIndex ->
             segmentIndex?.let {
-                // Re-submit the display items to refresh route info in UI
-                viewModel.displayItems.value?.let { items ->
-                    timelineAdapter.submitList(null) // Clear first
-                    timelineAdapter.submitList(items) // Re-submit to trigger rebind
-                }
                 viewModel.clearRouteInfoUpdate()
             }
         }
@@ -358,8 +347,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
+        handleBackNavigation()
+    }
+
+    /**
+     * Handles back navigation logic.
+     * If map mode is active, switches to list mode.
+     * Otherwise, closes the SDK and finishes the activity.
+     */
+    private fun handleBackNavigation() {
+        if (viewModel.isMapMode.value == true) {
+            viewModel.toggleMapMode()
+            return
+        }
         viewModel.onSDKDismissed()
-        super.onBackPressed()
+        finish()
     }
 
     // =====================
@@ -905,11 +907,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleExpandClick(item: TimelineDisplayItem) {
         if (item is TimelineDisplayItem.Recommendations) {
-            // Toggle expansion
+            // Toggle expansion - find by plan.id since item reference may have changed due to route info updates
             val currentItems = timelineAdapter.currentList.toMutableList()
-            val position = currentItems.indexOf(item)
+            val position = currentItems.indexOfFirst {
+                it is TimelineDisplayItem.Recommendations && it.plan.id == item.plan.id
+            }
             if (position != -1) {
-                currentItems[position] = item.copy(isExpanded = !item.isExpanded)
+                val currentItem = currentItems[position] as TimelineDisplayItem.Recommendations
+                currentItems[position] = currentItem.copy(isExpanded = !currentItem.isExpanded)
                 timelineAdapter.submitList(currentItems)
             }
         }
@@ -996,11 +1001,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         val availableDays = viewModel.availableDays.value ?: emptyList()
 
+        // Get city name to ID mapping for resolving host app cityIds to our system's cityIds
+        val cityMap = viewModel.getCityNameToIdMap()
+
         val intent = ACSavedPlans.launch(
             context = this,
             favorites = filteredFavorites,
             tripHash = viewModel.tripHash,
-            availableDays = availableDays
+            availableDays = availableDays,
+            cityNameToIdMap = cityMap
         )
         savedPlansLauncher.launch(intent)
     }

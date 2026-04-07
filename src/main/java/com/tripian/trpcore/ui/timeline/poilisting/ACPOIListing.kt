@@ -67,19 +67,10 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             updateEmptyState(pois.isEmpty())
         }
 
-        // Observe loading state
-        viewModel.isLoading.observe(this) { isLoading ->
-            binding.pbLoading.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
-        // Observe searching state
-        viewModel.isSearching.observe(this) { isSearching ->
-            binding.pbSearchProgress.visibility = if (isSearching) View.VISIBLE else View.GONE
-        }
-
         // Observe POI count
         viewModel.poiCount.observe(this) { count ->
-            val placesText = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
+            val placesText =
+                viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
             binding.tvResultCount.text = "$count $placesText"
         }
 
@@ -109,6 +100,14 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         viewModel.currentSort.observe(this) { sort ->
 //            updateSortButtonState(sort)
         }
+
+        // Observe scroll to top signal
+        viewModel.scrollToTop.observe(this) { shouldScroll ->
+            if (shouldScroll) {
+                binding.rvPOIs.scrollToPosition(0)
+                viewModel.clearScrollToTop()
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -120,6 +119,8 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         binding.rvPOIs.apply {
             layoutManager = LinearLayoutManager(this@ACPOIListing)
             adapter = poiAdapter
+            // Disable item change animations for instant list updates
+            itemAnimator = null
 
             // Pagination
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -138,7 +139,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     private fun setupSearchBar() {
-        binding.searchBar.setHint("Search places...")
+        binding.searchBar.setHint(viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
         binding.searchBar.setOnTextChangedListener { query ->
             viewModel.updateSearchText(query)
         }
@@ -211,8 +212,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
-        val isLoading = viewModel.isLoading.value == true
-        binding.tvEmpty.visibility = if (isEmpty && !isLoading) View.VISIBLE else View.GONE
+        binding.tvEmpty.visibility = if (isEmpty) View.VISIBLE else View.GONE
         binding.rvPOIs.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
 

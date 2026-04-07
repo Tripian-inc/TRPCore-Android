@@ -16,10 +16,14 @@ sealed class TimelineStepItem : Serializable {
      *
      * @param step The TimelineStep data
      * @param order Display order number (1-based)
+     * @param hasConflict Whether this step has a time conflict with another item
+     * @param showTimeOverlapText Whether to show "Time Overlap" text next to time
      */
     data class Step(
         val step: TimelineStep,
-        val order: Int
+        val order: Int,
+        val hasConflict: Boolean = false,
+        val showTimeOverlapText: Boolean = false
     ) : TimelineStepItem() {
         // Unique identifier for DiffUtil
         val id: String get() = "step_${step.id}"

@@ -44,18 +44,35 @@ class StepActivityVH(
         order: Int,
         onStepClick: ((TimelineStep) -> Unit)?,
         onDeleteClick: ((TimelineStep) -> Unit)?,
-        onReservationClick: ((TimelineStep) -> Unit)?
+        onReservationClick: ((TimelineStep) -> Unit)?,
+        hasConflict: Boolean = false,
+        showTimeOverlapText: Boolean = false
     ) {
         val poi = step.poi
 
         // Order badge
         binding.tvOrder.text = order.toString()
 
+        // Apply conflict styling
+        if (hasConflict) {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+        } else {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        }
+
         // Time (startTime - endTime format)
         val startTime = step.startDateTimes?.toDate()
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
-            binding.tvTime.text = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            if (showTimeOverlapText) {
+                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
+                binding.tvTime.text = "$timeText $overlapText"
+            } else {
+                binding.tvTime.text = timeText
+            }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)
@@ -101,7 +118,7 @@ class StepActivityVH(
         // Duration Row - from poi.duration (in minutes, convert to hours format)
         val duration = poi?.duration
         if (duration != null && duration > 0) {
-            binding.tvDuration.text = formatDuration(duration)
+            binding.tvDuration.text = FormatUtils.formatDuration(duration)
             binding.llDuration.visibility = View.VISIBLE
         } else {
             binding.llDuration.visibility = View.GONE
@@ -137,21 +154,6 @@ class StepActivityVH(
 
         binding.btnReservation.setOnClickListener {
             onReservationClick?.invoke(step)
-        }
-    }
-
-    /**
-     * Format duration from minutes to hours/minutes display
-     * Example: 210 minutes -> "3h 30m"
-     */
-    private fun formatDuration(durationInMinutes: Int): String {
-        val hours = durationInMinutes / 60
-        val minutes = durationInMinutes % 60
-
-        return when {
-            hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
-            hours > 0 -> "${hours}h"
-            else -> "${minutes}m"
         }
     }
 }

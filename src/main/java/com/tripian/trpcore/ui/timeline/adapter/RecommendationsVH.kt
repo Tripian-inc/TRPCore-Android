@@ -28,6 +28,10 @@ class RecommendationsVH(
     private var currentReservationClickListener: ((TimelineStep) -> Unit)? = null
     private var currentStartingOrder: Int = 1
 
+    // For partial updates (route info) without full rebind
+    private var currentItem: TimelineDisplayItem.Recommendations? = null
+    private var currentDistanceFormat: String = "%d min (%@ km)"
+
     fun bind(
         item: TimelineDisplayItem.Recommendations,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -45,6 +49,10 @@ class RecommendationsVH(
         currentDeleteClickListener = onStepDeleteClick
         currentReservationClickListener = onStepReservationClick
         currentStartingOrder = item.startingOrder
+
+        // Store for partial updates
+        currentItem = item
+        currentDistanceFormat = distanceFormat
 
         // Title only - no city, time, places info
         binding.tvTitle.text = item.title
@@ -101,7 +109,7 @@ class RecommendationsVH(
                 // Build step items with route separators if available
                 // Exclude the starting point route (fromStepId = null) as it's shown separately
                 val stepRoutes = item.routeInfoList.filter { it.fromStepId != null }
-                val stepItems = buildStepItemsWithRoutes(item.steps, stepRoutes)
+                val stepItems = buildStepItemsWithRoutes(item.steps, stepRoutes, item.conflictingStepIds)
                 stepsAdapter?.submitStepItemList(stepItems)
 
                 // Request route calculation if route info is empty and we have steps
@@ -181,18 +189,20 @@ class RecommendationsVH(
     /**
      * Builds an interleaved list of TimelineStepItem containing:
      * - Route separators between steps (if route info available)
-     * - Step items with correct order numbers
+     * - Step items with correct order numbers and conflict flags
      *
      * Result order:
      * [RouteSeparator(start→step1), Step(1), RouteSeparator(step1→step2), Step(2), ...]
      *
      * @param steps List of TimelineStep to display
      * @param routeInfoList List of StepRouteInfo for route separators
+     * @param conflictingStepIds Set of step IDs that have time conflicts
      * @return Interleaved list of TimelineStepItem
      */
     private fun buildStepItemsWithRoutes(
         steps: List<TimelineStep>,
-        routeInfoList: List<StepRouteInfo>
+        routeInfoList: List<StepRouteInfo>,
+        conflictingStepIds: Set<Int> = emptySet()
     ): List<TimelineStepItem> {
         val items = mutableListOf<TimelineStepItem>()
 
@@ -207,10 +217,45 @@ class RecommendationsVH(
                 items.add(TimelineStepItem.RouteSeparator(routeInfo))
             }
 
-            // Add the step with correct order number
-            items.add(TimelineStepItem.Step(step, currentStartingOrder + index))
+            // Check if this step has a time conflict
+            val hasConflict = stepId in conflictingStepIds
+
+            // Add the step with correct order number and conflict flags
+            items.add(
+                TimelineStepItem.Step(
+                    step = step,
+                    order = currentStartingOrder + index,
+                    hasConflict = hasConflict,
+                    showTimeOverlapText = hasConflict  // Show "Time Overlap" text for conflicting steps
+                )
+            )
         }
 
         return items
+    }
+
+    /**
+     * Updates only route info without full rebind.
+     * Prevents flash/flicker when distance calculations complete.
+     *
+     * @param newItem The updated item with fresh route info and conflict data
+     */
+    fun updateRouteInfo(newItem: TimelineDisplayItem.Recommendations) {
+        // Update currentItem to ensure we have fresh conflict data
+        currentItem = newItem
+
+        // Update starting point route info
+        val startingPointRoute = newItem.routeInfoList.find { it.fromStepId == null }
+        if (newItem.isExpanded && startingPointRoute != null && newItem.steps.isNotEmpty()) {
+            binding.startingPointRouteContainer.visibility = View.VISIBLE
+            binding.tvStartingPointRouteInfo.text = startingPointRoute.formatWithTemplate(currentDistanceFormat)
+        }
+
+        // Update steps adapter with new route info and conflict data
+        if (newItem.steps.isNotEmpty() && newItem.isExpanded) {
+            val stepRoutes = newItem.routeInfoList.filter { it.fromStepId != null }
+            val stepItems = buildStepItemsWithRoutes(newItem.steps, stepRoutes, newItem.conflictingStepIds)
+            stepsAdapter?.submitStepItemList(stepItems)
+        }
     }
 }

@@ -12,6 +12,26 @@ object FormatUtils {
     private val turkishLocale = Locale("tr", "TR")
 
     /**
+     * Format duration from minutes to hours/minutes display
+     * Example: 210 minutes -> "3h 30m"
+     *
+     * @param minutes Duration in minutes (can be Int, Double, or Float)
+     * @return Formatted duration string (e.g., "3h 30m", "2h", "45m")
+     */
+    fun formatDuration(minutes: Number): String {
+        val totalMinutes = minutes.toInt()
+        val hours = totalMinutes / 60
+        val mins = totalMinutes % 60
+
+        return when {
+            hours > 0 && mins > 0 -> "${hours}h ${mins}m"
+            hours > 0 -> "${hours}h"
+            mins > 0 -> "${mins}m"
+            else -> "0m"
+        }
+    }
+
+    /**
      * Format price with currency symbol
      * @param price The price value
      * @param currency The currency code (EUR, USD, GBP, TRY, etc.)

@@ -1,11 +1,9 @@
 package com.tripian.trpcore.ui.timeline.poilisting
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetPoiSortBinding
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.util.LanguageConst
@@ -15,25 +13,15 @@ import com.tripian.trpcore.util.LanguageConst
  * Bottom sheet for sorting POI list
  * iOS Reference: POISortVC
  */
-class SortBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetPoiSortBinding? = null
-    private val binding get() = _binding!!
+class SortBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiSortBinding>(
+    BottomSheetPoiSortBinding::inflate
+) {
 
     private var currentSort: SortOption = SortOption.DEFAULT
     private var onSortSelected: ((SortOption) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetPoiSortBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -96,11 +84,6 @@ class SortBottomSheet : BottomSheetDialogFragment() {
 
     fun setLanguageProvider(provider: (String) -> String) {
         getLanguage = provider
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     companion object {

@@ -53,22 +53,7 @@
             android:id="@+id/searchBar"
             android:layout_width="match_parent"
             android:layout_height="48dp" />
-
-        <ProgressBar
-            android:id="@+id/pbSearchProgress"
-            android:layout_width="@dimen/_20sdp"
-            android:layout_height="@dimen/_20sdp"
-            android:layout_gravity="end|center_vertical"
-            android:layout_marginEnd="@dimen/_48sdp"
-            android:visibility="gone" />
     </FrameLayout>
-
-    <!-- Separator between Search and Filters -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:background="@color/trp_lineWeak" />
 
     <!-- Fixed: Filter & Sort Buttons Row -->
     <LinearLayout
@@ -153,14 +138,6 @@
             android:clipToPadding="false"
             android:overScrollMode="never"
             android:paddingBottom="@dimen/_16sdp" />
-
-        <!-- Loading Progress -->
-        <ProgressBar
-            android:id="@+id/pbLoading"
-            android:layout_width="@dimen/_48sdp"
-            android:layout_height="@dimen/_48sdp"
-            android:layout_gravity="center"
-            android:visibility="gone" />
 
         <!-- Empty State -->
         <com.tripian.trpcore.util.widget.TextView

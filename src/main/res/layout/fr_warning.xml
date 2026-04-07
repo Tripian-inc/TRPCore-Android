@@ -54,6 +54,7 @@
                     style="@style/TextButton"
                     android:layout_width="0dp"
                     android:layout_marginEnd="@dimen/_4sdp"
+                    android:textColor="@color/trp_primary"
                     android:layout_height="wrap_content"
                     android:background="?selectableItemBackgroundBorderless"
                     tools:text="Negative" />

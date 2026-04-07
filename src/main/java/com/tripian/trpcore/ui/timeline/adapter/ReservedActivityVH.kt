@@ -35,10 +35,19 @@ class ReservedActivityVH(
         // Order badge
         binding.tvOrder.text = item.order.toString()
 
+        // Apply conflict styling (no "Time Overlap" text for reserved activities)
+        if (item.hasConflict) {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+        } else {
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        }
+
         // Title - semibold 16px
         binding.tvTitle.text = item.title
 
-        // Time (startTime - endTime format)
+        // Time (startTime - endTime format) - No "Time Overlap" text for reserved activities
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
@@ -84,8 +93,7 @@ class ReservedActivityVH(
         // Duration Row - from additionalData
         val duration = item.duration
         if (duration != null && duration > 0) {
-            val durationText = formatDuration(duration)
-            binding.tvDuration.text = durationText
+            binding.tvDuration.text = FormatUtils.formatDuration(duration)
             binding.llDuration.visibility = View.VISIBLE
         } else {
             binding.llDuration.visibility = View.GONE
@@ -120,22 +128,6 @@ class ReservedActivityVH(
 
         binding.btnReservation.setOnClickListener {
             onReservationClick(item)
-        }
-    }
-
-    /**
-     * Format duration from minutes to hours/minutes display
-     * Example: 210 minutes -> "3h 30m"
-     */
-    private fun formatDuration(durationInMinutes: Double): String {
-        val totalMinutes = durationInMinutes.toInt()
-        val hours = totalMinutes / 60
-        val minutes = totalMinutes % 60
-
-        return when {
-            hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
-            hours > 0 -> "${hours}h"
-            else -> "${minutes}m"
         }
     }
 }

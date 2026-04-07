@@ -40,6 +40,8 @@ import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
+import com.tripian.trpcore.util.extensions.hideLoading
+import com.tripian.trpcore.util.extensions.showLoading
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.text.SimpleDateFormat
@@ -91,9 +93,6 @@ class ACTimelineVM @Inject constructor(
     private val _showAddPlanSheet = MutableLiveData<Boolean>()
     val showAddPlanSheet: LiveData<Boolean> = _showAddPlanSheet
 
-    private val _isLoading = MutableLiveData(false)
-    val isLoading: LiveData<Boolean> = _isLoading
-
     private val _error = MutableLiveData<String?>()
     val error: LiveData<String?> = _error
 
@@ -138,6 +137,13 @@ class ACTimelineVM @Inject constructor(
     val showOnboarding: LiveData<Boolean> = _showOnboarding
     private var onboardingCompleted = false
 
+    // Scroll to new segment event - contains plan.id to scroll to
+    private val _scrollToNewSegmentPlanId = MutableLiveData<String?>()
+    val scrollToNewSegmentPlanId: LiveData<String?> = _scrollToNewSegmentPlanId
+
+    // Track existing plan IDs before creating new segment
+    private var existingPlanIds: Set<String> = emptySet()
+
     // =====================
     // STATE
     // =====================
@@ -149,6 +155,10 @@ class ACTimelineVM @Inject constructor(
     private var isLoggedIn: Boolean = false
     private var isLoginInProgress: Boolean = false
     private var hasMultipleCitiesInSelectedDay: Boolean = false
+
+    // City name to ID mapping - maps resolved city names (lowercase) to our cityIds
+    // Used to convert host app cityIds to our system's cityIds
+    private val cityNameToIdMap = mutableMapOf<String, Int>()
 
     // =====================
     // LIFECYCLE
@@ -203,7 +213,7 @@ class ACTimelineVM @Inject constructor(
      * Shows loading indicator while waiting.
      */
     private fun ensureLanguagesLoadedThenProceed() {
-        _isLoading.value = true
+        showLoading()
 
         miscRepository.waitForLanguagesLoaded()
             .subscribeOn(Schedulers.io())
@@ -232,7 +242,7 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Hide loading before showing onboarding
-        _isLoading.value = false
+        hideLoading()
 
         // Check and show onboarding if needed
         // onOnboardingComplete() will be called to continue with city resolution
@@ -253,7 +263,7 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
-        _isLoading.value = true
+        showLoading()
 
         // Step 1: Try to find cities from cache
         val resolvedCities = mutableListOf<City>()
@@ -318,7 +328,7 @@ class ACTimelineVM @Inject constructor(
                         proceedWithTimelineOperations()
                     } else {
                         // NEW TRIP: No cities at all - fatal error, close SDK
-                        _isLoading.value = false
+                        hideLoading()
                         val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
                             .replace("%s", unresolvedCityNames.joinToString(", "))
                         TRPCore.notifyError(errorMsg)
@@ -377,7 +387,7 @@ class ACTimelineVM @Inject constructor(
                     proceedWithTimelineOperations()
                 } else {
                     // NEW TRIP: No cities at all - show NoCityView (blocking)
-                    _isLoading.value = false
+                    hideLoading()
                     _noCitiesAvailable.value = true
                 }
             }
@@ -411,7 +421,16 @@ class ACTimelineVM @Inject constructor(
         }
 
         itinerary = currentItinerary.copy(destinationItems = updatedDestinations)
-        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds")
+
+        // Build cityName -> cityId mapping for favorites/tripItems city resolution
+        // This allows us to convert host app cityIds to our system's cityIds
+        resolvedCities.forEach { city ->
+            city.name?.lowercase()?.trim()?.let { name ->
+                cityNameToIdMap[name] = city.id
+            }
+        }
+
+        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds, cityNameToIdMap size: ${cityNameToIdMap.size}")
     }
 
     /**
@@ -489,7 +508,7 @@ class ACTimelineVM @Inject constructor(
             }
 
             else -> {
-                _isLoading.value = false
+                hideLoading()
                 _error.value = "No trip hash or itinerary provided"
             }
         }
@@ -519,12 +538,12 @@ class ACTimelineVM @Inject constructor(
         }
 
         if (coordinates.isEmpty()) {
-            _isLoading.value = false
+            hideLoading()
             _error.value = "No valid coordinates found"
             return
         }
 
-        _isLoading.value = true
+        showLoading()
 
         // Call cities/resolve API
         resolveCitiesUseCase.on(
@@ -540,7 +559,7 @@ class ACTimelineVM @Inject constructor(
                 validateAndCreateTimeline(updatedDestinations)
             },
             error = { errorModel ->
-                _isLoading.value = false
+                hideLoading()
                 _error.value = errorModel.errorDesc ?: "City resolve failed"
                 TRPCore.notifyError(errorModel.errorDesc ?: "City resolve failed")
             }
@@ -571,7 +590,7 @@ class ACTimelineVM @Inject constructor(
         when {
             // Case 1: ALL cities invalid - show NoCityView
             validDestinations.isEmpty() -> {
-                _isLoading.value = false
+                hideLoading()
                 _noCitiesAvailable.value = true
             }
 
@@ -608,7 +627,7 @@ class ACTimelineVM @Inject constructor(
     private fun createTimelineWithValidDestinations(validDestinations: List<SegmentDestinationItem>) {
         val modifiedItinerary = itinerary!!.copy(destinationItems = validDestinations)
 
-        _isLoading.value = true
+        showLoading()
         _error.value = null
 
         createTimelineUseCase.on(
@@ -620,13 +639,13 @@ class ACTimelineVM @Inject constructor(
                     waitForTimelineGeneration()
                 } else {
                     processTimeline(timeline)
-                    _isLoading.value = false
+                    hideLoading()
                 }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
@@ -637,6 +656,13 @@ class ACTimelineVM @Inject constructor(
      */
     fun clearPartialUnavailableAlert() {
         _showPartialUnavailableAlert.value = null
+    }
+
+    /**
+     * Clear scroll to new segment event after scrolling is done.
+     */
+    fun clearScrollToNewSegment() {
+        _scrollToNewSegmentPlanId.value = null
     }
 
     /**
@@ -675,7 +701,7 @@ class ACTimelineVM @Inject constructor(
     private fun createTimelineFromItinerary() {
         val itineraryData = itinerary ?: return
 
-        _isLoading.value = true
+        showLoading()
         _error.value = null
 
         createTimelineUseCase.on(
@@ -692,13 +718,13 @@ class ACTimelineVM @Inject constructor(
                     waitForTimelineGeneration()
                 } else {
                     processTimeline(timeline)
-                    _isLoading.value = false
+                    hideLoading()
                 }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
@@ -711,10 +737,10 @@ class ACTimelineVM @Inject constructor(
             params = WaitForGenerationUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                _isLoading.value = false
+                hideLoading()
             },
             error = { errorModel ->
-                _isLoading.value = false
+                hideLoading()
                 _error.value = errorModel.errorDesc ?: "Timeline generation failed"
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
             }
@@ -726,25 +752,25 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun fetchTimeline() {
-        _isLoading.value = true
+        showLoading()
         _error.value = null
 
         fetchTimelineUseCase.on(
             params = FetchTimelineUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                _isLoading.value = false
+                hideLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
 
     fun refreshTimeline() {
-        _isLoading.value = true
+        showLoading()
         // Clear route info cache to ensure fresh calculations
         clearRouteInfoCache()
 
@@ -752,10 +778,10 @@ class ACTimelineVM @Inject constructor(
             params = FetchTimelineUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                _isLoading.value = false
+                hideLoading()
             },
             error = {
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
@@ -910,10 +936,27 @@ class ACTimelineVM @Inject constructor(
 
         if (selectedIndex >= days.size) return
 
+        // Preserve existing collapse states (plan.id -> isExpanded)
+        val existingExpandStates = _displayItems.value
+            ?.filterIsInstance<TimelineDisplayItem.Recommendations>()
+            ?.associate { it.plan.id to it.isExpanded }
+            ?: emptyMap()
+
         val selectedDate = days[selectedIndex]
         val items = generateDisplayItemsForDay(timeline, selectedDate)
 
-        _displayItems.value = items
+        // Apply preserved collapse states to new items
+        val itemsWithPreservedState = items.map { item ->
+            if (item is TimelineDisplayItem.Recommendations) {
+                existingExpandStates[item.plan.id]?.let { savedExpanded ->
+                    item.copy(isExpanded = savedExpanded)
+                } ?: item
+            } else {
+                item
+            }
+        }
+
+        _displayItems.value = itemsWithPreservedState
 
         // Always update map steps so they're ready when user switches to map mode
         updateMapSteps()
@@ -979,13 +1022,20 @@ class ACTimelineVM @Inject constructor(
                                 return@forEachIndexed // Skip empty recommendations
                             }
 
+                            // Calculate recommendation index for same city
+                            val cityId = segment.cityId
+                            val recommendationIndex = items.count { item ->
+                                item is TimelineDisplayItem.Recommendations && item.city?.id == cityId
+                            } + 1
+
                             items.add(
                                 TimelineDisplayItem.Recommendations(
                                     plan = plan,
                                     steps = steps,
                                     segment = segment,
                                     segmentIndex = index,
-                                    cachedCity = getCityForSegment(segment, timeline)
+                                    cachedCity = getCityForSegment(segment, timeline),
+                                    recommendationIndex = recommendationIndex
                                 )
                             )
                         }
@@ -1018,8 +1068,11 @@ class ACTimelineVM @Inject constructor(
             )
         }
 
+        // Detect time conflicts before grouping by city
+        val itemsWithConflicts = detectTimeConflicts(items)
+
         // Group items by city
-        return groupItemsByCity(items)
+        return groupItemsByCity(itemsWithConflicts)
     }
 
     /**
@@ -1173,6 +1226,137 @@ class ACTimelineVM @Inject constructor(
     }
 
     // =====================
+    // TIME CONFLICT DETECTION
+    // =====================
+
+    /**
+     * Data class representing a time range for conflict detection.
+     */
+    private data class TimeRange(
+        val startTime: Date,
+        val endTime: Date,
+        val itemType: String,  // "booked", "manual", "step"
+        val itemIndex: Int,    // Index in items list (-1 for steps)
+        val stepId: Int? = null // Step ID for Recommendations steps
+    )
+
+    /**
+     * Detects time conflicts between all items in the list.
+     * Two time ranges overlap if: start1 < end2 AND start2 < end1
+     * (Adjacent times like 11:00-12:00 and 12:00-13:00 do NOT conflict)
+     *
+     * @return Updated items list with conflict flags set
+     */
+    private fun detectTimeConflicts(items: List<TimelineDisplayItem>): List<TimelineDisplayItem> {
+        // Collect all time ranges
+        val timeRanges = mutableListOf<TimeRange>()
+
+        items.forEachIndexed { index, item ->
+            when (item) {
+                is TimelineDisplayItem.BookedActivity -> {
+                    val startTime = item.startDateTime?.toDate()
+                    val endTime = item.endDateTime?.toDate()
+                    if (startTime != null && endTime != null) {
+                        timeRanges.add(
+                            TimeRange(
+                                startTime = startTime,
+                                endTime = endTime,
+                                itemType = "booked",
+                                itemIndex = index
+                            )
+                        )
+                    }
+                }
+
+                is TimelineDisplayItem.ManualPoi -> {
+                    val startTime = item.startTime
+                    val endTime = item.endTime
+                    if (startTime != null && endTime != null) {
+                        timeRanges.add(
+                            TimeRange(
+                                startTime = startTime,
+                                endTime = endTime,
+                                itemType = "manual",
+                                itemIndex = index
+                            )
+                        )
+                    }
+                }
+
+                is TimelineDisplayItem.Recommendations -> {
+                    // Add time ranges for each step
+                    item.steps.forEach { step ->
+                        val startTime = step.startDateTimes?.toDate()
+                        val endTime = step.endDateTimes?.toDate()
+                        if (startTime != null && endTime != null && step.id != null) {
+                            timeRanges.add(
+                                TimeRange(
+                                    startTime = startTime,
+                                    endTime = endTime,
+                                    itemType = "step",
+                                    itemIndex = index,
+                                    stepId = step.id
+                                )
+                            )
+                        }
+                    }
+                }
+
+                else -> { /* Ignore other item types */ }
+            }
+        }
+
+        // Find conflicting ranges (O(n^2) but n is typically small)
+        val conflictingItemIndices = mutableSetOf<Int>()
+        val conflictingStepIds = mutableMapOf<Int, MutableSet<Int>>() // itemIndex -> Set of stepIds
+
+        for (i in timeRanges.indices) {
+            for (j in (i + 1) until timeRanges.size) {
+                val range1 = timeRanges[i]
+                val range2 = timeRanges[j]
+
+                // Check overlap: start1 < end2 AND start2 < end1
+                if (range1.startTime.before(range2.endTime) && range2.startTime.before(range1.endTime)) {
+                    // Both ranges have conflict
+                    conflictingItemIndices.add(range1.itemIndex)
+                    conflictingItemIndices.add(range2.itemIndex)
+
+                    // Track conflicting step IDs for Recommendations
+                    if (range1.itemType == "step" && range1.stepId != null) {
+                        conflictingStepIds.getOrPut(range1.itemIndex) { mutableSetOf() }.add(range1.stepId)
+                    }
+                    if (range2.itemType == "step" && range2.stepId != null) {
+                        conflictingStepIds.getOrPut(range2.itemIndex) { mutableSetOf() }.add(range2.stepId)
+                    }
+                }
+            }
+        }
+
+        // Update items with conflict flags
+        // IMPORTANT: Always explicitly set conflict flags to ensure they are cleared when no conflicts exist
+        return items.mapIndexed { index, item ->
+            when (item) {
+                is TimelineDisplayItem.BookedActivity -> {
+                    val hasConflict = index in conflictingItemIndices
+                    item.copy(hasConflict = hasConflict)
+                }
+
+                is TimelineDisplayItem.ManualPoi -> {
+                    val hasConflict = index in conflictingItemIndices
+                    item.copy(hasConflict = hasConflict, showTimeOverlapText = hasConflict)
+                }
+
+                is TimelineDisplayItem.Recommendations -> {
+                    val stepIds = conflictingStepIds[index] ?: emptySet()
+                    item.copy(conflictingStepIds = stepIds)
+                }
+
+                else -> item
+            }
+        }
+    }
+
+    // =====================
     // SMART RECOMMENDATIONS
     // =====================
 
@@ -1197,8 +1381,14 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
+        // Track existing plan IDs before creating new segment (for scroll after creation)
+        existingPlanIds = _timeline.value?.plans
+            ?.map { it.id }
+            ?.filter { it.isNotEmpty() }
+            ?.toSet() ?: emptySet()
+
         // Set loading immediately (not postValue) since we're on main thread
-        _isLoading.value = true
+        showLoading()
 
         // Generate unique title ("Recommendations", "Recommendations 2", etc.)
         val title = generateSegmentTitle(validCity, selectedDate)
@@ -1239,7 +1429,7 @@ class ACTimelineVM @Inject constructor(
                 waitForSegmentGeneration()
             },
             error = { errorModel ->
-                _isLoading.value = false
+                hideLoading()
                 _error.value = errorModel.errorDesc
             }
         )
@@ -1249,11 +1439,26 @@ class ACTimelineVM @Inject constructor(
         waitForGenerationUseCase.on(
             params = WaitForGenerationUseCase.Params(_tripHash),
             success = { timeline ->
+                // Find newly added plan ID (not in existingPlanIds)
+                val newPlanId = try {
+                    timeline.plans?.find { plan ->
+                        plan.id.isNotEmpty() && plan.id !in existingPlanIds
+                    }?.id
+                } catch (e: Exception) {
+                    null
+                }
+
                 processTimeline(timeline)
-                _isLoading.value = false
+
+                // Trigger scroll to new segment after list is updated
+                if (!newPlanId.isNullOrEmpty()) {
+                    _scrollToNewSegmentPlanId.value = newPlanId
+                }
+
+                hideLoading()
             },
             error = {
-                _isLoading.value = false
+                hideLoading()
                 // Still refresh to show partial results
                 refreshTimeline()
             }
@@ -1285,33 +1490,33 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun deleteSegment(segmentIndex: Int) {
-        _isLoading.value = true
+        showLoading()
 
         deleteSegmentUseCase.on(
             params = DeleteSegmentUseCase.Params(_tripHash, segmentIndex),
             success = {
                 refreshTimeline()
-                _isLoading.value = false
+                hideLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
 
     fun deleteStep(stepId: Int) {
-        _isLoading.value = true
+        showLoading()
 
         deleteStepUseCase.on(
             params = DeleteStepUseCase.Params(stepId),
             success = {
                 refreshTimeline()
-                _isLoading.value = false
+                hideLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
-                _isLoading.value = false
+                hideLoading()
             }
         )
     }
@@ -1332,7 +1537,7 @@ class ACTimelineVM @Inject constructor(
     fun updateStepTime(stepId: Int, startTime: String?, endTime: String?) {
         if (startTime == null && endTime == null) return
 
-        _isLoading.value = true
+        showLoading()
 
         // API expects time only in HH:mm format (not full datetime)
         updateStepTimeUseCase.on(
@@ -1346,7 +1551,7 @@ class ACTimelineVM @Inject constructor(
                 refreshTimeline()
             },
             error = { errorModel ->
-                _isLoading.value = false
+                hideLoading()
                 _error.value = errorModel.errorDesc
             }
         )
@@ -1752,11 +1957,11 @@ class ACTimelineVM @Inject constructor(
     private fun createManualPoiStep(data: AddPlanData) {
         // TODO: Implement manual POI step creation
         // This would call an API to add a manual step to the timeline
-        _isLoading.value = true
+        showLoading()
 
         // For now, just refresh the timeline
         refreshTimeline()
-        _isLoading.value = false
+        hideLoading()
     }
 
     // =====================
@@ -1783,6 +1988,7 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Returns favorites that haven't been added as reserved_activity yet
+     * and have a valid city mapping (cityName matches a resolved destination)
      * Used when opening SavedPlans screen
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
@@ -1795,11 +2001,31 @@ class ACTimelineVM @Inject constructor(
             ?.mapNotNull { it.additionalData?.activityId }
             ?.toSet() ?: emptySet()
 
-        // Return only favourites that are NOT in timeline as reserved_activity
+        // Return only favourites that:
+        // 1. Are NOT in timeline as reserved_activity
+        // 2. Have a valid city mapping (cityName matches a resolved destination)
         return favourites.filter { favourite ->
-            favourite.activityId !in reservedActivityIds
+            favourite.activityId !in reservedActivityIds &&
+            getResolvedCityId(favourite.cityName) != null
         }
     }
+
+    /**
+     * Returns the resolved cityId for a given cityName.
+     * Uses the cityNameToIdMap built from resolved destinations.
+     * @param cityName The city name from host app data
+     * @return Our system's cityId, or null if not found
+     */
+    fun getResolvedCityId(cityName: String?): Int? {
+        if (cityName.isNullOrBlank()) return null
+        return cityNameToIdMap[cityName.lowercase().trim()]
+    }
+
+    /**
+     * Returns a copy of the cityName to cityId mapping.
+     * Used to pass resolved city mappings to other screens (e.g., SavedPlans)
+     */
+    fun getCityNameToIdMap(): Map<String, Int> = cityNameToIdMap.toMap()
 
     fun getSelectedDate(): Date? {
         val days = _availableDays.value ?: return null
@@ -1945,7 +2171,7 @@ class ACTimelineVM @Inject constructor(
 
         // Wait for login to complete (should already be done in background)
         // Then proceed with city resolution
-        _isLoading.value = true
+        showLoading()
         waitForLoginThenProceed {
             android.util.Log.d("TIMELINE_DEBUG", "Login complete, proceeding with city resolution")
             resolveDestinationCitiesAndProceed()

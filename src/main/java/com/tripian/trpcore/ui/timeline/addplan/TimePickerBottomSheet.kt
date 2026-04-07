@@ -1,12 +1,10 @@
 package com.tripian.trpcore.ui.timeline.addplan
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.NumberPicker
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.BottomSheetTimePickerBinding
 import com.tripian.trpcore.util.LanguageConst
@@ -15,10 +13,9 @@ import com.tripian.trpcore.util.LanguageConst
  * TimePickerBottomSheet
  * iOS-style time picker bottom sheet for start and end time selection
  */
-class TimePickerBottomSheet : BottomSheetDialogFragment() {
-
-    private var _binding: BottomSheetTimePickerBinding? = null
-    private val binding get() = _binding!!
+class TimePickerBottomSheet : BaseSimpleBottomSheet<BottomSheetTimePickerBinding>(
+    BottomSheetTimePickerBinding::inflate
+) {
 
     private var onTimeSelectedListener: ((startTime: String?, endTime: String?) -> Unit)? = null
 
@@ -43,15 +40,6 @@ class TimePickerBottomSheet : BottomSheetDialogFragment() {
     private val amPmValues = arrayOf("AM", "PM")
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = BottomSheetTimePickerBinding.inflate(inflater, container, false)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -336,11 +324,6 @@ class TimePickerBottomSheet : BottomSheetDialogFragment() {
 
     fun setOnTimeSelectedListener(listener: (startTime: String?, endTime: String?) -> Unit) {
         onTimeSelectedListener = listener
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 
     companion object {

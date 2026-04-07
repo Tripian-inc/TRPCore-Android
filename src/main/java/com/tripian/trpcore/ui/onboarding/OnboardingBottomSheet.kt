@@ -23,8 +23,6 @@ class OnboardingBottomSheet : BaseBottomDialogFragment<BottomSheetOnboardingBind
     private var onCompleteListener: (() -> Unit)? = null
     private var onCompleteListenerCalled = false
 
-    override fun isDragEnable(): Boolean = false
-
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         dialog.setCancelable(false)
@@ -32,6 +30,8 @@ class OnboardingBottomSheet : BaseBottomDialogFragment<BottomSheetOnboardingBind
         isCancelable = false
         return dialog
     }
+
+    override fun isDragEnable() = false
 
     override fun setListeners() {
         super.setListeners()

@@ -39,8 +39,12 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             // Convert long array back to Date list
             val availableDays = availableDaysLong?.map { Date(it) } ?: emptyList()
 
-            // Initialize ViewModel with filtered favorites
-            viewModel.initialize(favorites ?: emptyList(), tripHash, availableDays)
+            // Get city name to ID mapping from intent
+            @Suppress("UNCHECKED_CAST")
+            val cityMap = intent.getSerializableExtra(EXTRA_CITY_MAP) as? HashMap<String, Int> ?: hashMapOf()
+
+            // Initialize ViewModel with filtered favorites and city mapping
+            viewModel.initialize(favorites ?: emptyList(), tripHash, availableDays, cityMap)
         }
     }
 
@@ -120,9 +124,12 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
     private fun showTimeSelectionBottomSheet(favorite: SegmentFavoriteItem) {
         viewModel.clearTimeSelectionTrigger()
 
+        // Get resolved cityId from mapping (our system's ID) instead of host app's cityId
+        val resolvedCityId = viewModel.getResolvedCityId(favorite.cityName)
+
         timeSelectionBottomSheet = ActivityTimeSelectionBottomSheet.newInstanceForFavorite(
             favoriteActivityId = favorite.activityId,
-            favoriteCityId = favorite.cityId,
+            favoriteCityId = resolvedCityId ?: favorite.cityId,  // Use resolved cityId if available
             favoriteTitle = favorite.title,
             favoriteDuration = favorite.duration,
             availableDays = viewModel.getAvailableDays(),
@@ -141,21 +148,25 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         const val EXTRA_FAVORITES = "extra_favorites"
         const val EXTRA_TRIP_HASH = "extra_trip_hash"
         const val EXTRA_AVAILABLE_DAYS = "extra_available_days"
+        const val EXTRA_CITY_MAP = "extra_city_map"
 
         /**
          * Launch SavedPlans screen with pre-filtered favorites
          * @param favorites List of favorites that haven't been added as reserved_activity yet
+         * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
          */
         fun launch(
             context: Context,
             favorites: List<SegmentFavoriteItem>,
             tripHash: String,
-            availableDays: List<Date>
+            availableDays: List<Date>,
+            cityNameToIdMap: Map<String, Int> = emptyMap()
         ): Intent {
             return Intent(context, ACSavedPlans::class.java).apply {
                 putParcelableArrayListExtra(EXTRA_FAVORITES, ArrayList(favorites))
                 putExtra(EXTRA_TRIP_HASH, tripHash)
                 putExtra(EXTRA_AVAILABLE_DAYS, availableDays.map { it.time }.toLongArray())
+                putExtra(EXTRA_CITY_MAP, HashMap(cityNameToIdMap))
             }
         }
     }
