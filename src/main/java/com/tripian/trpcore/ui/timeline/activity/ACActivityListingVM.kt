@@ -14,7 +14,6 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
 import com.tripian.trpcore.util.AlertType
-import android.util.Log
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.appLanguage
 import java.text.SimpleDateFormat
