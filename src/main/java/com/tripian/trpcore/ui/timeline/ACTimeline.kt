@@ -252,6 +252,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
+        // Scroll to new segment after creation
+        viewModel.scrollToNewSegmentPlanId.observe(this) { planId ->
+            planId?.let {
+                scrollToNewSegment(it)
+                viewModel.clearScrollToNewSegment()
+            }
+        }
+
         // Add plan sheet
         viewModel.showAddPlanSheet.observe(this) { show ->
             if (show == true) {
@@ -917,6 +925,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 currentItems[position] = currentItem.copy(isExpanded = !currentItem.isExpanded)
                 timelineAdapter.submitList(currentItems)
             }
+        }
+    }
+
+    private fun scrollToNewSegment(planId: String) {
+        // Find position of the new segment by plan.id
+        val position = timelineAdapter.currentList.indexOfFirst { item ->
+            item is TimelineDisplayItem.Recommendations && item.plan.id == planId
+        }
+        if (position != -1) {
+            // Use smoothScrollToPosition for better UX
+            binding.rvTimeline.smoothScrollToPosition(position)
         }
     }
 

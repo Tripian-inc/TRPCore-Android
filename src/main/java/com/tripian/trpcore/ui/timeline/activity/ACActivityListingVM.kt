@@ -2,6 +2,7 @@ package com.tripian.trpcore.ui.timeline.activity
 
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.tour.model.TourProduct
@@ -251,12 +252,12 @@ class ACActivityListingVM @Inject constructor(
                 iconRes = R.drawable.ic_cat_shows,
                 keywords = "show"
             ),
-            ActivityCategoryItem(
-                id = "transport",
-                languageKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT,
-                iconRes = R.drawable.ic_cat_transfers,
-                keywords = "transfer service, transportation"
-            )
+//            ActivityCategoryItem(
+//                id = "transport",
+//                languageKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT,
+//                iconRes = R.drawable.ic_cat_transfers,
+//                keywords = "transfer service, transportation"
+//            )
         )
     }
 

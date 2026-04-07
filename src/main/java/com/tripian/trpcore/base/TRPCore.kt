@@ -30,6 +30,8 @@ import dagger.android.DispatchingAndroidInjector
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.plugins.RxJavaPlugins
 import io.reactivex.schedulers.Schedulers
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -551,6 +553,9 @@ class TRPCore {
         val effectiveUniqueId = uniqueId ?: itinerary.uniqueId
         val effectiveTripHash = tripHash ?: itinerary.tripianHash
 
+        // Fire-and-forget log - send itinerary parameters to backend
+        sendItineraryLog(itinerary, tripHash, uniqueId, appLanguage, appCurrency)
+
         // Ensure languages are loaded before opening timeline
         ensureLanguagesLoaded {
             val intent = Intent(context, ACTimeline::class.java).apply {
@@ -666,6 +671,75 @@ class TRPCore {
                     Log.e("TRPCore", "Failed to pre-fetch cities: ${error.message}")
                 }
             )
+    }
+
+    /**
+     * Sends itinerary parameters log to backend (fire-and-forget).
+     * This is called when SDK is started with startWithItinerary.
+     * The log is sent asynchronously and failures do not affect the user experience.
+     */
+    private fun sendItineraryLog(
+        itinerary: ItineraryWithActivities,
+        tripHash: String?,
+        uniqueId: String?,
+        appLanguage: String,
+        appCurrency: String
+    ) {
+        try {
+            val requestParams = mapOf<String, Any?>(
+                "tripName" to (itinerary.tripName ?: ""),
+                "startDatetime" to itinerary.startDatetime,
+                "endDatetime" to itinerary.endDatetime,
+                "uniqueId" to itinerary.uniqueId,
+                "tripianHash" to (itinerary.tripianHash ?: ""),
+                "destinationItems" to itinerary.destinationItems,
+                "favouriteItems" to (itinerary.favouriteItems ?: emptyList<Any>()),
+                "tripItems" to (itinerary.tripItems ?: emptyList<Any>()),
+                "appLanguage" to appLanguage,
+                "appCurrency" to appCurrency,
+                "passedTripHash" to (tripHash ?: ""),
+                "passedUniqueId" to (uniqueId ?: "")
+            )
+
+            val logMessage = mapOf(
+                "platform" to "android",
+                "type" to "INFO",
+                "g_api_customer_id" to 0,
+                "user_id" to 0,
+                "endpoint" to "startWithItinerary",
+                "response_msg" to "SDK started with itinerary",
+                "request_params" to requestParams,
+                "api_key" to appConfig.apiKey()
+            )
+
+            val logRequest = mapOf("message" to logMessage)
+            val jsonBody = com.google.gson.Gson().toJson(logRequest)
+
+            val client = okhttp3.OkHttpClient.Builder()
+                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .writeTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                .build()
+            val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+            val body = jsonBody.toRequestBody(mediaType)
+
+            val request = okhttp3.Request.Builder()
+                .url("${appConfig.tripianServiceUrl()}/${appConfig.apiVersion()}/misc/logs")
+                .addHeader("x-api-key", appConfig.apiKey())
+                .post(body)
+                .build()
+
+            // Fire-and-forget: Use enqueue for fully async call
+            client.newCall(request).enqueue(object : okhttp3.Callback {
+                override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
+                }
+
+                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                    response.close()
+                }
+            })
+        } catch (e: Exception) {
+        }
     }
 
     /**
