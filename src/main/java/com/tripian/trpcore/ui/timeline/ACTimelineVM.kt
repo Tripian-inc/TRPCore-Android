@@ -23,6 +23,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.TransitionInfo
 import com.tripian.trpcore.domain.model.timeline.generateDateRange
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
@@ -35,6 +36,12 @@ import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveSegmentsForDeletedCitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.SyncReservedToBookedUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.UpdateDateRangeUseCase
 import com.tripian.trpcore.repository.CityResolveResult
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.AlertType
@@ -65,7 +72,14 @@ class ACTimelineVM @Inject constructor(
     private val getTimelineStepRoutesUseCase: GetTimelineStepRoutesUseCase,
     private val resolveCitiesUseCase: ResolveCitiesUseCase,
     private val tripRepository: com.tripian.trpcore.repository.TripRepository,
-    private val preferences: Preferences
+    private val preferences: Preferences,
+    // Timeline Sync UseCases (iOS Guide Implementation)
+    private val resolveCityIdsForActivitiesUseCase: ResolveCityIdsForActivitiesUseCase,
+    private val detectReservedToBookedTransitionUseCase: DetectReservedToBookedTransitionUseCase,
+    private val syncReservedToBookedUseCase: SyncReservedToBookedUseCase,
+    private val addMissingBookedActivitiesUseCase: AddMissingBookedActivitiesUseCase,
+    private val updateDateRangeUseCase: UpdateDateRangeUseCase,
+    private val removeSegmentsForDeletedCitiesUseCase: RemoveSegmentsForDeletedCitiesUseCase
 ) : BaseViewModel() {
 
     // =====================
@@ -159,6 +173,9 @@ class ACTimelineVM @Inject constructor(
     // City name to ID mapping - maps resolved city names (lowercase) to our cityIds
     // Used to convert host app cityIds to our system's cityIds
     private val cityNameToIdMap = mutableMapOf<String, Int>()
+
+    // Sync operations flag - ensures sync only runs once after initial fetch
+    private var syncOperationsCompleted = false
 
     // =====================
     // LIFECYCLE
@@ -819,6 +836,12 @@ class ACTimelineVM @Inject constructor(
 
         // Generate display items for selected day
         updateDisplayItems()
+
+        // iOS Guide: Perform sync operations after initial timeline fetch
+        if (!syncOperationsCompleted && itinerary != null) {
+            syncOperationsCompleted = true
+            performSyncOperations(timeline)
+        }
     }
 
     /**
@@ -984,6 +1007,7 @@ class ACTimelineVM @Inject constructor(
             if (segment.startDate?.startsWith(dateStr) == true) {
                 val segmentType = segment.segmentType
                 val plan = timeline.plans?.get(index) //findPlanForSegment(segment, timeline.plans, dateStr)
+                val planId = plan?.id  // Get planId for conflict detection
                 when (segmentType) {
                     // Booked Activity (not reserved)
                     SegmentType.BOOKED_ACTIVITY -> {
@@ -992,7 +1016,8 @@ class ACTimelineVM @Inject constructor(
                                 segment = segment,
                                 isReserved = false,
                                 segmentIndex = index,
-                                city = getCityForSegment(segment, timeline)
+                                city = getCityForSegment(segment, timeline),
+                                planId = planId
                             )
                         )
                     }
@@ -1003,7 +1028,8 @@ class ACTimelineVM @Inject constructor(
                                 segment = segment,
                                 isReserved = true,
                                 segmentIndex = index,
-                                city = getCityForSegment(segment, timeline)
+                                city = getCityForSegment(segment, timeline),
+                                planId = planId
                             )
                         )
                     }
@@ -1050,7 +1076,8 @@ class ACTimelineVM @Inject constructor(
                                     step = step,
                                     segment = segment,
                                     segmentIndex = index,
-                                    city = getCityForSegment(segment, timeline)
+                                    city = getCityForSegment(segment, timeline),
+                                    planId = planId
                                 )
                             )
                         }
@@ -1236,19 +1263,44 @@ class ACTimelineVM @Inject constructor(
         val startTime: Date,
         val endTime: Date,
         val itemType: String,  // "booked", "manual", "step"
-        val itemIndex: Int,    // Index in items list (-1 for steps)
-        val stepId: Int? = null // Step ID for Recommendations steps
+        val itemIndex: Int,    // Index in items list
+        val stepId: Int? = null, // Step ID for Recommendations steps
+        val planId: String? = null,  // Plan ID for determining older/newer segments
+        val segmentType: String? = null  // Segment type for booked_activity special handling
     )
 
     /**
-     * Detects time conflicts between all items in the list.
-     * Two time ranges overlap if: start1 < end2 AND start2 < end1
-     * (Adjacent times like 11:00-12:00 and 12:00-13:00 do NOT conflict)
-     *
-     * @return Updated items list with conflict flags set
+     * Parses planId from string format.
+     * Format can be "12345" or "20123-20124" (takes first part after split)
      */
-    private fun detectTimeConflicts(items: List<TimelineDisplayItem>): List<TimelineDisplayItem> {
-        // Collect all time ranges
+    private fun parsePlanId(planId: String?): Int {
+        if (planId.isNullOrEmpty()) return 0
+        val firstPart = planId.split("-").firstOrNull() ?: planId
+        return firstPart.toIntOrNull() ?: 0
+    }
+
+    /**
+     * Determines which segment is older by comparing planIds.
+     * Lower planId = older segment
+     */
+    private fun determineOlderAndNewer(
+        range1: TimeRange,
+        range2: TimeRange
+    ): Pair<TimeRange, TimeRange> {
+        val planId1 = parsePlanId(range1.planId)
+        val planId2 = parsePlanId(range2.planId)
+
+        return if (planId1 < planId2) {
+            Pair(range1, range2)  // range1 is older
+        } else {
+            Pair(range2, range1)  // range2 is older
+        }
+    }
+
+    /**
+     * Collects all time ranges from display items
+     */
+    private fun collectTimeRanges(items: List<TimelineDisplayItem>): List<TimeRange> {
         val timeRanges = mutableListOf<TimeRange>()
 
         items.forEachIndexed { index, item ->
@@ -1262,7 +1314,9 @@ class ACTimelineVM @Inject constructor(
                                 startTime = startTime,
                                 endTime = endTime,
                                 itemType = "booked",
-                                itemIndex = index
+                                itemIndex = index,
+                                planId = item.planId,
+                                segmentType = if (item.isReserved) "reserved_activity" else "booked_activity"
                             )
                         )
                     }
@@ -1277,14 +1331,15 @@ class ACTimelineVM @Inject constructor(
                                 startTime = startTime,
                                 endTime = endTime,
                                 itemType = "manual",
-                                itemIndex = index
+                                itemIndex = index,
+                                planId = item.planId,
+                                segmentType = "manual_poi"
                             )
                         )
                     }
                 }
 
                 is TimelineDisplayItem.Recommendations -> {
-                    // Add time ranges for each step
                     item.steps.forEach { step ->
                         val startTime = step.startDateTimes?.toDate()
                         val endTime = step.endDateTimes?.toDate()
@@ -1295,20 +1350,114 @@ class ACTimelineVM @Inject constructor(
                                     endTime = endTime,
                                     itemType = "step",
                                     itemIndex = index,
-                                    stepId = step.id
+                                    stepId = step.id,
+                                    planId = item.planId,
+                                    segmentType = "itinerary"
                                 )
                             )
                         }
                     }
                 }
 
-                else -> { /* Ignore other item types */ }
+                else -> { /* Ignore */ }
             }
         }
 
-        // Find conflicting ranges (O(n^2) but n is typically small)
-        val conflictingItemIndices = mutableSetOf<Int>()
-        val conflictingStepIds = mutableMapOf<Int, MutableSet<Int>>() // itemIndex -> Set of stepIds
+        return timeRanges
+    }
+
+    /**
+     * Builds transitive conflict groups (Union-Find approach).
+     * Example: A-B overlap, B-C overlap → A,B,C in same group
+     */
+    private fun buildConflictGroups(conflicts: List<Pair<Int, Int>>): List<Set<Int>> {
+        val groups = mutableListOf<MutableSet<Int>>()
+
+        conflicts.forEach { (index1, index2) ->
+            val existingGroup = groups.find { it.contains(index1) || it.contains(index2) }
+
+            if (existingGroup != null) {
+                existingGroup.add(index1)
+                existingGroup.add(index2)
+            } else {
+                groups.add(mutableSetOf(index1, index2))
+            }
+        }
+
+        // Merge overlapping groups (transitive closure)
+        var merged = true
+        while (merged) {
+            merged = false
+            for (i in groups.indices) {
+                for (j in (i + 1) until groups.size) {
+                    if (groups[i].any { it in groups[j] }) {
+                        groups[i].addAll(groups[j])
+                        groups.removeAt(j)
+                        merged = true
+                        break
+                    }
+                }
+                if (merged) break
+            }
+        }
+
+        return groups.filter { it.size >= 3 }  // Only return groups with 3+ items
+    }
+
+    /**
+     * Applies 3+ conflict rule: oldest segment (min planId) gets only visual conflict,
+     * all others get Time Overlap + visual conflict.
+     * Booked activities always get only visual conflict.
+     */
+    private fun applyThreePlusConflictRules(
+        groupIndices: Set<Int>,
+        timeRanges: List<TimeRange>,
+        visualConflictIndices: MutableSet<Int>,
+        timeOverlapIndices: MutableSet<Int>,
+        timeOverlapStepIds: MutableMap<Int, MutableSet<Int>>
+    ) {
+        val groupRanges = groupIndices.map { timeRanges[it] }
+
+        // Separate booked from non-booked
+        val nonBookedRanges = groupRanges.filter { it.segmentType != "booked_activity" }
+
+        if (nonBookedRanges.isNotEmpty()) {
+            // Find oldest (min planId)
+            val oldestRange = nonBookedRanges.minByOrNull { parsePlanId(it.planId) }
+
+            // Apply rules
+            nonBookedRanges.forEach { range ->
+                visualConflictIndices.add(range.itemIndex)
+                if (range != oldestRange) {
+                    // NOT oldest → Time Overlap
+                    if (range.itemType == "step" && range.stepId != null) {
+                        timeOverlapStepIds.getOrPut(range.itemIndex) { mutableSetOf() }.add(range.stepId)
+                    } else {
+                        timeOverlapIndices.add(range.itemIndex)
+                    }
+                }
+            }
+        }
+
+        // Booked activities: only visual conflict
+        groupRanges.filter { it.segmentType == "booked_activity" }
+            .forEach { visualConflictIndices.add(it.itemIndex) }
+    }
+
+    /**
+     * Detects time conflicts based on planId-based rules.
+     *
+     * Rules:
+     * 1. 2-item conflicts: Newer segment (higher planId) shows "Time Overlap"
+     * 2. Booked activity special: If booked is newer, older segment shows "Time Overlap"
+     * 3. 3+ conflicts: Oldest (min planId) gets only visual, others get Time Overlap
+     */
+    private fun detectTimeConflicts(items: List<TimelineDisplayItem>): List<TimelineDisplayItem> {
+        // Phase 1: Collect all time ranges
+        val timeRanges = collectTimeRanges(items)
+
+        // Phase 2: Detect all 2-way conflicts
+        val twoWayConflicts = mutableListOf<Pair<Int, Int>>()
 
         for (i in timeRanges.indices) {
             for (j in (i + 1) until timeRanges.size) {
@@ -1317,37 +1466,86 @@ class ACTimelineVM @Inject constructor(
 
                 // Check overlap: start1 < end2 AND start2 < end1
                 if (range1.startTime.before(range2.endTime) && range2.startTime.before(range1.endTime)) {
-                    // Both ranges have conflict
-                    conflictingItemIndices.add(range1.itemIndex)
-                    conflictingItemIndices.add(range2.itemIndex)
-
-                    // Track conflicting step IDs for Recommendations
-                    if (range1.itemType == "step" && range1.stepId != null) {
-                        conflictingStepIds.getOrPut(range1.itemIndex) { mutableSetOf() }.add(range1.stepId)
-                    }
-                    if (range2.itemType == "step" && range2.stepId != null) {
-                        conflictingStepIds.getOrPut(range2.itemIndex) { mutableSetOf() }.add(range2.stepId)
-                    }
+                    twoWayConflicts.add(Pair(i, j))
                 }
             }
         }
 
-        // Update items with conflict flags
-        // IMPORTANT: Always explicitly set conflict flags to ensure they are cleared when no conflicts exist
+        // Storage for marking
+        val visualConflictIndices = mutableSetOf<Int>()
+        val timeOverlapIndices = mutableSetOf<Int>()
+        val timeOverlapStepIds = mutableMapOf<Int, MutableSet<Int>>()
+
+        // Phase 3: Build transitive conflict groups (3+ items)
+        val conflictGroups = buildConflictGroups(twoWayConflicts)
+        val handledByThreePlus = conflictGroups.flatten().toSet()
+
+        // Phase 4: Apply 3+ conflict rules (overrides 2-item rules)
+        conflictGroups.forEach { groupIndices ->
+            applyThreePlusConflictRules(
+                groupIndices,
+                timeRanges,
+                visualConflictIndices,
+                timeOverlapIndices,
+                timeOverlapStepIds
+            )
+        }
+
+        // Phase 5: Handle 2-item conflicts (NOT in 3+ groups)
+        twoWayConflicts.forEach { (i, j) ->
+            // Skip if already handled by 3+ rule
+            if (i in handledByThreePlus || j in handledByThreePlus) return@forEach
+
+            val range1 = timeRanges[i]
+            val range2 = timeRanges[j]
+            val (olderRange, newerRange) = determineOlderAndNewer(range1, range2)
+
+            // Apply visual conflict to both
+            visualConflictIndices.add(olderRange.itemIndex)
+            visualConflictIndices.add(newerRange.itemIndex)
+
+            // Booked activity special rule
+            if (newerRange.segmentType == "booked_activity") {
+                // Booked is newer → older segment shows Time Overlap
+                if (olderRange.itemType == "step" && olderRange.stepId != null) {
+                    timeOverlapStepIds.getOrPut(olderRange.itemIndex) { mutableSetOf() }.add(olderRange.stepId)
+                } else {
+                    timeOverlapIndices.add(olderRange.itemIndex)
+                }
+            } else if (olderRange.segmentType == "booked_activity") {
+                // Booked is older → newer segment shows Time Overlap (normal rule)
+                if (newerRange.itemType == "step" && newerRange.stepId != null) {
+                    timeOverlapStepIds.getOrPut(newerRange.itemIndex) { mutableSetOf() }.add(newerRange.stepId)
+                } else {
+                    timeOverlapIndices.add(newerRange.itemIndex)
+                }
+            } else {
+                // Normal rule: newer segment shows Time Overlap
+                if (newerRange.itemType == "step" && newerRange.stepId != null) {
+                    timeOverlapStepIds.getOrPut(newerRange.itemIndex) { mutableSetOf() }.add(newerRange.stepId)
+                } else {
+                    timeOverlapIndices.add(newerRange.itemIndex)
+                }
+            }
+        }
+
+        // Phase 6: Update items with final flags
         return items.mapIndexed { index, item ->
             when (item) {
                 is TimelineDisplayItem.BookedActivity -> {
-                    val hasConflict = index in conflictingItemIndices
-                    item.copy(hasConflict = hasConflict)
+                    item.copy(hasConflict = index in visualConflictIndices)
+                    // BookedActivity NEVER shows Time Overlap text
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
-                    val hasConflict = index in conflictingItemIndices
-                    item.copy(hasConflict = hasConflict, showTimeOverlapText = hasConflict)
+                    item.copy(
+                        hasConflict = index in visualConflictIndices,
+                        showTimeOverlapText = index in timeOverlapIndices
+                    )
                 }
 
                 is TimelineDisplayItem.Recommendations -> {
-                    val stepIds = conflictingStepIds[index] ?: emptySet()
+                    val stepIds = timeOverlapStepIds[index] ?: emptySet()
                     item.copy(conflictingStepIds = stepIds)
                 }
 
@@ -2176,6 +2374,157 @@ class ACTimelineVM @Inject constructor(
             android.util.Log.d("TIMELINE_DEBUG", "Login complete, proceeding with city resolution")
             resolveDestinationCitiesAndProceed()
         }
+    }
+
+    // ========================================
+    // SYNC OPERATIONS (iOS Guide Implementation)
+    // ========================================
+
+    /**
+     * Ana sync orchestrator
+     * STEP 1: City resolution (blocking)
+     * STEP 2: Parallel operations
+     * STEP 3: Sequential operations
+     * STEP 4: Silent refresh
+     */
+    private fun performSyncOperations(timeline: Timeline) {
+        val tripItems = itinerary?.tripItems ?: emptyList()
+        val favouriteItems = itinerary?.favouriteItems ?: emptyList()
+
+        if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
+            return  // Sync'e gerek yok
+        }
+
+        // STEP 1: City resolution (BLOCKING - diğer operasyonlar bunu bekler)
+        resolveCityIdsForActivitiesUseCase.on(
+            params = ResolveCityIdsForActivitiesUseCase.Params(
+                tripItems,
+                favouriteItems,
+                cityNameToIdMap.toMap()
+            ),
+            success = { updatedCityMap ->
+                cityNameToIdMap.putAll(updatedCityMap)
+                performParallelSyncOperations(timeline, tripItems, updatedCityMap)
+            },
+            error = { error ->
+                android.util.Log.e("TIMELINE_SYNC", "City resolution failed: ${error.errorDesc}")
+                // Fallback: mevcut map ile devam et
+                performParallelSyncOperations(timeline, tripItems, cityNameToIdMap.toMap())
+            }
+        )
+    }
+
+    /**
+     * STEP 2: Parallel operations (3 concurrent)
+     * - Detect transitions
+     * - Add missing activities
+     * - Update date range
+     */
+    private fun performParallelSyncOperations(
+        timeline: Timeline,
+        tripItems: List<com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem>,
+        cityMap: Map<String, Int>
+    ) {
+        var detectedTransitions: List<TransitionInfo>? = null
+        var completedOps = 0
+
+        val onParallelComplete = {
+            completedOps++
+            if (completedOps == 3) {
+                // Hepsi bitti, sequential operasyonlara geç
+                performSequentialSyncOperations(timeline, detectedTransitions, cityMap)
+            }
+        }
+
+        // Parallel Op 1: Transition detection
+        detectReservedToBookedTransitionUseCase.on(
+            params = DetectReservedToBookedTransitionUseCase.Params(timeline, tripItems),
+            success = { transitions ->
+                detectedTransitions = transitions
+                onParallelComplete()
+            },
+            error = {
+                android.util.Log.e("TIMELINE_SYNC", "Transition detection failed")
+                onParallelComplete()
+            }
+        )
+
+        // Parallel Op 2: Add missing activities
+        addMissingBookedActivitiesUseCase.on(
+            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, tripItems, timeline, cityMap),
+            success = { onParallelComplete() },
+            error = {
+                android.util.Log.e("TIMELINE_SYNC", "Add missing activities failed")
+                onParallelComplete()
+            }
+        )
+
+        // Parallel Op 3: Update date range
+        updateDateRangeUseCase.on(
+            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
+            success = { onParallelComplete() },
+            error = {
+                android.util.Log.e("TIMELINE_SYNC", "Date range update failed")
+                onParallelComplete()
+            }
+        )
+    }
+
+    /**
+     * STEP 3: Sequential operations
+     * - Sync transitions (delete reserved → create booked)
+     * - Remove deleted city segments
+     */
+    private fun performSequentialSyncOperations(
+        timeline: Timeline,
+        transitions: List<TransitionInfo>?,
+        cityMap: Map<String, Int>
+    ) {
+        // Sequential Op 1: Sync transitions (if any)
+        if (!transitions.isNullOrEmpty()) {
+            syncReservedToBookedUseCase.on(
+                params = SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap),
+                success = { performCityDeletionSync(timeline) },
+                error = {
+                    android.util.Log.e("TIMELINE_SYNC", "Transition sync failed")
+                    performCityDeletionSync(timeline)
+                }
+            )
+        } else {
+            performCityDeletionSync(timeline)
+        }
+    }
+
+    /**
+     * Sequential Op 2: Remove deleted cities
+     */
+    private fun performCityDeletionSync(timeline: Timeline) {
+        val destinations = itinerary?.destinationItems ?: emptyList()
+
+        removeSegmentsForDeletedCitiesUseCase.on(
+            params = RemoveSegmentsForDeletedCitiesUseCase.Params(_tripHash, timeline, destinations),
+            success = { refreshTimelineAfterSync() },
+            error = {
+                android.util.Log.e("TIMELINE_SYNC", "City deletion failed")
+                refreshTimelineAfterSync()
+            }
+        )
+    }
+
+    /**
+     * STEP 4: Silent refresh (no loading indicator)
+     */
+    private fun refreshTimelineAfterSync() {
+        fetchTimelineUseCase.on(
+            params = FetchTimelineUseCase.Params(_tripHash),
+            success = { timeline ->
+                // processTimeline'ı çağır ama sync tekrar çalışmayacak (syncOperationsCompleted=true)
+                processTimeline(timeline)
+            },
+            error = { error ->
+                android.util.Log.e("TIMELINE_SYNC", "Final refresh failed: ${error.errorDesc}")
+            }
+        )
     }
 
     companion object {

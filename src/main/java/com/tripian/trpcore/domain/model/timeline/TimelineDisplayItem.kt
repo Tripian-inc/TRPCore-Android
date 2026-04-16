@@ -21,6 +21,7 @@ sealed class TimelineDisplayItem : Serializable {
     abstract val city: City?
     abstract val segmentIndex: Int?
     abstract val order: Int  // Order number within each city group (1-based)
+    abstract val planId: String?  // Plan ID for conflict detection (higher = newer)
 
     /**
      * Section Header - City grouping header
@@ -32,6 +33,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val startTime: Date? = null
         override val segmentIndex: Int? = null
         override val order: Int = 0
+        override val planId: String? = null
     }
 
     /**
@@ -43,6 +45,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val startTime: Date? = null
         override val segmentIndex: Int? = null
         override val order: Int = 0
+        override val planId: String? = null
     }
 
     /**
@@ -56,6 +59,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val segmentIndex: Int? = null,
         override val city: City? = null,
         override val order: Int = 1,
+        override val planId: String? = null,
         val hasConflict: Boolean = false
     ) : TimelineDisplayItem() {
         override val startTime: Date?
@@ -113,6 +117,7 @@ sealed class TimelineDisplayItem : Serializable {
         val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
         val conflictingStepIds: Set<Int> = emptySet()  // Step IDs with time conflicts
     ) : TimelineDisplayItem() {
+        override val planId: String? get() = plan.id
         override val startTime: Date?
             get() = plan.startDate.toDate()
 
@@ -201,6 +206,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val segmentIndex: Int? = null,
         override val city: City? = null,
         override val order: Int = 1,
+        override val planId: String? = null,
         val hasConflict: Boolean = false,
         val showTimeOverlapText: Boolean = false
     ) : TimelineDisplayItem() {
@@ -244,6 +250,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val city: City? = null
         override val segmentIndex: Int? = null
         override val order: Int = 0
+        override val planId: String? = null
     }
 
     /**
@@ -256,6 +263,7 @@ sealed class TimelineDisplayItem : Serializable {
         override val city: City? = null
         override val segmentIndex: Int? = null
         override val order: Int = 0
+        override val planId: String? = null
     }
 }
 
