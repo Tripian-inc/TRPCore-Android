@@ -14,7 +14,7 @@ import com.tripian.trpcore.databinding.AcPoiListingBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.FilterData
 import com.tripian.trpcore.domain.model.timeline.SortOption
-import com.tripian.trpcore.ui.timeline.addplan.TimePickerBottomSheet
+import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.LanguageConst
 
@@ -26,7 +26,7 @@ import com.tripian.trpcore.util.LanguageConst
 class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
     private var poiAdapter: AdapterPOIListing? = null
-    private var timePickerBottomSheet: TimePickerBottomSheet? = null
+    private var timeSelectionBottomSheet: TimeSelectionBottomSheet? = null
     private var filterBottomSheet: FilterBottomSheet? = null
     private var sortBottomSheet: SortBottomSheet? = null
     private var selectedPoi: Poi? = null
@@ -220,12 +220,9 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         // Store the selected POI for use when time is confirmed
         selectedPoi = poi
 
-        // Use the existing TimePickerBottomSheet from AddPlan flow
-        // Pass POI duration for auto end time calculation (null or 0 will use default 60 minutes)
-        timePickerBottomSheet = TimePickerBottomSheet.newInstance(
-            durationMinutes = poi.duration
-        )
-        timePickerBottomSheet?.setOnTimeSelectedListener { startTime, endTime ->
+        // Show time selection bottom sheet (start time and end time)
+        timeSelectionBottomSheet = TimeSelectionBottomSheet.newInstance()
+        timeSelectionBottomSheet?.setOnTimeSelectedListener { startTime, endTime ->
             val currentPoi = selectedPoi ?: return@setOnTimeSelectedListener
             val selectedDate = viewModel.getSelectedDate() ?: return@setOnTimeSelectedListener
 
@@ -237,7 +234,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             selectedPoi = null
             viewModel.clearTimeSelection()
         }
-        timePickerBottomSheet?.show(supportFragmentManager, TimePickerBottomSheet.TAG)
+        timeSelectionBottomSheet?.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
     }
 
     private fun hideKeyboard() {

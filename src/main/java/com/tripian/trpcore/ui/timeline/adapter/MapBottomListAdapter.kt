@@ -98,45 +98,23 @@ class MapBottomListAdapter(
             // Order badge
             binding.tvOrderBadge.text = item.order.toString()
 
-            // Apply selection styling to badge based on city index
-            if (item.cityIndex == 0) {
-                // First city: black/white style
-                if (item.isSelected) {
-                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
-                        binding.root.context,
-                        R.drawable.bg_marker_red
-                    )
-                    binding.tvOrderBadge.setTextColor(
-                        ContextCompat.getColor(binding.root.context, R.color.trp_white)
-                    )
-                } else {
-                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
-                        binding.root.context,
-                        R.drawable.bg_marker_white
-                    )
-                    binding.tvOrderBadge.setTextColor(
-                        ContextCompat.getColor(binding.root.context, R.color.trp_black_soft)
-                    )
-                }
+            // Apply selection styling to badge - same color for all cities
+            if (item.isSelected) {
+                binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                    binding.root.context,
+                    R.drawable.bg_marker_red
+                )
+                binding.tvOrderBadge.setTextColor(
+                    ContextCompat.getColor(binding.root.context, R.color.trp_white)
+                )
             } else {
-                // Secondary cities: primary color style
-                if (item.isSelected) {
-                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
-                        binding.root.context,
-                        R.drawable.bg_marker_primary
-                    )
-                    binding.tvOrderBadge.setTextColor(
-                        ContextCompat.getColor(binding.root.context, R.color.trp_white)
-                    )
-                } else {
-                    binding.tvOrderBadge.background = ContextCompat.getDrawable(
-                        binding.root.context,
-                        R.drawable.bg_marker_white_primary
-                    )
-                    binding.tvOrderBadge.setTextColor(
-                        ContextCompat.getColor(binding.root.context, R.color.trp_primary)
-                    )
-                }
+                binding.tvOrderBadge.background = ContextCompat.getDrawable(
+                    binding.root.context,
+                    R.drawable.bg_marker_white
+                )
+                binding.tvOrderBadge.setTextColor(
+                    ContextCompat.getColor(binding.root.context, R.color.trp_black_soft)
+                )
             }
 
             // Title

@@ -1,16 +1,15 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Activity Card Item Layout - Flat Design -->
+<?xml version="1.0" encoding="utf-8"?><!-- Activity Card Item Layout - Flat Design -->
 <!-- iOS Reference: ActivityListingCell -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingEnd="@dimen/_6sdp"
+    android:background="@color/trp_white"
     android:paddingStart="@dimen/_12sdp"
     android:paddingTop="@dimen/_18sdp"
-    android:paddingBottom="12dp"
-    android:background="@color/trp_white">
+    android:paddingEnd="@dimen/_6sdp"
+    android:paddingBottom="12dp">
 
     <!-- Activity Image - 80x80 with rounded corners -->
     <com.tripian.trpcore.util.widget.ImageView
@@ -34,8 +33,8 @@
         android:background="@android:color/transparent"
         android:paddingStart="12dp"
         android:paddingTop="3dp"
-        android:paddingBottom="12dp"
         android:paddingEnd="6dp"
+        android:paddingBottom="12dp"
         android:src="@drawable/ic_add_to_plan"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -56,6 +55,12 @@
         app:layout_constraintTop_toTopOf="parent"
         tools:text="Barcelona &amp; Montjuïc Castle Tour" />
 
+    <com.tripian.trpcore.util.widget.Button
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:background="@color/transparent"
+        app:layout_constraintEnd_toEndOf="@+id/btnAdd"
+        app:layout_constraintTop_toBottomOf="@+id/btnAdd" />
     <!-- Rating Row -->
     <LinearLayout
         android:id="@+id/llRatingRow"

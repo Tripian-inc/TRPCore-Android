@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,10 +43,14 @@ import com.tripian.trpcore.util.LanguageConst
 /**
  * Compose-based Time Picker Dialog
  * Displayed in center of screen (not bottom sheet) with custom buttons
+ * @param minHour Minimum selectable hour (24h format, optional)
+ * @param minMinute Minimum selectable minute (optional, used with minHour)
  */
 class ComposeTimePickerDialog(
     private val initialHour: Int = 10,
     private val initialMinute: Int = 0,
+    private val minHour: Int? = null,
+    private val minMinute: Int? = null,
     private val cancelText: String,
     private val selectText: String,
     private val onTimeSelected: (hour: Int, minute: Int) -> Unit,
@@ -64,6 +67,8 @@ class ComposeTimePickerDialog(
                 TimePickerDialogContent(
                     initialHour = initialHour,
                     initialMinute = initialMinute,
+                    minHour = minHour,
+                    minMinute = minMinute,
                     cancelText = cancelText,
                     selectText = selectText,
                     onConfirm = { hour, minute ->
@@ -85,6 +90,8 @@ class ComposeTimePickerDialog(
 fun TimePickerDialogContent(
     initialHour: Int,
     initialMinute: Int,
+    minHour: Int?,
+    minMinute: Int?,
     cancelText: String,
     selectText: String,
     onConfirm: (Int, Int) -> Unit,
@@ -95,6 +102,15 @@ fun TimePickerDialogContent(
         initialMinute = initialMinute,
         is24Hour = false
     )
+
+    // Validate selected time against minimum time
+    val isTimeValid = if (minHour != null && minMinute != null) {
+        val selectedTotalMinutes = timePickerState.hour * 60 + timePickerState.minute
+        val minTotalMinutes = minHour * 60 + minMinute
+        selectedTotalMinutes > minTotalMinutes  // Must be strictly greater
+    } else {
+        true  // No minimum time constraint
+    }
 
     // Load custom fonts
     val mediumFont = FontFamily(
@@ -166,7 +182,6 @@ fun TimePickerDialogContent(
                 // Custom Buttons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Cancel Button (Text Button)
@@ -178,7 +193,7 @@ fun TimePickerDialogContent(
                     ) {
                         Text(
                             text = cancelText,
-                            color = textPrimary,
+                            color = primary,
                             fontSize = 16.sp,
                             fontFamily = mediumFont,
                             fontWeight = FontWeight.Medium
@@ -190,9 +205,12 @@ fun TimePickerDialogContent(
                         onClick = {
                             onConfirm(timePickerState.hour, timePickerState.minute)
                         },
+                        enabled = isTimeValid,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = primary,
-                            contentColor = Color.White
+                            contentColor = Color.White,
+                            disabledContainerColor = colorResource(id = R.color.trp_bgDisabled),
+                            disabledContentColor = colorResource(id = R.color.trp_fgWeak)
                         ),
                         shape = RoundedCornerShape(24.dp),
                         modifier = Modifier
@@ -214,15 +232,31 @@ fun TimePickerDialogContent(
 
 /**
  * Helper function to show the dialog from Fragment
+ * @param initialTime Initial time in HH:mm format (24h)
+ * @param minTime Minimum selectable time in HH:mm format (24h, optional)
+ * @param onTimeSelected Callback with selected hour and minute
  */
 fun Fragment.showComposeTimePicker(
     initialTime: String? = null,
+    minTime: String? = null,
     onTimeSelected: (hour: Int, minute: Int) -> Unit
 ) {
     val (hour, minute) = if (initialTime != null) {
         MaterialTimePickerHelper.parseTime24h(initialTime)
     } else {
         Pair(10, 0)
+    }
+
+    // Parse minimum time if provided
+    val minHourValue: Int?
+    val minMinuteValue: Int?
+    if (minTime != null) {
+        val (h, m) = MaterialTimePickerHelper.parseTime24h(minTime)
+        minHourValue = h
+        minMinuteValue = m
+    } else {
+        minHourValue = null
+        minMinuteValue = null
     }
 
     // Get localized button texts
@@ -232,6 +266,8 @@ fun Fragment.showComposeTimePicker(
     val dialog = ComposeTimePickerDialog(
         initialHour = hour,
         initialMinute = minute,
+        minHour = minHourValue,
+        minMinute = minMinuteValue,
         cancelText = cancelText,
         selectText = selectText,
         onTimeSelected = onTimeSelected

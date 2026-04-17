@@ -54,11 +54,19 @@ class BookedActivityVH(
         // Title
         binding.tvTitle.text = item.title
 
-        // Time (startTime - endTime format) - No "Time Overlap" text for BookedActivity
+        // Time (startTime - endTime format)
+        // Reserved activity CAN show "Time Overlap" text
+        // Booked activity NEVER shows "Time Overlap" text
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
-            binding.tvTime.text = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+            if (item.showTimeOverlapText) {
+                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
+                binding.tvTime.text = "$timeText $overlapText"
+            } else {
+                binding.tvTime.text = timeText
+            }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)

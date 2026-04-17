@@ -36,10 +36,11 @@
         <TextView
             android:id="@+id/tvTime"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="32dp"
+            android:maxLines="1"
+            android:gravity="center_vertical"
             android:layout_weight="1"
             android:layout_marginHorizontal="10dp"
-            android:gravity="end"
             android:fontFamily="@font/medium"
             android:textColor="@color/trp_text_primary"
             android:textSize="14sp"

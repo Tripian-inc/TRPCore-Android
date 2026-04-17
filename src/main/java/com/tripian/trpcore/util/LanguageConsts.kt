@@ -23,6 +23,7 @@ object LanguageConst {
     const val NO_RESULT_IN_AREA = "no_results_in_area"
     const val FROM = "trips.myTrips.itinerary.customPoiModal.visitTime.from"
     const val TO = "trips.myTrips.itinerary.customPoiModal.visitTime.to"
+    const val FREE = "common.label.free"
     const val OFFER_CLAIM = "notification.offerOptIn.title"
     const val DATE = "reservation.date"
     const val ATTRACTIONS = "trips.myTrips.exploreMore.categories.attractions"
@@ -206,6 +207,7 @@ object LanguageConst {
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
     const val TIMELINE_MAIN_VIEW = "timeline.map.mainView"
     const val TIME_OVERLAP = "timeline.timeOverlap"
+    const val CHANGE_TIME = "timeline.changeTime.title"
 
     // No City Available
     const val TIMELINE_NO_CITY_TITLE = "timeline.noCity.title"

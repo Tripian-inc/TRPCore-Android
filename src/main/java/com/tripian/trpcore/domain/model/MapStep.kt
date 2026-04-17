@@ -36,6 +36,8 @@ class MapStep : BaseModel() {
     var planDate: String? = null
     var isSelected: Boolean = false
     var cityIndex: Int = 0  // 0 = first city, 1+ = secondary cities (for different marker colors)
+    var isCityMarker: Boolean = false  // true if this is a city marker (not a step marker)
+    var cityId: Int? = null  // City ID for city markers
 
     fun isRatingAvailable(): Boolean {
         return rating != -1f && ratingCount > 0

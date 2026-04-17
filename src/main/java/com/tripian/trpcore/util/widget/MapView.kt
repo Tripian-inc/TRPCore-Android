@@ -291,32 +291,39 @@ class MapView : MapView {
 
                     val view = MarkerView(context)
 
-                    if (item.markerIcon != -1) {
-                        view.iconView.setImageResource(item.markerIcon)
-                        view.iconView.visibility = VISIBLE
+                    // Check if this is a city marker
+                    if (item.isCityMarker) {
+                        // City marker: show city icon only
+                        view.setCityMarker(true)
                     } else {
-                        // Hide icon view completely when no icon is set
-                        view.iconView.visibility = GONE
+                        // Step marker: normal rendering
+                        if (item.markerIcon != -1) {
+                            view.iconView.setImageResource(item.markerIcon)
+                            view.iconView.visibility = VISIBLE
+                        } else {
+                            // Hide icon view completely when no icon is set
+                            view.iconView.visibility = GONE
+                        }
+
+                        if (item.isOffer) {
+                            view.iconViewBackground.visibility = VISIBLE
+                        } else {
+                            view.iconViewBackground.visibility = GONE
+                        }
+
+                        if (item.position != -1) {
+                            view.poiOrderTv.text = item.position.toString()
+                            view.poiOrderTv.visibility = VISIBLE
+                        } else {
+                            view.poiOrderTv.visibility = GONE
+                        }
+
+                        // Set city index for marker color (0 = first city, 1+ = secondary cities)
+                        view.setCityIndex(item.cityIndex)
+
+                        // Set marker selection state
+                        view.setSelected(item.isSelected)
                     }
-
-                    if (item.isOffer) {
-                        view.iconViewBackground.visibility = VISIBLE
-                    } else {
-                        view.iconViewBackground.visibility = GONE
-                    }
-
-                    if (item.position != -1) {
-                        view.poiOrderTv.text = item.position.toString()
-                        view.poiOrderTv.visibility = VISIBLE
-                    } else {
-                        view.poiOrderTv.visibility = GONE
-                    }
-
-                    // Set city index for marker color (0 = first city, 1+ = secondary cities)
-                    view.setCityIndex(item.cityIndex)
-
-                    // Set marker selection state
-                    view.setSelected(item.isSelected)
 
                     val bitmap: Bitmap = view.getBitmap()
 
@@ -334,19 +341,26 @@ class MapView : MapView {
                             iconAllowOverlap(true)
                         }
 
-                        if (TextUtils.equals(item.group, "step")) {
-                            // Step items go above route layer
-                            style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
-                        } else {
-                            // Non-step items: check if there's a step layer to add below
-                            val firstStepItem = mapItems.firstOrNull { it.group == "step" }
-                            val stepLayerId = firstStepItem?.let { "step" + it.poiId }
-                            // Check if the step layer exists before adding below it
-                            if (stepLayerId != null && style?.getLayer(stepLayerId) != null) {
-                                style?.addLayerBelow(stretchLayer, stepLayerId)
-                            } else {
-                                // Step layer doesn't exist yet or no step items, add above route layer
+                        when {
+                            item.isCityMarker -> {
+                                // City markers go above route layer but below step markers
                                 style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
+                            }
+                            TextUtils.equals(item.group, "step") -> {
+                                // Step items go above route layer (and city markers)
+                                style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
+                            }
+                            else -> {
+                                // Non-step items: check if there's a step layer to add below
+                                val firstStepItem = mapItems.firstOrNull { it.group == "step" }
+                                val stepLayerId = firstStepItem?.let { "step" + it.poiId }
+                                // Check if the step layer exists before adding below it
+                                if (stepLayerId != null && style?.getLayer(stepLayerId) != null) {
+                                    style?.addLayerBelow(stretchLayer, stepLayerId)
+                                } else {
+                                    // Step layer doesn't exist yet or no step items, add above route layer
+                                    style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
+                                }
                             }
                         }
                     }
@@ -693,6 +707,36 @@ class MapView : MapView {
                 duration(500L)
             }
         )
+    }
+
+    /**
+     * Zooms the camera to a specific point with the given zoom level.
+     * This method doesn't require the point to be in mapItems.
+     *
+     * @param point The Point to zoom to
+     * @param zoomLevel The zoom level (default 13.0)
+     */
+    fun zoomToPoint(point: Point, zoomLevel: Double = 13.0) {
+        map?.flyTo(
+            cameraOptions {
+                center(point)
+                zoom(zoomLevel)
+            },
+            mapAnimationOptions {
+                duration(500L)
+            }
+        )
+    }
+
+    /**
+     * Zooms the camera to a specific coordinate with the given zoom level.
+     *
+     * @param lng Longitude
+     * @param lat Latitude
+     * @param zoomLevel The zoom level (default 13.0)
+     */
+    fun zoomToCoordinate(lng: Double, lat: Double, zoomLevel: Double = 13.0) {
+        zoomToPoint(Point.fromLngLat(lng, lat), zoomLevel)
     }
 
     /**

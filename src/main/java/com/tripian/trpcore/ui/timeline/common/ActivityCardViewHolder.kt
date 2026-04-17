@@ -1,5 +1,6 @@
 package com.tripian.trpcore.ui.timeline.common
 
+import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -112,12 +113,22 @@ class ActivityCardViewHolder(
     }
 
     private fun bindPrice(price: Double?, currency: String) {
-        if (price != null && price > 0) {
-            binding.llPriceRow.visibility = View.VISIBLE
-            binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
-            binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
-        } else {
-            binding.llPriceRow.visibility = View.GONE
+        when {
+            price == null -> {
+                binding.llPriceRow.visibility = View.GONE
+            }
+            price == 0.0 -> {
+                binding.tvFromLabel.visibility = View.GONE
+                binding.tvPrice.text = getLanguage(LanguageConst.FREE)
+                binding.tvPrice.setTypeface(null, Typeface.BOLD)
+                binding.llPriceRow.visibility = View.VISIBLE
+            }
+            else -> {
+                binding.tvFromLabel.visibility = View.VISIBLE
+                binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
+                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
+                binding.llPriceRow.visibility = View.VISIBLE
+            }
         }
     }
 

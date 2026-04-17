@@ -1,7 +1,9 @@
 package com.tripian.trpcore.domain.usecase.timeline.sync
 
+import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
+import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.BaseUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
@@ -15,10 +17,11 @@ import javax.inject.Inject
 /**
  * UpdateDateRangeUseCase
  *
- * Itinerary tarih aralığı genişlediyse boş segmentler ekle
+ * TimelineDate segment'ini itinerary tarih değişikliklerine göre güncelle
  * iOS Guide Operation 2: Date Range Sync
  *
- * Sequential operation - her eksik gün için segment oluşturur
+ * CRITICAL: NO empty segments - sadece mevcut TimelineDate segment'i UPDATE et
+ * BACKWARD COMPATIBILITY: Empty segmentler varsa migration yap
  */
 class UpdateDateRangeUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -33,87 +36,153 @@ class UpdateDateRangeUseCase @Inject constructor(
     override fun on(params: Params?) {
         params?.let {
             addObservable {
-                val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
-
-                // Timeline'daki tarih aralığını bul
+                // 1. TimelineDate segment'ini bul (title == "TimelineDate")
                 val segments = it.timeline.tripProfile?.segments ?: emptyList()
-                val timelineDates = segments.mapNotNull { segment ->
-                    segment.startDate?.let { dateStr -> dateFormat.parse(dateStr) }
+                val timelineDateSegment = segments.find { segment ->
+                    segment.title == "TimelineDate"
                 }
 
-                if (timelineDates.isEmpty()) {
+                if (timelineDateSegment == null) {
+                    // BACKWARD COMPATIBILITY: TimelineDate yok, migration gerekli
+                    android.util.Log.d("SYNC", "TimelineDate not found, performing migration")
+                    return@addObservable migrateToTimelineDateSegment(it)
+                }
+
+                // 2. Itinerary tarihlerini parse et (format: "yyyy-MM-dd HH:mm")
+                val itineraryDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+                val itineraryStartDate = itineraryDateFormat.parse(it.itinerary.startDatetime)
+                val itineraryEndDate = itineraryDateFormat.parse(it.itinerary.endDatetime)
+
+                if (itineraryStartDate == null || itineraryEndDate == null) {
                     return@addObservable io.reactivex.Observable.just(ResponseModelBase())
                 }
 
-                val timelineStartDate = timelineDates.minOrNull()
-                val timelineEndDate = timelineDates.maxOrNull()
+                // 3. TimelineDate için target formatı oluştur (dd.MM.yyyy HH:mm)
+                val targetFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US)
+                val cal = Calendar.getInstance()
 
-                // Itinerary tarih aralığı
-                val itineraryStartDate = dateFormat.parse(it.itinerary.startDatetime)
-                val itineraryEndDate = dateFormat.parse(it.itinerary.endDatetime)
+                // Start date: 00:00
+                cal.time = itineraryStartDate
+                cal.set(Calendar.HOUR_OF_DAY, 0)
+                cal.set(Calendar.MINUTE, 0)
+                val targetStartDate = targetFormat.format(cal.time)
 
-                // Eksik tarih aralıklarını tespit et
-                val missingDates = mutableListOf<Date>()
+                // End date: 23:59
+                cal.time = itineraryEndDate
+                cal.set(Calendar.HOUR_OF_DAY, 23)
+                cal.set(Calendar.MINUTE, 59)
+                val targetEndDate = targetFormat.format(cal.time)
 
-                // Başlangıç tarih kontrolü
-                if (itineraryStartDate != null && timelineStartDate != null &&
-                    itineraryStartDate.before(timelineStartDate)
-                ) {
-                    // Başta eksik günler var
-                    val cal = Calendar.getInstance()
-                    cal.time = itineraryStartDate
-                    while (cal.time.before(timelineStartDate)) {
-                        missingDates.add(cal.time)
-                        cal.add(Calendar.DAY_OF_MONTH, 1)
-                    }
-                }
+                // 4. Mevcut TimelineDate dates ile karşılaştır
+                val currentStartDate = timelineDateSegment.startDate
+                val currentEndDate = timelineDateSegment.endDate
 
-                // Bitiş tarih kontrolü
-                if (itineraryEndDate != null && timelineEndDate != null &&
-                    itineraryEndDate.after(timelineEndDate)
-                ) {
-                    // Sonda eksik günler var
-                    val cal = Calendar.getInstance()
-                    cal.time = timelineEndDate
-                    cal.add(Calendar.DAY_OF_MONTH, 1)
-                    while (cal.time.before(itineraryEndDate) || cal.time == itineraryEndDate) {
-                        missingDates.add(cal.time)
-                        cal.add(Calendar.DAY_OF_MONTH, 1)
-                    }
-                }
-
-                if (missingDates.isEmpty()) {
+                if (currentStartDate == targetStartDate && currentEndDate == targetEndDate) {
+                    // Değişiklik yok, update gerekmiyor
+                    android.util.Log.d("SYNC", "TimelineDate segment already up-to-date")
                     return@addObservable io.reactivex.Observable.just(ResponseModelBase())
                 }
 
-                // Her eksik gün için boş segment oluştur (sequential)
-                val createOperations = missingDates.map { date ->
-                    val dayFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-                    val dayStr = dayFormat.format(date)
+                // 5. TimelineDate segment'i güncelle
+                android.util.Log.d("SYNC", "Updating TimelineDate: $targetStartDate - $targetEndDate")
 
-                    val segment = TimelineSegmentSettings().apply {
-                        this.segmentType = SegmentType.ITINERARY
-                        this.title = "Day Plan"
-                        this.startDate = "$dayStr 00:00"
-                        this.endDate = "$dayStr 23:59"
-                        // cityId itinerary'den ilk şehir
-                        this.cityId = it.itinerary.destinationItems.firstOrNull()?.cityId
-                    }
-
-                    repository.editSegment(it.tripHash, segment)
-                        .onErrorResumeNext { error: Throwable ->
-                            android.util.Log.e(
-                                "SYNC",
-                                "Add date range failed: ${error.message}"
-                            )
-                            Completable.complete()
-                        }
+                val updatedSegment = TimelineSegmentSettings().apply {
+                    this.segmentType = timelineDateSegment.segmentType
+                    this.title = "TimelineDate"
+                    this.startDate = targetStartDate
+                    this.endDate = targetEndDate
+                    this.cityId = it.itinerary.destinationItems.firstOrNull()?.cityId
                 }
 
-                Completable.concat(createOperations)
+                repository.editSegment(it.tripHash, updatedSegment)
+                    .onErrorResumeNext { error: Throwable ->
+                        android.util.Log.e("SYNC", "Update TimelineDate failed: ${error.message}")
+                        Completable.complete()
+                    }
                     .toSingleDefault(ResponseModelBase())
                     .toObservable()
             }
         }
+    }
+
+    /**
+     * BACKWARD COMPATIBILITY: Migration from empty segments to TimelineDate segment
+     *
+     * Steps:
+     * 1. Find and delete all empty ITINERARY segments
+     * 2. Create new TimelineDate segment with itinerary date range
+     */
+    private fun migrateToTimelineDateSegment(params: Params): io.reactivex.Observable<ResponseModelBase> {
+        val segments = params.timeline.tripProfile?.segments ?: emptyList()
+
+        // 1. Find empty ITINERARY segments (title like "Day Plan", generic date placeholder)
+        val emptySegmentIndices = mutableListOf<Int>()
+        segments.forEachIndexed { index, segment ->
+            // Empty segment criteria:
+            // - Type: ITINERARY
+            // - Title: "Day Plan" or similar generic title (placeholder for date)
+            // - No additionalData (not a booked activity)
+            if (segment.segmentType == SegmentType.ITINERARY &&
+                (segment.title == "Day Plan" || segment.title?.startsWith("Day") == true) &&
+                segment.additionalData == null
+            ) {
+                emptySegmentIndices.add(index)
+            }
+        }
+
+        // 2. Delete empty segments (highest-index-first)
+        val deleteOperations = emptySegmentIndices
+            .sortedDescending()
+            .map { index ->
+                repository.deleteSegment(params.tripHash, index)
+                    .onErrorResumeNext { error: Throwable ->
+                        android.util.Log.e("SYNC", "Delete empty segment (index $index) failed: ${error.message}")
+                        Completable.complete()
+                    }
+            }
+
+        // 3. Create TimelineDate segment
+        val itineraryDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
+        val itineraryStartDate = itineraryDateFormat.parse(params.itinerary.startDatetime)
+        val itineraryEndDate = itineraryDateFormat.parse(params.itinerary.endDatetime)
+
+        if (itineraryStartDate == null || itineraryEndDate == null) {
+            return io.reactivex.Observable.just(ResponseModelBase())
+        }
+
+        val targetFormat = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.US)
+        val cal = Calendar.getInstance()
+
+        cal.time = itineraryStartDate
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        val targetStartDate = targetFormat.format(cal.time)
+
+        cal.time = itineraryEndDate
+        cal.set(Calendar.HOUR_OF_DAY, 23)
+        cal.set(Calendar.MINUTE, 59)
+        val targetEndDate = targetFormat.format(cal.time)
+
+        val createTimelineDateSegment = {
+            val segment = TimelineSegmentSettings().apply {
+                this.segmentType = SegmentType.ITINERARY
+                this.title = "TimelineDate"
+                this.startDate = targetStartDate
+                this.endDate = targetEndDate
+                this.cityId = params.itinerary.destinationItems.firstOrNull()?.cityId
+            }
+
+            repository.editSegment(params.tripHash, segment)
+                .onErrorResumeNext { error: Throwable ->
+                    android.util.Log.e("SYNC", "Create TimelineDate segment failed: ${error.message}")
+                    Completable.complete()
+                }
+        }
+
+        // Sequential: Delete all empty segments → Create TimelineDate
+        return Completable.concat(deleteOperations)
+            .andThen(createTimelineDateSegment())
+            .toSingleDefault(ResponseModelBase())
+            .toObservable()
     }
 }

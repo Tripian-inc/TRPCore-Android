@@ -12,6 +12,16 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
+ * Grouped time slot data class
+ * Groups slots with same time and keeps minimum price
+ */
+data class GroupedTimeSlot(
+    val time: String,
+    val minPrice: Double?,
+    val fullRefund: Boolean?
+)
+
+/**
  * ActivityTimeSelectionVM
  * ViewModel for ActivityTimeSelectionBottomSheet
  * Handles schedule loading for both tours and favorites
@@ -20,8 +30,8 @@ class ActivityTimeSelectionVM @Inject constructor(
     private val getTourScheduleUseCase: GetTourScheduleUseCase
 ) : BaseViewModel() {
 
-    private val _scheduleSlots = MutableLiveData<List<TourScheduleSlot>?>()
-    val scheduleSlots: LiveData<List<TourScheduleSlot>?> = _scheduleSlots
+    private val _scheduleSlots = MutableLiveData<List<GroupedTimeSlot>?>()
+    val scheduleSlots: LiveData<List<GroupedTimeSlot>?> = _scheduleSlots
 
     private val _isLoading = MutableLiveData(false)
     val isLoading: LiveData<Boolean> = _isLoading
@@ -47,13 +57,35 @@ class ActivityTimeSelectionVM @Inject constructor(
             ),
             success = { response ->
                 _isLoading.value = false
-                _scheduleSlots.value = response.data?.slots
+                val slots = response.data?.slots
+                _scheduleSlots.value = groupSlotsByTime(slots)
             },
             error = {
                 _isLoading.value = false
                 _scheduleSlots.value = emptyList()
             }
         )
+    }
+
+    /**
+     * Group slots by time and keep minimum price for each time
+     * If API returns: time:10:00,price:27.0 / time:10:00,price:29.0 / time:11:00,price:27.0
+     * Result will be: time:10:00,minPrice:27.0 / time:11:00,minPrice:27.0
+     */
+    private fun groupSlotsByTime(slots: List<TourScheduleSlot>?): List<GroupedTimeSlot> {
+        if (slots.isNullOrEmpty()) return emptyList()
+
+        return slots
+            .filter { !it.time.isNullOrEmpty() }
+            .groupBy { it.time!! }
+            .map { (time, slotsForTime) ->
+                GroupedTimeSlot(
+                    time = time,
+                    minPrice = slotsForTime.mapNotNull { it.price }.minOrNull(),
+                    fullRefund = slotsForTime.any { it.fullRefund == true }
+                )
+            }
+            .sortedBy { it.time }
     }
 
     /**

@@ -26,7 +26,8 @@ class CreateSegmentUseCase @Inject constructor(
         val adults: Int = 1,
         val children: Int = 0,
         val activityFreeText: String = "",  // Categories as comma-separated string (e.g., "guided tours, free tours,tickets")
-        val activityIds: List<String> = emptyList(),  // Favorite tour IDs
+        val activityIds: List<String> = emptyList(),  // Favorite tour IDs (formatted)
+        val excludedActivityIds: List<String> = emptyList(),  // Booked + Reserved activity IDs (formatted)
         val smartRecommendation: Boolean = true,
         val accommodation: Accommodation? = null  // Starting point accommodation (Google Place)
     )
@@ -49,6 +50,7 @@ class CreateSegmentUseCase @Inject constructor(
                 smartRecommendation = p.smartRecommendation
                 activityFreeText = p.activityFreeText
                 activityIds = p.activityIds
+                excludedActivityIds = p.excludedActivityIds  // Exclude booked + reserved
                 segmentType = SegmentType.ITINERARY
                 distinctPlan = true
                 available = true

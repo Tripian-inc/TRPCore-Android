@@ -1,17 +1,14 @@
 package com.tripian.trpcore.ui.timeline.addplan
 
 import android.app.Activity
-import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.snackbar.Snackbar
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
@@ -165,7 +162,6 @@ class FRTimeAndTravelers : Fragment() {
                 val endTime = sharedVM.endTime.value
                 if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
                     sharedVM.setEndTime(null)
-                    showSnackbar(LanguageConst.ADD_PLAN_END_TIME_CLEARED)
                 }
             }
         )
@@ -186,40 +182,15 @@ class FRTimeAndTravelers : Fragment() {
         val currentTime = sharedVM.endTime.value
 
         showComposeTimePicker(
-            initialTime = currentTime,
+            initialTime = currentTime ?: startTime,  // If no end time, default to start time
+            minTime = startTime,  // Minimum selectable time is start time
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
-
-                // Validate end time > start time
-                if (MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, time24h)) {
-                    sharedVM.setEndTime(time24h)
-                } else {
-                    showInvalidTimeError()
-                }
+                sharedVM.setEndTime(time24h)
             }
         )
     }
 
-    /**
-     * Show error snackbar for invalid time selection
-     */
-    private fun showInvalidTimeError() {
-        val message = TRPCore.core.miscRepository.getLanguageValueForKey(
-            LanguageConst.ADD_PLAN_END_TIME_MUST_BE_AFTER_START
-        )
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
-            .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.trp_error_message))
-            .setTextColor(Color.WHITE)
-            .show()
-    }
-
-    /**
-     * Show info snackbar (e.g., end time cleared)
-     */
-    private fun showSnackbar(languageKey: String) {
-        val message = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey)
-        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
-    }
 
     /**
      * Show alert for missing start time

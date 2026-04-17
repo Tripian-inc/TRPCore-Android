@@ -52,6 +52,7 @@ sealed class TimelineDisplayItem : Serializable {
      * Booked Activity - Activity with completed reservation
      *
      * @param hasConflict Whether this activity has a time conflict with another item
+     * @param showTimeOverlapText Whether to show "Time Overlap" text (only for reserved_activity, never for booked_activity)
      */
     data class BookedActivity(
         val segment: TimelineSegment,
@@ -60,7 +61,8 @@ sealed class TimelineDisplayItem : Serializable {
         override val city: City? = null,
         override val order: Int = 1,
         override val planId: String? = null,
-        val hasConflict: Boolean = false
+        val hasConflict: Boolean = false,
+        val showTimeOverlapText: Boolean = false
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -102,7 +104,8 @@ sealed class TimelineDisplayItem : Serializable {
     /**
      * Recommendations - Plan containing AI recommendations
      *
-     * @param conflictingStepIds Set of step IDs that have time conflicts
+     * @param conflictingStepIds Set of step IDs that have visual conflicts (ALL overlapping steps)
+     * @param timeOverlapStepIds Set of step IDs that should show "Time Overlap" text (only from different plans)
      */
     data class Recommendations(
         val plan: TimelinePlan,
@@ -115,7 +118,8 @@ sealed class TimelineDisplayItem : Serializable {
         var routeInfoList: List<StepRouteInfo> = emptyList(),  // Route info between steps
         val cachedCity: City? = null,  // City from cache with full coordinate data
         val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
-        val conflictingStepIds: Set<Int> = emptySet()  // Step IDs with time conflicts
+        val conflictingStepIds: Set<Int> = emptySet(),  // Step IDs with visual conflicts (ALL overlapping)
+        val timeOverlapStepIds: Set<Int> = emptySet()  // Step IDs that show "Time Overlap" text
     ) : TimelineDisplayItem() {
         override val planId: String? get() = plan.id
         override val startTime: Date?

@@ -265,7 +265,7 @@ enum class SmartCategory(
 ) {
     GUIDED_TOURS(
         apiValue = "guided tours, free tours",
-        iconRes = R.drawable.ic_activities,
+        iconRes = R.drawable.ic_cat_activities,
         titleKey = LanguageConst.ADD_PLAN_CAT_GUIDED_TOURS
     ),
     TICKETS(
@@ -309,7 +309,7 @@ enum class ManualCategory(
     val titleKey: String
 ) {
     ACTIVITIES(
-        iconRes = R.drawable.ic_activities,
+        iconRes = R.drawable.ic_cat_activities,
         titleKey = LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES
     ),
     PLACES_OF_INTEREST(

@@ -36,14 +36,15 @@
         <TextView
             android:id="@+id/tvTime"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="32dp"
+            android:maxLines="1"
             android:layout_marginHorizontal="10dp"
             android:layout_weight="1"
             android:fontFamily="@font/medium"
             android:gravity="center_vertical"
             android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
-            tools:text="10:00 - 11:00" />
+            tools:text="10:00 - 11:00  In Spanish, the text doesn’t fit in the pill asd" />
 
     </LinearLayout>
 

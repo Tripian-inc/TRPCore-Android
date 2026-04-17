@@ -109,7 +109,12 @@ class RecommendationsVH(
                 // Build step items with route separators if available
                 // Exclude the starting point route (fromStepId = null) as it's shown separately
                 val stepRoutes = item.routeInfoList.filter { it.fromStepId != null }
-                val stepItems = buildStepItemsWithRoutes(item.steps, stepRoutes, item.conflictingStepIds)
+                val stepItems = buildStepItemsWithRoutes(
+                    steps = item.steps,
+                    routeInfoList = stepRoutes,
+                    conflictingStepIds = item.conflictingStepIds,
+                    timeOverlapStepIds = item.timeOverlapStepIds
+                )
                 stepsAdapter?.submitStepItemList(stepItems)
 
                 // Request route calculation if route info is empty and we have steps
@@ -196,13 +201,15 @@ class RecommendationsVH(
      *
      * @param steps List of TimelineStep to display
      * @param routeInfoList List of StepRouteInfo for route separators
-     * @param conflictingStepIds Set of step IDs that have time conflicts
+     * @param conflictingStepIds Set of step IDs that have visual conflicts (ALL overlapping steps)
+     * @param timeOverlapStepIds Set of step IDs that should show "Time Overlap" text
      * @return Interleaved list of TimelineStepItem
      */
     private fun buildStepItemsWithRoutes(
         steps: List<TimelineStep>,
         routeInfoList: List<StepRouteInfo>,
-        conflictingStepIds: Set<Int> = emptySet()
+        conflictingStepIds: Set<Int> = emptySet(),
+        timeOverlapStepIds: Set<Int> = emptySet()
     ): List<TimelineStepItem> {
         val items = mutableListOf<TimelineStepItem>()
 
@@ -217,8 +224,9 @@ class RecommendationsVH(
                 items.add(TimelineStepItem.RouteSeparator(routeInfo))
             }
 
-            // Check if this step has a time conflict
-            val hasConflict = stepId in conflictingStepIds
+            // Check conflict flags separately
+            val hasConflict = stepId in conflictingStepIds  // Visual conflict (red border)
+            val showTimeOverlap = stepId in timeOverlapStepIds  // Time Overlap text
 
             // Add the step with correct order number and conflict flags
             items.add(
@@ -226,7 +234,7 @@ class RecommendationsVH(
                     step = step,
                     order = currentStartingOrder + index,
                     hasConflict = hasConflict,
-                    showTimeOverlapText = hasConflict  // Show "Time Overlap" text for conflicting steps
+                    showTimeOverlapText = showTimeOverlap
                 )
             )
         }
@@ -254,7 +262,12 @@ class RecommendationsVH(
         // Update steps adapter with new route info and conflict data
         if (newItem.steps.isNotEmpty() && newItem.isExpanded) {
             val stepRoutes = newItem.routeInfoList.filter { it.fromStepId != null }
-            val stepItems = buildStepItemsWithRoutes(newItem.steps, stepRoutes, newItem.conflictingStepIds)
+            val stepItems = buildStepItemsWithRoutes(
+                steps = newItem.steps,
+                routeInfoList = stepRoutes,
+                conflictingStepIds = newItem.conflictingStepIds,
+                timeOverlapStepIds = newItem.timeOverlapStepIds
+            )
             stepsAdapter?.submitStepItemList(stepItems)
         }
     }

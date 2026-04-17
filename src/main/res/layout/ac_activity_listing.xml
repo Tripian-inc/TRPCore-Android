@@ -116,6 +116,7 @@
         android:fontFamily="@font/regular"
         android:textColor="@color/trp_activity_count_label"
         android:textSize="12sp"
+        android:visibility="gone"
         tools:text="150 activities found" />
 
     <!-- Scrollable: Activity List Container -->

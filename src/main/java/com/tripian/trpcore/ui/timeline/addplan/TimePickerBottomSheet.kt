@@ -13,12 +13,13 @@ import com.tripian.trpcore.util.LanguageConst
  * TimePickerBottomSheet
  * iOS-style time picker bottom sheet for start and end time selection
  *
- * @deprecated Use MaterialTimePicker for AddPlan flow. This class is retained for legacy trip/createtrip flows.
- * Migrate to separate MaterialTimePicker instances for start and end time selection.
+ * @deprecated Replaced by TimeSelectionBottomSheet + ComposeTimePickerDialog.
+ * This class is kept for legacy compatibility only.
+ * Migrate to TimeSelectionBottomSheet which uses Material 3 Compose time picker.
  */
 @Deprecated(
-    message = "Use MaterialTimePicker for AddPlan flow. Retained for legacy trip/createtrip flows.",
-    replaceWith = ReplaceWith("MaterialTimePicker"),
+    message = "Replaced by TimeSelectionBottomSheet + ComposeTimePickerDialog. Kept for legacy compatibility only.",
+    replaceWith = ReplaceWith("TimeSelectionBottomSheet"),
     level = DeprecationLevel.WARNING
 )
 class TimePickerBottomSheet : BaseSimpleBottomSheet<BottomSheetTimePickerBinding>(

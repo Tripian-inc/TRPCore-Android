@@ -21,6 +21,7 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
+import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
@@ -131,6 +132,14 @@ class ACTimelineVM @Inject constructor(
     private val _showMainViewButton = MutableLiveData(false)
     val showMainViewButton: LiveData<Boolean> = _showMainViewButton
 
+    // City markers for multi-city overview mode
+    private val _cityMarkers = MutableLiveData<List<MapStep>>()
+    val cityMarkers: LiveData<List<MapStep>> = _cityMarkers
+
+    // Map markers mode (city markers vs step markers)
+    private val _mapMarkersMode = MutableLiveData(MapMarkersMode.STEP_MARKERS)
+    val mapMarkersMode: LiveData<MapMarkersMode> = _mapMarkersMode
+
     // Route info cache - maps segmentIndex to route info list
     private val _routeInfoCache = mutableMapOf<Int, List<StepRouteInfo>>()
 
@@ -176,6 +185,10 @@ class ACTimelineVM @Inject constructor(
 
     // Sync operations flag - ensures sync only runs once after initial fetch
     private var syncOperationsCompleted = false
+
+    // Multi-city map mode state
+    private var isShowingStepMarkersInMultiCity: Boolean = false
+    private var selectedStepId: String? = null
 
     // =====================
     // LIFECYCLE
@@ -949,6 +962,8 @@ class ACTimelineVM @Inject constructor(
 
     fun selectDay(index: Int) {
         _selectedDayIndex.value = index
+        // Reset selected step when day changes
+        selectedStepId = null
         updateDisplayItems()
     }
 
@@ -1405,43 +1420,55 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Applies 3+ conflict rule: oldest segment (min planId) gets only visual conflict,
-     * all others get Time Overlap + visual conflict.
-     * Booked activities always get only visual conflict.
+     * Applies 3+ conflict rule with plan-based logic:
+     * - ALL conflicting items get visual conflict (red border)
+     * - Time Overlap text only for items from DIFFERENT/NEWER plans
+     * - Booked activities NEVER show Time Overlap text
      */
     private fun applyThreePlusConflictRules(
         groupIndices: Set<Int>,
         timeRanges: List<TimeRange>,
         visualConflictIndices: MutableSet<Int>,
+        visualConflictStepIds: MutableMap<Int, MutableSet<Int>>,
         timeOverlapIndices: MutableSet<Int>,
         timeOverlapStepIds: MutableMap<Int, MutableSet<Int>>
     ) {
         val groupRanges = groupIndices.map { timeRanges[it] }
 
-        // Separate booked from non-booked
+        // Step 1: Apply visual conflict to ALL items in the group
+        groupRanges.forEach { range ->
+            visualConflictIndices.add(range.itemIndex)
+            // For Recommendations steps, also add to visualConflictStepIds
+            if (range.itemType == "step" && range.stepId != null) {
+                visualConflictStepIds.getOrPut(range.itemIndex) { mutableSetOf() }.add(range.stepId)
+            }
+        }
+
+        // Step 2: Determine Time Overlap for non-booked items
         val nonBookedRanges = groupRanges.filter { it.segmentType != "booked_activity" }
 
         if (nonBookedRanges.isNotEmpty()) {
-            // Find oldest (min planId)
-            val oldestRange = nonBookedRanges.minByOrNull { parsePlanId(it.planId) }
+            // Find the minimum planId (oldest plan)
+            val planIds = nonBookedRanges.mapNotNull { it.planId }.distinct()
+            val minPlanId = planIds.minOfOrNull { parsePlanId(it) } ?: 0
 
-            // Apply rules
+            // Time Overlap only for items from plans NEWER than the oldest plan
             nonBookedRanges.forEach { range ->
-                visualConflictIndices.add(range.itemIndex)
-                if (range != oldestRange) {
-                    // NOT oldest → Time Overlap
+                val rangePlanId = parsePlanId(range.planId)
+                if (rangePlanId > minPlanId) {
+                    // This item is from a newer plan → Time Overlap
                     if (range.itemType == "step" && range.stepId != null) {
                         timeOverlapStepIds.getOrPut(range.itemIndex) { mutableSetOf() }.add(range.stepId)
                     } else {
                         timeOverlapIndices.add(range.itemIndex)
                     }
                 }
+                // Items from the oldest plan do NOT get Time Overlap (but already have visual conflict)
             }
         }
 
-        // Booked activities: only visual conflict
-        groupRanges.filter { it.segmentType == "booked_activity" }
-            .forEach { visualConflictIndices.add(it.itemIndex) }
+        // Booked activities already have visual conflict from Step 1
+        // They never get Time Overlap text (handled by NOT being in nonBookedRanges)
     }
 
     /**
@@ -1473,8 +1500,9 @@ class ACTimelineVM @Inject constructor(
 
         // Storage for marking
         val visualConflictIndices = mutableSetOf<Int>()
+        val visualConflictStepIds = mutableMapOf<Int, MutableSet<Int>>()  // For Recommendations: ALL conflicting steps
         val timeOverlapIndices = mutableSetOf<Int>()
-        val timeOverlapStepIds = mutableMapOf<Int, MutableSet<Int>>()
+        val timeOverlapStepIds = mutableMapOf<Int, MutableSet<Int>>()  // For Recommendations: steps with Time Overlap text
 
         // Phase 3: Build transitive conflict groups (3+ items)
         val conflictGroups = buildConflictGroups(twoWayConflicts)
@@ -1486,6 +1514,7 @@ class ACTimelineVM @Inject constructor(
                 groupIndices,
                 timeRanges,
                 visualConflictIndices,
+                visualConflictStepIds,
                 timeOverlapIndices,
                 timeOverlapStepIds
             )
@@ -1498,11 +1527,27 @@ class ACTimelineVM @Inject constructor(
 
             val range1 = timeRanges[i]
             val range2 = timeRanges[j]
-            val (olderRange, newerRange) = determineOlderAndNewer(range1, range2)
 
-            // Apply visual conflict to both
-            visualConflictIndices.add(olderRange.itemIndex)
-            visualConflictIndices.add(newerRange.itemIndex)
+            // ALWAYS apply visual conflict to both (regardless of plan)
+            visualConflictIndices.add(range1.itemIndex)
+            visualConflictIndices.add(range2.itemIndex)
+
+            // For Recommendations steps, also add to visualConflictStepIds
+            if (range1.itemType == "step" && range1.stepId != null) {
+                visualConflictStepIds.getOrPut(range1.itemIndex) { mutableSetOf() }.add(range1.stepId)
+            }
+            if (range2.itemType == "step" && range2.stepId != null) {
+                visualConflictStepIds.getOrPut(range2.itemIndex) { mutableSetOf() }.add(range2.stepId)
+            }
+
+            // Check if both items are from the SAME plan
+            if (range1.planId == range2.planId) {
+                // Same plan: NO Time Overlap text (only visual conflict already added above)
+                return@forEach
+            }
+
+            // Different plans: apply Time Overlap rules
+            val (olderRange, newerRange) = determineOlderAndNewer(range1, range2)
 
             // Booked activity special rule
             if (newerRange.segmentType == "booked_activity") {
@@ -1533,8 +1578,17 @@ class ACTimelineVM @Inject constructor(
         return items.mapIndexed { index, item ->
             when (item) {
                 is TimelineDisplayItem.BookedActivity -> {
-                    item.copy(hasConflict = index in visualConflictIndices)
-                    // BookedActivity NEVER shows Time Overlap text
+                    // Booked activity: NEVER shows Time Overlap (booked_activity)
+                    // Reserved activity: CAN show Time Overlap (reserved_activity, normal segment)
+                    val showOverlap = if (item.isReserved) {
+                        index in timeOverlapIndices
+                    } else {
+                        false  // Booked activity never shows Time Overlap
+                    }
+                    item.copy(
+                        hasConflict = index in visualConflictIndices,
+                        showTimeOverlapText = showOverlap
+                    )
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
@@ -1545,8 +1599,12 @@ class ACTimelineVM @Inject constructor(
                 }
 
                 is TimelineDisplayItem.Recommendations -> {
-                    val stepIds = timeOverlapStepIds[index] ?: emptySet()
-                    item.copy(conflictingStepIds = stepIds)
+                    val conflictStepIds = visualConflictStepIds[index] ?: emptySet()
+                    val overlapStepIds = timeOverlapStepIds[index] ?: emptySet()
+                    item.copy(
+                        conflictingStepIds = conflictStepIds,  // ALL conflicting steps (visual conflict)
+                        timeOverlapStepIds = overlapStepIds    // Steps with Time Overlap text
+                    )
                 }
 
                 else -> item
@@ -1557,6 +1615,32 @@ class ACTimelineVM @Inject constructor(
     // =====================
     // SMART RECOMMENDATIONS
     // =====================
+
+    /**
+     * Format activityId for Smart Recommendations API
+     * Standardizes format to C_{rawId}_15_{cityId}
+     * Provider ID 15 = Civitatis (hardcoded as per iOS implementation)
+     *
+     * @param activityId The original activity ID (can be plain "12345", partial "C_12345_15", or full "C_12345_15_28")
+     * @param cityId The target city ID
+     * @return Formatted activity ID: "C_{rawId}_15_{cityId}"
+     */
+    private fun formatActivityId(activityId: String?, cityId: Int): String {
+        if (activityId.isNullOrBlank()) return ""
+
+        // Extract raw ID if starts with C_
+        val rawId = if (activityId.startsWith("C_")) {
+            // Format: "C_12345_15" or "C_12345_15_28" → extract "12345"
+            activityId.removePrefix("C_").split("_").firstOrNull() ?: activityId
+        } else {
+            // Plain ID: "12345"
+            activityId
+        }
+
+        // Standardize to C_{rawId}_15_{cityId}
+        // Provider ID 15 = Civitatis (hardcoded)
+        return "C_${rawId}_15_$cityId"
+    }
 
     fun createSmartRecommendationSegment(data: AddPlanData) {
         val city = data.selectedCity
@@ -1604,9 +1688,27 @@ class ACTimelineVM @Inject constructor(
             "$dateStr 18:00"  // Default end time
         }
 
-        // Get favorite tour IDs if available
-        val tourActivityIds = data.activityIds.toMutableList()
-        // TODO: Add favorite tour IDs from favorites if needed
+        // Get favorite tour IDs and apply format conversion
+        val filteredFavorites = getFilteredFavorites()
+        val favoriteActivityIds = filteredFavorites
+            .filter { it.activityId != null }
+            .map { formatActivityId(it.activityId, validCity.id) }
+
+        // Combine data.activityIds (from SavedPlans) with favorites, format all
+        val combinedActivityIds = (data.activityIds + favoriteActivityIds)
+            .distinct()
+            .map { formatActivityId(it, validCity.id) }
+
+        // Build excludedActivityIds: Booked + Reserved activities
+        val timeline = _timeline.value
+        val bookedAndReservedIds = timeline?.tripProfile?.segments
+            ?.filter {
+                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
+                it.segmentType == SegmentType.RESERVED_ACTIVITY
+            }
+            ?.mapNotNull { it.additionalData?.activityId }
+            ?.map { formatActivityId(it, validCity.id) }
+            ?: emptyList()
 
         createSegmentUseCase.on(
             params = CreateSegmentUseCase.Params(
@@ -1615,13 +1717,13 @@ class ACTimelineVM @Inject constructor(
                 cityId = validCity.id,
                 startDate = startDateTimeStr,
                 endDate = endDateTimeStr,
-                // coordinate is null - don't send when cityId is present
                 adults = data.travelers,
                 children = 0,
-                activityFreeText = data.smartCategoriesAsString,  // Use smart categories
-                activityIds = tourActivityIds,
+                activityFreeText = data.smartCategoriesAsString,
+                activityIds = combinedActivityIds,  // Formatted favorites + saved
+                excludedActivityIds = bookedAndReservedIds,  // Formatted booked + reserved
                 smartRecommendation = true,
-                accommodation = data.startingPointAccommodation  // Starting point (Google Place)
+                accommodation = data.startingPointAccommodation
             ),
             success = {
                 waitForSegmentGeneration()
@@ -1757,7 +1859,7 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Show change time picker for a step
-     * This will be handled by the activity to show TimePickerBottomSheet
+     * This will be handled by the activity to show TimeSelectionBottomSheet
      */
     private val _showChangeTimePickerStep =
         MutableLiveData<com.tripian.one.api.timeline.model.TimelineStep?>()
@@ -1845,10 +1947,213 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Called when Main View button is clicked.
-     * Hides the button (camera will be reset by the Activity).
+     * Hides the button and resets to city markers mode (camera will be reset by the Activity).
      */
     fun onMainViewClicked() {
         _showMainViewButton.value = false
+        resetToOverviewMode()
+    }
+
+    /**
+     * Called when zoom level changes on the map.
+     * Automatically switches between city markers and step markers mode based on zoom threshold.
+     *
+     * @param zoomLevel Current zoom level from the map
+     */
+    fun onZoomLevelChanged(zoomLevel: Double) {
+        // Only handle zoom-based switching in multi-city mode
+        if (!hasMultipleCitiesInSelectedDay) return
+
+        val shouldShowStepMarkers = zoomLevel > MULTI_CITY_ZOOM_THRESHOLD
+
+        // Only update if state changed
+        if (shouldShowStepMarkers == isShowingStepMarkersInMultiCity) return
+
+        isShowingStepMarkersInMultiCity = shouldShowStepMarkers
+
+        if (shouldShowStepMarkers) {
+            // Switch to step markers mode
+            _mapMarkersMode.value = MapMarkersMode.STEP_MARKERS
+            _showMainViewButton.value = true
+        } else {
+            // Switch to city markers mode
+            _mapMarkersMode.value = MapMarkersMode.CITY_MARKERS
+            _showMainViewButton.value = false
+        }
+    }
+
+    /**
+     * Called when a city marker is clicked on the map.
+     * Selects the first step of the clicked city.
+     *
+     * @param cityId ID of the clicked city
+     */
+    fun onCityMarkerClicked(cityId: Int?) {
+        if (cityId == null) return
+
+        val items = _displayItems.value ?: return
+
+        // Find first step of this city
+        val firstStepItem = items.firstOrNull { item ->
+            item.city?.id == cityId && item !is TimelineDisplayItem.SectionHeader && item !is TimelineDisplayItem.SectionFooter
+        }
+
+        firstStepItem?.let { item ->
+            // Update selected step ID
+            when (item) {
+                is TimelineDisplayItem.Recommendations -> {
+                    item.steps.firstOrNull()?.poi?.id?.let { poiId ->
+                        selectedStepId = poiId
+                    }
+                }
+                is TimelineDisplayItem.BookedActivity -> {
+                    selectedStepId = item.segment.additionalData?.activityId
+                }
+                is TimelineDisplayItem.ManualPoi -> {
+                    selectedStepId = item.step.poi?.id
+                }
+                else -> {}
+            }
+
+            // Update city markers to show new selection
+            updateCityMarkers()
+        }
+    }
+
+    /**
+     * Selects a step on the map by its ID.
+     * Updates the selection state in mapSteps and mapBottomItems.
+     * Called when a list item is clicked or scrolled to.
+     *
+     * @param stepId The poiId of the step to select
+     */
+    fun selectStepOnMap(stepId: String) {
+        // Update selected step ID
+        selectedStepId = stepId
+
+        // Update mapSteps selection
+        val currentMapSteps = _mapSteps.value?.toMutableList() ?: return
+        var stepCityIndex = 0
+
+        currentMapSteps.forEach { step ->
+            if (step.poiId == stepId) {
+                step.isSelected = true
+                stepCityIndex = step.cityIndex
+            } else if (step.cityIndex == stepCityIndex) {
+                // Deselect other steps in the same city
+                step.isSelected = false
+            }
+        }
+
+        // Find the city index of the selected step and deselect others in same city
+        val selectedStep = currentMapSteps.find { it.poiId == stepId }
+        if (selectedStep != null) {
+            currentMapSteps.forEach { step ->
+                if (step.cityIndex == selectedStep.cityIndex && step.poiId != stepId) {
+                    step.isSelected = false
+                }
+            }
+        }
+
+        _mapSteps.value = currentMapSteps
+
+        // Update mapBottomItems selection
+        val currentBottomItems = _mapBottomItems.value?.map { item ->
+            item.copy(isSelected = item.id == stepId)
+        }
+        currentBottomItems?.let { _mapBottomItems.value = it }
+
+        // If in city markers mode, switch to step markers mode
+        if (_mapMarkersMode.value == MapMarkersMode.CITY_MARKERS) {
+            isShowingStepMarkersInMultiCity = true
+            _mapMarkersMode.value = MapMarkersMode.STEP_MARKERS
+        }
+    }
+
+    /**
+     * Resets to overview mode (city markers + selected step marker).
+     * Called when Main View button is clicked.
+     */
+    fun resetToOverviewMode() {
+        isShowingStepMarkersInMultiCity = false
+        _mapMarkersMode.value = if (hasMultipleCitiesInSelectedDay) {
+            MapMarkersMode.CITY_MARKERS
+        } else {
+            MapMarkersMode.STEP_MARKERS
+        }
+    }
+
+    /**
+     * Returns the currently selected step as a MapStep for display.
+     * Used in city markers mode to show the selected step marker.
+     */
+    fun getSelectedStepMarker(): MapStep? {
+        val stepId = selectedStepId ?: return null
+
+        // Find the step in existing mapSteps to get the correct global position
+        val existingStep = _mapSteps.value?.find { it.poiId == stepId }
+
+        return existingStep?.let { step ->
+            // Return a copy with isSelected = true
+            MapStep().apply {
+                poiId = step.poiId
+                name = step.name
+                coordinate = step.coordinate
+                position = step.position  // Use the global position from mapSteps
+                group = step.group
+                markerIcon = step.markerIcon
+                isOffer = step.isOffer
+                isSelected = true
+                cityIndex = step.cityIndex
+                isCityMarker = false
+            }
+        }
+    }
+
+    /**
+     * Generates city markers for multi-city overview mode.
+     * Called when entering map mode or switching to city markers mode.
+     */
+    private fun generateCityMarkers(): List<MapStep> {
+        val items = _displayItems.value ?: return emptyList()
+        val cities = mutableMapOf<Int, City>()
+
+        // Collect unique cities with their coordinates
+        items.forEach { item ->
+            val city = item.city
+            city?.let {
+                if (it.id != null && it.coordinate != null) {
+                    cities[it.id!!] = it
+                }
+            }
+        }
+
+        // Create city MapStep objects
+        return cities.values.mapNotNull { city ->
+            city.coordinate?.let { coord ->
+                MapStep().apply {
+                    poiId = "city_${city.id}"
+                    coordinate = Coordinate().apply {
+                        lat = coord.lat
+                        lng = coord.lng
+                    }
+                    isCityMarker = true
+                    cityId = city.id
+                    group = "city"
+                    position = -1 // No number badge for city markers
+                    markerIcon = -1 // Will use ic_city_marker via MarkerView
+                    isSelected = false
+                }
+            }
+        }
+    }
+
+    /**
+     * Updates city markers LiveData.
+     * Called when entering map mode or when selection changes in city markers mode.
+     */
+    private fun updateCityMarkers() {
+        _cityMarkers.value = generateCityMarkers()
     }
 
     // =====================
@@ -1893,15 +2198,15 @@ class ACTimelineVM @Inject constructor(
 
         // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
         val cityOrder = mutableMapOf<Int, Int>()
-        // Track position per city: cityId -> current position
-        val cityPositions = mutableMapOf<Int, Int>()
         var nextCityIndex = 0
 
-        // Helper function to get next position for a city
-        fun getNextPosition(cityId: Int): Int {
-            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
-            cityPositions[cityId] = pos
-            return pos
+        // Global position counter - continues across all cities like timeline list
+        var globalPosition = 0
+
+        // Helper function to get next global position
+        fun getNextPosition(): Int {
+            globalPosition++
+            return globalPosition
         }
 
         items.forEach { item ->
@@ -1931,7 +2236,7 @@ class ACTimelineVM @Inject constructor(
                                                 }
                                             // No icon, only show order label
                                             markerIcon = -1
-                                            this.position = getNextPosition(cityId)
+                                            this.position = getNextPosition()
                                             isOffer = false
                                             this.cityIndex = currentCityIndex
                                         }
@@ -1958,7 +2263,7 @@ class ACTimelineVM @Inject constructor(
                                     }
                                     // No icon, only show order label
                                     markerIcon = -1
-                                    this.position = getNextPosition(cityId)
+                                    this.position = getNextPosition()
                                     isOffer = false
                                     this.cityIndex = currentCityIndex
                                 }
@@ -1982,7 +2287,7 @@ class ACTimelineVM @Inject constructor(
                                         }
                                         // No icon, only show order label
                                         markerIcon = -1
-                                        this.position = getNextPosition(cityId)
+                                        this.position = getNextPosition()
                                         isOffer = false
                                         this.cityIndex = currentCityIndex
                                     }
@@ -2002,16 +2307,33 @@ class ACTimelineVM @Inject constructor(
             if (!selectedCities.contains(step.cityIndex)) {
                 step.isSelected = true
                 selectedCities.add(step.cityIndex)
+                // Set initial selected step ID (first step of first city)
+                if (selectedStepId == null && step.cityIndex == 0) {
+                    selectedStepId = step.poiId
+                }
             }
         }
 
         // Track if there are multiple cities in selected day (for Main View button)
         hasMultipleCitiesInSelectedDay = cityOrder.size > 1
 
+        // Reset zoom state when map steps are updated
+        isShowingStepMarkersInMultiCity = false
+
         // Hide Main View button when map steps are updated (reset state)
         _showMainViewButton.value = false
 
+        // Set initial markers mode based on multi-city state
+        _mapMarkersMode.value = if (hasMultipleCitiesInSelectedDay) {
+            MapMarkersMode.CITY_MARKERS
+        } else {
+            MapMarkersMode.STEP_MARKERS
+        }
+
         _mapSteps.value = mapSteps
+
+        // Also update city markers for multi-city mode
+        updateCityMarkers()
 
         // Also update map bottom items
         updateMapBottomItems()
@@ -2028,15 +2350,15 @@ class ACTimelineVM @Inject constructor(
 
         // Track city order: cityId -> cityIndex (0 = first city, 1 = second city, etc.)
         val cityOrder = mutableMapOf<Int, Int>()
-        // Track position per city: cityId -> current position
-        val cityPositions = mutableMapOf<Int, Int>()
         var nextCityIndex = 0
 
-        // Helper function to get next position for a city
-        fun getNextPosition(cityId: Int): Int {
-            val pos = cityPositions.getOrPut(cityId) { 0 } + 1
-            cityPositions[cityId] = pos
-            return pos
+        // Global position counter - continues across all cities like timeline list
+        var globalPosition = 0
+
+        // Helper function to get next global position
+        fun getNextPosition(): Int {
+            globalPosition++
+            return globalPosition
         }
 
         // Date formatters for display
@@ -2067,7 +2389,7 @@ class ACTimelineVM @Inject constructor(
                         bottomItems.add(
                             MapBottomItem(
                                 id = step.poi?.id ?: "step_${step.id}",
-                                order = getNextPosition(cityId),
+                                order = getNextPosition(),
                                 title = step.poi?.name ?: "",
                                 imageUrl = step.poi?.image?.url,
                                 date = dateTime?.let { outputDateFormat.format(it) },
@@ -2093,7 +2415,7 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = data?.activityId ?: "booked_${item.segmentIndex}",
-                            order = getNextPosition(cityId),
+                            order = getNextPosition(),
                             title = data?.title ?: item.segment.title ?: "",
                             imageUrl = data?.imageUrl,
                             date = dateTime?.let { outputDateFormat.format(it) },
@@ -2117,7 +2439,7 @@ class ACTimelineVM @Inject constructor(
                     bottomItems.add(
                         MapBottomItem(
                             id = step.poi?.id ?: "manual_${step.id}",
-                            order = getNextPosition(cityId),
+                            order = getNextPosition(),
                             title = step.poi?.name ?: "",
                             imageUrl = step.poi?.image?.url,
                             date = dateTime?.let { outputDateFormat.format(it) },
@@ -2185,7 +2507,7 @@ class ACTimelineVM @Inject constructor(
     fun getItinerary(): ItineraryWithActivities? = itinerary
 
     /**
-     * Returns favorites that haven't been added as reserved_activity yet
+     * Returns favorites that haven't been added as booked_activity or reserved_activity yet
      * and have a valid city mapping (cityName matches a resolved destination)
      * Used when opening SavedPlans screen
      */
@@ -2193,17 +2515,20 @@ class ACTimelineVM @Inject constructor(
         val favourites = itinerary?.favouriteItems ?: return emptyList()
         val timeline = _timeline.value
 
-        // Get activityIds of reserved_activity segments from timeline
-        val reservedActivityIds = timeline?.tripProfile?.segments
-            ?.filter { it.segmentType == SegmentType.RESERVED_ACTIVITY }
+        // Get activityIds from BOTH booked_activity AND reserved_activity segments
+        val bookedAndReservedIds = timeline?.tripProfile?.segments
+            ?.filter {
+                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
+                it.segmentType == SegmentType.RESERVED_ACTIVITY
+            }
             ?.mapNotNull { it.additionalData?.activityId }
             ?.toSet() ?: emptySet()
 
         // Return only favourites that:
-        // 1. Are NOT in timeline as reserved_activity
+        // 1. Are NOT in timeline as booked_activity or reserved_activity
         // 2. Have a valid city mapping (cityName matches a resolved destination)
         return favourites.filter { favourite ->
-            favourite.activityId !in reservedActivityIds &&
+            favourite.activityId !in bookedAndReservedIds &&
             getResolvedCityId(favourite.cityName) != null
         }
     }
@@ -2529,5 +2854,10 @@ class ACTimelineVM @Inject constructor(
 
     companion object {
         const val ARG_TRIP_HASH = "tripHash"
+
+        // Multi-city zoom thresholds
+        const val MULTI_CITY_ZOOM_THRESHOLD = 12.0
+        const val CITY_MARKER_ZOOM_LEVEL = 13.0
+        const val STEP_MARKER_ZOOM_LEVEL = 15.0
     }
 }

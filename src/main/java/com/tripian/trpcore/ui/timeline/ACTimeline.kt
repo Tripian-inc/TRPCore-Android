@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -16,6 +17,8 @@ import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.PagerSnapHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.FRWarning
@@ -24,12 +27,13 @@ import com.tripian.trpcore.databinding.ActivityTimelineBinding
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
+import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
 import com.tripian.trpcore.ui.timeline.adapter.TimelineAdapter
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
-import com.tripian.trpcore.ui.timeline.addplan.TimePickerBottomSheet
+import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
@@ -177,13 +181,24 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             hideMapBottomList()
         }
 
-        // Main View button - returns map to initial zoom
+        // Zoom level listener for multi-city mode switching
+        binding.mapView.setOnZoomLevelListener { zoomLevel ->
+            viewModel.onZoomLevelChanged(zoomLevel)
+        }
+
+        // Main View button - returns map to overview (city markers mode for multi-city)
         binding.btnMainView.setOnClickListener {
-            // Reset map to initial view (all markers visible)
+            // Notify ViewModel to reset to overview mode
+            viewModel.onMainViewClicked()
+
+            // Collapse bottom list
+            hideMapBottomList()
+
+            // Zoom out to city overview
             lifecycleScope.launch {
                 binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
             }
-            viewModel.onMainViewClicked()
+
             // Fade out animation
             binding.btnMainView.animate()
                 .alpha(0f)
@@ -270,14 +285,25 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // Map steps for map mode
         viewModel.mapSteps.observe(this) { mapSteps ->
             if (viewModel.isMapMode.value == true) {
-                binding.mapView.clearMap()
-                binding.mapView.showMapIcons(mapSteps)
-                lifecycleScope.launch {
-                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+                // Use the current markers mode to decide what to show
+                when (viewModel.mapMarkersMode.value) {
+                    MapMarkersMode.CITY_MARKERS -> showCityMarkersMode()
+                    MapMarkersMode.STEP_MARKERS -> showStepMarkersMode()
+                    else -> showStepMarkersMode()
                 }
                 // Handle FAB position based on whether there are items
                 if (mapSteps.isNullOrEmpty()) {
                     hideMapBottomListCompletely()
+                }
+            }
+        }
+
+        // Map markers mode observer (for multi-city zoom-based switching)
+        viewModel.mapMarkersMode.observe(this) { mode ->
+            if (viewModel.isMapMode.value == true) {
+                when (mode) {
+                    MapMarkersMode.CITY_MARKERS -> showCityMarkersMode()
+                    MapMarkersMode.STEP_MARKERS -> showStepMarkersMode()
                 }
             }
         }
@@ -469,15 +495,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     /**
      * Setup horizontal list at bottom of map.
      * Shows timeline items as cards when annotation is clicked.
+     * Uses PagerSnapHelper for paging scroll behavior.
      */
     private fun setupMapBottomList() {
         mapBottomListAdapter = MapBottomListAdapter { item ->
-            // Always focus on the marker
-            binding.mapView.focusOnMarker(item.id)
-
-            // Show Main View button when focusing on a marker (multi-city mode)
-            viewModel.onMarkerFocused()
-
             if (item.isSelected) {
                 // Item is already selected - navigate to detail
                 when {
@@ -501,11 +522,39 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                 }
             } else {
-                // Item is not selected - select it
-                mapBottomListAdapter?.selectItem(item.id)
+                // Item is not selected - select it via ViewModel
+                // This will update mapSteps, mapBottomItems and switch to step markers mode if needed
+                viewModel.selectStepOnMap(item.id)
+
+                // Select marker on map (will work after mode switches to step markers)
                 binding.mapView.selectMarker(item.id)
+
+                // Zoom to the item's coordinate
+                val mapStep = viewModel.mapSteps.value?.find { it.poiId == item.id }
+                mapStep?.coordinate?.let { coord ->
+                    binding.mapView.zoomToCoordinate(
+                        lng = coord.lng,
+                        lat = coord.lat,
+                        zoomLevel = ACTimelineVM.STEP_MARKER_ZOOM_LEVEL
+                    )
+                }
+
+                // Show Main View button when focusing on a marker (multi-city mode)
+                viewModel.onMarkerFocused()
+
+                // Show full list
+                showMapBottomList()
+
+                // Scroll the list to center on the clicked item
+                val position = mapBottomListAdapter?.currentList?.indexOfFirst { it.id == item.id } ?: -1
+                if (position >= 0) {
+                    binding.rvMapBottomList.smoothScrollToPosition(position)
+                }
             }
         }
+
+        // Create PagerSnapHelper for paging behavior
+        val snapHelper = PagerSnapHelper()
 
         binding.rvMapBottomList.apply {
             layoutManager = LinearLayoutManager(
@@ -514,6 +563,62 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 false
             )
             adapter = mapBottomListAdapter
+
+            // Attach paging snap helper
+            snapHelper.attachToRecyclerView(this)
+
+            // Add scroll listener to select centered item when scroll stops
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    // Show full list when user starts scrolling
+                    if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
+                        showMapBottomList()
+                    }
+
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        // Find the centered (snapped) item
+                        val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                        val snapView = snapHelper.findSnapView(layoutManager)
+                        snapView?.let { view ->
+                            val position = layoutManager.getPosition(view)
+                            val item = mapBottomListAdapter?.currentList?.getOrNull(position)
+                            item?.let { bottomItem ->
+                                // Select the item if not already selected
+                                if (!bottomItem.isSelected) {
+                                    // Select via ViewModel - updates mapSteps and mapBottomItems
+                                    viewModel.selectStepOnMap(bottomItem.id)
+
+                                    // Select marker on map
+                                    binding.mapView.selectMarker(bottomItem.id)
+
+                                    // Zoom to the item's coordinate
+                                    val mapStep = viewModel.mapSteps.value?.find { it.poiId == bottomItem.id }
+                                    mapStep?.coordinate?.let { coord ->
+                                        binding.mapView.zoomToCoordinate(
+                                            lng = coord.lng,
+                                            lat = coord.lat,
+                                            zoomLevel = ACTimelineVM.STEP_MARKER_ZOOM_LEVEL
+                                        )
+                                    }
+
+                                    viewModel.onMarkerFocused()
+                                }
+                            }
+                        }
+                    }
+                }
+            })
+
+            // Add touch listener to show full list when tapped (if partially hidden)
+            setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_DOWN) {
+                    // Show full list when touched (if not already visible)
+                    if (!isBottomListVisible) {
+                        showMapBottomList()
+                    }
+                }
+                false // Don't consume the event, let RecyclerView handle it
+            }
         }
     }
 
@@ -667,14 +772,43 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     private fun handleMapItemClick(mapStep: MapStep) {
+        // Check if this is a city marker
+        if (mapStep.isCityMarker) {
+            // City marker clicked - handle via ViewModel
+            viewModel.onCityMarkerClicked(mapStep.cityId)
+
+            // Show Main View button
+            viewModel.onMarkerFocused()
+
+            // Zoom to city coordinate using MapView's zoomToCoordinate method
+            mapStep.coordinate?.let { coord ->
+                binding.mapView.zoomToCoordinate(
+                    lng = coord.lng,
+                    lat = coord.lat,
+                    zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
+                )
+            }
+
+            // Note: Don't call showCityMarkersMode() here as it will override camera movement
+            // The mapMarkersMode observer will handle marker updates when zoom changes
+            return
+        }
+
+        // Step marker handling
+        // Select via ViewModel - updates mapSteps and mapBottomItems
+        viewModel.selectStepOnMap(mapStep.poiId)
+
         // Select the clicked marker (changes visual appearance)
         binding.mapView.selectMarker(mapStep.poiId)
 
-        // Select the corresponding item in bottom list
-        mapBottomListAdapter?.selectItem(mapStep.poiId)
-
-        // Focus on the marker
-        binding.mapView.focusOnMarker(mapStep.poiId)
+        // Zoom to the marker
+        mapStep.coordinate?.let { coord ->
+            binding.mapView.zoomToCoordinate(
+                lng = coord.lng,
+                lat = coord.lat,
+                zoomLevel = ACTimelineVM.STEP_MARKER_ZOOM_LEVEL
+            )
+        }
 
         // Show Main View button when focusing on a marker (multi-city mode)
         viewModel.onMarkerFocused()
@@ -746,9 +880,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 //        updateFabPositions()
 
         // Card item height is approximately 104dp (80dp image + 24dp margins)
-        // Show only 10% (~10dp), so translate 90% (~94dp) down
+        // Show 50% of card for better peek effect
         val itemHeight = 104f * resources.displayMetrics.density
-        val translationY = itemHeight * 0.9f  // Show only 10% of card
+        val translationY = itemHeight * 0.5f  // Show 50% of card
 
         binding.rvMapBottomList.animate()
             .translationY(translationY)
@@ -782,6 +916,45 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.fabList.translationY = 0f
         binding.fabAddPlan.translationY = 0f
         updateFabPositions()
+    }
+
+    /**
+     * Shows city markers mode for multi-city days.
+     * Displays city icons + selected step marker only.
+     * Does NOT move camera - camera position is controlled by user interactions.
+     */
+    private fun showCityMarkersMode() {
+        binding.mapView.clearMap()
+
+        // Show city markers
+        viewModel.cityMarkers.value?.let { cities ->
+            binding.mapView.showMapIcons(cities)
+        }
+
+        // Show selected step marker
+        viewModel.getSelectedStepMarker()?.let { selectedStep ->
+            binding.mapView.showMapIcons(listOf(selectedStep))
+        }
+
+        // Note: Don't call moveCameraTo() here - camera is controlled by:
+        // - Initial map mode entry (in updateMapMode)
+        // - City marker clicks (zoomToCoordinate)
+        // - List item clicks (zoomToCoordinate)
+    }
+
+    /**
+     * Shows step markers mode.
+     * Displays all step markers (for single-city days or zoomed-in multi-city).
+     * Does NOT move camera - camera position is controlled by user interactions.
+     */
+    private fun showStepMarkersMode() {
+        binding.mapView.clearMap()
+
+        viewModel.mapSteps.value?.let { steps ->
+            binding.mapView.showMapIcons(steps)
+        }
+
+        // Note: Don't call moveCameraTo() here - camera is controlled by user interactions
     }
 
     private fun updateFabPositions() {
@@ -961,7 +1134,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     private fun showChangeTimePicker(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        // Parse start and end times from step
+        // Extract current start/end times from step (format: "yyyy-MM-dd HH:mm:ss")
         val startTime = step.startDateTimes?.let { dateTime ->
             // Extract HH:mm from datetime string
             if (dateTime.length >= 16) dateTime.substring(11, 16) else null
@@ -971,21 +1144,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             if (dateTime.length >= 16) dateTime.substring(11, 16) else null
         }
 
-        // Get estimated duration from POI
-        val estimatedDuration = step.poi?.duration ?: 60
-
-        val timePickerSheet = TimePickerBottomSheet.newInstance(
+        val timeSelectionSheet = TimeSelectionBottomSheet.newInstance(
             startTime = startTime,
-            endTime = endTime,
-            durationMinutes = estimatedDuration
+            endTime = endTime
         )
 
-        timePickerSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
+        timeSelectionSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
             // Update step time via ViewModel
             viewModel.updateStepTime(step.id, newStartTime, newEndTime)
         }
 
-        timePickerSheet.show(supportFragmentManager, TimePickerBottomSheet.TAG)
+        timeSelectionSheet.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
     }
 
     /**

@@ -301,7 +301,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_activities"
+                            android:src="@drawable/ic_cat_activities"
                             android:tint="@color/trp_text_primary"/>
 
                         <TextView

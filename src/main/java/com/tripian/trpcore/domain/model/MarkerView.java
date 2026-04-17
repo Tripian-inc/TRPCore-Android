@@ -113,35 +113,20 @@ public class MarkerView extends RelativeLayout {
 
     /**
      * Sets the selection state of the marker.
-     * For first city (cityIndex == 0):
-     *   - Selected: black background with white text
+     * All markers use the same color scheme:
+     *   - Selected: red background with white text
      *   - Unselected: white background with black border and black text
-     * For secondary cities (cityIndex > 0):
-     *   - Selected: primary color background with white text
-     *   - Unselected: white background with primary border and primary text
      *
      * @param selected true if marker is selected, false otherwise
      */
     public void setSelected(boolean selected) {
         this.isSelected = selected;
-        if (cityIndex == 0) {
-            // First city: black/white style
-            if (selected) {
-                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_red));
-                poiOrderTv.setTextColor(Color.WHITE);
-            } else {
-                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white));
-                poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_black_soft));
-            }
+        if (selected) {
+            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_red));
+            poiOrderTv.setTextColor(Color.WHITE);
         } else {
-            // Secondary cities: primary color style
-            if (selected) {
-                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_primary));
-                poiOrderTv.setTextColor(Color.WHITE);
-            } else {
-                poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white_primary));
-                poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_primary));
-            }
+            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white));
+            poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_black_soft));
         }
     }
 
@@ -152,6 +137,29 @@ public class MarkerView extends RelativeLayout {
      */
     public boolean isMarkerSelected() {
         return isSelected;
+    }
+
+    /**
+     * Configures this marker as a city marker.
+     * City markers display a city icon without a number badge.
+     * They are used in multi-city map overview mode.
+     *
+     * @param isCityMarker true to display as city marker, false for step marker
+     */
+    public void setCityMarker(boolean isCityMarker) {
+        if (isCityMarker) {
+            // City marker: show city icon, hide number badge
+            iconView.setImageResource(R.drawable.ic_city_marker);
+            iconView.setVisibility(View.VISIBLE);
+            iconView.setBackground(null);  // No background for city marker icon
+            iconView.setPadding(0, 0, 0, 0);  // Remove padding for full icon size
+            iconViewBackground.setVisibility(View.GONE);
+            poiOrderTv.setVisibility(View.GONE);
+        } else {
+            // Step marker: reset to default state
+            iconView.setVisibility(View.GONE);
+            iconViewBackground.setVisibility(View.GONE);
+        }
     }
 
     /**

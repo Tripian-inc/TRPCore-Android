@@ -24,7 +24,8 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         val selectedDate: String,      // Format: "yyyy-MM-dd"
         val selectedTimeSlot: String,  // Format: "HH:mm"
         val adults: Int = 1,
-        val cityId: Int
+        val cityId: Int,
+        val slotPrice: Double? = null  // Minimum price from selected time slot (if available)
     )
 
     companion object {
@@ -46,6 +47,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             }
 
             // Build additional data
+            // Use slot price (minimum price for selected time) if available, fallback to tour price
             val additionalData = TimelineSegmentAdditionalData().apply {
                 activityId = p.tour.productId
                 title = p.tour.title
@@ -55,7 +57,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 this.endDatetime = endDatetime
                 this.coordinate = coordinate
                 duration = p.tour.duration
-                price = p.tour.price
+                price = p.slotPrice ?: p.tour.price
                 currency = p.tour.currency ?: "EUR"
             }
 

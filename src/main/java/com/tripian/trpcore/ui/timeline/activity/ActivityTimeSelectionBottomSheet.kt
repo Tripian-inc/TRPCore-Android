@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.tour.model.TourProduct
-import com.tripian.one.api.tour.model.TourScheduleSlot
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseBottomDialogFragment
 import com.tripian.trpcore.databinding.BottomSheetActivityTimeSelectionBinding
@@ -34,9 +33,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var availableDays: List<Date> = emptyList()
     private var selectedDayIndex: Int = 0
     private var selectedTimeSlot: String? = null
-    private var currentSlots: List<TourScheduleSlot> = emptyList()
+    private var selectedPrice: Double? = null
+    private var currentSlots: List<GroupedTimeSlot> = emptyList()
 
-    private var onTimeSelectedListener: ((TourProduct, Date, String) -> Unit)? = null
+    private var onTimeSelectedListener: ((TourProduct, Date, String, Double?) -> Unit)? = null
 
     // For favorites mode (uses activityId for schedule API)
     private var isFavoriteMode: Boolean = false
@@ -110,6 +110,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         dayAdapter = DayFilterAdapter { index ->
             selectedDayIndex = index
             selectedTimeSlot = null
+            selectedPrice = null
             dayAdapter?.setSelectedPosition(index)
             clearTimeSlotSelection()
             updateContinueButtonState()
@@ -144,9 +145,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
             onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime)
         } else {
-            // For tours
+            // For tours - pass selected price (minimum price for the selected time slot)
             val tour = activity ?: return
-            onTimeSelectedListener?.invoke(tour, date, timeSlot)
+            onTimeSelectedListener?.invoke(tour, date, timeSlot, selectedPrice)
         }
     }
 
@@ -205,8 +206,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
     /**
      * Update the schedule slots UI
+     * Receives grouped time slots (unique times with minimum prices)
      */
-    private fun updateSchedule(slots: List<TourScheduleSlot>?) {
+    private fun updateSchedule(slots: List<GroupedTimeSlot>?) {
         binding.pbLoading.visibility = View.GONE
         currentSlots = slots ?: emptyList()
 
@@ -220,7 +222,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         }
     }
 
-    private fun populateTimeSlots(slots: List<TourScheduleSlot>) {
+    private fun populateTimeSlots(slots: List<GroupedTimeSlot>) {
         binding.flexTimeSlots.removeAllViews()
 
         val inflater = LayoutInflater.from(requireContext())
@@ -240,7 +242,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
         slots.forEach { slot ->
             val chipView = inflater.inflate(R.layout.item_time_slot, binding.flexTimeSlots, false) as TextView
-            chipView.text = slot.time ?: ""
+            chipView.text = slot.time
 
             val isSelected = slot.time == selectedTimeSlot
             chipView.isSelected = isSelected
@@ -248,6 +250,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
             chipView.setOnClickListener {
                 selectedTimeSlot = slot.time
+                selectedPrice = slot.minPrice
                 updateTimeSlotSelection()
                 updateContinueButtonState()
             }
@@ -292,7 +295,11 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         return format.format(date1) == format.format(date2)
     }
 
-    fun setOnTimeSelectedListener(listener: (TourProduct, Date, String) -> Unit) {
+    /**
+     * Set listener for time selection
+     * @param listener Callback with (tour, selectedDate, timeSlot, slotMinPrice)
+     */
+    fun setOnTimeSelectedListener(listener: (TourProduct, Date, String, Double?) -> Unit) {
         onTimeSelectedListener = listener
     }
 

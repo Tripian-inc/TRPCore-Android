@@ -218,7 +218,7 @@ class ACActivityListingVM @Inject constructor(
             ActivityCategoryItem(
                 id = "guided_tours",
                 languageKey = LanguageConst.ADD_PLAN_CAT_GUIDED_TOURS,
-                iconRes = R.drawable.ic_activities,
+                iconRes = R.drawable.ic_cat_activities,
                 keywords = "guided tours, free tours"
             ),
             ActivityCategoryItem(
@@ -391,7 +391,7 @@ class ACActivityListingVM @Inject constructor(
     // CREATE SEGMENT
     // =====================
 
-    fun createReservedActivitySegment(tour: TourProduct, selectedDate: Date, timeSlot: String) {
+    fun createReservedActivitySegment(tour: TourProduct, selectedDate: Date, timeSlot: String, slotPrice: Double?) {
         _isCreatingSegment.value = true
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -404,7 +404,8 @@ class ACActivityListingVM @Inject constructor(
                 selectedDate = dateString,
                 selectedTimeSlot = timeSlot,
                 adults = planData?.travelers ?: 1,
-                cityId = cityId
+                cityId = cityId,
+                slotPrice = slotPrice
             ),
             success = { _ ->
                 _isCreatingSegment.value = false

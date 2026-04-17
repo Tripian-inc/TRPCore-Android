@@ -9,8 +9,7 @@
     android:layout_height="wrap_content"
     android:layout_marginEnd="@dimen/_16sdp"
     android:gravity="center_horizontal"
-    android:orientation="vertical"
-    android:paddingVertical="@dimen/_8sdp">
+    android:orientation="vertical">
 
     <ImageView
         android:id="@+id/ivCategoryIcon"
@@ -30,5 +29,5 @@
         android:maxLines="2"
         android:textColor="@color/category_text_selector"
         android:textSize="12sp"
-        tools:text="All" />
+        tools:text="All asdasd asd gygygygydas d sad asd" />
 </LinearLayout>
