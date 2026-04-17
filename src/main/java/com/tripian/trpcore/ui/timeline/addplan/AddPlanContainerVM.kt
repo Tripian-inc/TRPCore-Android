@@ -14,6 +14,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
 import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.util.LanguageConst
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -357,7 +358,16 @@ class AddPlanContainerVM @Inject constructor(
         updateContinueButtonState()
     }
 
-    fun setEndTime(time: String) {
+    fun setEndTime(time: String?) {
+        // Validate before setting (additional defense layer - UI already validates)
+        if (time != null) {
+            val startTime = _startTime.value
+            if (startTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, time)) {
+                // Invalid - don't set
+                return
+            }
+        }
+
         _endTime.value = time
         planData.endTime = time
         updateContinueButtonState()

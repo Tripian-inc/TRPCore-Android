@@ -14,6 +14,7 @@ import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.gyg.base.Tripian
 import com.tripian.one.TRPRest
+import com.tripian.trpcore.BuildConfig
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
@@ -677,6 +678,7 @@ class TRPCore {
      * Sends itinerary parameters log to backend (fire-and-forget).
      * This is called when SDK is started with startWithItinerary.
      * The log is sent asynchronously and failures do not affect the user experience.
+     * Only sends logs in release builds to avoid unnecessary API calls during development.
      */
     private fun sendItineraryLog(
         itinerary: ItineraryWithActivities,
@@ -685,6 +687,11 @@ class TRPCore {
         appLanguage: String,
         appCurrency: String
     ) {
+        // Only send logs in release builds
+        if (BuildConfig.DEBUG) {
+            return
+        }
+
         try {
             val requestParams = mapOf<String, Any?>(
                 "tripName" to (itinerary.tripName ?: ""),

@@ -206,16 +206,9 @@
     <!-- Reservation Button (stepType == "activity" only) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnReservation"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
+        style="@style/TrpButtonPrimary"
+        android:layout_height="@dimen/_31sdp"
         android:layout_marginTop="8dp"
-        android:backgroundTint="@color/trp_timeline_primary"
-        android:fontFamily="@font/medium"
-        android:textAllCaps="false"
-        android:textColor="@color/trp_white"
-        android:textSize="13sp"
-        android:visibility="gone"
-        app:cornerRadius="8dp"
         tools:text="Reservation"
         tools:visibility="visible" />
 

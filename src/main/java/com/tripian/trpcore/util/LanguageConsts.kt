@@ -305,6 +305,11 @@ object LanguageConst {
     const val ADD_PLAN_ERROR_MISSING = "trips.myTrips.timelineitinerary.addPlan.error.missingData"
     const val ADD_PLAN_ERROR_CREATE_FAILED = "trips.myTrips.timelineitinerary.addPlan.error.createFailed"
 
+    // Time Picker Validation Messages
+    const val ADD_PLAN_SELECT_START_TIME_FIRST = "addPlan.validation.selectStartTimeFirst"
+    const val ADD_PLAN_END_TIME_MUST_BE_AFTER_START = "addPlan.validation.endTimeMustBeAfterStart"
+    const val ADD_PLAN_END_TIME_CLEARED = "addPlan.message.endTimeCleared"
+
     // =====================
     // POI DETAIL SCREEN
     // =====================

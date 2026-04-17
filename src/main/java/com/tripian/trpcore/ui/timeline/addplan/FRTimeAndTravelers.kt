@@ -1,14 +1,17 @@
 package com.tripian.trpcore.ui.timeline.addplan
 
 import android.app.Activity
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
@@ -138,31 +141,95 @@ class FRTimeAndTravelers : Fragment() {
 
     private fun setupTimeSelection() {
         binding.btnStartTime.setOnClickListener {
-            showTimePickerBottomSheet()
+            showStartTimePicker()
         }
 
         binding.btnEndTime.setOnClickListener {
-            showTimePickerBottomSheet()
+            showEndTimePicker()
         }
     }
 
-    private fun showTimePickerBottomSheet() {
-        val currentStartTime = sharedVM.startTime.value
-        val currentEndTime = sharedVM.endTime.value
+    /**
+     * Show Compose TimePicker Dialog for start time selection
+     */
+    private fun showStartTimePicker() {
+        val currentTime = sharedVM.startTime.value
 
-        val bottomSheet = TimePickerBottomSheet.newInstance(
-            startTime = currentStartTime,
-            endTime = currentEndTime,
-            durationMinutes = null,
-            disableAutoEndTime = true  // Disable auto end time for smart recommendations
+        showComposeTimePicker(
+            initialTime = currentTime,
+            onTimeSelected = { hour, minute ->
+                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
+                sharedVM.setStartTime(time24h)
+
+                // Clear end time if it's now invalid (before new start time)
+                val endTime = sharedVM.endTime.value
+                if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
+                    sharedVM.setEndTime(null)
+                    showSnackbar(LanguageConst.ADD_PLAN_END_TIME_CLEARED)
+                }
+            }
         )
+    }
 
-        bottomSheet.setOnTimeSelectedListener { startTime, endTime ->
-            startTime?.let { sharedVM.setStartTime(it) }
-            endTime?.let { sharedVM.setEndTime(it) }
+    /**
+     * Show Compose TimePicker Dialog for end time selection
+     */
+    private fun showEndTimePicker() {
+        val startTime = sharedVM.startTime.value
+
+        // Validate start time is selected first
+        if (startTime == null) {
+            showAlert(LanguageConst.ADD_PLAN_SELECT_START_TIME_FIRST)
+            return
         }
 
-        bottomSheet.show(childFragmentManager, TimePickerBottomSheet.TAG)
+        val currentTime = sharedVM.endTime.value
+
+        showComposeTimePicker(
+            initialTime = currentTime,
+            onTimeSelected = { hour, minute ->
+                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
+
+                // Validate end time > start time
+                if (MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, time24h)) {
+                    sharedVM.setEndTime(time24h)
+                } else {
+                    showInvalidTimeError()
+                }
+            }
+        )
+    }
+
+    /**
+     * Show error snackbar for invalid time selection
+     */
+    private fun showInvalidTimeError() {
+        val message = TRPCore.core.miscRepository.getLanguageValueForKey(
+            LanguageConst.ADD_PLAN_END_TIME_MUST_BE_AFTER_START
+        )
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
+            .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.trp_error_message))
+            .setTextColor(Color.WHITE)
+            .show()
+    }
+
+    /**
+     * Show info snackbar (e.g., end time cleared)
+     */
+    private fun showSnackbar(languageKey: String) {
+        val message = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey)
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    /**
+     * Show alert for missing start time
+     */
+    private fun showAlert(languageKey: String) {
+        val message = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey)
+        android.app.AlertDialog.Builder(requireContext())
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
 
     private fun setupTravelers() {
@@ -188,27 +255,6 @@ class FRTimeAndTravelers : Fragment() {
         //         sharedVM.selectCity(city)
         //     }.show(childFragmentManager, CitySelectionBottomSheet.TAG)
         // }
-    }
-
-    /**
-     * Convert 24h format (HH:mm) to 12h display format (h:mm AM/PM)
-     */
-    private fun formatTimeFor12h(time24: String): String {
-        val parts = time24.split(":")
-        if (parts.size != 2) return time24
-
-        val hour24 = parts[0].toIntOrNull() ?: return time24
-        val minute = parts[1].toIntOrNull() ?: return time24
-
-        val isPM = hour24 >= 12
-        val hour12 = when {
-            hour24 == 0 -> 12
-            hour24 > 12 -> hour24 - 12
-            else -> hour24
-        }
-
-        val amPm = if (isPM) "PM" else "AM"
-        return String.format("%d:%02d %s", hour12, minute, amPm)
     }
 
     private fun observeViewModel() {
@@ -265,7 +311,7 @@ class FRTimeAndTravelers : Fragment() {
         // Start time
         sharedVM.startTime.observe(viewLifecycleOwner) { time ->
             val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
-            binding.tvStartTime.text = time?.let { formatTimeFor12h(it) } ?: selectText
+            binding.tvStartTime.text = time?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
             binding.tvStartTime.setTextColor(
                 requireContext().getColor(
                     if (time != null) R.color.trp_text_primary
@@ -277,7 +323,7 @@ class FRTimeAndTravelers : Fragment() {
         // End time
         sharedVM.endTime.observe(viewLifecycleOwner) { time ->
             val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
-            binding.tvEndTime.text = time?.let { formatTimeFor12h(it) } ?: selectText
+            binding.tvEndTime.text = time?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
             binding.tvEndTime.setTextColor(
                 requireContext().getColor(
                     if (time != null) R.color.trp_text_primary
