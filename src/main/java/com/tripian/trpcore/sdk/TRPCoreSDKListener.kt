@@ -28,10 +28,12 @@ interface TRPCoreSDKListener {
      * Host app should start reservation/booking flow in this callback.
      *
      * @param activityId ID of the activity to be reserved
+     * @param date Date of the activity in "yyyy-MM-dd" format (e.g., "2026-04-17")
+     *             Null if date is not available.
      *
      * iOS equivalent: trpCoreKitDidRequestActivityReservation(activityId:)
      */
-    fun onRequestActivityReservation(activityId: String)
+    fun onRequestActivityReservation(activityId: String, date: String? = null)
 
     /**
      * Called when timeline is successfully created.

@@ -459,7 +459,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onReservationClick = { bookedActivity ->
                 // Handle reservation button click for reserved activities
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
-                    viewModel.onActivityReservationRequested(activityId)
+                    // Extract date part (yyyy-MM-dd) from startDateTime (yyyy-MM-dd HH:mm)
+                    val dateString = bookedActivity.startDateTime?.substringBefore(" ")
+                    viewModel.onActivityReservationRequested(activityId, dateString)
                 }
             },
             // Step callbacks for Recommendations
@@ -473,10 +475,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             },
             onStepReservationClick = { step ->
                 // Handle reservation for activity step
-                step.poi?.additionalData?.productId?.let { productId ->
-                    viewModel.onActivityReservationRequested(productId)
-                } ?: step.poi?.id?.let { poiId ->
-                    viewModel.onActivityReservationRequested(poiId)
+                val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
+                activityId?.let { id ->
+                    // Extract date part (yyyy-MM-dd) from startDateTimes (yyyy-MM-dd HH:mm)
+                    val dateString = step.startDateTimes?.substringBefore(" ")
+                    viewModel.onActivityReservationRequested(id, dateString)
                 }
             },
             // Route calculation callback for Recommendations

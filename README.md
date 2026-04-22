@@ -12,6 +12,7 @@ TRPCore is the main Android library for integrating Tripian Timeline Itinerary f
 - [Complete Integration Example](#complete-integration-example)
 - [Legacy Methods](#legacy-methods)
 - [Language Support](#language-support)
+- [Jetpack Compose Integration](#jetpack-compose-integration)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -217,7 +218,7 @@ TRPCore.core.startWithItinerary(
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `context` | `Context` | Yes | Android context |
+| `context` | `Context` | Yes | Android context (see note below) |
 | `itinerary` | `ItineraryWithActivities` | Yes | Trip data model |
 | `tripHash` | `String?` | No | Existing timeline hash (null to create new) |
 | `uniqueId` | `String?` | No | User ID (uses device ID if null) |
@@ -225,6 +226,10 @@ TRPCore.core.startWithItinerary(
 | `appLanguage` | `String` | No | Language code (default: "en") |
 
 > **Note:** `tripHash` can be passed either as a parameter or inside `itinerary.tripianHash`. If both are provided, the parameter takes precedence.
+
+> **Important - Context Parameter:**
+> - **Activity context** (`this`): SDK runs in the same task as your app. Back navigation works properly. **Recommended for Jetpack Compose apps.**
+> - **Application context**: SDK runs in a new task. Use this only when launching from non-Activity contexts (e.g., Service, BroadcastReceiver).
 
 ---
 
@@ -386,20 +391,26 @@ override fun onRequestActivityDetail(activityId: String) {
 }
 ```
 
-#### onRequestActivityReservation(activityId: String)
+#### onRequestActivityReservation(activityId: String, date: String?)
 
 Called when user taps "Reserve" or "Book" button. Start your booking flow.
 
 ```kotlin
-override fun onRequestActivityReservation(activityId: String) {
-    Log.d("SDK", "Reservation requested: $activityId")
+override fun onRequestActivityReservation(activityId: String, date: String?) {
+    Log.d("SDK", "Reservation requested: $activityId on $date")
+
+    // date: Activity date in "yyyy-MM-dd" format (e.g., "2026-04-17")
+    // Null if date is not available
 
     // Start your reservation/booking flow
     val intent = Intent(this, BookingActivity::class.java)
     intent.putExtra("activityId", activityId)
+    date?.let { intent.putExtra("date", it) }
     startActivity(intent)
 }
 ```
+
+> **Note:** The `date` parameter is nullable with a default value of `null`. Existing implementations without the date parameter will continue to work (backward compatible).
 
 #### onTimelineCreated(tripHash: String)
 
@@ -468,7 +479,7 @@ override fun onActivityAdded(activityId: String) {
 | Method | Required | Description |
 |--------|----------|-------------|
 | `onRequestActivityDetail(activityId)` | Yes | User tapped activity card - open detail screen |
-| `onRequestActivityReservation(activityId)` | Yes | User tapped Reserve - start booking flow |
+| `onRequestActivityReservation(activityId, date?)` | Yes | User tapped Reserve - start booking flow (date format: "yyyy-MM-dd", null if not available) |
 | `onTimelineCreated(tripHash)` | Yes | **Save this hash** to load timeline later |
 | `onTimelineLoaded(tripHash)` | No | Timeline loaded successfully |
 | `onError(error)` | No | Error occurred in SDK |
@@ -598,9 +609,15 @@ class MainActivity : AppCompatActivity(), TRPCoreSDKListener {
         Toast.makeText(this, "Open detail for: $activityId", Toast.LENGTH_SHORT).show()
     }
 
-    override fun onRequestActivityReservation(activityId: String) {
+    override fun onRequestActivityReservation(activityId: String, date: String?) {
         // Start your booking flow
-        Toast.makeText(this, "Start booking for: $activityId", Toast.LENGTH_SHORT).show()
+        // date: Activity date in "yyyy-MM-dd" format (e.g., "2026-04-17"), null if not available
+        val message = if (date != null) {
+            "Start booking for: $activityId on $date"
+        } else {
+            "Start booking for: $activityId"
+        }
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onTimelineCreated(tripHash: String) {
@@ -706,6 +723,131 @@ TRPCore.core.startTripianWithUniqueId(
 
 ---
 
+## Jetpack Compose Integration
+
+TRPCore SDK supports integration with Jetpack Compose Single-Activity architecture. For proper back navigation between SDK screens and your Compose screens, follow these guidelines:
+
+### Recommended Integration
+
+When using Jetpack Compose, **always pass Activity context** (not Application context) to SDK methods:
+
+```kotlin
+@Composable
+fun MyScreen() {
+    val context = LocalContext.current
+    val activity = context as? Activity ?: (context as ContextWrapper).baseContext as Activity
+
+    Button(onClick = {
+        TRPCore.core.startWithItinerary(
+            context = activity,  // Pass Activity context for proper back navigation
+            itinerary = itinerary,
+            tripHash = null,
+            canBack = true,
+            appLanguage = "en"
+        )
+    }) {
+        Text("Open Tripian")
+    }
+}
+```
+
+### Using ActivityResultLauncher (Recommended)
+
+For better control over the SDK lifecycle, use `ActivityResultLauncher`:
+
+```kotlin
+class MainActivity : ComponentActivity() {
+
+    private val tripianLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // Called when SDK is dismissed
+        // You can refresh your UI or handle the result here
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            MyApp(
+                onOpenTripian = { itinerary ->
+                    // Using Activity context ensures proper back navigation
+                    TRPCore.core.startWithItinerary(
+                        context = this@MainActivity,
+                        itinerary = itinerary,
+                        canBack = true,
+                        appLanguage = "en"
+                    )
+                }
+            )
+        }
+    }
+}
+```
+
+### Handling SDK Callbacks in Compose
+
+When using `onRequestActivityDetail` callback to navigate to your Compose detail screen:
+
+```kotlin
+class MainActivity : ComponentActivity(), TRPCoreSDKListener {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        TRPCore.setListener(this)
+
+        setContent {
+            val navController = rememberNavController()
+
+            // Store navController reference for callbacks
+            remember { navControllerRef = navController }
+
+            NavHost(navController, startDestination = "home") {
+                composable("home") { HomeScreen() }
+                composable("activity/{id}") { backStackEntry ->
+                    ActivityDetailScreen(
+                        activityId = backStackEntry.arguments?.getString("id")
+                    )
+                }
+            }
+        }
+    }
+
+    private var navControllerRef: NavController? = null
+
+    override fun onRequestActivityDetail(activityId: String) {
+        // Navigate to your Compose detail screen
+        // Back press will return to SDK (same task)
+        navControllerRef?.navigate("activity/$activityId")
+    }
+
+    override fun onRequestActivityReservation(activityId: String, date: String?) {
+        // date: Activity date in "yyyy-MM-dd" format, null if not available
+        val route = if (date != null) {
+            "booking/$activityId?date=$date"
+        } else {
+            "booking/$activityId"
+        }
+        navControllerRef?.navigate(route)
+    }
+
+    override fun onTimelineCreated(tripHash: String) {
+        // Save the trip hash
+    }
+}
+```
+
+### Context Behavior Summary
+
+| Context Type | Behavior | Use Case |
+|--------------|----------|----------|
+| **Activity** (`this`) | SDK runs in same task, back navigation works | Compose apps, normal Activity launches |
+| **Application** | SDK runs in new task, separate back stack | Service, BroadcastReceiver, background launches |
+
+> **Note:** Prior to version 1.1.4, SDK always used `FLAG_ACTIVITY_NEW_TASK` which caused back navigation issues in Compose apps. This has been fixed with conditional flag behavior.
+
+---
+
 ## Troubleshooting
 
 | Issue | Solution |
@@ -714,15 +856,19 @@ TRPCore.core.startTripianWithUniqueId(
 | "destinationItems or tripItems required" | Provide at least one destination or activity |
 | City not found | Provide correct `cityName` and `countryName` |
 | Callbacks not received | Ensure `TRPCore.setListener(this)` is called |
+| Back button doesn't return to SDK from Compose screen | Pass Activity context instead of Application context to `startWithItinerary()` |
+| SDK opens in separate task (Compose apps) | Use `this` (Activity) instead of `applicationContext` when calling SDK methods |
 
 ---
 
 ## Version
 
-Current version: **1.1.3**
+Current version: **1.1.5**
 
 ## Changelog
 
+- **1.1.5**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
+- **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context
 - **1.1.3**: Bottom toast alert, AddPlan UI fixes
 - **1.1.2**: TEST environment support
 - **1.1.0**: Optional destinationItems, cityName resolution

@@ -2175,9 +2175,10 @@ class ACTimelineVM @Inject constructor(
      * Forwards reservation request to host app.
      *
      * @param activityId ID of the activity to be reserved
+     * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
      */
-    fun onActivityReservationRequested(activityId: String) {
-        TRPCore.notifyActivityReservationRequested(activityId)
+    fun onActivityReservationRequested(activityId: String, date: String? = null) {
+        TRPCore.notifyActivityReservationRequested(activityId, date)
     }
 
     /**

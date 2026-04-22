@@ -142,9 +142,12 @@ class TRPCore {
 
         /**
          * Triggers activity reservation request callback
+         *
+         * @param activityId ID of the activity
+         * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
          */
-        internal fun notifyActivityReservationRequested(activityId: String) {
-            listener?.onRequestActivityReservation(activityId)
+        internal fun notifyActivityReservationRequested(activityId: String, date: String? = null) {
+            listener?.onRequestActivityReservation(activityId, date)
         }
 
         /**
@@ -496,7 +499,11 @@ class TRPCore {
         intent.putExtra("uniqueId", uniqueId)
         intent.putExtra("appLanguage", appLanguage)
         intent.putExtra(EXTRA_APP_CURRENCY, appCurrency)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
+        // When called from Activity context, SDK runs in same task for proper back navigation
+        if (context !is Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(intent)
     }
 
@@ -513,7 +520,11 @@ class TRPCore {
         tripHash: String
     ) {
         val intent = ACTimeline.newIntent(context, tripHash)
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
+        // When called from Activity context, SDK runs in same task for proper back navigation
+        if (context !is Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(intent)
     }
 
@@ -566,45 +577,15 @@ class TRPCore {
                 putExtra(EXTRA_CAN_BACK, canBack)
                 putExtra(EXTRA_APP_LANGUAGE, appLanguage)
                 putExtra(EXTRA_APP_CURRENCY, appCurrency)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
+                // When called from Activity context, SDK runs in same task for proper back navigation
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             }
             context.startActivity(intent)
         }
     }
-
-//    /**
-//     * Opens an existing timeline with hash
-//     *
-//     * @param context Android context
-//     * @param tripHash Timeline hash
-//     * @param uniqueId User ID (device ID used if null)
-//     * @param canBack Whether to show back button
-//     * @param appLanguage App language (default: "en")
-//     * @param appCurrency App currency (default: "EUR")
-//     */
-//    fun startWithTripHash(
-//        context: Context,
-//        tripHash: String,
-//        uniqueId: String? = null,
-//        canBack: Boolean = true,
-//        appLanguage: String = "en",
-//        appCurrency: String = "EUR"
-//    ) {
-//        val effectiveUniqueId = uniqueId ?: getDeviceId(context)
-//
-//        // Ensure languages are loaded before opening timeline
-//        ensureLanguagesLoaded {
-//            val intent = Intent(context, ACTimeline::class.java).apply {
-//                putExtra(EXTRA_TRIP_HASH, tripHash)
-//                putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
-//                putExtra(EXTRA_CAN_BACK, canBack)
-//                putExtra(EXTRA_APP_LANGUAGE, appLanguage)
-//                putExtra(EXTRA_APP_CURRENCY, appCurrency)
-//                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//            }
-//            context.startActivity(intent)
-//        }
-//    }
 
     fun activityInjector(): AndroidInjector<Activity> {
         return actInjector
