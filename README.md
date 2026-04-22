@@ -86,7 +86,7 @@ In your app-level `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.Tripian-inc:TRPCore-Android:1.1.3'
+    implementation 'com.github.Tripian-inc:TRPCore-Android:1.2.18'
 }
 ```
 
@@ -863,11 +863,11 @@ class MainActivity : ComponentActivity(), TRPCoreSDKListener {
 
 ## Version
 
-Current version: **1.1.5**
+Current version: **1.2.18**
 
 ## Changelog
 
-- **1.1.5**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
+- **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
 - **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context
 - **1.1.3**: Bottom toast alert, AddPlan UI fixes
 - **1.1.2**: TEST environment support
