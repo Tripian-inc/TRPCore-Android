@@ -99,6 +99,14 @@ sealed class TimelineDisplayItem : Serializable {
 
         val endDateTime: String?
             get() = segment.additionalData?.endDatetime ?: segment.endDate
+
+        /** Whether the activity has no real-world coordinate (Theme 6). */
+        val isNoLocation: Boolean
+            get() = segment.additionalData?.isNoLocation == true
+
+        /** Whether the booking is no longer available on its booked date (Theme 17). */
+        val isAvailabilityExpired: Boolean
+            get() = segment.additionalData?.isAvailabilityExpired == true
     }
 
     /**
@@ -242,6 +250,61 @@ sealed class TimelineDisplayItem : Serializable {
 
         val stepId: Int?
             get() = step.id
+
+        /** Whether the POI has no real-world coordinate (Theme 6). */
+        val isNoLocation: Boolean
+            get() = segment?.additionalData?.isNoLocation == true
+    }
+
+    /**
+     * Flexible-Time Activity — reserved activities whose `additionalData.duration == -1`
+     * and whose start/end fall in the all-day placeholder set {"00:00", "23:59"}.
+     *
+     * Rendered by FlexibleActivityVH with a dashed-border card, U+2212 order chip,
+     * and "Flexible entry / Check the timetable" labels. Pinned to the top of its
+     * city group, excluded from time-conflict detection (start/end are placeholders,
+     * not a real interval).
+     */
+    data class FlexibleActivity(
+        val segment: TimelineSegment,
+        override val segmentIndex: Int? = null,
+        override val city: City? = null,
+        override val order: Int = -1,  // visual order is "−"; not part of numeric chain
+        override val planId: String? = null,
+        val isAvailabilityExpired: Boolean = false,
+        val isNoLocation: Boolean = false
+    ) : TimelineDisplayItem() {
+        override val startTime: Date?
+            get() = segment.startDate?.toDate()
+
+        val title: String
+            get() = segment.additionalData?.title ?: segment.title ?: ""
+
+        val imageUrl: String?
+            get() = segment.additionalData?.imageUrl
+
+        val cancellation: String?
+            get() = segment.additionalData?.cancellation
+
+        val rating: Double?
+            get() = segment.additionalData?.rating
+
+        val reviewCount: Int?
+            get() = segment.additionalData?.reviewCount
+
+        val adults: Int
+            get() = segment.adults
+
+        val description: String?
+            get() = segment.additionalData?.description ?: segment.description
+
+        /** Always false: flexible items don't participate in conflict detection. */
+        val hasConflict: Boolean
+            get() = false
+
+        /** Always false; the time-overlap label is suppressed for flexible items. */
+        val showTimeOverlapText: Boolean
+            get() = false
     }
 
     /**

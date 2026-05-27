@@ -12,8 +12,10 @@ import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
+import com.airbnb.lottie.LottieCompositionFactory
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
+import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.widget.BottomToast
 import com.tripian.trpcore.util.OnBackPressListener
@@ -66,6 +68,8 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
+        LottieCompositionFactory.fromRawRes(applicationContext, R.raw.loader)
+
         super.onCreate(savedInstanceState)
         _binding = getViewBinding()
         setContentView(binding.root)
@@ -89,6 +93,19 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
         viewModel.arguments = intent.extras
         viewModel.onViewCreated(savedInstanceState)
+
+        viewModel.lottieLoadingEvent.observe(this) { event ->
+            if (event == null) return@observe
+            if (event.show) {
+                // Force-hide the legacy DGLockScreen spinner so the two loaders
+                // never stack on top of each other.
+                hideLoading()
+                LottieLoading.show(this, event.presentation, event.text)
+            } else {
+                LottieLoading.hide(this)
+                hideLoading()
+            }
+        }
 
         setListeners()
         setReceivers()
@@ -116,20 +133,23 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         viewModel.onSaveInstanceState(outState)
     }
 
+    /**
+     * Legacy DGLockScreen spinner. Disabled SDK-wide — all callers route through
+     * `showLottieLoading()` / `hideLottieLoading()` (full-screen Lottie) or
+     * `showBottomSheetLoader()` (bottom-sheet Lottie) instead. Kept as a no-op
+     * so existing call sites don't need to be rewritten. Any DGLockScreen that
+     * was previously surfaced (older builds, defensive) is dismissed here too.
+     */
     fun hideLoading() {
         dgLockScreen?.dismiss()
+        dgLockScreen = null
     }
 
     fun showLoading() {
-        if (dgLockScreen == null) {
-            dgLockScreen = DGLockScreen(this)
-        }
-
-        dgLockScreen?.let {
-            if (!it.isShowing) {
-                it.show()
-            }
-        }
+        // no-op — see [hideLoading] doc. If anything previously inflated the
+        // legacy lock screen, dismiss it so the SDK is loader-uniform.
+        dgLockScreen?.dismiss()
+        dgLockScreen = null
     }
 
     open fun backPressed() {

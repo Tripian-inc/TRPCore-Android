@@ -42,12 +42,24 @@ fun BaseViewModel.navigateToFragment(
     viewListener?.showFragment(factory)
 }
 
+/**
+ * Legacy alias — every `showLoading()` call across the SDK now routes through the
+ * full-screen Lottie loader with the default rotating texts. Callers that want
+ * the bottom-sheet variant must use [BaseViewModel.showBottomSheetLoader] (or
+ * `showLottieLoading(BOTTOM_SHEET, …)`) directly.
+ *
+ * The legacy DGLockScreen path remains wired up but is itself a no-op (see
+ * `BaseActivity.showLoading`), so existing call sites that haven't been ported
+ * yet still get a coherent Lottie experience.
+ */
 fun BaseViewModel.showLoading() {
-    viewListener?.showLoading()
+    showLottieLoading()
+    viewListener?.showLoading()  // legacy no-op path, kept for back-compat
 }
 
 fun BaseViewModel.hideLoading() {
-    viewListener?.hideLoading()
+    hideLottieLoading()
+    viewListener?.hideLoading()  // legacy no-op path, kept for back-compat
 }
 
 fun BaseViewModel.goBack() {

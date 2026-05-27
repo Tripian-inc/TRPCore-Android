@@ -7,13 +7,17 @@ import androidx.annotation.CallSuper
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.LiveData
 import com.tripian.trpcore.repository.MiscRepository
+import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
+import com.tripian.trpcore.ui.common.loader.LottieLoadingText
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.Strings
 import com.tripian.trpcore.util.ViewListener
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.event.SingleLiveEvent
 import com.tripian.trpcore.util.extensions.navigateToFragment
 import com.tripian.trpcore.util.extensions.setUseCasesListener
 import com.tripian.trpcore.util.fragment.FragmentFactory
@@ -178,5 +182,65 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     fun getLanguageForKey(key: String): String {
         return miscRepository.getLanguageValueForKey(key)
+    }
+
+    // ---------------------------------------------------------------------
+    // Lottie loading (long-running operations)
+    // ---------------------------------------------------------------------
+    data class LottieLoadingEvent(
+        val show: Boolean,
+        val presentation: LottieLoadingPresentation = LottieLoadingPresentation.FULL_SCREEN,
+        val text: LottieLoadingText = LottieLoadingText.None
+    )
+
+    private val _lottieLoadingEvent = SingleLiveEvent<LottieLoadingEvent>()
+    val lottieLoadingEvent: LiveData<LottieLoadingEvent> = _lottieLoadingEvent
+
+    fun showLottieLoading(
+        presentation: LottieLoadingPresentation = LottieLoadingPresentation.FULL_SCREEN,
+        text: LottieLoadingText = LottieLoadingText.Rotating.default()
+    ) {
+        _lottieLoadingEvent.postValue(LottieLoadingEvent(true, presentation, text))
+    }
+
+    fun hideLottieLoading() {
+        _lottieLoadingEvent.postValue(LottieLoadingEvent(false))
+    }
+
+    /** Convenience for bottom-sheet "refreshing" loader. */
+    fun showRefreshLoader() {
+        val refreshing = miscRepository
+            .getLanguageValueForKey(LanguageConst.LOADING_TEXT_LOADING_TIME_SLOTS)
+            .ifBlank { "Loading available times" }
+        showLottieLoading(
+            LottieLoadingPresentation.BOTTOM_SHEET,
+            LottieLoadingText.Single(refreshing)
+        )
+    }
+
+    /** Bottom-sheet loader with a single resolved language key as text. */
+    fun showBottomSheetLoader(languageKey: String, fallback: String) {
+        val text = miscRepository.getLanguageValueForKey(languageKey).ifBlank { fallback }
+        showLottieLoading(
+            LottieLoadingPresentation.BOTTOM_SHEET,
+            LottieLoadingText.Single(text)
+        )
+    }
+
+    /** Full-screen loader with a single resolved language key as text. */
+    fun showFullScreenLoader(languageKey: String, fallback: String) {
+        val text = miscRepository.getLanguageValueForKey(languageKey).ifBlank { fallback }
+        showLottieLoading(
+            LottieLoadingPresentation.FULL_SCREEN,
+            LottieLoadingText.Single(text)
+        )
+    }
+
+    /** Full-screen loader showing only the animation (no text). */
+    fun showFullScreenLoaderNoText() {
+        showLottieLoading(
+            LottieLoadingPresentation.FULL_SCREEN,
+            LottieLoadingText.None
+        )
     }
 }

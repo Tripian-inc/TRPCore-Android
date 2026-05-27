@@ -21,6 +21,7 @@ class SearchToursUseCase @Inject constructor(
         val tagIds: String? = null,  // Comma-separated tag IDs for category filtering (not used - use keywords instead)
         val providerId: Int? = null, // Provider ID for filtering (default: 15 for tour-api)
         val date: String? = null,    // Format: "YYYY-MM-DD"
+        val to: String? = null,      // Format: "YYYY-MM-DD" — range end paired with `date`
         val minPrice: Int? = null,
         val maxPrice: Int? = null,
         val minDuration: Int? = null, // Minimum duration in minutes
@@ -44,6 +45,7 @@ class SearchToursUseCase @Inject constructor(
                     tagIds = p.tagIds,
                     providerId = p.providerId,
                     date = p.date,
+                    to = p.to,
                     minPrice = p.minPrice,
                     maxPrice = p.maxPrice,
                     minDuration = p.minDuration,

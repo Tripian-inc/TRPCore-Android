@@ -1,5 +1,6 @@
 package com.tripian.trpcore.ui.timeline.activity
 
+import android.graphics.Paint
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseBottomDialogFragment
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.BottomSheetActivityTimeSelectionBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
 import com.tripian.trpcore.util.LanguageConst
@@ -114,7 +116,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             dayAdapter?.setSelectedPosition(index)
             clearTimeSlotSelection()
             updateContinueButtonState()
-            requestScheduleLoad()
+            // Schedule for the full trip range was already fetched in setListeners();
+            // day switch just re-filters the cached response.
+            availableDays.getOrNull(index)?.let { viewModel.selectDate(it) }
         }
         binding.rvDays.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -173,8 +177,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     /**
-     * Request schedule loading via ViewModel
-     * Works for both tour mode (using activity.id) and favorites mode (using favoriteActivityId)
+     * Request schedule loading via ViewModel.
+     * Called once on open — sends the full trip date range so the VM can cache
+     * the response and serve day switches client-side via [ActivityTimeSelectionVM.selectDate].
      */
     private fun requestScheduleLoad() {
         // Get activity ID from either tour or favorite
@@ -185,12 +190,12 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         }
 
         if (activityId == null) return
-        val date = availableDays.getOrNull(selectedDayIndex) ?: return
+        if (availableDays.isEmpty()) return
+        val selectedDate = availableDays.getOrNull(selectedDayIndex) ?: availableDays.first()
 
-        // Request schedule via ViewModel
         // For favorites, pass cityId for proper activityId formatting
         val cityId = if (isFavoriteMode) favoriteCityId else null
-        viewModel.loadSchedule(activityId, date, cityId)
+        viewModel.loadSchedule(activityId, availableDays, selectedDate, cityId)
     }
 
     /**
@@ -218,7 +223,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else {
             binding.tvNoTimeSlots.visibility = View.GONE
             binding.flexTimeSlots.visibility = View.VISIBLE
-            populateTimeSlots(currentSlots)
+            // Theme 9: render the collapsed window (first N slots) when the VM
+            // reports we should be in the show-more state.
+            populateTimeSlots(viewModel.getDisplayedSlots())
         }
     }
 
@@ -264,6 +271,30 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             chipView.layoutParams = params
 
             binding.flexTimeSlots.addView(chipView)
+        }
+
+        // Theme 9: append "Show more times" cell when the collapsed window is active.
+        if (viewModel.shouldShowMoreCell) {
+            val showMoreView = inflater.inflate(
+                R.layout.item_time_slot_show_more,
+                binding.flexTimeSlots,
+                false
+            ) as TextView
+            showMoreView.text = TRPCore.core.miscRepository
+                .getLanguageValueForKey(LanguageConst.ADD_PLAN_TS_SHOW_MORE)
+                .ifBlank { "Show more times" }
+            showMoreView.paintFlags = showMoreView.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            showMoreView.setOnClickListener {
+                viewModel.expandTimeSlots()
+                populateTimeSlots(viewModel.getDisplayedSlots())
+            }
+            val params = com.google.android.flexbox.FlexboxLayout.LayoutParams(
+                itemWidthPx,
+                heightPx
+            )
+            params.setMargins(0, 0, marginPx, marginPx)
+            showMoreView.layoutParams = params
+            binding.flexTimeSlots.addView(showMoreView)
         }
     }
 

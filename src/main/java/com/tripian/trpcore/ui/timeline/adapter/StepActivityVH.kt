@@ -44,6 +44,7 @@ class StepActivityVH(
         step: TimelineStep,
         order: Int,
         onStepClick: ((TimelineStep) -> Unit)?,
+        onChangeTimeClick: ((TimelineStep) -> Unit)?,
         onDeleteClick: ((TimelineStep) -> Unit)?,
         onReservationClick: ((TimelineStep) -> Unit)?,
         hasConflict: Boolean = false,
@@ -158,6 +159,10 @@ class StepActivityVH(
         // Click listeners
         binding.root.setOnClickListener {
             onStepClick?.invoke(step)
+        }
+
+        binding.btnChangeTime.setOnClickListener {
+            onChangeTimeClick?.invoke(step)
         }
 
         binding.btnDelete.setOnClickListener {

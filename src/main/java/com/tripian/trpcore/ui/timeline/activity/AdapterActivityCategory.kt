@@ -90,8 +90,11 @@ class AdapterActivityCategory(
             // Set icon
             binding.ivCategoryIcon.setImageResource(category.iconRes)
 
-            // Set text using language key
-            binding.tvCategoryName.text = getLanguage(category.languageKey)
+            // Prefer an explicit display label (used by facet-driven chips that have a
+            // server-provided label and no LanguageConst key); otherwise resolve through
+            // the language service.
+            binding.tvCategoryName.text = category.displayLabel
+                ?: getLanguage(category.languageKey)
 
             // Set selection state (for tint selector)
             binding.ivCategoryIcon.isSelected = isSelected
@@ -115,10 +118,14 @@ class AdapterActivityCategory(
  * @param languageKey Language key for localized name (from LanguageConst)
  * @param iconRes Drawable resource for category icon
  * @param keywords Keywords for API filtering (null for "All")
+ * @param displayLabel Optional server-provided label that overrides [languageKey]
+ *                    rendering — used for facet-driven chips whose label already
+ *                    arrives localized in the search response.
  */
 data class ActivityCategoryItem(
     val id: String,
     val languageKey: String,
     @DrawableRes val iconRes: Int,
-    val keywords: String?
+    val keywords: String?,
+    val displayLabel: String? = null
 )

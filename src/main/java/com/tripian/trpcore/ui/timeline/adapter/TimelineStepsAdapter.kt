@@ -83,6 +83,7 @@ class TimelineStepsAdapter(
                         step = item.step,
                         order = item.order,
                         onStepClick = onStepClick,
+                        onChangeTimeClick = onChangeTimeClick,
                         onDeleteClick = onDeleteClick,
                         onReservationClick = onReservationClick,
                         hasConflict = item.hasConflict,

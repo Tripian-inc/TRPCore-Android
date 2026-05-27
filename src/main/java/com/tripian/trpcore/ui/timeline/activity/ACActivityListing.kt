@@ -30,6 +30,15 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var timeSelectionBottomSheet: ActivityTimeSelectionBottomSheet? = null
     private var filterBottomSheet: ActivityFilterBottomSheet? = null
     private var sortBottomSheet: ActivitySortBottomSheet? = null
+    // Theme 16: paginated scroll listener kept around so we can detach it on
+    // destroy and avoid leaking the activity into RecyclerView.
+    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
+
+    override fun onDestroy() {
+        paginationScrollListener?.let { binding.rvActivities.removeOnScrollListener(it) }
+        paginationScrollListener = null
+        super.onDestroy()
+    }
 
     override fun getViewBinding() = AcActivityListingBinding.inflate(layoutInflater)
 
@@ -57,9 +66,10 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             updateEmptyState(activities.isEmpty())
         }
 
-        // Observe loading state - show fullscreen loading dialog with dimmed background
+        // Observe loading state — show full-screen Lottie loader with rotating texts
+        // (legacy DGLockScreen is disabled SDK-wide).
         viewModel.isLoading.observe(this) { isLoading ->
-            if (isLoading) showLoading() else hideLoading()
+            if (isLoading) viewModel.showLottieLoading() else viewModel.hideLottieLoading()
         }
 
         // Observe searching state
@@ -77,17 +87,25 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             categoryAdapter?.setSelectedIndices(selectedIndices)
         }
 
+        // Rebuild the category chip strip when facets arrive (or change between searches).
+        viewModel.facetCategories.observe(this) { _ ->
+            rebuildCategoryAdapter()
+        }
+
         // Observe time selection trigger
         viewModel.showTimeSelection.observe(this) { activity ->
             activity?.let { showTimeSelectionBottomSheet(it) }
         }
 
-        // Observe segment creation loading state
+        // Observe segment creation loading state — full-screen Lottie while the
+        // new reserved activity segment is being created on the server.
         viewModel.isCreatingSegment.observe(this) { isCreating ->
             if (isCreating) {
-                // Dismiss bottom sheet and show loading
+                // Dismiss bottom sheet and show Lottie loader
                 timeSelectionBottomSheet?.dismiss()
-                showLoading()
+                viewModel.showLottieLoading()
+            } else {
+                viewModel.hideLottieLoading()
             }
         }
 
@@ -167,10 +185,12 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             // Add separator decoration (skip last item)
             addItemDecoration(ActivitySeparatorDecoration(this@ACActivityListing))
 
-            // Pagination
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            // Pagination — Theme 16: keep a reference so we can detach on destroy
+            // (prevents the listener leaking the activity after rotation).
+            paginationScrollListener = object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return  // Only paginate when scrolling forward
                     val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
                     val totalItemCount = layoutManager.itemCount
                     val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
@@ -179,21 +199,36 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
                         viewModel.loadMoreActivities()
                     }
                 }
-            })
+            }
+            addOnScrollListener(paginationScrollListener!!)
         }
 
         // Category filter with icon and multi-selection support
+        rebuildCategoryAdapter()
+    }
+
+    private fun rebuildCategoryAdapter() {
+        val items = viewModel.getFacetCategoryItems()
         categoryAdapter = AdapterActivityCategory(
-            categories = viewModel.getCategories(),
+            categories = items,
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
             onSelectionChanged = { selectedIndices ->
                 viewModel.onCategorySelectionChanged(selectedIndices)
             }
         )
         binding.rvCategories.apply {
-            layoutManager = LinearLayoutManager(this@ACActivityListing, LinearLayoutManager.HORIZONTAL, false)
+            if (layoutManager == null) {
+                layoutManager = LinearLayoutManager(
+                    this@ACActivityListing,
+                    LinearLayoutManager.HORIZONTAL,
+                    false
+                )
+            }
             adapter = categoryAdapter
         }
+        // Re-apply selection state in case the new facet set changed positions —
+        // we always default to "All" (index 0) after a rebuild since indices may shift.
+        categoryAdapter?.setSelectedIndices(setOf(0))
     }
 
     private fun setupSearchBar() {
@@ -223,9 +258,23 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     private fun showFilterBottomSheet() {
+        // Pull facet-driven slider bounds (when present). Backend price ranges arrive
+        // in minor units (cents) — convert to whole currency units to match the
+        // slider's price scale. Duration bounds are already in minutes.
+        val priceFacet = viewModel.priceRangeFacet.value
+        val durationFacet = viewModel.durationRangeFacet.value
+        val minPriceBound = priceFacet?.minimum?.amount?.let { it / 100f }
+        val maxPriceBound = priceFacet?.maximum?.amount?.let { it / 100f }
+        val minDurationBound = durationFacet?.minimumMinutes?.toFloat()
+        val maxDurationBound = durationFacet?.maximumMinutes?.toFloat()
+
         filterBottomSheet = ActivityFilterBottomSheet.newInstance(
             currentFilter = viewModel.getCurrentFilter(),
-            currency = viewModel.getCurrency()
+            currency = viewModel.getCurrency(),
+            minPriceBound = minPriceBound,
+            maxPriceBound = maxPriceBound,
+            minDurationBound = minDurationBound,
+            maxDurationBound = maxDurationBound
         )
         filterBottomSheet?.setLanguageProvider { key ->
             viewModel.getLanguageForKey(key)

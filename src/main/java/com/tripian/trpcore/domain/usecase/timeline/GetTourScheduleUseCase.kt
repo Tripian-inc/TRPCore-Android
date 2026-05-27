@@ -15,7 +15,8 @@ class GetTourScheduleUseCase @Inject constructor(
 
     data class Params(
         val productId: String,
-        val date: String,           // Format: "YYYY-MM-DD"
+        val date: String,             // Format: "YYYY-MM-DD" (range start when `to` is set)
+        val to: String? = null,       // Optional range end "YYYY-MM-DD" — backend returns `dates` buckets
         val currency: String? = null  // Currency from AppConfig - caller should pass explicitly
     )
 
@@ -25,6 +26,7 @@ class GetTourScheduleUseCase @Inject constructor(
                 repository.getTourSchedule(
                     productId = p.productId,
                     date = p.date,
+                    to = p.to,
                     currency = p.currency
                 ).toObservable()
             }

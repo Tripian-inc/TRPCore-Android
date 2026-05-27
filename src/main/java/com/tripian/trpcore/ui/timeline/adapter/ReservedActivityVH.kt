@@ -41,36 +41,55 @@ class ReservedActivityVH(
     fun bind(
         item: TimelineDisplayItem.BookedActivity,
         onItemClick: (TimelineDisplayItem) -> Unit,
+        onChangeTimeClick: (TimelineDisplayItem.BookedActivity) -> Unit,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
         onReservationClick: (TimelineDisplayItem.BookedActivity) -> Unit
     ) {
-        // Order badge
-        binding.tvOrder.text = item.order.toString()
+        // Order badge — Theme 14: order 0 (or negative) renders as U+2212.
+        binding.tvOrder.text = if (item.order <= 0)
+            com.tripian.trpcore.util.extensions.MINUS_SIGN
+        else item.order.toString()
 
-        // Apply conflict styling (no "Time Overlap" text for reserved activities)
-        if (item.hasConflict) {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
-        } else {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+        // Apply time badge styling (Theme 7: precedence is expired > conflict > normal).
+        // Expired booking takes precedence over a conflict — even if both flags are
+        // set on the same item, the red "Not available" state wins.
+        when {
+            item.isAvailabilityExpired -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.bg_order_time_container_expired)
+                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_expired)
+            }
+            item.hasConflict -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.bg_order_time_container_conflict)
+                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+            }
+            else -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.bg_order_time_container)
+                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+            }
         }
 
         // Title - semibold 16px
         binding.tvTitle.text = item.title
 
         // Time (startTime - endTime format)
-        // Reserved activity CAN show "Time Overlap" text (normal segment behavior)
+        // Status suffix precedence (Theme 7): "Not available" > "Time Overlap" > none
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            if (item.showTimeOverlapText) {
-                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                binding.tvTime.text = "$timeText $overlapText"
-            } else {
-                binding.tvTime.text = timeText
+            val statusSuffix = when {
+                item.isAvailabilityExpired ->
+                    " " + getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
+                        .ifBlank { "Not available" }
+                item.showTimeOverlapText ->
+                    " " + getLanguage(LanguageConst.TIMELINE_LABEL_TIME_OVERLAP)
+                        .ifBlank { getLanguage(LanguageConst.TIME_OVERLAP) }
+                else -> ""
             }
+            binding.tvTime.text = "$timeText$statusSuffix"
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)
@@ -118,6 +137,16 @@ class ReservedActivityVH(
             binding.llDuration.visibility = View.GONE
         }
 
+        // No-Location badge (Theme 6) — visible only when segment carries the flag.
+        binding.noLocationBadge.llNoLocationBadge.visibility = if (item.isNoLocation) {
+            binding.noLocationBadge.tvNoLocationLabel.text = TRPCore.core.miscRepository
+                .getLanguageValueForKey(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
+                .ifBlank { "No exact location" }
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
+
         // Cancellation text - default "Free cancellation"
         val cancellationText = item.cancellation ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
@@ -149,6 +178,10 @@ class ReservedActivityVH(
         // Click listeners
         binding.root.setOnClickListener {
             onItemClick(item)
+        }
+
+        binding.btnChangeTime.setOnClickListener {
+            onChangeTimeClick(item)
         }
 
         binding.btnDelete.setOnClickListener {

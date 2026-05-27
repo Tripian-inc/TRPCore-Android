@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemDayFilterBinding
 import com.tripian.trpcore.util.extensions.appLanguage
+import com.tripian.trpcore.util.extensions.isPastDay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,6 +25,18 @@ class DayFilterAdapter(
     private var days: List<Date> = emptyList()
     private var selectedPosition: Int = 0
 
+    /**
+     * When true, past days render muted and tap events are swallowed —
+     * used by the AddPlan flow to prevent picking a day in the past.
+     */
+    var disablePastDays: Boolean = false
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
     fun setDays(newDays: List<Date>) {
         days = newDays
         notifyDataSetChanged()
@@ -35,6 +48,9 @@ class DayFilterAdapter(
         notifyItemChanged(oldPosition)
         notifyItemChanged(selectedPosition)
     }
+
+    /** Returns the Date at [position] or null if the index is out of range. */
+    fun dayAt(position: Int): Date? = days.getOrNull(position)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DayViewHolder {
         val binding = ItemDayFilterBinding.inflate(
@@ -72,35 +88,57 @@ class DayFilterAdapter(
             binding.tvMonth.text = monthFormat.format(date).lowercase(locale)
 
             val context = binding.root.context
+            val isPast = date.isPastDay()
+            val isPastDisabled = disablePastDays && isPast
 
-            // Selection state - apply background and text styles
+            // Background: same drawable for past/future — selected gets the border
+            // ring, unselected has no border. Past days do NOT dim the container
+            // (we dim individual texts instead) so the selection border keeps its
+            // full opacity, "default black" look.
             if (isSelected) {
                 binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_selected)
-                // Selected: all text primary color, day number bold
+            } else {
+                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_unselected)
+            }
+
+            // Text styling: past days keep the muted "unselected" typography even
+            // when selected — only the border ring indicates the selection.
+            val applyActiveText = isSelected && !isPast
+
+            if (applyActiveText) {
+                // Selected (future): all text primary color, day number bold
                 val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
                 binding.tvDayLetter.setTextColor(fgColor)
                 binding.tvDayNumber.setTextColor(fgColor)
                 binding.tvMonth.setTextColor(fgColor)
-                // Day number bold for selected
                 ResourcesCompat.getFont(context, R.font.bold)?.let {
                     binding.tvDayNumber.typeface = it
                 }
             } else {
-                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_unselected)
-                // Unselected: day letter fgWeak, others fg, all medium
+                // Unselected, OR past (with or without selection): day letter fgWeak,
+                // others fg, all medium.
                 val fgWeakColor = ContextCompat.getColor(context, R.color.trp_fgWeak)
                 val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
                 binding.tvDayLetter.setTextColor(fgWeakColor)
                 binding.tvDayNumber.setTextColor(fgColor)
                 binding.tvMonth.setTextColor(fgColor)
-                // Day number medium for unselected
                 ResourcesCompat.getFont(context, R.font.medium)?.let {
                     binding.tvDayNumber.typeface = it
                 }
             }
 
+            // Past days dim only their text. The container (and therefore the
+            // selection border) stays at full opacity.
+            val textAlpha = if (isPast) 0.4f else 1.0f
+            binding.tvDayLetter.alpha = textAlpha
+            binding.tvDayNumber.alpha = textAlpha
+            binding.tvMonth.alpha = textAlpha
+            binding.llDayContainer.alpha = 1.0f
+            binding.llDayContainer.isEnabled = !isPastDisabled
+
             // Click listener
             binding.llDayContainer.setOnClickListener {
+                if (isPastDisabled) return@setOnClickListener
                 if (position != selectedPosition) {
                     onDaySelected(position)
                 }

@@ -107,6 +107,8 @@ class FRTimeAndTravelers : Fragment() {
     private fun setupDayFilterRecyclerView() {
         dayFilterAdapter = DayFilterAdapter { position ->
             sharedVM.selectDay(position)
+        }.apply {
+            disablePastDays = true
         }
         binding.rvDays.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)

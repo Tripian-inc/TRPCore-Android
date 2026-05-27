@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineEmptyStateBinding
+import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineGeneratingBinding
 import com.tripian.trpcore.databinding.ItemTimelineManualPoiBinding
 import com.tripian.trpcore.databinding.ItemTimelineRecommendationsBinding
@@ -25,14 +26,20 @@ class TimelineAdapter(
     private val onExpandClick: (TimelineDisplayItem) -> Unit,
     private val onStepClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
     private val onChangeTimeClick: ((TimelineDisplayItem.ManualPoi) -> Unit)? = null,
+    private val onReservedActivityChangeTimeClick: ((TimelineDisplayItem.BookedActivity) -> Unit)? = null,
+    private val onFlexibleActivityChangeTimeClick: ((TimelineDisplayItem.FlexibleActivity) -> Unit)? = null,
     private val onReservationClick: ((TimelineDisplayItem.BookedActivity) -> Unit)? = null,
+    private val onFlexibleReservationClick: ((TimelineDisplayItem.FlexibleActivity) -> Unit)? = null,
     private val onAddPlanClick: (() -> Unit)? = null,
     // Step callbacks for Recommendations
     private val onStepChangeTimeClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
     private val onStepDeleteClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
     private val onStepReservationClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
     // Route calculation callback for Recommendations
-    private val onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null
+    private val onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null,
+    // Theme 12: section collapse/expand. Both must be non-null to render the chevron.
+    private val onSectionToggle: ((cityId: Int) -> Unit)? = null,
+    private val isSectionCollapsed: ((cityId: Int) -> Boolean)? = null
 ) : ListAdapter<TimelineDisplayItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
 
     companion object {
@@ -44,6 +51,7 @@ class TimelineAdapter(
         private const val TYPE_GENERATING = 5
         private const val TYPE_SECTION_FOOTER = 6
         private const val TYPE_RESERVED_ACTIVITY = 7
+        private const val TYPE_FLEXIBLE_ACTIVITY = 8
 
         // Payload constants for partial updates
         const val PAYLOAD_ROUTE_INFO_UPDATE = "route_info_update"
@@ -56,6 +64,7 @@ class TimelineAdapter(
                 // Differentiate between booked and reserved activities
                 if (item.isReserved) TYPE_RESERVED_ACTIVITY else TYPE_BOOKED_ACTIVITY
             }
+            is TimelineDisplayItem.FlexibleActivity -> TYPE_FLEXIBLE_ACTIVITY
             is TimelineDisplayItem.Recommendations -> TYPE_RECOMMENDATIONS
             is TimelineDisplayItem.ManualPoi -> TYPE_MANUAL_POI
             is TimelineDisplayItem.EmptyState -> TYPE_EMPTY_STATE
@@ -75,6 +84,9 @@ class TimelineAdapter(
             )
             TYPE_RESERVED_ACTIVITY -> ReservedActivityVH(
                 ItemTimelineReservedActivityBinding.inflate(inflater, parent, false)
+            )
+            TYPE_FLEXIBLE_ACTIVITY -> FlexibleActivityVH(
+                ItemTimelineFlexibleActivityBinding.inflate(inflater, parent, false)
             )
             TYPE_RECOMMENDATIONS -> RecommendationsVH(
                 ItemTimelineRecommendationsBinding.inflate(inflater, parent, false)
@@ -116,7 +128,12 @@ class TimelineAdapter(
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
         when (holder) {
-            is SectionHeaderVH -> holder.bind(item as TimelineDisplayItem.SectionHeader)
+            is SectionHeaderVH -> {
+                val header = item as TimelineDisplayItem.SectionHeader
+                val cityId = header.city?.id ?: 0
+                val collapsed = isSectionCollapsed?.invoke(cityId) ?: false
+                holder.bind(header, collapsed, onSectionToggle)
+            }
             is BookedActivityVH -> holder.bind(
                 item as TimelineDisplayItem.BookedActivity,
                 onItemClick,
@@ -125,8 +142,16 @@ class TimelineAdapter(
             is ReservedActivityVH -> holder.bind(
                 item as TimelineDisplayItem.BookedActivity,
                 onItemClick,
+                onReservedActivityChangeTimeClick ?: {},
                 onDeleteClick,
                 onReservationClick ?: {}
+            )
+            is FlexibleActivityVH -> holder.bind(
+                item as TimelineDisplayItem.FlexibleActivity,
+                onItemClick,
+                onFlexibleActivityChangeTimeClick ?: {},
+                onDeleteClick,
+                onFlexibleReservationClick ?: {}
             )
             is RecommendationsVH -> holder.bind(
                 item = item as TimelineDisplayItem.Recommendations,
@@ -164,6 +189,8 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
             oldItem is TimelineDisplayItem.SectionHeader && newItem is TimelineDisplayItem.SectionHeader ->
                 oldItem.cityName == newItem.cityName
             oldItem is TimelineDisplayItem.BookedActivity && newItem is TimelineDisplayItem.BookedActivity ->
+                oldItem.segment.title == newItem.segment.title && oldItem.segment.startDate == newItem.segment.startDate
+            oldItem is TimelineDisplayItem.FlexibleActivity && newItem is TimelineDisplayItem.FlexibleActivity ->
                 oldItem.segment.title == newItem.segment.title && oldItem.segment.startDate == newItem.segment.startDate
             oldItem is TimelineDisplayItem.Recommendations && newItem is TimelineDisplayItem.Recommendations ->
                 oldItem.plan.id == newItem.plan.id

@@ -142,4 +142,20 @@
     <color name="trp_advantage">#00825B</color>
     <color name="trp_error_icon">#E74A41</color>
     <color name="trp_error_bg">#FFF6F7</color>
+
+    <!-- No-Location Badge (Theme 6) -->
+    <color name="trp_no_location_bg">#E8F1FF</color>
+    <color name="trp_no_location_fg">#1F5BB8</color>
+
+    <!-- Conflict / Warning (Theme 7, 8) -->
+    <color name="trp_civi_orange">#F39C12</color>
+    <color name="trp_civi_orange_bg">#FFF6E5</color>
+    <color name="trp_civi_orange_border">#FFE0B2</color>
+    <color name="trp_warning_text">#8A5A00</color>
+    <color name="trp_warning_icon">#D6771A</color>
+
+    <!-- Availability Expired (Theme 7, 17) -->
+    <color name="trp_expired_bg">#FFF6F7</color>
+    <color name="trp_expired_border">#F4C7C3</color>
+    <color name="trp_expired_fg">#E74A41</color>
 </resources>

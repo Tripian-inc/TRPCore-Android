@@ -1,13 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  Section header for the timeline list. Tappable to collapse/expand the section
+  (Theme 12) — the chevron rotates between down (expanded) and right (collapsed).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/tvCityName"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
     android:paddingHorizontal="16dp"
     android:paddingTop="16dp"
-    android:paddingBottom="4dp"
-    android:textSize="20sp"
-    android:textColor="@color/trp_text_primary"
-    android:fontFamily="@font/semibold"
-    tools:text="City Name" />
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/tvCityName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:fontFamily="@font/semibold"
+        android:textColor="@color/trp_text_primary"
+        android:textSize="20sp"
+        tools:text="City Name" />
+
+    <ImageView
+        android:id="@+id/ivCollapseChevron"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:contentDescription="Collapse / expand section"
+        android:rotation="0"
+        android:src="@drawable/ic_arrow_down_black"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</LinearLayout>

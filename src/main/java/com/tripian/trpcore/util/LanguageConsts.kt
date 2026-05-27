@@ -396,4 +396,49 @@ object LanguageConst {
     const val ONBOARDING_BUTTON_CONTINUE = "onboarding.button.continue"
     const val ONBOARDING_BUTTON_SKIP = "onboarding.button.skip"
 
+    // =====================
+    // FLEXIBLE ACTIVITY (timeline + AddPlan)
+    // =====================
+    const val TIMELINE_FLEXIBLE_TITLE = "timeline.flexible.title"
+    const val TIMELINE_FLEXIBLE_SUBTITLE = "timeline.flexible.subtitle"
+    const val TIMELINE_FLEXIBLE_SHORT = "timeline.flexible.short"
+    const val ADD_PLAN_FLEXIBLE_INFO_TITLE = "addPlan.flexible.title"
+    const val ADD_PLAN_FLEXIBLE_INFO_DESC = "addPlan.flexible.description"
+    const val ADD_PLAN_FLEXIBLE_PIN_TOP = "addPlan.flexible.pinToTop"
+    const val ADD_PLAN_FLEXIBLE_ANY_TIME = "addPlan.flexible.anyTime"
+
+    // =====================
+    // TIMELINE — NO LOCATION, CONFLICT, AVAILABILITY
+    // =====================
+    const val TIMELINE_NO_EXACT_LOCATION = "timeline.label.noExactLocation"
+    const val TIMELINE_LABEL_TIME_OVERLAP = "timeline.label.timeOverlap"
+    const val TIMELINE_LABEL_NOT_AVAILABLE = "timeline.label.notAvailable"
+    const val TIMELINE_CONFLICT_BANNER = "timeline.conflictWarning"
+    const val TIMELINE_CONFLICT_BANNER_ACTION = "timeline.conflict.banner.action"
+
+    // =====================
+    // ADD PLAN — TIME SELECTION ENHANCEMENTS
+    // =====================
+    const val ADD_PLAN_TS_SHOW_MORE = "addPlan.time.showMore"
+    const val ADD_PLAN_TS_SOLD_OUT_BANNER = "addPlan.timeSelection.soldOutBanner"
+    const val ADD_PLAN_TS_BOOKING_UNAVAILABLE = "addPlan.timeSelection.bookingUnavailable"
+    const val ADD_PLAN_TS_NO_AVAILABLE = "addPlan.timeSelection.noAvailable"
+
+    // =====================
+    // LOTTIE LOADING TEXTS
+    // =====================
+    // Rotating (full-screen)
+    const val LOADING_TEXT_FINDING_ACTIVITIES = "loading.text.findingActivities"
+    const val LOADING_TEXT_TAILORING_RECOMMENDATIONS = "loading.text.tailoringRecommendations"
+    const val LOADING_TEXT_OPTIMIZING_ROUTE = "loading.text.optimizingRoute"
+
+    // Single (bottom-sheet)
+    const val LOADING_TEXT_GETTING_ACTIVITIES = "loading.text.gettingActivities"
+    const val LOADING_TEXT_GETTING_PLACES = "loading.text.gettingPlaces"
+    const val LOADING_TEXT_LOADING_TIME_SLOTS = "loading.text.loadingTimeSlots"
+    const val LOADING_TEXT_ADDING_TO_ITINERARY = "loading.text.addingToItinerary"
+    const val LOADING_TEXT_REMOVING_FROM_PLAN = "loading.text.removingFromPlan"
+    const val LOADING_TEXT_CHANGING_TIME = "loading.text.changingTime"
+    const val LOADING_TEXT_GETTING_ITINERARY_PLAN = "loading.text.gettingYourItineraryPlan"
+
 }

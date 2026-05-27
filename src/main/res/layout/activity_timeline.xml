@@ -162,13 +162,26 @@
         tools:text="Main View"
         tools:visibility="visible" />
 
+    <!-- Conflict warning banner (Theme 8) — sits between day filter and timeline list -->
+    <com.tripian.trpcore.ui.timeline.views.ConflictWarningView
+        android:id="@+id/conflictWarningView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/dayFilterView"
+        tools:visibility="visible" />
+
     <!-- SwipeRefreshLayout with RecyclerView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/dayFilterView">
+        app:layout_constraintTop_toBottomOf="@id/conflictWarningView">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvTimeline"

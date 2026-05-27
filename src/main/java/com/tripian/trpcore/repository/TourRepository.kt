@@ -1,6 +1,8 @@
 package com.tripian.trpcore.repository
 
 import com.tripian.one.TRPRest
+import com.tripian.one.api.tour.model.TourProductLookupResponse
+import com.tripian.one.api.tour.model.TourScheduleAvailabilityResponse
 import com.tripian.one.api.tour.model.TourScheduleResponse
 import com.tripian.one.api.tour.model.TourSearchResponse
 import io.reactivex.Single
@@ -25,6 +27,7 @@ class TourRepository @Inject constructor(
      * @param tagIds Optional - Comma-separated tag IDs for category filtering
      * @param providerId Optional - Provider ID for filtering (default: 15)
      * @param date Optional - Date filter (YYYY-MM-DD)
+     * @param to Optional - Range end date (YYYY-MM-DD); paired with `date`
      * @param minPrice Optional - Minimum price filter
      * @param maxPrice Optional - Maximum price filter
      * @param minDuration Optional - Minimum duration in minutes
@@ -44,6 +47,7 @@ class TourRepository @Inject constructor(
         tagIds: String? = null,
         providerId: Int? = null,
         date: String? = null,
+        to: String? = null,
         minPrice: Int? = null,
         maxPrice: Int? = null,
         minDuration: Int? = null,
@@ -64,6 +68,7 @@ class TourRepository @Inject constructor(
                 tagIds = tagIds,
                 providerId = providerId,
                 date = date,
+                to = to,
                 minPrice = minPrice,
                 maxPrice = maxPrice,
                 minDuration = minDuration,
@@ -88,24 +93,79 @@ class TourRepository @Inject constructor(
      * Get tour schedule/availability
      *
      * @param productId Tour product ID
-     * @param date Date to check availability (YYYY-MM-DD)
+     * @param date Date to check availability (YYYY-MM-DD); range start when `to` is set
+     * @param to Optional range end date (YYYY-MM-DD); response then carries per-day buckets in `dates`
      * @param currency Optional currency code (e.g., "EUR")
      */
     fun getTourSchedule(
         productId: String,
         date: String,
+        to: String? = null,
         currency: String? = null
     ): Single<TourScheduleResponse> {
         return Single.create { emitter ->
             trpRest.getTourSchedule(
                 productId = productId,
                 date = date,
+                to = to,
                 currency = currency,
                 success = { response ->
                     emitter.onSuccess(response)
                 },
                 error = { throwable ->
                     emitter.onError(throwable ?: Exception("Unknown error"))
+                }
+            )
+        }
+    }
+
+    /**
+     * Lookup a single tour product by provider + product id.
+     * GET /tour-api/product-lookup
+     *
+     * Used to resolve activities the timeline doesn't carry coordinates / city for
+     * (e.g. no-location segments).
+     */
+    fun lookupTourProduct(
+        providerId: Int,
+        productId: String
+    ): Single<TourProductLookupResponse> {
+        return Single.create { emitter ->
+            trpRest.lookupTourProduct(
+                providerId = providerId,
+                productId = productId,
+                success = { response -> emitter.onSuccess(response) },
+                error = { throwable ->
+                    emitter.onError(throwable ?: Exception("Tour product lookup failed"))
+                }
+            )
+        }
+    }
+
+    /**
+     * Batch availability lookup across multiple activities on a single target date.
+     * POST /tour-api/schedule-bulk
+     *
+     * @param items Activity IDs (e.g. "C_163295_15")
+     * @param date Target date "YYYY-MM-DD"
+     * @param currency Optional currency override
+     * @param lang Optional language override
+     */
+    fun getTourScheduleAvailability(
+        items: List<String>,
+        date: String,
+        currency: String? = null,
+        lang: String? = null
+    ): Single<TourScheduleAvailabilityResponse> {
+        return Single.create { emitter ->
+            trpRest.getTourScheduleAvailability(
+                items = items,
+                date = date,
+                currency = currency,
+                lang = lang,
+                success = { response -> emitter.onSuccess(response) },
+                error = { throwable ->
+                    emitter.onError(throwable ?: Exception("Schedule availability lookup failed"))
                 }
             )
         }

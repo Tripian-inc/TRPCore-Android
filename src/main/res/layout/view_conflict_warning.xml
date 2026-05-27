@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Inner layout for ConflictWarningView. Pale yellow background, warning icon on
+  the left, dismissable text in the middle, close (X) button on the right.
+  Visible when the current day has at least one conflicting activity AND the user
+  has not dismissed the banner for that day.
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="androidx.constraintlayout.widget.ConstraintLayout"
+    tools:layout_width="match_parent"
+    tools:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/ivConflictIcon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:contentDescription="Warning"
+        android:src="@drawable/ic_warning"
+        android:tint="@color/trp_warning_icon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+    <TextView
+        android:id="@+id/tvConflictText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="12dp"
+        android:fontFamily="@font/montserrat_medium"
+        android:textColor="@color/trp_text_primary"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnConflictClose"
+        app:layout_constraintStart_toEndOf="@id/ivConflictIcon"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="You have overlapping activities on this day. Tap to review."
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+    <ImageButton
+        android:id="@+id/btnConflictClose"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Dismiss"
+        android:padding="6dp"
+        android:src="@drawable/ic_close"
+        android:tint="@color/trp_text_primary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+</merge>

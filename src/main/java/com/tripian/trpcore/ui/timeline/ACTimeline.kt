@@ -94,6 +94,32 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     override fun getViewBinding() = ActivityTimelineBinding.inflate(layoutInflater)
 
+    /**
+     * Theme 8: per-day index that the user dismissed the conflict warning banner on.
+     * -1 means no dismissal in effect. Reset on full timeline refresh so a new round
+     * of conflicts shows the banner again.
+     */
+    private var conflictBannerDismissedDayIndex: Int = -1
+
+    /**
+     * Theme 8: recompute conflict banner visibility. The banner is shown when:
+     *  - at least one display item carries `hasConflict == true` AND
+     *  - the current day hasn't been dismissed by the user.
+     */
+    private fun updateConflictWarningVisibility() {
+        val items = viewModel.displayItems.value ?: emptyList()
+        val hasConflict = items.any {
+            (it is TimelineDisplayItem.BookedActivity && it.hasConflict) ||
+            (it is TimelineDisplayItem.ManualPoi && it.hasConflict) ||
+            (it is TimelineDisplayItem.Recommendations && it.conflictingStepIds.isNotEmpty())
+        }
+        val currentDayIndex = viewModel.selectedDayIndex.value ?: 0
+        val dismissed = conflictBannerDismissedDayIndex == currentDayIndex
+        binding.conflictWarningView.visibility =
+            if (hasConflict && !dismissed) android.view.View.VISIBLE
+            else android.view.View.GONE
+    }
+
     override fun setListeners() {
         // Handle navigation bar insets for FAB
 
@@ -127,6 +153,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // Back button
         binding.ivBack.setOnClickListener {
             handleBackNavigation()
+        }
+
+        // Conflict warning banner (Theme 8) — dismiss is tracked per-day
+        binding.conflictWarningView.onDismiss = {
+            conflictBannerDismissedDayIndex = viewModel.selectedDayIndex.value ?: 0
+            updateConflictWarningVisibility()
+        }
+        binding.conflictWarningView.onTap = {
+            // Optional: scroll to the first conflicting item. Left as a no-op for now;
+            // users see the conflict styling on the badges themselves.
         }
 
         // Map FAB - switches to map mode
@@ -228,6 +264,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         viewModel.displayItems.observe(this) { items ->
             timelineAdapter.submitList(items)
             updateEmptyState(items.isEmpty() || items.all { it is TimelineDisplayItem.EmptyState })
+            updateConflictWarningVisibility()
         }
 
         // Available days
@@ -238,6 +275,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // Selected day
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
+            // Day changed — re-evaluate banner visibility. The dismiss flag is
+            // tracked per-day so switching back to the same day later restores it.
+            updateConflictWarningVisibility()
         }
 
         // Map mode
@@ -349,6 +389,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
+        // Change time picker for top-level segment (reserved / flexible activities)
+        viewModel.showChangeTimePickerSegment.observe(this) { request ->
+            request?.let {
+                showSegmentChangeTimePicker(it.segment, it.segmentIndex)
+                viewModel.clearChangeTimePickerSegment()
+            }
+        }
+
         // Route info updated - DiffUtil will handle partial updates via payload
         viewModel.routeInfoUpdated.observe(this) { segmentIndex ->
             segmentIndex?.let {
@@ -456,11 +504,29 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 // When Add Plans button is clicked from empty state
                 showAddPlanSheet()
             },
+            onReservedActivityChangeTimeClick = { reservedActivity ->
+                reservedActivity.segmentIndex?.let { idx ->
+                    viewModel.showSegmentChangeTimePicker(reservedActivity.segment, idx)
+                }
+            },
+            onFlexibleActivityChangeTimeClick = { flexibleActivity ->
+                flexibleActivity.segmentIndex?.let { idx ->
+                    viewModel.showSegmentChangeTimePicker(flexibleActivity.segment, idx)
+                }
+            },
             onReservationClick = { bookedActivity ->
                 // Handle reservation button click for reserved activities
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
                     // Extract date part (yyyy-MM-dd) from startDateTime (yyyy-MM-dd HH:mm)
                     val dateString = bookedActivity.startDateTime?.substringBefore(" ")
+                    viewModel.onActivityReservationRequested(activityId, dateString)
+                }
+            },
+            onFlexibleReservationClick = { flexibleActivity ->
+                // Same reservation entry point as reserved activities; the start
+                // datetime is the placeholder 00:00 — extract the date only.
+                flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
+                    val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(activityId, dateString)
                 }
             },
@@ -485,6 +551,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             // Route calculation callback for Recommendations
             onRequestRouteCalculation = { recommendations ->
                 viewModel.calculateRoutesForRecommendations(recommendations)
+            },
+            // Theme 12: section collapse / expand
+            onSectionToggle = { cityId ->
+                viewModel.toggleSectionCollapsed(cityId)
+            },
+            isSectionCollapsed = { cityId ->
+                viewModel.isSectionCollapsed(cityId)
             }
         )
 
@@ -1158,6 +1231,34 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         timeSelectionSheet.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
+    }
+
+    /**
+     * Shows the time picker for a top-level segment (reserved/flexible activity).
+     * The segment carries "yyyy-MM-dd HH:mm" datetimes; we only edit the HH:mm part.
+     */
+    private fun showSegmentChangeTimePicker(
+        segment: com.tripian.one.api.timeline.model.TimelineSegment,
+        segmentIndex: Int
+    ) {
+        fun timePart(dt: String?): String? =
+            if (dt != null && dt.length >= 16) dt.substring(11, 16) else null
+
+        val startTime = timePart(segment.startDate)
+            ?: timePart(segment.additionalData?.startDatetime)
+        val endTime = timePart(segment.endDate)
+            ?: timePart(segment.additionalData?.endDatetime)
+
+        val sheet = TimeSelectionBottomSheet.newInstance(
+            startTime = startTime,
+            endTime = endTime
+        )
+
+        sheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
+            viewModel.updateSegmentTime(segment, segmentIndex, newStartTime, newEndTime)
+        }
+
+        sheet.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
     }
 
     /**

@@ -15,6 +15,8 @@ import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
+import com.tripian.trpcore.util.extensions.isPastDay
+import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.LanguageConst
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -147,11 +149,25 @@ class AddPlanContainerVM @Inject constructor(
     fun initializeFromArgs(args: Bundle) {
         val days = args.getSerializable(ARG_AVAILABLE_DAYS) as? ArrayList<Date> ?: arrayListOf()
         val citiesList = args.getSerializable(ARG_CITIES) as? ArrayList<City> ?: arrayListOf()
-        val dayIndex = args.getInt(ARG_SELECTED_DAY_INDEX, 0)
+        var dayIndex = args.getInt(ARG_SELECTED_DAY_INDEX, 0)
         val city = args.getSerializable(ARG_SELECTED_CITY) as? City
         val tripHash = args.getString(ARG_TRIP_HASH)
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
+
+        // Theme 3: if the incoming selected day is in the past, jump forward to
+        // today (or the first non-past day) so the user can't start a plan on a
+        // historical date. The caller's selection is honored only when it's
+        // already a valid (non-past) day.
+        if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
+            val todayIndex = days.indexOfFirst { it.isTodayDate() }
+            val firstFutureIndex = days.indexOfFirst { !it.isPastDay() }
+            dayIndex = when {
+                todayIndex >= 0 -> todayIndex
+                firstFutureIndex >= 0 -> firstFutureIndex
+                else -> (days.size - 1).coerceAtLeast(0)
+            }
+        }
 
         _availableDays.value = days
         _selectedDayIndex.value = dayIndex

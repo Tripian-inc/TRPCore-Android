@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
 import com.tripian.trpcore.di.ViewModelFactory
+import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.ToolbarProperties
 import com.tripian.trpcore.util.extensions.setViewListener
@@ -85,6 +86,20 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
             setViewListener()
 
             viewModel.onViewCreated(savedInstanceState)
+
+            viewModel.lottieLoadingEvent.observe(viewLifecycleOwner) { event ->
+                if (event == null) return@observe
+                val host = activity ?: return@observe
+                if (event.show) {
+                    // Force-hide the legacy DGLockScreen spinner on the host
+                    // activity so the two loaders never stack.
+                    (host as? BaseActivity<*, *>)?.hideLoading()
+                    LottieLoading.show(host, event.presentation, event.text)
+                } else {
+                    LottieLoading.hide(host)
+                    (host as? BaseActivity<*, *>)?.hideLoading()
+                }
+            }
 
             setListeners()
 

@@ -1,10 +1,12 @@
 package com.tripian.trpcore.ui.timeline.activity
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.tripian.one.api.tour.model.TourFacet
+import com.tripian.one.api.tour.model.TourFacetCategory
+import com.tripian.one.api.tour.model.TourFacetDurationRange
+import com.tripian.one.api.tour.model.TourFacetPriceRange
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseViewModel
@@ -15,6 +17,7 @@ import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegment
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.TourCategoryIconMapper
 import com.tripian.trpcore.util.extensions.appLanguage
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,6 +77,20 @@ class ACActivityListingVM @Inject constructor(
     private val _scrollToTop = MutableLiveData<Boolean>()
     val scrollToTop: LiveData<Boolean> = _scrollToTop
 
+    // Facet-driven category strip — populated from the search response. The Activity
+    // Listing UI prefers facet categories over the hard-coded fallback when at least
+    // one facet category is present. Multi-select; chip "All" (index 0) clears.
+    private val _facetCategories = MutableLiveData<List<TourFacetCategory>>(emptyList())
+    val facetCategories: LiveData<List<TourFacetCategory>> = _facetCategories
+
+    // Bounds for the price / duration filter sliders. When null, the filter bottom
+    // sheet falls back to its own DEFAULT_* bounds.
+    private val _priceRangeFacet = MutableLiveData<TourFacetPriceRange?>(null)
+    val priceRangeFacet: LiveData<TourFacetPriceRange?> = _priceRangeFacet
+
+    private val _durationRangeFacet = MutableLiveData<TourFacetDurationRange?>(null)
+    val durationRangeFacet: LiveData<TourFacetDurationRange?> = _durationRangeFacet
+
     // =====================
     // STATE
     // =====================
@@ -89,10 +106,8 @@ class ACActivityListingVM @Inject constructor(
     private var currentOffset: Int = 0
     private val pageLimit: Int = 10
     private var allActivities: MutableList<TourProduct> = mutableListOf()
-
-    private var searchHandler: Handler? = Handler(Looper.getMainLooper())
-    private var searchRunnable: Runnable? = null
-    private val searchDebounceMs = 650L
+    // API-reported total (used for the count label when no client-side filter is active).
+    private var apiTotal: Int = 0
 
     // =====================
     // INITIALIZATION
@@ -123,17 +138,30 @@ class ACActivityListingVM @Inject constructor(
     // SEARCH
     // =====================
 
+    /**
+     * Search is now purely client-side: filters the already-loaded [allActivities]
+     * by title. No API call is made — keystroke feedback is instant and pagination
+     * (which is API-driven) is paused while a query is active (see [loadMoreActivities]).
+     */
     fun updateSearchText(query: String) {
         currentSearchQuery = query
+        applyClientSideSearchFilter()
+    }
 
-        // Cancel previous search
-        searchRunnable?.let { searchHandler?.removeCallbacks(it) }
-
-        // Debounce search
-        searchRunnable = Runnable {
-            resetAndSearch()
+    /**
+     * Re-emits [allActivities] through the title filter into [_activities] and
+     * updates the count label. When the query is blank the API-reported total is
+     * shown; while filtering, the count reflects the visible (filtered) size.
+     */
+    private fun applyClientSideSearchFilter() {
+        val q = currentSearchQuery.trim()
+        val filtered = if (q.isBlank()) {
+            allActivities.toList()
+        } else {
+            allActivities.filter { it.title?.contains(q, ignoreCase = true) == true }
         }
-        searchHandler?.postDelayed(searchRunnable!!, searchDebounceMs)
+        _activities.value = filtered
+        _activityCount.value = if (q.isBlank()) apiTotal else filtered.size
     }
 
     private fun resetAndSearch() {
@@ -276,9 +304,12 @@ class ACActivityListingVM @Inject constructor(
         } else {
             _isLoadingMore.value = true
         }
-        _isSearching.value = currentSearchQuery.isNotEmpty()
+        // `isSearching` was the in-flight indicator for keyword API searches; since
+        // search is now client-side, the spinner stays hidden permanently.
+        _isSearching.value = false
 
-        // Build keywords from search query and selected categories
+        // Build keywords from selected categories only — the search text input is
+        // applied client-side after the response arrives (see applyClientSideSearchFilter).
         val combinedKeywords = buildCombinedKeywords()
 
         // Get filter values
@@ -308,6 +339,7 @@ class ACActivityListingVM @Inject constructor(
                 tagIds = null, // Not using tagIds - only keywords
                 providerId = 15, // Always use providerId 15 for tour-api
                 date = selectedDateString, // Selected date from AddPlan flow
+                to = selectedDateString,   // Single-day range — `to` mirrors `date`
                 currency = getCurrency(), // Use configured currency
                 minPrice = minPrice,
                 maxPrice = maxPrice,
@@ -336,11 +368,18 @@ class ACActivityListingVM @Inject constructor(
                     allActivities.clear()
                 }
                 allActivities.addAll(newProducts)
+                apiTotal = total
 
-                _activities.value = allActivities.toList()
-                _activityCount.value = total
+                // Re-emit through the active search filter (no-op when query is blank).
+                applyClientSideSearchFilter()
                 // Check if more pages exist based on returned items count, not total (API may return incorrect total)
                 _hasMorePages.value = newProducts.size >= pageLimit
+
+                // First page also carries facet metadata — refresh chip strip + filter bounds
+                if (currentOffset == 0) {
+                    updateFacetsFromResponse(response.data?.facets)
+                }
+
                 Log.d(
                     "ACActivityListingVM",
                     "loadActivities - allActivities.size: ${allActivities.size}, newProducts.size: ${newProducts.size}, hasMorePages: ${_hasMorePages.value}"
@@ -354,6 +393,7 @@ class ACActivityListingVM @Inject constructor(
                     AlertType.ERROR,
                     error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 )
+                apiTotal = 0
                 _activities.value = emptyList()
                 _activityCount.value = 0
             }
@@ -361,6 +401,11 @@ class ACActivityListingVM @Inject constructor(
     }
 
     fun loadMoreActivities() {
+        // Pause pagination while a client-side search filter is active — the adapter's
+        // count is reduced by the filter, so the scroll listener would otherwise fire
+        // loadMore continuously trying to fill the visible window.
+        if (currentSearchQuery.isNotBlank()) return
+
         Log.d(
             "ACActivityListingVM",
             "loadMoreActivities called - hasMorePages: ${_hasMorePages.value}, isLoading: ${_isLoading.value}, isLoadingMore: ${_isLoadingMore.value}, currentOffset: $currentOffset, allActivities.size: ${allActivities.size}"
@@ -424,37 +469,76 @@ class ACActivityListingVM @Inject constructor(
     }
 
     // =====================
+    // FACETS
+    // =====================
+
+    /**
+     * Pull facet metadata from the first facet entry (single-provider response —
+     * providerId 15) and publish into the chip / filter LiveData fields.
+     */
+    private fun updateFacetsFromResponse(facets: List<TourFacet>?) {
+        val facet = facets?.firstOrNull()
+        if (facet == null) {
+            _facetCategories.value = emptyList()
+            _priceRangeFacet.value = null
+            _durationRangeFacet.value = null
+            return
+        }
+        _facetCategories.value = facet.categories?.filter { it.id != null && it.label != null }
+            ?: emptyList()
+        _priceRangeFacet.value = facet.priceRange
+        _durationRangeFacet.value = facet.durationRange
+    }
+
+    /**
+     * Returns the chip list for the category strip. Prefers facet categories from
+     * the latest search response; falls back to the hard-coded list when facets
+     * are unavailable (older backends / first paint before any response). Index 0
+     * is always the "All" chip that clears selection.
+     */
+    fun getFacetCategoryItems(): List<ActivityCategoryItem> {
+        val facets = _facetCategories.value.orEmpty()
+        if (facets.isEmpty()) return getCategories()
+
+        val items = mutableListOf<ActivityCategoryItem>()
+        items += ActivityCategoryItem(
+            id = "all",
+            languageKey = LanguageConst.ADD_PLAN_CAT_ALL,
+            iconRes = TourCategoryIconMapper.ALL_CATEGORIES_ICON,
+            keywords = null
+        )
+        facets.forEach { cat ->
+            items += ActivityCategoryItem(
+                id = cat.id ?: cat.key ?: cat.label.orEmpty(),
+                languageKey = "",
+                iconRes = TourCategoryIconMapper.iconRes(cat.key),
+                keywords = cat.label
+            ).copy(displayLabel = cat.label)
+        }
+        return items
+    }
+
+    // =====================
     // HELPERS
     // =====================
 
     /**
-     * Build combined keywords from user search query and selected categories
-     * Multiple category keywords are combined with comma separator
-     * @return Combined keywords string or null if no keywords
+     * Build combined keywords from selected categories.
+     * The search-text input is intentionally excluded — it is applied client-side
+     * after the response arrives. See [applyClientSideSearchFilter].
      */
     private fun buildCombinedKeywords(): String? {
         val indices = _selectedCategoryIndices.value ?: setOf(0)
         val categories = getCategories()
 
-        // If "All" is selected or no selection, only use search query
-        if (indices.contains(0) || indices.isEmpty()) {
-            return if (currentSearchQuery.isNotBlank()) currentSearchQuery else null
-        }
+        if (indices.contains(0) || indices.isEmpty()) return null
 
-        // Combine keywords from selected categories
         val categoryKeywords = indices
             .mapNotNull { categories.getOrNull(it)?.keywords }
             .filter { it.isNotBlank() }
             .joinToString(", ")
 
-        return when {
-            currentSearchQuery.isNotBlank() && categoryKeywords.isNotBlank() ->
-                "$currentSearchQuery, $categoryKeywords"
-
-            currentSearchQuery.isNotBlank() -> currentSearchQuery
-            categoryKeywords.isNotBlank() -> categoryKeywords
-            else -> null
-        }
+        return categoryKeywords.ifBlank { null }
     }
 
     fun getSelectedDate(): Date? = planData?.selectedDay
@@ -475,8 +559,6 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     override fun onDestroy() {
-        searchRunnable?.let { searchHandler?.removeCallbacks(it) }
-        searchHandler = null
         super.onDestroy()
     }
 }

@@ -122,10 +122,11 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             // Disable item change animations for instant list updates
             itemAnimator = null
 
-            // Pagination
-            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            // Pagination — Theme 16: keep a reference so we can detach on destroy.
+            paginationScrollListener = object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return
                     val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
                     val totalItemCount = layoutManager.itemCount
                     val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
@@ -134,8 +135,17 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
                         viewModel.loadMorePOIs()
                     }
                 }
-            })
+            }
+            addOnScrollListener(paginationScrollListener!!)
         }
+    }
+
+    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
+
+    override fun onDestroy() {
+        paginationScrollListener?.let { binding.rvPOIs.removeOnScrollListener(it) }
+        paginationScrollListener = null
+        super.onDestroy()
     }
 
     private fun setupSearchBar() {

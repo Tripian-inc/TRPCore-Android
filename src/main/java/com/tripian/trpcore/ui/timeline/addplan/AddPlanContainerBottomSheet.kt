@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.tripian.one.api.cities.model.City
@@ -63,8 +66,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Set max height on fragmentContainer to ensure footer stays fixed
-        setupFragmentContainerMaxHeight()
+        // Initial max height; final value is recomputed once system bar insets are known
+        adjustFragmentContainerMaxHeight(topInset = 0, bottomInset = 0)
 
         // Initialize from arguments
         arguments?.let { args ->
@@ -76,29 +79,41 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     }
 
     /**
-     * Set max height on fragmentContainer to ensure content scrolls and footer stays fixed.
-     * Uses MaxHeightFrameLayout's maxHeight property.
+     * Calculates the fragmentContainer max height accounting for actual system bar insets.
+     * Without subtracting the navigation bar inset, the LinearLayout root (which already gets
+     * navbar-height bottom padding) overflows the bottom sheet and the Continue button is
+     * clipped behind the device's bottom navigation buttons.
      */
-    private fun setupFragmentContainerMaxHeight() {
+    private fun adjustFragmentContainerMaxHeight(topInset: Int, bottomInset: Int) {
         val displayMetrics = resources.displayMetrics
         val screenHeight = displayMetrics.heightPixels
-
-        // Calculate available height for content:
-        // Screen height - header (44dp + 8dp margin) - footer (80dp) - handle (4dp + 8dp margin) - status bar (~24dp)
         val density = displayMetrics.density
-        val headerHeight = (52 * density).toInt()  // 44dp + 8dp margin
-        val footerHeight = (80 * density).toInt()  // 80dp
-        val handleHeight = (12 * density).toInt()  // 4dp + 8dp margin
-        val statusBarHeight = (24 * density).toInt()  // ~24dp status bar
-        val padding = (16 * density).toInt()  // extra padding
 
-        val maxHeight = screenHeight - headerHeight - footerHeight - handleHeight - statusBarHeight - padding
+        val headerHeight = (52 * density).toInt()   // 44dp + 8dp margin
+        val footerHeight = (80 * density).toInt()   // footer
+        val handleHeight = (12 * density).toInt()   // 4dp + 8dp margin
+        val padding = (16 * density).toInt()        // safety buffer
 
-        binding.fragmentContainer.maxHeight = maxHeight
+        val maxHeight = screenHeight - headerHeight - footerHeight - handleHeight - topInset - bottomInset - padding
+        binding.fragmentContainer.maxHeight = maxHeight.coerceAtLeast((120 * density).toInt())
     }
 
     override fun setListeners() {
         super.setListeners()
+
+        // Re-apply insets listener to also recompute the fragmentContainer max height,
+        // so the footer (Continue button) stays above the system navigation bar.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.updatePadding(
+                left = insets.left,
+                top = 0,
+                right = insets.right,
+                bottom = insets.bottom
+            )
+            adjustFragmentContainerMaxHeight(insets.top, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
 
         // Close button
         binding.ivClose.setOnClickListener {

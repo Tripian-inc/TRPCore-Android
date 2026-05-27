@@ -16,6 +16,39 @@ import java.util.concurrent.TimeUnit
 /**
  * Created by semihozkoroglu on 19.08.2020.
  */
+
+/**
+ * True when the receiver's calendar day is strictly before today (clock time is
+ * ignored — only year-month-day are compared). Used by Theme 3 to mute past-day
+ * cells on Timeline and to disable past days in the AddPlan day filter.
+ */
+fun Date.isPastDay(): Boolean {
+    val today = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.time
+    val target = Calendar.getInstance().apply {
+        time = this@isPastDay
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.time
+    return target.before(today)
+}
+
+/**
+ * True when the receiver falls on today's calendar date (clock time ignored).
+ */
+fun Date.isTodayDate(): Boolean {
+    val today = Calendar.getInstance()
+    val target = Calendar.getInstance().apply { time = this@isTodayDate }
+    return today.get(Calendar.YEAR) == target.get(Calendar.YEAR) &&
+        today.get(Calendar.DAY_OF_YEAR) == target.get(Calendar.DAY_OF_YEAR)
+}
+
 fun formatDate2String(
     dateText: String?,
     inputFormat: String = "yyyy-MM-dd hh:mm:ss",

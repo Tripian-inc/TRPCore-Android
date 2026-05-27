@@ -35,6 +35,7 @@ import com.tripian.trpcore.domain.usecase.timeline.DeleteStepUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.UpdateSegmentTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
@@ -44,9 +45,14 @@ import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivit
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncReservedToBookedUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.UpdateDateRangeUseCase
 import com.tripian.trpcore.repository.CityResolveResult
+import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import java.util.concurrent.TimeUnit
+import com.tripian.trpcore.util.extensions.isFlexibleActivity
+import com.tripian.trpcore.util.extensions.isPastDay
+import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
@@ -70,6 +76,7 @@ class ACTimelineVM @Inject constructor(
     private val deleteSegmentUseCase: DeleteSegmentUseCase,
     private val deleteStepUseCase: DeleteStepUseCase,
     private val updateStepTimeUseCase: UpdateStepTimeUseCase,
+    private val updateSegmentTimeUseCase: UpdateSegmentTimeUseCase,
     private val getTimelineStepRoutesUseCase: GetTimelineStepRoutesUseCase,
     private val resolveCitiesUseCase: ResolveCitiesUseCase,
     private val tripRepository: com.tripian.trpcore.repository.TripRepository,
@@ -80,7 +87,8 @@ class ACTimelineVM @Inject constructor(
     private val syncReservedToBookedUseCase: SyncReservedToBookedUseCase,
     private val addMissingBookedActivitiesUseCase: AddMissingBookedActivitiesUseCase,
     private val updateDateRangeUseCase: UpdateDateRangeUseCase,
-    private val removeSegmentsForDeletedCitiesUseCase: RemoveSegmentsForDeletedCitiesUseCase
+    private val removeSegmentsForDeletedCitiesUseCase: RemoveSegmentsForDeletedCitiesUseCase,
+    private val availabilityCheckManager: com.tripian.trpcore.domain.manager.AvailabilityCheckManager
 ) : BaseViewModel() {
 
     // =====================
@@ -186,6 +194,11 @@ class ACTimelineVM @Inject constructor(
     // Sync operations flag - ensures sync only runs once after initial fetch
     private var syncOperationsCompleted = false
 
+    // True once we've auto-selected the initial day (today, or trip's first day
+    // when today falls outside the trip range). Subsequent timeline refreshes
+    // must not override an explicit user selection.
+    private var initialDayAutoSelected = false
+
     // Multi-city map mode state
     private var isShowingStepMarkersInMultiCity: Boolean = false
     private var selectedStepId: String? = null
@@ -240,29 +253,86 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Ensures languages are loaded before proceeding with timeline operations.
-     * Shows loading indicator while waiting.
+     *
+     * Fast path: translations already cached from TRPCore.init() → show the
+     * "Getting your itinerary plan" loader and continue immediately.
+     *
+     * Slow path: TRPCore.init() couldn't fetch translations. Re-trigger the
+     * fetch and wait for BOTH translations AND the parallel light-login to
+     * finish before proceeding. While waiting, show a text-less Lottie
+     * (animation only) — host-visible copy is rendered only once the
+     * translation bundle is actually available.
+     *
+     * If translations cannot be obtained within [LANGUAGE_RETRY_TIMEOUT_SECONDS],
+     * dispatches [TRPCoreErrorCode.LANGUAGE_LOAD_FAILED] and closes the SDK.
      */
     private fun ensureLanguagesLoadedThenProceed() {
-        showLoading()
+        // Fast path: translations already loaded (init succeeded earlier).
+        if (miscRepository.isLanguagesLoaded) {
+            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+            proceedAfterLanguagesLoaded()
+            return
+        }
 
+        // Slow path: parallel translation fetch + light-login. No text until
+        // translations are available; otherwise we'd flash a hardcoded string.
+        showFullScreenLoaderNoText()
+        attemptLanguageFetch(allowRetry = true)
+    }
+
+    /**
+     * Drives the translation fetch with one explicit retry. The retry exists
+     * because MiscRepository's shared BehaviorSubject may emit a stale `false`
+     * to subscribers that joined while the init() fetch was still in flight —
+     * if that init() fetch then fails, the subject delivers `false` to us
+     * without ever sending a new request. By the time we re-enter this method
+     * `isFetchInProgress` has been reset, so the second call actually fires a
+     * fresh /languages request.
+     */
+    private fun attemptLanguageFetch(allowRetry: Boolean) {
         miscRepository.waitForLanguagesLoaded()
+            .timeout(LANGUAGE_RETRY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { _ ->
-                    // Languages loaded, now proceed with timeline operations
-                    proceedAfterLanguagesLoaded()
+                { loaded ->
+                    if (loaded && miscRepository.isLanguagesLoaded) {
+                        // Translations ready. Now block on the parallel light-login
+                        // so the timeline fetch never runs without an auth header.
+                        waitForLoginThenProceed {
+                            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+                            proceedAfterLanguagesLoaded()
+                        }
+                    } else if (allowRetry) {
+                        attemptLanguageFetch(allowRetry = false)
+                    } else {
+                        failLanguageLoad("Translation fetch returned no data")
+                    }
                 },
                 { error ->
-                    // Even if language fetch fails, proceed (will use cached/fallback)
-                    proceedAfterLanguagesLoaded()
+                    if (allowRetry) {
+                        attemptLanguageFetch(allowRetry = false)
+                    } else {
+                        failLanguageLoad(error?.message ?: "Translation fetch failed")
+                    }
                 }
             )
     }
 
     /**
+     * Hides the loader, surfaces a typed [TRPCoreErrorCode.LANGUAGE_LOAD_FAILED]
+     * to the host so it can react, and closes the SDK.
+     */
+    private fun failLanguageLoad(message: String) {
+        hideLottieLoading()
+        TRPCore.notifyError(message, TRPCoreErrorCode.LANGUAGE_LOAD_FAILED)
+        finishActivity()
+    }
+
+    /**
      * Called after languages are loaded.
      * Sets language, checks onboarding, then resolves cities and starts login flow.
+     * The unified loader stays open — fetchTimeline() reuses it.
      */
     private fun proceedAfterLanguagesLoaded() {
         // Apply language change after languages are loaded
@@ -271,11 +341,9 @@ class ACTimelineVM @Inject constructor(
             miscRepository.changeLanguage(language)
         }
 
-        // Hide loading before showing onboarding
-        hideLoading()
-
-        // Check and show onboarding if needed
-        // onOnboardingComplete() will be called to continue with city resolution
+        // Loader intentionally stays visible — the next step (timeline fetch)
+        // continues to use the same loader so the user sees one continuous
+        // "Getting your itinerary plan" screen until the timeline is ready.
         checkAndShowOnboarding()
     }
 
@@ -293,7 +361,10 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
-        showLoading()
+        // Keep the unified "Getting your itinerary plan" text — showLoading()
+        // would post the rotating default and replace it before the fetch step
+        // can re-assert the single text.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
 
         // Step 1: Try to find cities from cache
         val resolvedCities = mutableListOf<City>()
@@ -657,7 +728,8 @@ class ACTimelineVM @Inject constructor(
     private fun createTimelineWithValidDestinations(validDestinations: List<SegmentDestinationItem>) {
         val modifiedItinerary = itinerary!!.copy(destinationItems = validDestinations)
 
-        showLoading()
+        // İlk açılış akışı: rotating yerine tek "Getting your itinerary plan" mesajı.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
         createTimelineUseCase.on(
@@ -669,13 +741,13 @@ class ACTimelineVM @Inject constructor(
                     waitForTimelineGeneration()
                 } else {
                     processTimeline(timeline)
-                    hideLoading()
+                    hideLottieLoading()
                 }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                hideLoading()
+                hideLottieLoading()
             }
         )
     }
@@ -731,7 +803,8 @@ class ACTimelineVM @Inject constructor(
     private fun createTimelineFromItinerary() {
         val itineraryData = itinerary ?: return
 
-        showLoading()
+        // İlk açılış akışı: rotating yerine tek "Getting your itinerary plan" mesajı.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
         createTimelineUseCase.on(
@@ -748,13 +821,13 @@ class ACTimelineVM @Inject constructor(
                     waitForTimelineGeneration()
                 } else {
                     processTimeline(timeline)
-                    hideLoading()
+                    hideLottieLoading()
                 }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                hideLoading()
+                hideLottieLoading()
             }
         )
     }
@@ -767,10 +840,10 @@ class ACTimelineVM @Inject constructor(
             params = WaitForGenerationUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                hideLoading()
+                hideLottieLoading()
             },
             error = { errorModel ->
-                hideLoading()
+                hideLottieLoading()
                 _error.value = errorModel.errorDesc ?: "Timeline generation failed"
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
             }
@@ -782,25 +855,38 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun fetchTimeline() {
-        showLoading()
+        // Theme 17: a new fetch invalidates any in-flight availability sweep.
+        availabilityCheckManager.reset()
+        // Initial fetch: keep the same single-text loader from the language-load step.
+        // postValue() collapses to the latest value, so we must keep using the same
+        // Single text or the rotating defaults would race ahead and replace it
+        // before the observer fires.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
         fetchTimelineUseCase.on(
             params = FetchTimelineUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                hideLoading()
+                hideLottieLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
-                hideLoading()
+                hideLottieLoading()
             }
         )
     }
 
     fun refreshTimeline() {
-        showLoading()
+        // Theme 17: a refresh invalidates any in-flight availability sweep.
+        availabilityCheckManager.reset()
+        // Theme 10: publish the refresh state so external observers (Saved Plans,
+        // Time Selection bottom sheet) can show their own loader / toast.
+        com.tripian.trpcore.domain.manager.TimelineRefreshState.setRefreshing()
+        // Theme 1: same full-screen Lottie as fetchTimeline — refresh is a
+        // long-running operation including post-load availability sweep.
+        showLottieLoading()
         // Clear route info cache to ensure fresh calculations
         clearRouteInfoCache()
 
@@ -808,10 +894,17 @@ class ACTimelineVM @Inject constructor(
             params = FetchTimelineUseCase.Params(_tripHash),
             success = { timeline ->
                 processTimeline(timeline)
-                hideLoading()
+                hideLottieLoading()
+                com.tripian.trpcore.domain.manager.TimelineRefreshState.setCompleted()
+                // Idle quickly so subscribers can distinguish a fresh completion
+                // event from the "static" idle state on next subscribe.
+                com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
             },
-            error = {
-                hideLoading()
+            error = { error ->
+                hideLottieLoading()
+                com.tripian.trpcore.domain.manager.TimelineRefreshState
+                    .setFailed(Throwable(error?.errorDesc ?: "Timeline refresh failed"))
+                com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
             }
         )
     }
@@ -841,10 +934,20 @@ class ACTimelineVM @Inject constructor(
         val days = calculateAvailableDays(timeline)
         _availableDays.value = days
 
-        // Ensure selected index is valid
-        val currentIndex = _selectedDayIndex.value ?: 0
-        if (currentIndex >= days.size && days.isNotEmpty()) {
-            _selectedDayIndex.value = 0
+        // First load: pick today if it falls within the trip, otherwise the
+        // trip's first day. Later refreshes only clamp out-of-bounds indices
+        // so user selections aren't overwritten.
+        if (days.isNotEmpty()) {
+            if (!initialDayAutoSelected) {
+                val todayIndex = days.indexOfFirst { it.isTodayDate() }
+                _selectedDayIndex.value = if (todayIndex >= 0) todayIndex else 0
+                initialDayAutoSelected = true
+            } else {
+                val currentIndex = _selectedDayIndex.value ?: 0
+                if (currentIndex >= days.size) {
+                    _selectedDayIndex.value = 0
+                }
+            }
         }
 
         // Generate display items for selected day
@@ -855,6 +958,55 @@ class ACTimelineVM @Inject constructor(
             syncOperationsCompleted = true
             performSyncOperations(timeline)
         }
+
+        // Theme 17: kick off the post-load availability sweep in the background.
+        triggerAvailabilitySweep(timeline)
+    }
+
+    /**
+     * Theme 17: invokes the post-load availability sweep against `/schedule-bulk`
+     * and applies the resulting `isAvailabilityExpired` flags to timeline segments and
+     * itinerary steps. Safe to call repeatedly — the manager guards against duplicate
+     * runs (call [com.tripian.trpcore.domain.manager.AvailabilityCheckManager.reset]
+     * to restart on a brand-new timeline).
+     */
+    override fun onCleared() {
+        // Theme 17: cancel any in-flight availability sweep when the VM goes away.
+        availabilityCheckManager.cancel()
+        super.onCleared()
+    }
+
+    private fun triggerAvailabilitySweep(timeline: Timeline) {
+        val selectedIdx = _selectedDayIndex.value ?: 0
+        val selectedDate = _availableDays.value?.getOrNull(selectedIdx)
+        val currency = TRPCore.core.appConfig.appCurrency
+        val lang = TRPCore.core.appConfig.appLanguage
+
+        availabilityCheckManager.runInitialAvailabilityCheck(
+            timeline = timeline,
+            selectedDate = selectedDate,
+            currency = currency,
+            lang = lang,
+            listener = object :
+                com.tripian.trpcore.domain.manager.AvailabilityCheckManager.ItemUpdateListener {
+                override fun onItemUpdated(segmentIndex: Int, stepId: Int?, isExpired: Boolean) {
+                    val tl = _timeline.value ?: return
+                    val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return
+                    if (stepId == null) {
+                        segment.additionalData?.isAvailabilityExpired = isExpired
+                    } else {
+                        val step = tl.plans?.getOrNull(segmentIndex)?.steps
+                            ?.firstOrNull { it.id == stepId }
+                        step?.isAvailabilityExpired = isExpired
+                    }
+                }
+            },
+            onCompleted = {
+                // Trigger a recompose of the display items so the new expired flags
+                // surface in the UI (red badge + "Not available" suffix).
+                updateDisplayItems()
+            }
+        )
     }
 
     /**
@@ -964,6 +1116,9 @@ class ACTimelineVM @Inject constructor(
         _selectedDayIndex.value = index
         // Reset selected step when day changes
         selectedStepId = null
+        // Theme 12: collapse state is per-screen, not per-day — but we reset on
+        // day change so the user always sees expanded sections when switching.
+        collapsedSectionCityIds.clear()
         updateDisplayItems()
     }
 
@@ -1036,17 +1191,34 @@ class ACTimelineVM @Inject constructor(
                             )
                         )
                     }
-                    // Reserved Activity
+                    // Reserved Activity (or flexible-time variant)
                     SegmentType.RESERVED_ACTIVITY -> {
-                        items.add(
-                            TimelineDisplayItem.BookedActivity(
-                                segment = segment,
-                                isReserved = true,
-                                segmentIndex = index,
-                                city = getCityForSegment(segment, timeline),
-                                planId = planId
+                        if (segment.isFlexibleActivity) {
+                            // Flexible-time reservation: render via FlexibleActivityVH,
+                            // pinned to the top of its city group, excluded from
+                            // conflict detection (start/end are placeholders).
+                            items.add(
+                                TimelineDisplayItem.FlexibleActivity(
+                                    segment = segment,
+                                    segmentIndex = index,
+                                    city = getCityForSegment(segment, timeline),
+                                    planId = planId,
+                                    isNoLocation = segment.additionalData?.isNoLocation == true,
+                                    isAvailabilityExpired =
+                                        segment.additionalData?.isAvailabilityExpired == true
+                                )
                             )
-                        )
+                        } else {
+                            items.add(
+                                TimelineDisplayItem.BookedActivity(
+                                    segment = segment,
+                                    isReserved = true,
+                                    segmentIndex = index,
+                                    city = getCityForSegment(segment, timeline),
+                                    planId = planId
+                                )
+                            )
+                        }
                     }
                     // Itinerary / Generated (Smart Recommendations)
                     SegmentType.ITINERARY, SegmentType.GENERATED -> {
@@ -1194,6 +1366,30 @@ class ACTimelineVM @Inject constructor(
      * - Section headers are added only when multiple cities exist
      * - Section footers (separators) are added between city groups (not after last)
      */
+    // =====================
+    // SECTION COLLAPSE (Theme 12)
+    // =====================
+
+    /**
+     * City IDs whose section is currently collapsed in the Timeline list. When a
+     * city is in this set, [groupItemsByCity] emits only the header + footer for
+     * that group (its actual content items are filtered out). Reset on day change
+     * (see [setSelectedDayIndex]) and on full timeline refresh.
+     */
+    private val collapsedSectionCityIds: MutableSet<Int> = mutableSetOf()
+
+    fun isSectionCollapsed(cityId: Int): Boolean = cityId in collapsedSectionCityIds
+
+    fun toggleSectionCollapsed(cityId: Int) {
+        if (cityId == 0) return
+        if (cityId in collapsedSectionCityIds) {
+            collapsedSectionCityIds.remove(cityId)
+        } else {
+            collapsedSectionCityIds.add(cityId)
+        }
+        updateDisplayItems()
+    }
+
     private fun groupItemsByCity(items: List<TimelineDisplayItem>): List<TimelineDisplayItem> {
         // Filter out headers and footers, keep only content items
         val contentItems = items.filterNot {
@@ -1213,8 +1409,14 @@ class ACTimelineVM @Inject constructor(
         val result = mutableListOf<TimelineDisplayItem>()
         val totalCities = groupedByCity.size
 
-        groupedByCity.entries.forEachIndexed { cityIndex, (_, cityItems) ->
+        groupedByCity.entries.forEachIndexed { cityIndex, (_, rawCityItems) ->
+            // Pin flexible-time items to the top of their city group (Theme 4).
+            // Within each bucket the original chronological order is preserved.
+            val cityItems = rawCityItems.sortedWith(
+                compareByDescending<TimelineDisplayItem> { it is TimelineDisplayItem.FlexibleActivity }
+            )
             val city = cityItems.firstOrNull()?.city
+            val isCollapsed = city != null && city.id in collapsedSectionCityIds
 
             // Always add section header (city name)
             if (city != null) {
@@ -1226,7 +1428,19 @@ class ACTimelineVM @Inject constructor(
                 )
             }
 
-            // Sequential order numbering - starts at 1 for each city
+            // Theme 12: if this section is collapsed, skip its content items —
+            // keep the header (and the footer separator) so the user can toggle
+            // it back open. The order-numbering block below is still executed
+            // implicitly because no items are appended.
+            if (isCollapsed) {
+                if (totalCities > 1 && cityIndex < totalCities - 1) {
+                    result.add(TimelineDisplayItem.SectionFooter(city = city))
+                }
+                return@forEachIndexed
+            }
+
+            // Sequential order numbering - starts at 1 for each city. Flexible
+            // activities are skipped in the numeric sequence — they render "−".
             var currentOrder = 1
 
             cityItems.forEach { item ->
@@ -1242,6 +1456,8 @@ class ACTimelineVM @Inject constructor(
                         currentOrder += 1  // Single item = +1
                         ordered
                     }
+
+                    is TimelineDisplayItem.FlexibleActivity -> item // order stays -1
 
                     is TimelineDisplayItem.Recommendations -> {
                         val stepCount = item.steps.size.coerceAtLeast(1)
@@ -1670,7 +1886,7 @@ class ACTimelineVM @Inject constructor(
             ?.toSet() ?: emptySet()
 
         // Set loading immediately (not postValue) since we're on main thread
-        showLoading()
+        showLottieLoading()
 
         // Generate unique title ("Recommendations", "Recommendations 2", etc.)
         val title = generateSegmentTitle(validCity, selectedDate)
@@ -1729,7 +1945,7 @@ class ACTimelineVM @Inject constructor(
                 waitForSegmentGeneration()
             },
             error = { errorModel ->
-                hideLoading()
+                hideLottieLoading()
                 _error.value = errorModel.errorDesc
             }
         )
@@ -1755,10 +1971,10 @@ class ACTimelineVM @Inject constructor(
                     _scrollToNewSegmentPlanId.value = newPlanId
                 }
 
-                hideLoading()
+                hideLottieLoading()
             },
             error = {
-                hideLoading()
+                hideLottieLoading()
                 // Still refresh to show partial results
                 refreshTimeline()
             }
@@ -1790,33 +2006,33 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun deleteSegment(segmentIndex: Int) {
-        showLoading()
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
 
         deleteSegmentUseCase.on(
             params = DeleteSegmentUseCase.Params(_tripHash, segmentIndex),
             success = {
                 refreshTimeline()
-                hideLoading()
+                hideLottieLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
-                hideLoading()
+                hideLottieLoading()
             }
         )
     }
 
     fun deleteStep(stepId: Int) {
-        showLoading()
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
 
         deleteStepUseCase.on(
             params = DeleteStepUseCase.Params(stepId),
             success = {
                 refreshTimeline()
-                hideLoading()
+                hideLottieLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
-                hideLoading()
+                hideLottieLoading()
             }
         )
     }
@@ -1837,7 +2053,7 @@ class ACTimelineVM @Inject constructor(
     fun updateStepTime(stepId: Int, startTime: String?, endTime: String?) {
         if (startTime == null && endTime == null) return
 
-        showLoading()
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
 
         // API expects time only in HH:mm format (not full datetime)
         updateStepTimeUseCase.on(
@@ -1851,7 +2067,7 @@ class ACTimelineVM @Inject constructor(
                 refreshTimeline()
             },
             error = { errorModel ->
-                hideLoading()
+                hideLottieLoading()
                 _error.value = errorModel.errorDesc
             }
         )
@@ -1868,6 +2084,60 @@ class ACTimelineVM @Inject constructor(
 
     fun showStepChangeTimePicker(step: com.tripian.one.api.timeline.model.TimelineStep) {
         _showChangeTimePickerStep.value = step
+    }
+
+    /**
+     * Segment-level change time. Used for reserved_activity and flexible activities
+     * (booked activities don't expose change-time). Carries both the original
+     * segment payload and its index so the edit goes in-place via segmentIndex.
+     */
+    data class SegmentTimePickerRequest(
+        val segment: TimelineSegment,
+        val segmentIndex: Int
+    )
+
+    private val _showChangeTimePickerSegment = MutableLiveData<SegmentTimePickerRequest?>()
+    val showChangeTimePickerSegment: LiveData<SegmentTimePickerRequest?> =
+        _showChangeTimePickerSegment
+
+    fun showSegmentChangeTimePicker(segment: TimelineSegment, segmentIndex: Int) {
+        _showChangeTimePickerSegment.value = SegmentTimePickerRequest(segment, segmentIndex)
+    }
+
+    fun clearChangeTimePickerSegment() {
+        _showChangeTimePickerSegment.value = null
+    }
+
+    /**
+     * Edit a top-level segment's start/end time. Times are "HH:mm"; the date is
+     * preserved from the segment's existing start.
+     */
+    fun updateSegmentTime(
+        segment: TimelineSegment,
+        segmentIndex: Int,
+        startTime: String?,
+        endTime: String?
+    ) {
+        if (startTime == null || endTime == null) return
+
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
+
+        updateSegmentTimeUseCase.on(
+            params = UpdateSegmentTimeUseCase.Params(
+                tripHash = _tripHash,
+                segmentIndex = segmentIndex,
+                original = segment,
+                newStartTime = startTime,
+                newEndTime = endTime
+            ),
+            success = {
+                refreshTimeline()
+            },
+            error = { errorModel ->
+                hideLottieLoading()
+                _error.value = errorModel.errorDesc
+            }
+        )
     }
 
     fun clearChangeTimePickerStep() {
@@ -1939,6 +2209,18 @@ class ACTimelineVM @Inject constructor(
      * Called when a marker is focused (user taps on bottom list item or marker).
      * Shows Main View button if there are multiple cities in the selected day.
      */
+    /**
+     * Theme 15: clears any selected marker / preview card. The map redraws its
+     * marker selection and the bottom preview list collapses to its idle state.
+     */
+    fun clearMapSelection() {
+        selectedStepId = null
+        val currentMapSteps = _mapSteps.value?.toMutableList() ?: return
+        currentMapSteps.forEach { it.isSelected = false }
+        _mapSteps.value = currentMapSteps
+        updateMapBottomItems()
+    }
+
     fun onMarkerFocused() {
         if (hasMultipleCitiesInSelectedDay) {
             _showMainViewButton.value = true
@@ -2025,9 +2307,19 @@ class ACTimelineVM @Inject constructor(
      * Updates the selection state in mapSteps and mapBottomItems.
      * Called when a list item is clicked or scrolled to.
      *
-     * @param stepId The poiId of the step to select
+     * Theme 15: when [allowToggle] is true (a marker tap) and the same step is
+     * already selected, the selection is cleared so the bottom preview card
+     * closes. List-driven calls leave [allowToggle] false and always set.
+     *
+     * @param stepId    The poiId of the step to select
+     * @param allowToggle  Whether to deselect when re-selecting the same step
      */
-    fun selectStepOnMap(stepId: String) {
+    @JvmOverloads
+    fun selectStepOnMap(stepId: String, allowToggle: Boolean = false) {
+        if (allowToggle && selectedStepId == stepId) {
+            clearMapSelection()
+            return
+        }
         // Update selected step ID
         selectedStepId = stepId
 
@@ -2249,26 +2541,58 @@ class ACTimelineVM @Inject constructor(
                 }
 
                 is TimelineDisplayItem.BookedActivity -> {
-                    // Get coordinate from additionalData first, then fallback to segment.coordinate
-                    val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
-                    coord?.let {
-                        if (it.lat != 0.0 && it.lng != 0.0) {
-                            mapSteps.add(
-                                MapStep().apply {
-                                    group = "booked"
-                                    poiId = item.segment.additionalData?.activityId ?: "booked_${item.segmentIndex}"
-                                    name = item.segment.additionalData?.title ?: item.segment.title ?: ""
-                                    coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                                        lat = it.lat
-                                        lng = it.lng
+                    // Theme 6: skip map marker for no-location segments — they have no
+                    // real-world coordinate.
+                    if (!item.isNoLocation) {
+                        // Get coordinate from additionalData first, then fallback to segment.coordinate
+                        val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
+                        coord?.let {
+                            if (it.lat != 0.0 && it.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "booked"
+                                        poiId = item.segment.additionalData?.activityId ?: "booked_${item.segmentIndex}"
+                                        name = item.segment.additionalData?.title ?: item.segment.title ?: ""
+                                        coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
+                                            lat = it.lat
+                                            lng = it.lng
+                                        }
+                                        // No icon, only show order label
+                                        markerIcon = -1
+                                        this.position = getNextPosition()
+                                        isOffer = false
+                                        this.cityIndex = currentCityIndex
                                     }
-                                    // No icon, only show order label
-                                    markerIcon = -1
-                                    this.position = getNextPosition()
-                                    isOffer = false
-                                    this.cityIndex = currentCityIndex
-                                }
-                            )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is TimelineDisplayItem.FlexibleActivity -> {
+                    // Theme 4 + 6: flexible items only get a map marker when they
+                    // carry a real coordinate (typically they do not).
+                    if (!item.isNoLocation) {
+                        val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
+                        coord?.let {
+                            if (it.lat != 0.0 && it.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "flexible"
+                                        poiId = item.segment.additionalData?.activityId
+                                            ?: "flexible_${item.segmentIndex}"
+                                        name = item.title
+                                        coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
+                                            lat = it.lat
+                                            lng = it.lng
+                                        }
+                                        markerIcon = -1
+                                        this.position = getNextPosition()
+                                        isOffer = false
+                                        this.cityIndex = currentCityIndex
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -2557,6 +2881,10 @@ class ACTimelineVM @Inject constructor(
         return if (index < days.size) days[index] else null
     }
 
+    /** Theme 3: true when the currently-viewed day is in the past. */
+    val isSelectedDayPast: Boolean
+        get() = getSelectedDate()?.isPastDay() == true
+
     fun getBookedActivities(): List<TimelineSegment> {
         return _timeline.value?.tripProfile?.segments
             ?.filter {
@@ -2678,6 +3006,12 @@ class ACTimelineVM @Inject constructor(
         android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.checkAndShowOnboarding called")
         if (shouldShowOnboarding()) {
             android.util.Log.d("ONBOARDING_DEBUG", "Setting _showOnboarding.value = true")
+            // Drop the full-screen loader before the onboarding bottom sheet is
+            // shown — otherwise the loader Dialog sits on top of the sheet and
+            // the user has no way to dismiss onboarding, leaving the SDK stuck
+            // on "Getting your itinerary plan". onOnboardingComplete() re-shows
+            // the loader before proceeding with city resolution / fetch.
+            hideLottieLoading()
             _showOnboarding.value = true
         } else {
             android.util.Log.d("ONBOARDING_DEBUG", "Onboarding not needed, proceeding with timeline")
@@ -2694,8 +3028,11 @@ class ACTimelineVM @Inject constructor(
         onboardingCompleted = true
 
         // Wait for login to complete (should already be done in background)
-        // Then proceed with city resolution
-        showLoading()
+        // Then proceed with city resolution.
+        // Keep the same single "Getting your itinerary plan" text — calling the
+        // generic showLoading() here posts the rotating default and races ahead
+        // of the SingleLiveEvent observer, replacing the intended single text.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         waitForLoginThenProceed {
             android.util.Log.d("TIMELINE_DEBUG", "Login complete, proceeding with city resolution")
             resolveDestinationCitiesAndProceed()
@@ -2860,5 +3197,10 @@ class ACTimelineVM @Inject constructor(
         const val MULTI_CITY_ZOOM_THRESHOLD = 12.0
         const val CITY_MARKER_ZOOM_LEVEL = 13.0
         const val STEP_MARKER_ZOOM_LEVEL = 15.0
+
+        // Upper bound for translation fetch on SDK launch. Beyond this, the
+        // host is informed via LANGUAGE_LOAD_FAILED and the SDK closes so the
+        // user is not left staring at the loader forever.
+        private const val LANGUAGE_RETRY_TIMEOUT_SECONDS = 10L
     }
 }

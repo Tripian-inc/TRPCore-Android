@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Order chip background for the availability-expired state (red filled circle).
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/trp_expired_fg" />
+    <size
+        android:width="20dp"
+        android:height="20dp" />
+</shape>

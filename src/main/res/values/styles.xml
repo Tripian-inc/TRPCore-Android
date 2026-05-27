@@ -41,4 +41,22 @@
         <item name="fontFamily">@font/medium</item>
         <item name="android:textAllCaps">false</item>
     </style>
+
+    <!--
+      Full-screen opaque dialog used by the Lottie loading overlay. The dialog
+      contents (FrameLayout in dialog_lottie_full_screen.xml) paint a white
+      background; the window itself is also white so the system bars don't
+      bleed through and there's no dim layer.
+    -->
+    <style name="TrpFullScreenTransparentDialog" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:navigationBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
 </resources>

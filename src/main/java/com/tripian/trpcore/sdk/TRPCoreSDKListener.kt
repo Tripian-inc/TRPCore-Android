@@ -1,6 +1,18 @@
 package com.tripian.trpcore.sdk
 
 /**
+ * Categorizes errors surfaced through [TRPCoreSDKListener.onError].
+ * Host apps can switch on this to provide user-facing messages or recovery actions.
+ */
+enum class TRPCoreErrorCode {
+    /** Default — any uncategorized SDK error. */
+    GENERIC,
+
+    /** Frontend translations could not be fetched after retry; SDK was not opened. */
+    LANGUAGE_LOAD_FAILED
+}
+
+/**
  * TRPCoreSDKListener - SDK callback interface
  *
  * Host app implements this interface to receive events from the SDK.
@@ -61,6 +73,20 @@ interface TRPCoreSDKListener {
      * @param error Error message
      */
     fun onError(error: String) {}
+
+    /**
+     * Called when a categorized error occurs in the SDK.
+     * Default implementation delegates to [onError] for backwards compatibility,
+     * so existing implementations keep working without changes.
+     * Override this when you need to switch on [code] (e.g. show a
+     * dedicated retry UI for [TRPCoreErrorCode.LANGUAGE_LOAD_FAILED]).
+     *
+     * @param error Error message
+     * @param code Categorizes the error so the host can react accordingly
+     */
+    fun onError(error: String, code: TRPCoreErrorCode) {
+        onError(error)
+    }
 
     /**
      * Called when user exits the SDK (back pressed).

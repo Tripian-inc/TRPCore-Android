@@ -26,6 +26,14 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     private var currentFilter: ActivityFilterData = ActivityFilterData.default()
     private var currency: String = "EUR"
 
+    // Optional facet-driven bounds. When null, the sliders fall back to
+    // ActivityFilterData.DEFAULT_* — preserving previous behaviour for callers that
+    // don't pass bounds (older paths / first paint before any search response).
+    private var minPriceBound: Float? = null
+    private var maxPriceBound: Float? = null
+    private var minDurationBound: Float? = null
+    private var maxDurationBound: Float? = null
+
     private var onFilterConfirmedListener: ((ActivityFilterData) -> Unit)? = null
     private var getLanguageForKey: ((String) -> String)? = null
 
@@ -42,6 +50,18 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             }
             args.getString(ARG_CURRENCY)?.let {
                 currency = it
+            }
+            if (args.containsKey(ARG_PRICE_MIN_BOUND)) {
+                minPriceBound = args.getFloat(ARG_PRICE_MIN_BOUND)
+            }
+            if (args.containsKey(ARG_PRICE_MAX_BOUND)) {
+                maxPriceBound = args.getFloat(ARG_PRICE_MAX_BOUND)
+            }
+            if (args.containsKey(ARG_DURATION_MIN_BOUND)) {
+                minDurationBound = args.getFloat(ARG_DURATION_MIN_BOUND)
+            }
+            if (args.containsKey(ARG_DURATION_MAX_BOUND)) {
+                maxDurationBound = args.getFloat(ARG_DURATION_MAX_BOUND)
             }
         }
 
@@ -71,11 +91,17 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         val thumbRadiusPx = (12.5f * resources.displayMetrics.density).toInt()
 
         // Price slider
+        val priceFrom = minPriceBound ?: ActivityFilterData.DEFAULT_MIN_PRICE
+        val priceTo = (maxPriceBound ?: ActivityFilterData.DEFAULT_MAX_PRICE)
+            .coerceAtLeast(priceFrom + ActivityFilterData.PRICE_STEP)
         binding.sliderPrice.apply {
-            valueFrom = ActivityFilterData.DEFAULT_MIN_PRICE
-            valueTo = ActivityFilterData.DEFAULT_MAX_PRICE
+            valueFrom = priceFrom
+            valueTo = priceTo
             stepSize = ActivityFilterData.PRICE_STEP
-            values = listOf(currentFilter.minPrice, currentFilter.maxPrice)
+            values = listOf(
+                currentFilter.minPrice.coerceIn(priceFrom, priceTo),
+                currentFilter.maxPrice.coerceIn(priceFrom, priceTo)
+            )
 
             // Set thumb radius and custom drawable
             thumbRadius = thumbRadiusPx
@@ -92,11 +118,17 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         }
 
         // Duration slider
+        val durationFrom = minDurationBound ?: ActivityFilterData.DEFAULT_MIN_DURATION
+        val durationTo = (maxDurationBound ?: ActivityFilterData.DEFAULT_MAX_DURATION)
+            .coerceAtLeast(durationFrom + ActivityFilterData.DURATION_STEP)
         binding.sliderDuration.apply {
-            valueFrom = ActivityFilterData.DEFAULT_MIN_DURATION
-            valueTo = ActivityFilterData.DEFAULT_MAX_DURATION
+            valueFrom = durationFrom
+            valueTo = durationTo
             stepSize = ActivityFilterData.DURATION_STEP
-            values = listOf(currentFilter.minDuration, currentFilter.maxDuration)
+            values = listOf(
+                currentFilter.minDuration.coerceIn(durationFrom, durationTo),
+                currentFilter.maxDuration.coerceIn(durationFrom, durationTo)
+            )
 
             // Set thumb radius and custom drawable
             thumbRadius = thumbRadiusPx
@@ -226,14 +258,27 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
 
         fun newInstance(
             currentFilter: ActivityFilterData,
-            currency: String
+            currency: String,
+            minPriceBound: Float? = null,
+            maxPriceBound: Float? = null,
+            minDurationBound: Float? = null,
+            maxDurationBound: Float? = null
         ): ActivityFilterBottomSheet {
             return ActivityFilterBottomSheet().apply {
                 arguments = Bundle().apply {
                     putSerializable(ARG_CURRENT_FILTER, currentFilter)
                     putString(ARG_CURRENCY, currency)
+                    minPriceBound?.let { putFloat(ARG_PRICE_MIN_BOUND, it) }
+                    maxPriceBound?.let { putFloat(ARG_PRICE_MAX_BOUND, it) }
+                    minDurationBound?.let { putFloat(ARG_DURATION_MIN_BOUND, it) }
+                    maxDurationBound?.let { putFloat(ARG_DURATION_MAX_BOUND, it) }
                 }
             }
         }
+
+        private const val ARG_PRICE_MIN_BOUND = "filter_price_min_bound"
+        private const val ARG_PRICE_MAX_BOUND = "filter_price_max_bound"
+        private const val ARG_DURATION_MIN_BOUND = "filter_duration_min_bound"
+        private const val ARG_DURATION_MAX_BOUND = "filter_duration_max_bound"
     }
 }

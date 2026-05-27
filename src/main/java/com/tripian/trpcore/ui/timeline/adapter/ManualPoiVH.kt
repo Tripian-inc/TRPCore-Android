@@ -42,8 +42,10 @@ class ManualPoiVH(
         onChangeTimeClick: ((TimelineDisplayItem.ManualPoi) -> Unit)? = null,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit
     ) {
-        // Order badge
-        binding.tvOrder.text = item.order.toString()
+        // Order badge — Theme 14: order 0 (or negative) renders as U+2212.
+        binding.tvOrder.text = if (item.order <= 0)
+            com.tripian.trpcore.util.extensions.MINUS_SIGN
+        else item.order.toString()
 
         // Apply conflict styling
         if (item.hasConflict) {

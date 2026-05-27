@@ -20,6 +20,7 @@ import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.repository.authorization.AwsConfig
+import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
 import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
@@ -165,10 +166,17 @@ class TRPCore {
         }
 
         /**
-         * Triggers error callback
+         * Triggers error callback (generic / uncategorized).
          */
         internal fun notifyError(error: String) {
-            listener?.onError(error)
+            notifyError(error, TRPCoreErrorCode.GENERIC)
+        }
+
+        /**
+         * Triggers error callback with a typed [code] so the host can switch on the category.
+         */
+        internal fun notifyError(error: String, code: TRPCoreErrorCode) {
+            listener?.onError(error, code)
         }
 
         /**
@@ -568,23 +576,25 @@ class TRPCore {
         // Fire-and-forget log - send itinerary parameters to backend
         sendItineraryLog(itinerary, tripHash, uniqueId, appLanguage, appCurrency)
 
-        // Ensure languages are loaded before opening timeline
-        ensureLanguagesLoaded {
-            val intent = Intent(context, ACTimeline::class.java).apply {
-                putExtra(EXTRA_ITINERARY, itinerary)
-                putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
-                putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
-                putExtra(EXTRA_CAN_BACK, canBack)
-                putExtra(EXTRA_APP_LANGUAGE, appLanguage)
-                putExtra(EXTRA_APP_CURRENCY, appCurrency)
-                // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
-                // When called from Activity context, SDK runs in same task for proper back navigation
-                if (context !is Activity) {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+        // Always launch ACTimeline directly. The activity owns the unified
+        // "Getting your itinerary plan" loader covering both the language
+        // retry and the initial timeline fetch — no host screen flicker, no
+        // duplicated loaders. ACTimelineVM dispatches LANGUAGE_LOAD_FAILED
+        // via the listener if translations can't be obtained.
+        val intent = Intent(context, ACTimeline::class.java).apply {
+            putExtra(EXTRA_ITINERARY, itinerary)
+            putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
+            putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
+            putExtra(EXTRA_CAN_BACK, canBack)
+            putExtra(EXTRA_APP_LANGUAGE, appLanguage)
+            putExtra(EXTRA_APP_CURRENCY, appCurrency)
+            // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
+            // When called from Activity context, SDK runs in same task for proper back navigation
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            context.startActivity(intent)
         }
+        context.startActivity(intent)
     }
 
     fun activityInjector(): AndroidInjector<Activity> {
@@ -610,30 +620,6 @@ class TRPCore {
             )
     }
 
-    /**
-     * Ensures languages are loaded before executing the action.
-     * If already loaded, executes immediately.
-     * If fetch is in progress (from init), waits for it to complete.
-     * This prevents duplicate API calls and reduces user wait time.
-     */
-    private fun ensureLanguagesLoaded(onReady: () -> Unit) {
-        if (miscRepository.isLanguagesLoaded) {
-            onReady()
-        } else {
-            // Wait for ongoing fetch or start new one if needed
-            miscRepository.waitForLanguagesLoaded()
-                .subscribe(
-                    { _ ->
-                        onReady()
-                    },
-                    { error ->
-                        Log.e("TRPCore", "Failed to fetch languages: ${error.message}")
-                        // Still proceed even if fetch fails (will use cached or fallback)
-                        onReady()
-                    }
-                )
-        }
-    }
 
     /**
      * Pre-fetches cities from server and caches them.
