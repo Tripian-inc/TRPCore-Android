@@ -41,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_8sdp"
         android:layout_below="@+id/rlItem"
-        app:srcCompat="@drawable/im_line" />
+        app:srcCompat="@drawable/trp_im_line" />
 
     <com.tripian.trpcore.util.widget.ImageView
         android:layout_width="wrap_content"
@@ -51,5 +51,5 @@
         android:layout_marginEnd="@dimen/_12sdp"
         android:layout_alignParentEnd="true"
         android:layout_centerInParent="true"
-        app:srcCompat="@drawable/ic_arrow_right_gray" />
+        app:srcCompat="@drawable/trp_ic_arrow_right_gray" />
 </RelativeLayout>

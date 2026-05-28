@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
+    android:background="@drawable/trp_bg_bottom_sheet"
     android:orientation="vertical"
     android:paddingBottom="@dimen/_24sdp">
 
@@ -15,7 +15,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle" />
+        android:background="@drawable/trp_bg_drag_handle" />
 
     <!-- Toolbar -->
     <RelativeLayout
@@ -31,7 +31,7 @@
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
             android:contentDescription="Back"
-            android:src="@drawable/ic_back" />
+            android:src="@drawable/trp_ic_back" />
 
         <!-- Title -->
         <com.tripian.trpcore.util.widget.TextView
@@ -101,7 +101,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_12sdp"
-        android:background="@drawable/bg_flexible_info_card"
+        android:background="@drawable/trp_bg_flexible_info_card"
         android:gravity="top"
         android:orientation="horizontal"
         android:padding="@dimen/_12sdp"

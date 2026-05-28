@@ -63,7 +63,7 @@ abstract class AdapterOverViewItem(val context: Context, val items: List<Butterf
             if (!TextUtils.isEmpty(item.step?.poi?.image?.url)) {
                 Glide.with(context).load(item.step?.poi?.image?.url?.toSmallUrl())
                     .apply(RequestOptions().circleCrop())
-                    .placeholder(ContextCompat.getDrawable(context, R.drawable.bg_place_holder_image))
+                    .placeholder(ContextCompat.getDrawable(context, R.drawable.trp_bg_place_holder_image))
                     .into(imPoi)
             }
 

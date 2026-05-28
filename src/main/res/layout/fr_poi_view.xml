@@ -72,7 +72,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
                 android:padding="@dimen/_6sdp"
-                app:srcCompat="@drawable/ic_minus_box_red" />
+                app:srcCompat="@drawable/trp_ic_minus_box_red" />
 
             <androidx.appcompat.widget.AppCompatRatingBar
                 android:id="@+id/rateBar"

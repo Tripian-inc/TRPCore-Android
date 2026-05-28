@@ -9,7 +9,7 @@
     android:id="@+id/llNoLocationBadge"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_no_location_badge"
+    android:background="@drawable/trp_bg_no_location_badge"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:visibility="gone"
@@ -20,7 +20,7 @@
         android:layout_width="14dp"
         android:layout_height="14dp"
         android:contentDescription="No exact location"
-        android:src="@drawable/ic_location_off"
+        android:src="@drawable/trp_ic_location_off"
         android:tint="@color/trp_no_location_fg" />
 
     <TextView

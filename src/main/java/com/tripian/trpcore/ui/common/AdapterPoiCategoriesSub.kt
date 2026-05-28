@@ -46,10 +46,10 @@ abstract class AdapterPoiCategoriesSub(
             tvName.text = item.name
 
             if (selectedItems.contains(item)) {
-                imCheck.setImageResource(R.drawable.ic_check_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_new)
                 tvName.setTextAppearance(R.style.Medium_14_Black)
             } else {
-                imCheck.setImageResource(R.drawable.ic_check_empty_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
                 tvName.setTextAppearance(R.style.Regular_14_DarkGray)
             }
 

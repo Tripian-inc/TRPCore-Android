@@ -7,26 +7,26 @@ import com.tripian.trpcore.R
  * Created by semihozkoroglu on 4.10.2020.
  */
 var mapIcons: Map<String, Int> = mapOf(
-    "IceCream" to R.drawable.ic_map_icon_icecream,
-    "Burger" to R.drawable.ic_map_icon_burger,
-    "Bakery" to R.drawable.ic_map_icon_bakery,
-    "Attraction" to R.drawable.ic_map_icon_attractions,
-    "Shop" to R.drawable.ic_map_icon_shop,
-    "Flag" to R.drawable.ic_map_icon_flag,
-    "Bbq" to R.drawable.ic_map_icon_bbq,
-    "Pizza" to R.drawable.ic_map_icon_pizza,
-    "Restaurant" to R.drawable.ic_map_icon_restaurant,
-    "Mosque" to R.drawable.ic_map_icon_mosque,
-    "Synagogue" to R.drawable.ic_map_icon_synagogue,
-    "Church" to R.drawable.ic_map_icon_church,
-    "Bar" to R.drawable.ic_map_icon_bar,
-    "WineBar" to R.drawable.ic_map_icon_winebar,
-    "Pub" to R.drawable.ic_map_icon_pub,
-    "ArtGallery" to R.drawable.ic_map_icon_art,
-    "Museum" to R.drawable.ic_map_icon_museum,
-    "Cafe" to R.drawable.ic_map_icon_cafe,
-    "Dessert" to R.drawable.ic_map_icon_dessert,
-    "Homebase" to R.drawable.ic_map_icon_homebase
+    "IceCream" to R.drawable.trp_ic_map_icon_icecream,
+    "Burger" to R.drawable.trp_ic_map_icon_burger,
+    "Bakery" to R.drawable.trp_ic_map_icon_bakery,
+    "Attraction" to R.drawable.trp_ic_map_icon_attractions,
+    "Shop" to R.drawable.trp_ic_map_icon_shop,
+    "Flag" to R.drawable.trp_ic_map_icon_flag,
+    "Bbq" to R.drawable.trp_ic_map_icon_bbq,
+    "Pizza" to R.drawable.trp_ic_map_icon_pizza,
+    "Restaurant" to R.drawable.trp_ic_map_icon_restaurant,
+    "Mosque" to R.drawable.trp_ic_map_icon_mosque,
+    "Synagogue" to R.drawable.trp_ic_map_icon_synagogue,
+    "Church" to R.drawable.trp_ic_map_icon_church,
+    "Bar" to R.drawable.trp_ic_map_icon_bar,
+    "WineBar" to R.drawable.trp_ic_map_icon_winebar,
+    "Pub" to R.drawable.trp_ic_map_icon_pub,
+    "ArtGallery" to R.drawable.trp_ic_map_icon_art,
+    "Museum" to R.drawable.trp_ic_map_icon_museum,
+    "Cafe" to R.drawable.trp_ic_map_icon_cafe,
+    "Dessert" to R.drawable.trp_ic_map_icon_dessert,
+    "Homebase" to R.drawable.trp_ic_map_icon_homebase
 )
 
 var hours = arrayOf(

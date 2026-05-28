@@ -42,7 +42,7 @@ abstract class AdapterMustTry constructor(val context: Context, val items: List<
             if (!TextUtils.isEmpty(item.image?.url)) {
                 Glide.with(context).load(item.image?.url?.toSmallUrl())
                     .apply(RequestOptions().circleCrop())
-                    .placeholder(ContextCompat.getDrawable(context, R.drawable.bg_place_holder_image))
+                    .placeholder(ContextCompat.getDrawable(context, R.drawable.trp_bg_place_holder_image))
                     .into(imPoi)
             }
 

@@ -71,7 +71,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
-                android:background="@drawable/bg_selection_field"
+                android:background="@drawable/trp_bg_selection_field"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -92,7 +92,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center_vertical|end"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_next"
+                    android:src="@drawable/trp_ic_next"
                     app:tint="@color/trp_fgWeak"/>
 
             </FrameLayout>
@@ -142,7 +142,7 @@
                     android:id="@+id/ivSmartIcon"
                     android:layout_width="52dp"
                     android:layout_height="52dp"
-                    android:src="@drawable/ic_smart_recommendations"
+                    android:src="@drawable/trp_ic_smart_recommendations"
                     android:contentDescription="Smart Recommendations"/>
 
                 <!-- Text Container -->
@@ -206,7 +206,7 @@
                     android:id="@+id/ivManualIcon"
                     android:layout_width="52dp"
                     android:layout_height="52dp"
-                    android:src="@drawable/ic_add_manual"
+                    android:src="@drawable/trp_ic_add_manual"
                     android:contentDescription="Add Manually"/>
 
                 <!-- Text Container -->
@@ -301,7 +301,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_cat_activities"
+                            android:src="@drawable/trp_ic_cat_activities"
                             android:tint="@color/trp_text_primary"/>
 
                         <TextView
@@ -345,7 +345,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_cat_poi"
+                            android:src="@drawable/trp_ic_cat_poi"
                             app:tint="@color/trp_text_primary" />
 
                         <TextView
@@ -389,7 +389,7 @@
                         <ImageView
                             android:layout_width="32dp"
                             android:layout_height="32dp"
-                            android:src="@drawable/ic_food_drink"
+                            android:src="@drawable/trp_ic_food_drink"
                             android:tint="@color/trp_text_primary"/>
 
                         <TextView
@@ -459,8 +459,8 @@
                     android:id="@+id/btnTravelersMinus"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:background="@drawable/bg_circle_button"
-                    android:src="@drawable/ic_minus"
+                    android:background="@drawable/trp_bg_circle_button"
+                    android:src="@drawable/trp_ic_minus"
                     android:tint="@color/trp_fgWeak"
                     android:contentDescription="Decrease"/>
 
@@ -480,8 +480,8 @@
                     android:id="@+id/btnTravelersPlus"
                     android:layout_width="32dp"
                     android:layout_height="32dp"
-                    android:background="@drawable/bg_circle_button"
-                    android:src="@drawable/ic_increase"
+                    android:background="@drawable/trp_bg_circle_button"
+                    android:src="@drawable/trp_ic_increase"
                     android:tint="@color/trp_fgWeak"
                     android:contentDescription="Increase"/>
 

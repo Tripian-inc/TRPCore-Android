@@ -30,7 +30,7 @@
                 android:layout_height="@dimen/_38sdp"
                 android:layout_marginTop="@dimen/_6sdp"
                 android:padding="@dimen/_13sdp"
-                app:srcCompat="@drawable/ic_close_black" />
+                app:srcCompat="@drawable/trp_ic_close_black" />
 
             <FrameLayout
                 android:layout_width="match_parent"

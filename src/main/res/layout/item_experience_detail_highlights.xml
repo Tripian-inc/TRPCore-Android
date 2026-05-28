@@ -9,7 +9,7 @@
         android:layout_width="5dp"
         android:layout_height="5dp"
         android:layout_gravity="center"
-        android:background="@drawable/bg_circle_red_full"
+        android:background="@drawable/trp_bg_circle_red_full"
         android:textColor="@color/trp_extra_main"
         android:visibility="visible" />
 

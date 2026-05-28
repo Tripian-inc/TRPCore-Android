@@ -35,7 +35,7 @@
         android:paddingTop="3dp"
         android:paddingEnd="6dp"
         android:paddingBottom="12dp"
-        android:src="@drawable/ic_add_to_plan"
+        android:src="@drawable/trp_ic_add_to_plan"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -89,7 +89,7 @@
             android:layout_width="@dimen/_9sdp"
             android:layout_height="@dimen/_9sdp"
             android:layout_marginStart="@dimen/_2sdp"
-            android:src="@drawable/ic_rating_star" />
+            android:src="@drawable/trp_ic_rating_star" />
 
         <!-- Rating Count - Medium 14sp #666666 -->
         <com.tripian.trpcore.util.widget.TextView
@@ -120,7 +120,7 @@
             android:id="@+id/ivDurationIcon"
             android:layout_width="@dimen/_14sdp"
             android:layout_height="@dimen/_14sdp"
-            android:src="@drawable/ic_duration" />
+            android:src="@drawable/trp_ic_duration" />
 
         <!-- Duration Text -->
         <com.tripian.trpcore.util.widget.TextView

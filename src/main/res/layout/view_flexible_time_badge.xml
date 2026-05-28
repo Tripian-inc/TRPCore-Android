@@ -11,7 +11,7 @@
         android:id="@+id/tvOrderChip"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:background="@drawable/bg_flexible_order_chip"
+        android:background="@drawable/trp_bg_flexible_order_chip"
         android:gravity="center"
         android:includeFontPadding="false"
         android:text="−"

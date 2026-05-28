@@ -24,7 +24,7 @@
             app:shapeAppearanceOverlay="@style/TrpRoundedImageView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:src="@drawable/bg_place_holder_image"/>
+            tools:src="@drawable/trp_bg_place_holder_image"/>
 
         <!-- Rating Badge (on image) -->
         <LinearLayout
@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="@drawable/bg_rating_container"
+            android:background="@drawable/trp_bg_rating_container"
             android:padding="4dp"
             android:layout_margin="4dp"
             app:layout_constraintStart_toStartOf="@id/ivImage"
@@ -42,7 +42,7 @@
             <ImageView
                 android:layout_width="12dp"
                 android:layout_height="12dp"
-                android:src="@drawable/ic_star_filled"
+                android:src="@drawable/trp_ic_star_filled"
                 app:tint="@color/trp_timeline_rating"/>
 
             <TextView
@@ -104,7 +104,7 @@
             <ImageView
                 android:layout_width="14dp"
                 android:layout_height="14dp"
-                android:src="@drawable/ic_location_pin"/>
+                android:src="@drawable/trp_ic_location_pin"/>
 
             <TextView
                 android:id="@+id/tvAddress"

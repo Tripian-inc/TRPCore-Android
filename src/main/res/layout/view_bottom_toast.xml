@@ -35,7 +35,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"
-            android:src="@drawable/ic_check_circle_green" />
+            android:src="@drawable/trp_ic_check_circle_green" />
 
         <TextView
             android:id="@+id/tvToastMessage"

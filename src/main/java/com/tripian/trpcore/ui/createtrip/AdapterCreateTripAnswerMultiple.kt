@@ -57,8 +57,8 @@ abstract class AdapterCreateTripAnswerMultiple(
             imArrow.isVisible = !item.subAnswers.isNullOrEmpty()
 
             if (selectedItems.containsKey(position) && selectedItems[position]!!) {
-                imCheck.setImageResource(R.drawable.ic_check_new)
-                imArrow.setImageResource(R.drawable.ic_arrow_up)
+                imCheck.setImageResource(R.drawable.trp_ic_check_new)
+                imArrow.setImageResource(R.drawable.trp_ic_arrow_up)
                 if (isSubAnswers) {
                     tvName.setTextAppearance(R.style.Medium_14_Black)
                 } else {
@@ -66,8 +66,8 @@ abstract class AdapterCreateTripAnswerMultiple(
                 }
                 rvInnerList.visibility = View.VISIBLE
             } else {
-                imCheck.setImageResource(R.drawable.ic_check_empty_new)
-                imArrow.setImageResource(R.drawable.ic_arrow_down)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
+                imArrow.setImageResource(R.drawable.trp_ic_arrow_down)
                 if (isSubAnswers) {
                     tvName.setTextAppearance(R.style.Regular_14_DarkGray)
                 } else {

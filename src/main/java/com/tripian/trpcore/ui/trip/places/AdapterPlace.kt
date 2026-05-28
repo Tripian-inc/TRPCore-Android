@@ -53,7 +53,7 @@ abstract class AdapterPlace(
                     .placeholder(
                         ContextCompat.getDrawable(
                             context,
-                            R.drawable.bg_place_holder_image
+                            R.drawable.trp_bg_place_holder_image
                         )
                     )
                     .into(imPoi)

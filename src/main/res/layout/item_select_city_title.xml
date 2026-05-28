@@ -13,7 +13,7 @@
         android:id="@+id/imIcon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:srcCompat="@drawable/im_south_america" />
+        app:srcCompat="@drawable/trp_im_south_america" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTitle"

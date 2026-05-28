@@ -31,14 +31,14 @@ class InView @JvmOverloads constructor(
     fun offerEnable(enable: Boolean, optOutEnable: Boolean = false) {
         if (enable) {
 //            if (optOutEnable) {
-                root.setBackgroundResource(R.drawable.bg_i_am_in_enable)
+                root.setBackgroundResource(R.drawable.trp_bg_i_am_in_enable)
 //            } else {
-//                root.setBackgroundResource(R.drawable.bg_i_am_in_disable)
+//                root.setBackgroundResource(R.drawable.trp_bg_i_am_in_disable)
 //            }
 //            imIcon.setImageResource(R.drawable.ic_i_am_in_disable)
             tvText.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.I_AM_OUT)
         } else {
-            root.setBackgroundResource(R.drawable.bg_i_am_in_enable)
+            root.setBackgroundResource(R.drawable.trp_bg_i_am_in_enable)
 //            imIcon.setImageResource(R.drawable.ic_i_am_in_enable)
             tvText.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.I_AM_IN)
         }

@@ -84,7 +84,7 @@
                     android:layout_height="@dimen/_42sdp"
                     android:layout_marginEnd="@dimen/_12sdp"
                     android:padding="@dimen/_13sdp"
-                    app:srcCompat="@drawable/ic_like" />
+                    app:srcCompat="@drawable/trp_ic_like" />
 
                 <com.tripian.trpcore.util.widget.ImageView
                     android:id="@+id/imDislike"
@@ -92,7 +92,7 @@
                     android:layout_height="@dimen/_42sdp"
                     android:layout_marginStart="@dimen/_12sdp"
                     android:padding="@dimen/_13sdp"
-                    app:srcCompat="@drawable/ic_dislike" />
+                    app:srcCompat="@drawable/trp_ic_dislike" />
             </LinearLayout>
         </LinearLayout>
 
@@ -101,7 +101,7 @@
             style="@style/TextCaption2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_butterfly_match"
+            android:background="@drawable/trp_bg_butterfly_match"
             android:padding="@dimen/_4sdp"
             android:textColor="@color/trp_black_soft"
             android:visibility="gone" />
@@ -125,7 +125,7 @@
             android:layout_height="@dimen/_32sdp"
             android:layout_gravity="right"
             android:padding="@dimen/_13sdp"
-            app:srcCompat="@drawable/ic_close_black" />
+            app:srcCompat="@drawable/trp_ic_close_black" />
 
         <LinearLayout
             android:layout_width="wrap_content"

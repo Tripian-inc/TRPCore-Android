@@ -131,7 +131,7 @@ class RecommendationsVH(
 
         // Expand/Collapse icon - chevron up when expanded, down when collapsed
         binding.ivExpand.setImageResource(
-            if (item.isExpanded) R.drawable.ic_chevron_up else R.drawable.ic_chevron_down
+            if (item.isExpanded) R.drawable.trp_ic_chevron_up else R.drawable.trp_ic_chevron_down
         )
 
         // Click listeners

@@ -38,7 +38,7 @@
             android:layout_height="3dp"
             android:layout_gravity="center"
             android:layout_marginStart="@dimen/_6sdp"
-            android:background="@drawable/bg_circle_black_full"
+            android:background="@drawable/trp_bg_circle_black_full"
             android:textColor="@color/trp_extra_main"
             android:visibility="visible" />
 

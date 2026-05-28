@@ -57,11 +57,11 @@ class StepActivityVH(
 
         // Apply conflict styling
         if (hasConflict) {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
         } else {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
         // Time (startTime - endTime format)
@@ -91,10 +91,10 @@ class StepActivityVH(
             Glide.with(binding.ivImage)
                 .load(url)
                 .centerCrop()
-                .placeholder(R.drawable.bg_place_holder_image)
+                .placeholder(R.drawable.trp_bg_place_holder_image)
                 .into(binding.ivImage)
         } ?: run {
-            binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
+            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
 
         // Rating Row - from poi.rating and poi.ratingCount

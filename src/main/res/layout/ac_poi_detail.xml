@@ -104,7 +104,7 @@
                         android:layout_width="16dp"
                         android:layout_height="16dp"
                         android:layout_marginStart="4dp"
-                        android:src="@drawable/ic_rating_star" />
+                        android:src="@drawable/trp_ic_rating_star" />
 
                     <TextView
                         android:id="@+id/tvRatingCount"
@@ -177,7 +177,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="8dp"
-                        android:src="@drawable/ic_chevron_down" />
+                        android:src="@drawable/trp_ic_chevron_down" />
 
                 </LinearLayout>
 
@@ -270,7 +270,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_phone"
+                            android:src="@drawable/trp_ic_phone"
                             app:tint="@color/trp_text_primary" />
 
                     </androidx.cardview.widget.CardView>
@@ -332,7 +332,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:layout_gravity="center"
-                            android:src="@drawable/ic_opening_hours"
+                            android:src="@drawable/trp_ic_opening_hours"
                             app:tint="@color/trp_text_primary" />
 
                     </androidx.cardview.widget.CardView>
@@ -454,7 +454,7 @@
                     <com.tripian.trpcore.util.widget.ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/ic_location_point_civi" />
+                        app:srcCompat="@drawable/trp_ic_location_point_civi" />
 
                     <TextView
                         android:id="@+id/tvAddress"
@@ -489,7 +489,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         android:layout_marginStart="16dp"
-                        app:srcCompat="@drawable/ic_view_map" />
+                        app:srcCompat="@drawable/trp_ic_view_map" />
                 </LinearLayout>
 
             </LinearLayout>
@@ -519,7 +519,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/trp_ic_back"
             app:tint="@color/trp_text_primary" />
 
     </androidx.cardview.widget.CardView>

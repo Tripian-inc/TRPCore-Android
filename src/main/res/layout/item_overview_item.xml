@@ -83,6 +83,6 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_16sdp"
             android:layout_below="@+id/imPoi"
-            app:srcCompat="@drawable/im_line" />
+            app:srcCompat="@drawable/trp_im_line" />
     </RelativeLayout>
 </RelativeLayout>

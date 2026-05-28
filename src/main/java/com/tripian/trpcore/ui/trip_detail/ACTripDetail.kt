@@ -211,17 +211,17 @@ class ACTripDetail : BaseActivity<AcTripDetailBinding, ACTripDetailVM>() {
 
         observe(viewModel.onSetFavoriteListener) {
             if (it!!) {
-                binding.imFavorite.setImageResource(R.drawable.ic_favorite_selected2)
+                binding.imFavorite.setImageResource(R.drawable.trp_ic_favorite_selected2)
             } else {
-                binding.imFavorite.setImageResource(R.drawable.ic_favorite2)
+                binding.imFavorite.setImageResource(R.drawable.trp_ic_favorite2)
             }
         }
 
         observe(viewModel.onSetIconListener) {
             when (it!!) {
-                Mode.ADD -> binding.imAction.setImageResource(R.drawable.ic_plus)
-                Mode.REMOVE -> binding.imAction.setImageResource(R.drawable.ic_minus)
-                Mode.CHANGE -> binding.imAction.setImageResource(R.drawable.ic_change_black)
+                Mode.ADD -> binding.imAction.setImageResource(R.drawable.trp_ic_plus)
+                Mode.REMOVE -> binding.imAction.setImageResource(R.drawable.trp_ic_minus)
+                Mode.CHANGE -> binding.imAction.setImageResource(R.drawable.trp_ic_change_black)
             }
 
             binding.imAction.visibility = View.VISIBLE

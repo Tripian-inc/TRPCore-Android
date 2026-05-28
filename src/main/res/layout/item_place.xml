@@ -97,6 +97,6 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_tripian_check" />
+            app:srcCompat="@drawable/trp_ic_tripian_check" />
     </RelativeLayout>
 </RelativeLayout>

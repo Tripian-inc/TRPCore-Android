@@ -25,5 +25,5 @@
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:padding="@dimen/_2sdp"
-        app:srcCompat="@drawable/ic_check_new" />
+        app:srcCompat="@drawable/trp_ic_check_new" />
 </RelativeLayout>

@@ -26,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"
             android:layout_marginTop="@dimen/_32sdp"
-            android:background="@drawable/shape_click_transparent"
+            android:background="@drawable/trp_shape_click_transparent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp">
@@ -34,7 +34,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="@dimen/_16sdp"
                 android:layout_height="@dimen/_16sdp"
-                app:srcCompat="@drawable/ic_edit" />
+                app:srcCompat="@drawable/trp_ic_edit" />
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
@@ -49,7 +49,7 @@
             android:id="@+id/llCompanion"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"
-            android:background="@drawable/shape_click_transparent"
+            android:background="@drawable/trp_shape_click_transparent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp">
@@ -57,7 +57,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="@dimen/_16sdp"
                 android:layout_height="@dimen/_16sdp"
-                app:srcCompat="@drawable/ic_friends" />
+                app:srcCompat="@drawable/trp_ic_friends" />
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
@@ -71,7 +71,7 @@
             android:id="@+id/llChangePassword"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"
-            android:background="@drawable/shape_click_transparent"
+            android:background="@drawable/trp_shape_click_transparent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp">
@@ -79,7 +79,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="@dimen/_16sdp"
                 android:layout_height="@dimen/_16sdp"
-                app:srcCompat="@drawable/ic_password" />
+                app:srcCompat="@drawable/trp_ic_password" />
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
@@ -93,7 +93,7 @@
             android:id="@+id/llHelp"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"
-            android:background="@drawable/shape_click_transparent"
+            android:background="@drawable/trp_shape_click_transparent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp">
@@ -101,7 +101,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="@dimen/_16sdp"
                 android:layout_height="@dimen/_16sdp"
-                app:srcCompat="@drawable/ic_help" />
+                app:srcCompat="@drawable/trp_ic_help" />
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
@@ -115,7 +115,7 @@
             android:id="@+id/llAbout"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_40sdp"
-            android:background="@drawable/shape_click_transparent"
+            android:background="@drawable/trp_shape_click_transparent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp"
@@ -124,7 +124,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="@dimen/_16sdp"
                 android:layout_height="@dimen/_16sdp"
-                app:srcCompat="@drawable/ic_info" />
+                app:srcCompat="@drawable/trp_ic_info" />
 
             <com.tripian.trpcore.util.widget.TextView
                 style="@style/TextBody2"
@@ -147,7 +147,7 @@
         <com.tripian.trpcore.util.widget.ImageView
             android:layout_width="@dimen/_16sdp"
             android:layout_height="@dimen/_16sdp"
-            app:srcCompat="@drawable/ic_logout" />
+            app:srcCompat="@drawable/trp_ic_logout" />
 
         <com.tripian.trpcore.util.widget.TextView
             style="@style/TextBody2"

@@ -46,11 +46,11 @@ class BookedActivityVH(
 
         // Apply conflict styling (no "Time Overlap" text for BookedActivity)
         if (item.hasConflict) {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
         } else {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
         // Title
@@ -82,15 +82,15 @@ class BookedActivityVH(
             Glide.with(binding.ivImage)
                 .load(url)
                 .centerCrop()
-                .placeholder(R.drawable.bg_place_holder_image)
+                .placeholder(R.drawable.trp_bg_place_holder_image)
                 .into(binding.ivImage)
         } ?: run {
-            binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
+            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
 
         // Badge - Confirmed style (green bg, green text)
         binding.tvBadge.text = getLanguage(LanguageConst.CONFIRMED)
-        binding.tvBadge.setBackgroundResource(R.drawable.bg_confirmed_badge)
+        binding.tvBadge.setBackgroundResource(R.drawable.trp_bg_confirmed_badge)
         binding.tvBadge.setTextColor(binding.root.context.getColor(R.color.trp_confirmed_badge_text))
 
         // Travelers - "X Adults, Y Children" format

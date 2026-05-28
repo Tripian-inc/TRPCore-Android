@@ -15,7 +15,7 @@
             android:layout_height="@dimen/_32sdp"
             android:padding="@dimen/_8sdp"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:srcCompat="@drawable/ic_close" />
+            app:srcCompat="@drawable/trp_ic_close" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <WebView

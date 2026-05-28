@@ -14,7 +14,7 @@
         android:orientation="vertical"
         android:gravity="center"
         android:padding="8dp"
-        android:background="@drawable/bg_category_item_selector"
+        android:background="@drawable/trp_bg_category_item_selector"
         android:layout_margin="4dp">
 
         <ImageView
@@ -22,7 +22,7 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:tint="@color/trp_text_primary"
-            tools:src="@drawable/ic_local_experience"/>
+            tools:src="@drawable/trp_ic_local_experience"/>
 
         <TextView
             android:id="@+id/tvTitle"

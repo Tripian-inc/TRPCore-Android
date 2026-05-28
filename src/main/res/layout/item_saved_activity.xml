@@ -12,7 +12,7 @@
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginStart="16dp"
-        android:background="@drawable/bg_icon_container_circle"
+        android:background="@drawable/trp_bg_icon_container_circle"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
@@ -22,7 +22,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_gravity="center"
-            android:src="@drawable/ic_starting_point_pin"
+            android:src="@drawable/trp_ic_starting_point_pin"
             app:tint="@color/trp_text_primary" />
 
     </FrameLayout>

@@ -49,11 +49,11 @@ class ManualPoiVH(
 
         // Apply conflict styling
         if (item.hasConflict) {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container_conflict)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
         } else {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.bg_order_time_container)
-            binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
         // Title - semibold 16px primaryText
@@ -83,10 +83,10 @@ class ManualPoiVH(
             Glide.with(binding.ivImage)
                 .load(url)
                 .centerCrop()
-                .placeholder(R.drawable.bg_place_holder_image)
+                .placeholder(R.drawable.trp_bg_place_holder_image)
                 .into(binding.ivImage)
         } ?: run {
-            binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
+            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
 
         // Rating Row - Bold 14px rating, star icon 12x12, Light 14px fgWeak review count

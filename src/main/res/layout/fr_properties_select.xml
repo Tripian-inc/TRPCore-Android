@@ -17,7 +17,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_oval_gray"
+            android:background="@drawable/trp_bg_oval_gray"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp"
@@ -26,7 +26,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:srcCompat="@drawable/ic_select_date" />
+                app:srcCompat="@drawable/trp_ic_select_date" />
 
             <LinearLayout
                 android:id="@+id/llArrivalDate"
@@ -105,7 +105,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_16sdp"
-            android:background="@drawable/bg_oval_gray"
+            android:background="@drawable/trp_bg_oval_gray"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp"
@@ -114,7 +114,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:srcCompat="@drawable/ic_select_date" />
+                app:srcCompat="@drawable/trp_ic_select_date" />
 
             <LinearLayout
                 android:id="@+id/llDepartureDate"
@@ -194,7 +194,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_16sdp"
-            android:background="@drawable/bg_oval_gray"
+            android:background="@drawable/trp_bg_oval_gray"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp"
@@ -203,7 +203,7 @@
             <com.tripian.trpcore.util.widget.ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:srcCompat="@drawable/ic_select_companion" />
+                app:srcCompat="@drawable/trp_ic_select_companion" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvPassengerCount"
@@ -249,7 +249,7 @@
                     <com.tripian.trpcore.util.widget.ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/ic_select_traveler" />
+                        app:srcCompat="@drawable/trp_ic_select_traveler" />
 
                     <com.tripian.trpcore.util.widget.TextView
                         android:id="@+id/tvCompanions"
@@ -267,7 +267,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                app:srcCompat="@drawable/ic_arrow_right_gray" />
+                app:srcCompat="@drawable/trp_ic_arrow_right_gray" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -305,7 +305,7 @@
                     <com.tripian.trpcore.util.widget.ImageView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/ic_select_hotel" />
+                        app:srcCompat="@drawable/trp_ic_select_hotel" />
 
                     <com.tripian.trpcore.util.widget.TextView
                         android:id="@+id/tvHotel"
@@ -328,7 +328,7 @@
                 android:layout_alignBottom="@+id/llStay"
                 android:visibility="gone"
                 android:padding="@dimen/_8sdp"
-                app:srcCompat="@drawable/ic_close_black" />
+                app:srcCompat="@drawable/trp_ic_close_black" />
 
             <com.tripian.trpcore.util.widget.ImageView
                 android:id="@+id/imArrow"
@@ -337,7 +337,7 @@
                 android:layout_alignParentEnd="true"
                 android:visibility="visible"
                 android:layout_centerVertical="true"
-                app:srcCompat="@drawable/ic_arrow_right_gray" />
+                app:srcCompat="@drawable/trp_ic_arrow_right_gray" />
         </RelativeLayout>
     </LinearLayout>
 </LinearLayout>

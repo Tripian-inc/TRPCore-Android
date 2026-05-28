@@ -32,7 +32,7 @@ class ConflictWarningView @JvmOverloads constructor(
 
     init {
         background = androidx.core.content.ContextCompat.getDrawable(
-            context, R.drawable.bg_conflict_warning
+            context, R.drawable.trp_bg_conflict_warning
         )
         val padding = (4f * resources.displayMetrics.density).toInt()
         setPadding(padding, padding, padding, padding)

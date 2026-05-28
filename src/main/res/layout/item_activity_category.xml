@@ -16,7 +16,7 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         app:tint="@color/category_icon_tint_selector"
-        tools:src="@drawable/ic_all_categories" />
+        tools:src="@drawable/trp_ic_all_categories" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvCategoryName"

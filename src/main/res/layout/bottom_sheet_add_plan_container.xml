@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_bottom_sheet">
+    android:background="@drawable/trp_bg_bottom_sheet">
 
     <!-- Handle Bar -->
     <View
@@ -14,7 +14,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle"/>
+        android:background="@drawable/trp_bg_drag_handle"/>
 
     <!-- ==================== -->
     <!-- HEADER (44dp)        -->
@@ -35,7 +35,7 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/trp_ic_back"
             android:contentDescription="Back"
             android:visibility="gone"
             tools:visibility="visible"/>
@@ -60,7 +60,7 @@
             android:layout_centerVertical="true"
             android:layout_marginEnd="8dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/trp_ic_close"
             android:contentDescription="Close"/>
 
     </RelativeLayout>

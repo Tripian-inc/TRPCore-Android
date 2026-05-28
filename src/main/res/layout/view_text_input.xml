@@ -12,7 +12,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/_51sdp"
-        android:background="@drawable/bg_text_input_view"
+        android:background="@drawable/trp_bg_text_input_view"
         android:paddingStart="@dimen/_18sdp"
         android:paddingEnd="@dimen/_4sdp"
         android:paddingVertical="@dimen/_9sdp">

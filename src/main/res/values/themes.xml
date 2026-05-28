@@ -159,7 +159,7 @@
     </style>
 
     <style name="TrpTimelineBottomSheet" parent="Widget.Design.BottomSheet.Modal">
-        <item name="android:background">@drawable/bg_bottom_sheet</item>
+        <item name="android:background">@drawable/trp_bg_bottom_sheet</item>
     </style>
 
     <!-- AddPlan Continue Button Style -->

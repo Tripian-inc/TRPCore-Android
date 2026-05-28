@@ -10,7 +10,7 @@
         style="@style/TextHeader2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_56sdp"
-        android:background="@drawable/bg_rounded_top_white"
+        android:background="@drawable/trp_bg_rounded_top_white"
         android:gravity="center"
         android:paddingTop="@dimen/_16sdp" />
 
@@ -37,7 +37,7 @@
             android:layout_marginTop="@dimen/_16sdp"
             android:layout_marginEnd="@dimen/_24sdp"
             android:layout_marginBottom="@dimen/_16sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:textColor="@color/trp_white" />
     </FrameLayout>
 </RelativeLayout>

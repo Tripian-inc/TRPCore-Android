@@ -45,7 +45,7 @@
                 app:layout_constraintBottom_toBottomOf="@+id/tvName"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@+id/tvName"
-                app:srcCompat="@drawable/ic_delete_new" />
+                app:srcCompat="@drawable/trp_ic_delete_new" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </com.tripian.trpcore.util.widget.CardView>

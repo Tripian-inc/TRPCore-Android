@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet"
+    android:background="@drawable/trp_bg_bottom_sheet"
     android:orientation="vertical"
     android:paddingBottom="@dimen/_24sdp">
 
@@ -14,7 +14,7 @@
         android:layout_height="@dimen/_3sdp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle" />
+        android:background="@drawable/trp_bg_drag_handle" />
 
     <!-- Header: Title + Close Button -->
     <FrameLayout
@@ -39,7 +39,7 @@
             android:layout_height="@dimen/_24sdp"
             android:padding="7dp"
             android:layout_gravity="end|center_vertical"
-            android:src="@drawable/ic_close" />
+            android:src="@drawable/trp_ic_close" />
     </FrameLayout>
 
     <!-- Price Section -->

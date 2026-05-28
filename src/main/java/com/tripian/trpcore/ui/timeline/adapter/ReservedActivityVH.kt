@@ -56,18 +56,18 @@ class ReservedActivityVH(
         when {
             item.isAvailabilityExpired -> {
                 binding.orderTimeContainer
-                    .setBackgroundResource(R.drawable.bg_order_time_container_expired)
-                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_expired)
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container_expired)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
             }
             item.hasConflict -> {
                 binding.orderTimeContainer
-                    .setBackgroundResource(R.drawable.bg_order_time_container_conflict)
-                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_conflict)
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
             }
             else -> {
                 binding.orderTimeContainer
-                    .setBackgroundResource(R.drawable.bg_order_time_container)
-                binding.tvOrder.setBackgroundResource(R.drawable.bg_step_order_new)
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
             }
         }
 
@@ -103,10 +103,10 @@ class ReservedActivityVH(
             Glide.with(binding.ivImage)
                 .load(url)
                 .centerCrop()
-                .placeholder(R.drawable.bg_place_holder_image)
+                .placeholder(R.drawable.trp_bg_place_holder_image)
                 .into(binding.ivImage)
         } ?: run {
-            binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
+            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
 
         // Rating Row - from additionalData (hide if no data)

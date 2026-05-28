@@ -12,7 +12,7 @@
         android:layout_width="162dp"
         android:layout_height="162dp"
         android:contentDescription="No City Available"
-        android:src="@drawable/im_no_city"
+        android:src="@drawable/trp_im_no_city"
         app:layout_constraintBottom_toTopOf="@id/tvTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

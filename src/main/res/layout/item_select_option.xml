@@ -33,7 +33,7 @@
         android:layout_width="@dimen/_24sdp"
         android:layout_height="@dimen/_50sdp"
         android:layout_alignParentEnd="true"
-        app:srcCompat="@drawable/ic_check_new" />
+        app:srcCompat="@drawable/trp_ic_check_new" />
 
 <!--    <View-->
 <!--        android:id="@+id/viLine"-->

@@ -12,7 +12,7 @@
         android:id="@+id/orderTimeContainer"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
-        android:background="@drawable/bg_order_time_container"
+        android:background="@drawable/trp_bg_order_time_container"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -22,7 +22,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_marginStart="6dp"
-            android:background="@drawable/bg_step_order_new"
+            android:background="@drawable/trp_bg_step_order_new"
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
@@ -111,7 +111,7 @@
                     android:layout_marginStart="8dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Remove"
-                    android:src="@drawable/ic_remove_step" />
+                    android:src="@drawable/trp_ic_remove_step" />
 
             </LinearLayout>
 
@@ -121,7 +121,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="@drawable/bg_activity_badge"
+                android:background="@drawable/trp_bg_activity_badge"
                 android:fontFamily="@font/medium"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="2dp"
@@ -186,7 +186,7 @@
                     android:layout_width="12dp"
                     android:layout_height="12dp"
                     android:contentDescription="Rating"
-                    android:src="@drawable/ic_star" />
+                    android:src="@drawable/trp_ic_star" />
 
                 <TextView
                     android:id="@+id/tvRating"

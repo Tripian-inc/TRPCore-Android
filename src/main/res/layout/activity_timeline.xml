@@ -22,7 +22,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:contentDescription="Back"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/trp_ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -75,10 +75,10 @@
                     android:id="@+id/ivHeartBg"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:background="@drawable/bg_circle_pink"
+                    android:background="@drawable/trp_bg_circle_pink"
                     android:contentDescription="Heart"
                     android:padding="10dp"
-                    android:src="@drawable/ic_heart" />
+                    android:src="@drawable/trp_ic_heart" />
 
                 <!-- Badge -->
                 <TextView
@@ -86,7 +86,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_gravity="bottom|end"
-                    android:background="@drawable/bg_circle_primary"
+                    android:background="@drawable/trp_bg_circle_primary"
                     android:fontFamily="@font/semibold"
                     android:gravity="center"
                     android:includeFontPadding="false"
@@ -118,7 +118,7 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:contentDescription="Go"
-                android:src="@drawable/ic_saved_plans_next"
+                android:src="@drawable/trp_ic_saved_plans_next"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -222,7 +222,7 @@
         android:textSize="12sp"
         android:visibility="gone"
         app:cornerRadius="20dp"
-        app:icon="@drawable/ic_near_me"
+        app:icon="@drawable/trp_ic_near_me"
         app:iconTint="@color/trp_timeline_primary"
         app:layout_constraintBottom_toTopOf="@id/fabAddPlan"
         app:layout_constraintStart_toStartOf="parent"
@@ -245,7 +245,7 @@
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:contentDescription="Empty"
-            android:src="@drawable/ic_empty_timeline" />
+            android:src="@drawable/trp_ic_empty_timeline" />
 
         <TextView
             android:id="@+id/tvEmptyTitle"
@@ -286,7 +286,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:contentDescription="Map"
-        android:src="@drawable/ic_map"
+        android:src="@drawable/trp_ic_map"
         app:backgroundTint="@color/trp_text_primary"
         app:elevation="4dp"
         app:fabCustomSize="56dp"
@@ -304,7 +304,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="32dp"
         android:contentDescription="Add Plan"
-        android:src="@drawable/ic_plus_bold"
+        android:src="@drawable/trp_ic_plus_bold"
         app:backgroundTint="@color/trp_primary"
         app:elevation="4dp"
         app:fabCustomSize="56dp"
@@ -322,7 +322,7 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:contentDescription="List"
-        android:src="@drawable/ic_list"
+        android:src="@drawable/trp_ic_list"
         android:visibility="gone"
         app:backgroundTint="@color/trp_text_primary"
         app:elevation="4dp"

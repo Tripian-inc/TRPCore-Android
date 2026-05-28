@@ -44,9 +44,9 @@ class FRPoiView :
 
         observe(viewModel.onShowAddListener) {
             if (it!!) {
-                binding.imAction.setImageResource(R.drawable.ic_plus_box_black)
+                binding.imAction.setImageResource(R.drawable.trp_ic_plus_box_black)
             } else {
-                binding.imAction.setImageResource(R.drawable.ic_minus_box_red)
+                binding.imAction.setImageResource(R.drawable.trp_ic_minus_box_red)
             }
 
             binding.imAction.visibility = View.VISIBLE
@@ -68,7 +68,7 @@ class FRPoiView :
             if (!TextUtils.isEmpty(it?.image)) {
                 Glide.with(requireContext()).load(it?.image?.toSmallUrl())
                     .apply(RequestOptions().circleCrop())
-                    .placeholder(ContextCompat.getDrawable(requireContext(), R.drawable.bg_place_holder_image))
+                    .placeholder(ContextCompat.getDrawable(requireContext(), R.drawable.trp_bg_place_holder_image))
                     .into(binding.imPoi)
             }
 

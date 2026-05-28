@@ -27,7 +27,7 @@
                 android:layout_marginTop="@dimen/_20sdp"
                 android:clickable="true"
                 android:focusable="true"
-                app:srcCompat="@drawable/ic_create_trip_back" />
+                app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -48,7 +48,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/_4sdp"
-                    app:srcCompat="@drawable/im_line" />
+                    app:srcCompat="@drawable/trp_im_line" />
             </LinearLayout>
 
             <LinearLayout
@@ -58,7 +58,7 @@
                 android:layout_marginHorizontal="@dimen/_28sdp"
                 android:layout_marginTop="@dimen/_76sdp"
                 android:animateLayoutChanges="true"
-                android:background="@drawable/bg_oval_gray_without_line"
+                android:background="@drawable/trp_bg_oval_gray_without_line"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="@dimen/_16sdp"
@@ -105,8 +105,8 @@
                     android:layout_marginHorizontal="@dimen/_12sdp"
                     android:layout_marginTop="@dimen/_16sdp"
                     android:layout_toStartOf="@+id/btnCancel"
-                    android:background="@drawable/bg_oval_gray"
-                    android:drawableStart="@drawable/ic_search_gray"
+                    android:background="@drawable/trp_bg_oval_gray"
+                    android:drawableStart="@drawable/trp_ic_search_gray"
                     android:drawablePadding="@dimen/_8sdp"
                     android:paddingStart="@dimen/_10sdp"
                     android:paddingEnd="@dimen/_10sdp" />

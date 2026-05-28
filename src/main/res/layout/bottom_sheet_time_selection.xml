@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet_white"
+    android:background="@drawable/trp_bg_bottom_sheet_white"
     android:orientation="vertical"
     android:paddingBottom="24dp">
 
@@ -14,7 +14,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle" />
+        android:background="@drawable/trp_bg_drag_handle" />
 
     <!-- Header -->
     <RelativeLayout
@@ -37,7 +37,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:padding="7dp"
-            android:src="@drawable/ic_close" />
+            android:src="@drawable/trp_ic_close" />
 
     </RelativeLayout>
 
@@ -67,7 +67,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="24dp"
-        android:background="@drawable/bg_selection_field"
+        android:background="@drawable/trp_bg_selection_field"
         android:clickable="true"
         android:focusable="true">
 
@@ -89,7 +89,7 @@
             android:layout_gravity="center_vertical|end"
             android:layout_marginEnd="16dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_next"
+            android:src="@drawable/trp_ic_next"
             app:tint="@color/trp_fgWeak" />
     </FrameLayout>
 
@@ -113,7 +113,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="24dp"
-        android:background="@drawable/bg_selection_field"
+        android:background="@drawable/trp_bg_selection_field"
         android:clickable="true"
         android:focusable="true">
 
@@ -135,7 +135,7 @@
             android:layout_gravity="center_vertical|end"
             android:layout_marginEnd="16dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_next"
+            android:src="@drawable/trp_ic_next"
             app:tint="@color/trp_fgWeak" />
     </FrameLayout>
 

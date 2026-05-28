@@ -10,7 +10,7 @@
         style="@style/TextHeader2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_36sdp"
-        android:background="@drawable/bg_rounded_top_white"
+        android:background="@drawable/trp_bg_rounded_top_white"
         android:gravity="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -89,7 +89,7 @@
                 style="@style/TextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
-                android:background="@drawable/bg_oval_gray_without_line"
+                android:background="@drawable/trp_bg_oval_gray_without_line"
                 android:imeOptions="actionNext"
                 android:inputType="textPersonName|textCapWords"
                 android:maxLength="50"
@@ -111,7 +111,7 @@
                 style="@style/TextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
-                android:background="@drawable/bg_oval_gray_without_line"
+                android:background="@drawable/trp_bg_oval_gray_without_line"
                 android:imeOptions="actionDone"
                 android:inputType="number"
                 android:maxLength="2"
@@ -158,7 +158,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/_16sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:textColor="@color/trp_white" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

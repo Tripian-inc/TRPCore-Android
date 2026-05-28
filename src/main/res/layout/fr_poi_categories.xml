@@ -11,7 +11,7 @@
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_36sdp"
-        android:src="@drawable/bg_rounded_top_white"
+        android:src="@drawable/trp_bg_rounded_top_white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -80,7 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/_8sdp"
                 android:layout_weight="1"
-                android:background="@drawable/selector_button_second"
+                android:background="@drawable/trp_selector_button_second"
                 android:textColor="@color/trp_primary" />
 
             <com.tripian.trpcore.util.widget.Button
@@ -90,7 +90,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
                 android:layout_weight="1"
-                android:background="@drawable/selector_button_primary"
+                android:background="@drawable/trp_selector_button_primary"
                 android:textColor="@color/trp_white"
                 tools:text="asd" />
         </LinearLayout>
@@ -115,7 +115,7 @@
     <!--            android:layout_width="match_parent"-->
     <!--            android:layout_height="wrap_content"-->
     <!--            android:layout_marginBottom="@dimen/_16sdp"-->
-    <!--            android:background="@drawable/selector_button_primary"-->
+    <!--            android:background="@drawable/trp_selector_button_primary"-->
     <!--            android:text="@string/apply"-->
     <!--            android:textColor="@color/trp_white" />-->
     <!--    </LinearLayout>-->

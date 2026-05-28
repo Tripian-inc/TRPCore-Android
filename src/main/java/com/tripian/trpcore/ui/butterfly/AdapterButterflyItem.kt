@@ -94,8 +94,8 @@ abstract class AdapterButterflyItem constructor(val context: Context, val items:
                 imLike.visibility = View.VISIBLE
                 imDislike.visibility = View.VISIBLE
 
-                imLike.setImageResource(R.drawable.ic_like)
-                imDislike.setImageResource(R.drawable.ic_dislike)
+                imLike.setImageResource(R.drawable.trp_ic_like)
+                imDislike.setImageResource(R.drawable.trp_ic_dislike)
 
                 imLike.setOnClickListener {
                     item.isLikeSelected = true
@@ -122,7 +122,7 @@ abstract class AdapterButterflyItem constructor(val context: Context, val items:
 
                 if (item.isLikeSelected) {
                     imLike.visibility = View.VISIBLE
-                    imLike.setImageResource(R.drawable.ic_like_selected)
+                    imLike.setImageResource(R.drawable.trp_ic_like_selected)
                     imDislike.visibility = View.GONE
 
                     cvTop.visibility = View.GONE
@@ -142,7 +142,7 @@ abstract class AdapterButterflyItem constructor(val context: Context, val items:
                 } else if (item.isDislikeSelected) {
                     imLike.visibility = View.GONE
                     imDislike.visibility = View.VISIBLE
-                    imDislike.setImageResource(R.drawable.ic_dislike_selected)
+                    imDislike.setImageResource(R.drawable.trp_ic_dislike_selected)
 
                     if (item.isClosed) {
                         cvTop.visibility = View.GONE

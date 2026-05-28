@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="16dp"
-    android:background="@drawable/bg_poi_feature_tag"
+    android:background="@drawable/trp_bg_poi_feature_tag"
     android:fontFamily="@font/medium"
     android:paddingHorizontal="12dp"
     android:paddingVertical="6dp"

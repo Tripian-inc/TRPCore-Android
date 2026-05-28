@@ -23,7 +23,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:contentDescription="Back"
-            android:src="@drawable/ic_back"
+            android:src="@drawable/trp_ic_back"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

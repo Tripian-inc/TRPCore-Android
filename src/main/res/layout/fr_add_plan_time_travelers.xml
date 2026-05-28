@@ -70,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
-                android:background="@drawable/bg_selection_field"
+                android:background="@drawable/trp_bg_selection_field"
                 android:clickable="true"
                 android:focusable="true">
 
@@ -91,7 +91,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="center_vertical|end"
                     android:layout_marginEnd="16dp"
-                    android:src="@drawable/ic_next"
+                    android:src="@drawable/trp_ic_next"
                     app:tint="@color/trp_fgWeak"/>
 
             </FrameLayout>
@@ -129,7 +129,7 @@
             android:layout_height="40dp"
             android:layout_marginTop="16dp"
             android:layout_marginHorizontal="16dp"
-            android:background="@drawable/bg_selection_field"
+            android:background="@drawable/trp_bg_selection_field"
             android:clickable="true"
             android:focusable="true">
 
@@ -152,7 +152,7 @@
                 android:layout_height="24dp"
                 android:layout_gravity="center_vertical|end"
                 android:layout_marginEnd="16dp"
-                android:src="@drawable/ic_next"
+                android:src="@drawable/trp_ic_next"
                 app:tint="@color/trp_fgWeak"/>
 
         </FrameLayout>
@@ -204,7 +204,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_selection_field"
+                    android:background="@drawable/trp_bg_selection_field"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -225,7 +225,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical|end"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_next"
+                        android:src="@drawable/trp_ic_next"
                         app:tint="@color/trp_fgWeak"/>
 
                 </FrameLayout>
@@ -254,7 +254,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_selection_field"
+                    android:background="@drawable/trp_bg_selection_field"
                     android:clickable="true"
                     android:focusable="true">
 
@@ -275,7 +275,7 @@
                         android:layout_height="24dp"
                         android:layout_gravity="center_vertical|end"
                         android:layout_marginEnd="16dp"
-                        android:src="@drawable/ic_next"
+                        android:src="@drawable/trp_ic_next"
                         app:tint="@color/trp_fgWeak"/>
 
                 </FrameLayout>
@@ -324,8 +324,8 @@
                 android:id="@+id/btnMinus"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:background="@drawable/bg_circle_button"
-                android:src="@drawable/ic_minus"
+                android:background="@drawable/trp_bg_circle_button"
+                android:src="@drawable/trp_ic_minus"
                 android:contentDescription="Decrease"
                 app:tint="@color/trp_fgWeak" />
 
@@ -345,8 +345,8 @@
                 android:id="@+id/btnPlus"
                 android:layout_width="32dp"
                 android:layout_height="32dp"
-                android:background="@drawable/bg_circle_button"
-                android:src="@drawable/ic_increase"
+                android:background="@drawable/trp_bg_circle_button"
+                android:src="@drawable/trp_ic_increase"
                 android:contentDescription="Increase"
                 app:tint="@color/trp_fgWeak" />
 

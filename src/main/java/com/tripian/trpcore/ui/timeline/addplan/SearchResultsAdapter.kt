@@ -41,7 +41,7 @@ class SearchResultsAdapter(
         }
 
         fun bind(place: PlaceAutocomplete) {
-            binding.ivIcon.setImageResource(R.drawable.ic_location_pin)
+            binding.ivIcon.setImageResource(R.drawable.trp_ic_location_pin)
             binding.tvName.text = place.area ?: ""
             binding.tvLocation.text = place.address ?: ""
         }

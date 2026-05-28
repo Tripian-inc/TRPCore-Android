@@ -48,11 +48,11 @@ abstract class AdapterOptionsMultiple constructor(val context: Context, val item
             tvName.text = item.name
 
             if (selectedItems.containsKey(position) && selectedItems[position]!!) {
-                imCheck.setImageResource(R.drawable.ic_check_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_new)
 
                 rvInnerList.visibility = View.VISIBLE
             } else {
-                imCheck.setImageResource(R.drawable.ic_check_empty_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
 
                 rvInnerList.visibility = View.GONE
             }

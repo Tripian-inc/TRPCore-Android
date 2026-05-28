@@ -48,11 +48,11 @@ abstract class AdapterCreateTripBoxAnswer(val context: Context, val items: List<
             tvDescription.text = item.description
 
             if (selectedItem == position) {
-                rlBackground.setBackgroundResource(R.drawable.bg_oval_light_red_without_line)
-                imCheck.setImageResource(R.drawable.ic_check_circle)
+                rlBackground.setBackgroundResource(R.drawable.trp_bg_oval_light_red_without_line)
+                imCheck.setImageResource(R.drawable.trp_ic_check_circle)
             } else {
-                rlBackground.setBackgroundResource(R.drawable.bg_oval_transparent)
-                imCheck.setImageResource(R.drawable.ic_check_empty_circle)
+                rlBackground.setBackgroundResource(R.drawable.trp_bg_oval_transparent)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_circle)
             }
 
             itemView.tag = position

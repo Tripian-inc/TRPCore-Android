@@ -76,7 +76,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_18sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:paddingHorizontal="@dimen/_18sdp"
             android:textAllCaps="false"
             android:textColor="@color/trp_white"
@@ -117,7 +117,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/_31sdp"
             android:layout_marginHorizontal="@dimen/_36sdp"
-            android:background="@drawable/selector_button_grey"
+            android:background="@drawable/trp_selector_button_grey"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -127,7 +127,7 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="@dimen/_1sdp"
                 android:elevation="@dimen/_12sdp"
-                app:srcCompat="@drawable/ic_google" />
+                app:srcCompat="@drawable/trp_ic_google" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvGoogle"

@@ -11,7 +11,7 @@
         android:id="@+id/btnBack"
         android:layout_width="44dp"
         android:layout_height="44dp"
-        android:src="@drawable/ic_back_timeline"
+        android:src="@drawable/trp_ic_back_timeline"
         android:padding="10dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Back"
@@ -30,7 +30,7 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingHorizontal="12dp"
-        android:background="@drawable/bg_search_bar"
+        android:background="@drawable/trp_bg_search_bar"
         app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBack"
@@ -39,7 +39,7 @@
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/ic_search_gray"
+            android:src="@drawable/trp_ic_search_gray"
             app:tint="@color/trp_fgWeak"
             android:contentDescription="Search" />
 
@@ -63,7 +63,7 @@
             android:id="@+id/ivClearSearch"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/trp_ic_close"
             android:visibility="gone"
             android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="@color/trp_fgWeak"
@@ -97,7 +97,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_location"
+                android:src="@drawable/trp_ic_location"
                 app:tint="@color/trp_text_primary" />
 
             <TextView
@@ -126,7 +126,7 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_city_center"
+                android:src="@drawable/trp_ic_city_center"
                 app:tint="@color/trp_text_primary" />
 
             <TextView

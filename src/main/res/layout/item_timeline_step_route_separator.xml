@@ -17,7 +17,7 @@
         android:layout_width="14dp"
         android:layout_height="14dp"
         android:contentDescription="Transport Mode"
-        android:src="@drawable/ic_itinerary_walk"
+        android:src="@drawable/trp_ic_itinerary_walk"
         app:tint="#8C8C8C" />
 
     <!-- Route Info Text (e.g., "5 min (1,2 km)") -->
