@@ -61,7 +61,7 @@
     <style name="TrpDefaultNumberPickerTheme" parent="TrpAppTheme">
         <item name="colorControlNormal">@color/trp_ultra_light_grey</item>
         <item name="android:fontFamily">@font/semibold</item>
-        <item name="android:textSize">@dimen/text_size_headline</item>
+        <item name="android:textSize">@dimen/trp_text_size_headline</item>
         <item name="android:textColor">@color/trp_black87</item>
     </style>
 

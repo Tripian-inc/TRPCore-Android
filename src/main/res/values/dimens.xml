@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="text_display">20sp</dimen>
-    <dimen name="text_header_1">16sp</dimen>
-    <dimen name="text_header_2">16sp</dimen>
-    <dimen name="text_body_1">16sp</dimen>
-    <dimen name="text_body_2">14sp</dimen>
-    <dimen name="text_body_3">12sp</dimen>
-    <dimen name="text_button">14sp</dimen>
+    <dimen name="trp_text_display">20sp</dimen>
+    <dimen name="trp_text_header_1">16sp</dimen>
+    <dimen name="trp_text_header_2">16sp</dimen>
+    <dimen name="trp_text_body_1">16sp</dimen>
+    <dimen name="trp_text_body_2">14sp</dimen>
+    <dimen name="trp_text_body_3">12sp</dimen>
+    <dimen name="trp_text_button">14sp</dimen>
 
-    <dimen name="text_size_display_2">32sp</dimen>
-    <dimen name="text_size_display_1">29sp</dimen>
-    <dimen name="text_size_headline">24sp</dimen>
-    <dimen name="text_size_title_2">21sp</dimen>
-    <dimen name="text_size_title_1">18sp</dimen>
-    <dimen name="text_size_subhead">15sp</dimen>
-    <dimen name="text_size_form_field">15sp</dimen>
-    <dimen name="text_size_caption_2">11sp</dimen>
-    <dimen name="text_size_caption_1">12sp</dimen>
+    <dimen name="trp_text_size_display_2">32sp</dimen>
+    <dimen name="trp_text_size_display_1">29sp</dimen>
+    <dimen name="trp_text_size_headline">24sp</dimen>
+    <dimen name="trp_text_size_title_2">21sp</dimen>
+    <dimen name="trp_text_size_title_1">18sp</dimen>
+    <dimen name="trp_text_size_subhead">15sp</dimen>
+    <dimen name="trp_text_size_form_field">15sp</dimen>
+    <dimen name="trp_text_size_caption_2">11sp</dimen>
+    <dimen name="trp_text_size_caption_1">12sp</dimen>
 
     <!-- AddPlan Flow -->
-    <dimen name="category_grid_spacing">8dp</dimen>
-    <dimen name="corner_radius_3dp">3dp</dimen>
-    <dimen name="corner_radius_8dp">8dp</dimen>
+    <dimen name="trp_category_grid_spacing">8dp</dimen>
+    <dimen name="trp_corner_radius_3dp">3dp</dimen>
+    <dimen name="trp_corner_radius_8dp">8dp</dimen>
 
     <!-- POI Detail -->
-    <dimen name="poi_indicator_active_width">14dp</dimen>
-    <dimen name="poi_indicator_inactive_size">8dp</dimen>
-    <dimen name="poi_indicator_margin">4dp</dimen>
-    <dimen name="poi_product_card_corner_radius">8dp</dimen>
+    <dimen name="trp_poi_indicator_active_width">14dp</dimen>
+    <dimen name="trp_poi_indicator_inactive_size">8dp</dimen>
+    <dimen name="trp_poi_indicator_margin">4dp</dimen>
+    <dimen name="trp_poi_product_card_corner_radius">8dp</dimen>
 
     <!-- Timeline FAB and Bottom List -->
-    <dimen name="fab_bottom_margin">32dp</dimen>
-    <dimen name="map_bottom_list_padding">32dp</dimen>
+    <dimen name="trp_fab_bottom_margin">32dp</dimen>
+    <dimen name="trp_map_bottom_list_padding">32dp</dimen>
 </resources>

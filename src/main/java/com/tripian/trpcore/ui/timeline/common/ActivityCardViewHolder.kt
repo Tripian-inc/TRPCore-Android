@@ -62,7 +62,7 @@ class ActivityCardViewHolder(
 
     private fun bindImage(imageUrl: String?) {
         if (!imageUrl.isNullOrEmpty()) {
-            val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.corner_radius_8dp)
+            val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_corner_radius_8dp)
             Glide.with(binding.ivActivityImage)
                 .load(imageUrl)
                 .transform(CenterCrop(), RoundedCorners(cornerRadius))

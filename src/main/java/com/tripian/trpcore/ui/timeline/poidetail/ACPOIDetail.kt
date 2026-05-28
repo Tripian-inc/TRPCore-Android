@@ -327,13 +327,13 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         for (i in 0 until count) {
             val dot = View(this).apply {
                 val size = if (i == 0) {
-                    resources.getDimensionPixelSize(R.dimen.poi_indicator_active_width)
+                    resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_active_width)
                 } else {
-                    resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                    resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
                 }
-                val height = resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                val height = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
                 layoutParams = android.widget.LinearLayout.LayoutParams(size, height).apply {
-                    marginEnd = resources.getDimensionPixelSize(R.dimen.poi_indicator_margin)
+                    marginEnd = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_margin)
                 }
                 background = if (i == 0) {
                     ContextCompat.getDrawable(context, R.drawable.trp_bg_poi_page_indicator_active)
@@ -350,13 +350,13 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             val dot = binding.llPageIndicator.getChildAt(i)
             val isActive = i == position
             val size = if (isActive) {
-                resources.getDimensionPixelSize(R.dimen.poi_indicator_active_width)
+                resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_active_width)
             } else {
-                resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
             }
-            val height = resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+            val height = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
             dot.layoutParams = android.widget.LinearLayout.LayoutParams(size, height).apply {
-                marginEnd = resources.getDimensionPixelSize(R.dimen.poi_indicator_margin)
+                marginEnd = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_margin)
             }
             dot.background = if (isActive) {
                 ContextCompat.getDrawable(this, R.drawable.trp_bg_poi_page_indicator_active)
