@@ -80,23 +80,30 @@ class MapBoxRouteCalculator {
      * @param destination the destination of the route
      * @param points      the list of Points for which refers to the route points.
      */
-    fun calculate(origin: Point?, destination: Point?, points: List<Point?>?) {
-        val routeOptions = RouteOptions.builder()
+    fun calculate(
+        origin: Point?,
+        destination: Point?,
+        points: List<Point?>?,
+        alternatives: Boolean = false,
+        excludeFerry: Boolean = false
+    ) {
+        val routeOptionsBuilder = RouteOptions.builder()
             .overview(DirectionsCriteria.OVERVIEW_FULL)
             .profile(getDirectionsCriteria(directionProfile))
             .steps(true)
             .coordinatesList(points!!)
-            .build()
-        //        if (points != null) {
-//            for (Point point : points) {
-//                builder.addWaypoint(point);
-//            }
-//        }
+
+        if (alternatives) {
+            routeOptionsBuilder.alternatives(true)
+        }
+        if (excludeFerry) {
+            routeOptionsBuilder.exclude(DirectionsCriteria.EXCLUDE_FERRY)
+        }
+
+        val routeOptions = routeOptionsBuilder.build()
+
         mdRoute = MapboxDirections.builder()
-            .routeOptions(routeOptions) //                .origin(origin)
-            //                .overview(DirectionsCriteria.OVERVIEW_FULL)
-            //                .profile(getDirectionsCriteria(directionProfile))
-            //                .steps(true)
+            .routeOptions(routeOptions)
             .accessToken(TRPCore.mapBoxApiKey).build()
         mdRoute?.enqueueCall(object : Callback<DirectionsResponse?> {
             override fun onResponse(
@@ -107,7 +114,7 @@ class MapBoxRouteCalculator {
                     if (isErrorContainsNoRoute(response) && routeErrorStatus === DirectionErrorStatus.NONE) {
                         directionProfile = DirectionProfile.AUTOMOBILE
                         routeErrorStatus = DirectionErrorStatus.WALKING
-                        calculate(origin, destination, points)
+                        calculate(origin, destination, points, alternatives, excludeFerry)
                         return
                     }
                     if (routeErrorStatus === DirectionErrorStatus.WALKING) {
@@ -116,13 +123,10 @@ class MapBoxRouteCalculator {
                         val newWayPoints = calculateNewWayPoints(
                             response.body()!!.routes()[0].legs()
                         )
-                        calculate(origin, destination, newWayPoints)
+                        calculate(origin, destination, newWayPoints, alternatives, excludeFerry)
                         return
                     }
                     if (isErrorContainsNoRoute(response)) {
-//                        Toast.makeText(context, "NO ROUTE", Toast.LENGTH_SHORT).show();
-//                        DialogUtil.showErrorDialog((Activity) context, context.getString(R.string.route_error_mapbox));
-                        // TODO:
                         onLoadListener!!.onMapBoxError("No route")
                         return
                     }
@@ -132,6 +136,57 @@ class MapBoxRouteCalculator {
 
             override fun onFailure(call: Call<DirectionsResponse?>, t: Throwable) {
                 onLoadListener!!.onMapBoxError(t.message)
+            }
+        })
+    }
+
+    /**
+     * Cancel any in-flight Mapbox Directions request.
+     * Safe to call multiple times; no-op if no active call.
+     */
+    fun cancel() {
+        mdRoute?.cancelCall()
+    }
+
+    /**
+     * Single batch request. No walking→automobile fallback, no recursion, no leg parsing.
+     * Caller receives the raw [DirectionsResponse] (or error) and is responsible for mapping
+     * legs to its own domain model.
+     *
+     * Use this for use cases that need predictable 1-call/1-response behavior — e.g. Timeline
+     * batch route calculation where leg count must match the requested waypoint pairs.
+     *
+     * @param points Full waypoint list (size >= 2). One leg returned per consecutive pair.
+     * @param profile Routing profile; defaults to WALKING (matches iOS TRPRouteCalculator).
+     * @param onResult Callback invoked once with either response body or throwable. Called on Mapbox's
+     *                 callback thread.
+     */
+    fun calculateBatch(
+        points: List<Point>,
+        profile: DirectionProfile = DirectionProfile.WALKING,
+        onResult: (response: DirectionsResponse?, error: Throwable?) -> Unit
+    ) {
+        val routeOptions = RouteOptions.builder()
+            .overview(DirectionsCriteria.OVERVIEW_SIMPLIFIED)
+            .profile(getDirectionsCriteria(profile))
+            .coordinatesList(points)
+            .build()
+
+        mdRoute = MapboxDirections.builder()
+            .routeOptions(routeOptions)
+            .accessToken(TRPCore.mapBoxApiKey)
+            .build()
+
+        mdRoute?.enqueueCall(object : Callback<DirectionsResponse?> {
+            override fun onResponse(
+                call: Call<DirectionsResponse?>,
+                response: Response<DirectionsResponse?>
+            ) {
+                onResult(response.body(), null)
+            }
+
+            override fun onFailure(call: Call<DirectionsResponse?>, t: Throwable) {
+                onResult(null, t)
             }
         })
     }

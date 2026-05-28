@@ -1140,12 +1140,17 @@ class ACTimelineVM @Inject constructor(
         val selectedDate = days[selectedIndex]
         val items = generateDisplayItemsForDay(timeline, selectedDate)
 
-        // Apply preserved collapse states to new items
+        // Apply preserved collapse states + cached route info to new items.
+        // Route info cache survives updateDisplayItems() so async refreshes (availability sweep,
+        // generation polling, etc.) don't wipe distance separators off the UI.
         val itemsWithPreservedState = items.map { item ->
             if (item is TimelineDisplayItem.Recommendations) {
-                existingExpandStates[item.plan.id]?.let { savedExpanded ->
-                    item.copy(isExpanded = savedExpanded)
-                } ?: item
+                val savedExpanded = existingExpandStates[item.plan.id]
+                val cachedRoutes = item.segmentIndex?.let { _routeInfoCache[it] }
+                item.copy(
+                    isExpanded = savedExpanded ?: item.isExpanded,
+                    routeInfoList = if (!cachedRoutes.isNullOrEmpty()) cachedRoutes else item.routeInfoList
+                )
             } else {
                 item
             }
