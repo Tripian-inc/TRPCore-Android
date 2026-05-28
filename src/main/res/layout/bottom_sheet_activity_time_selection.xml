@@ -9,6 +9,14 @@
     android:orientation="vertical"
     android:paddingBottom="@dimen/_24sdp">
 
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="32dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_drag_handle" />
+
     <!-- Toolbar -->
     <RelativeLayout
         android:layout_width="match_parent"
@@ -72,15 +80,6 @@
         app:flexWrap="wrap"
         app:justifyContent="flex_start" />
 
-    <!-- Loading Progress -->
-    <ProgressBar
-        android:id="@+id/pbLoading"
-        android:layout_width="@dimen/_32sdp"
-        android:layout_height="@dimen/_32sdp"
-        android:layout_gravity="center"
-        android:layout_marginTop="@dimen/_16sdp"
-        android:visibility="gone" />
-
     <!-- No Time Slots Message -->
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvNoTimeSlots"
@@ -93,6 +92,55 @@
         android:textColor="@color/trp_grey_30"
         android:visibility="gone"
         tools:text="No time slots available" />
+
+    <!-- Flexible info card — shown when the selected day has only
+         flexible (any-time) slots. Replaces the time grid. -->
+    <LinearLayout
+        android:id="@+id/flexibleInfoCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:background="@drawable/bg_flexible_info_card"
+        android:gravity="top"
+        android:orientation="horizontal"
+        android:padding="@dimen/_12sdp"
+        tools:visibility="visible"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="@dimen/_16sdp"
+            android:layout_height="@dimen/_16sdp"
+            android:contentDescription="Info"
+            android:src="@drawable/trp_ic_information"
+            app:tint="@color/trp_info_icon" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvFlexibleTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_weight="1"
+            android:fontFamily="@font/montserrat_medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="Valid at any time on the chosen day. Check the opening hours." />
+
+    </LinearLayout>
+
+    <!-- Plain "pin to top of itinerary" hint, shown directly under the
+         flexible info card. Not part of the card itself. -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvFlexibleTopOfItinerary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_8sdp"
+        android:fontFamily="@font/montserrat_medium"
+        android:textColor="@color/trp_fgWeak"
+        android:textSize="14sp"
+        android:visibility="gone"
+        tools:text="Add it to top of your itinerary." />
 
     <!-- Continue Button -->
     <com.google.android.material.button.MaterialButton

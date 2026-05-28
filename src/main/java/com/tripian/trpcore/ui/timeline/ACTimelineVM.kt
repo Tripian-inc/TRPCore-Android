@@ -281,16 +281,22 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Drives the translation fetch with one explicit retry. The retry exists
-     * because MiscRepository's shared BehaviorSubject may emit a stale `false`
-     * to subscribers that joined while the init() fetch was still in flight —
-     * if that init() fetch then fails, the subject delivers `false` to us
-     * without ever sending a new request. By the time we re-enter this method
-     * `isFetchInProgress` has been reset, so the second call actually fires a
-     * fresh /languages request.
+     * Drives the translation fetch with one explicit retry.
+     *
+     * First attempt piggybacks on the shared in-progress fetch (if init() is
+     * still running) via [MiscRepository.waitForLanguagesLoaded]. That path can
+     * silently surface a stale `false` from a previously failed init fetch or
+     * miss an emission that happens after a long delay, so the retry explicitly
+     * calls [MiscRepository.refetchLanguages] to force a brand-new /languages
+     * request regardless of subject state.
      */
     private fun attemptLanguageFetch(allowRetry: Boolean) {
-        miscRepository.waitForLanguagesLoaded()
+        val source = if (allowRetry) {
+            miscRepository.waitForLanguagesLoaded()
+        } else {
+            miscRepository.refetchLanguages()
+        }
+        source
             .timeout(LANGUAGE_RETRY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
@@ -530,8 +536,6 @@ class ACTimelineVM @Inject constructor(
                 cityNameToIdMap[name] = city.id
             }
         }
-
-        android.util.Log.d("TIMELINE_DEBUG", "Updated itinerary with ${resolvedCities.size} resolved cityIds, cityNameToIdMap size: ${cityNameToIdMap.size}")
     }
 
     /**
@@ -552,13 +556,11 @@ class ACTimelineVM @Inject constructor(
             success = { response ->
                 isLoggedIn = true
                 isLoginInProgress = false
-                android.util.Log.d("TIMELINE_DEBUG", "LightLogin completed successfully")
             },
             error = { errorModel ->
                 isLoginInProgress = false
                 _error.value = errorModel.errorDesc ?: "Login failed"
                 TRPCore.notifyError(errorModel.errorDesc ?: "Login failed")
-                android.util.Log.e("TIMELINE_DEBUG", "LightLogin failed: ${errorModel.errorDesc}")
             }
         )
     }
@@ -1226,13 +1228,14 @@ class ACTimelineVM @Inject constructor(
                         if (plan != null) {
                             val steps = plan.steps ?: emptyList()
 
-                            // Skip empty itinerary segments (title "Empty" with no steps)
-                            if ((segment.title?.equals(
-                                    "Empty",
-                                    ignoreCase = true
-                                ) == true || plan.generatedStatus == -2) && steps.isEmpty()
-                            ) {
-                                return@forEachIndexed // Skip empty recommendations
+                            // TimelineDate is a control segment (dd.MM.yyyy HH:mm) — never render.
+                            if (segment.title == "TimelineDate") {
+                                return@forEachIndexed
+                            }
+
+                            // Smart recommendation that came back without POIs — nothing to show.
+                            if (plan.generatedStatus == -2 && steps.isEmpty()) {
+                                return@forEachIndexed
                             }
 
                             // Calculate recommendation index for same city
@@ -2687,7 +2690,7 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Date formatters for display
-        val inputDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val inputDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
         val outputDateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
         val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
 
@@ -2991,8 +2994,6 @@ class ACTimelineVM @Inject constructor(
         val hasSeen = preferences.getBoolean(Preferences.Keys.ONBOARDING_HAS_SEEN, false)
         val count = preferences.getInt(Preferences.Keys.ONBOARDING_CONTINUE_COUNT, 0)
 
-        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.shouldShowOnboarding: dismissed=$dismissed, hasSeen=$hasSeen, count=$count")
-
         if (dismissed) return false
         if (!hasSeen) return true
         return count < 3
@@ -3003,9 +3004,7 @@ class ACTimelineVM @Inject constructor(
      * Called after languages are loaded.
      */
     fun checkAndShowOnboarding() {
-        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.checkAndShowOnboarding called")
         if (shouldShowOnboarding()) {
-            android.util.Log.d("ONBOARDING_DEBUG", "Setting _showOnboarding.value = true")
             // Drop the full-screen loader before the onboarding bottom sheet is
             // shown — otherwise the loader Dialog sits on top of the sheet and
             // the user has no way to dismiss onboarding, leaving the SDK stuck
@@ -3014,7 +3013,6 @@ class ACTimelineVM @Inject constructor(
             hideLottieLoading()
             _showOnboarding.value = true
         } else {
-            android.util.Log.d("ONBOARDING_DEBUG", "Onboarding not needed, proceeding with timeline")
             onOnboardingComplete()
         }
     }
@@ -3024,7 +3022,6 @@ class ACTimelineVM @Inject constructor(
      * Waits for login to complete, then continues with city resolution and timeline.
      */
     fun onOnboardingComplete() {
-        android.util.Log.d("ONBOARDING_DEBUG", "ACTimelineVM.onOnboardingComplete called")
         onboardingCompleted = true
 
         // Wait for login to complete (should already be done in background)
@@ -3034,7 +3031,6 @@ class ACTimelineVM @Inject constructor(
         // of the SingleLiveEvent observer, replacing the intended single text.
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         waitForLoginThenProceed {
-            android.util.Log.d("TIMELINE_DEBUG", "Login complete, proceeding with city resolution")
             resolveDestinationCitiesAndProceed()
         }
     }
@@ -3069,8 +3065,7 @@ class ACTimelineVM @Inject constructor(
                 cityNameToIdMap.putAll(updatedCityMap)
                 performParallelSyncOperations(timeline, tripItems, updatedCityMap)
             },
-            error = { error ->
-                android.util.Log.e("TIMELINE_SYNC", "City resolution failed: ${error.errorDesc}")
+            error = { _ ->
                 // Fallback: mevcut map ile devam et
                 performParallelSyncOperations(timeline, tripItems, cityNameToIdMap.toMap())
             }
@@ -3107,17 +3102,15 @@ class ACTimelineVM @Inject constructor(
                 onParallelComplete()
             },
             error = {
-                android.util.Log.e("TIMELINE_SYNC", "Transition detection failed")
                 onParallelComplete()
             }
         )
 
         // Parallel Op 2: Add missing activities
         addMissingBookedActivitiesUseCase.on(
-            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, tripItems, timeline, cityMap),
+            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, itinerary!!, timeline),
             success = { onParallelComplete() },
             error = {
-                android.util.Log.e("TIMELINE_SYNC", "Add missing activities failed")
                 onParallelComplete()
             }
         )
@@ -3127,7 +3120,6 @@ class ACTimelineVM @Inject constructor(
             params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
             success = { onParallelComplete() },
             error = {
-                android.util.Log.e("TIMELINE_SYNC", "Date range update failed")
                 onParallelComplete()
             }
         )
@@ -3149,7 +3141,6 @@ class ACTimelineVM @Inject constructor(
                 params = SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap),
                 success = { performCityDeletionSync(timeline) },
                 error = {
-                    android.util.Log.e("TIMELINE_SYNC", "Transition sync failed")
                     performCityDeletionSync(timeline)
                 }
             )
@@ -3168,7 +3159,6 @@ class ACTimelineVM @Inject constructor(
             params = RemoveSegmentsForDeletedCitiesUseCase.Params(_tripHash, timeline, destinations),
             success = { refreshTimelineAfterSync() },
             error = {
-                android.util.Log.e("TIMELINE_SYNC", "City deletion failed")
                 refreshTimelineAfterSync()
             }
         )
@@ -3184,9 +3174,7 @@ class ACTimelineVM @Inject constructor(
                 // processTimeline'ı çağır ama sync tekrar çalışmayacak (syncOperationsCompleted=true)
                 processTimeline(timeline)
             },
-            error = { error ->
-                android.util.Log.e("TIMELINE_SYNC", "Final refresh failed: ${error.errorDesc}")
-            }
+            error = { _ -> }
         )
     }
 
@@ -3201,6 +3189,6 @@ class ACTimelineVM @Inject constructor(
         // Upper bound for translation fetch on SDK launch. Beyond this, the
         // host is informed via LANGUAGE_LOAD_FAILED and the SDK closes so the
         // user is not left staring at the loader forever.
-        private const val LANGUAGE_RETRY_TIMEOUT_SECONDS = 10L
+        private const val LANGUAGE_RETRY_TIMEOUT_SECONDS = 30L
     }
 }

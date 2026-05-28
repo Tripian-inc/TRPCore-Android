@@ -13,6 +13,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.FragmentManager
@@ -21,8 +22,10 @@ import androidx.viewbinding.ViewBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import androidx.fragment.app.FragmentActivity
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
+import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.setViewListener
 import dagger.android.support.AndroidSupportInjection
@@ -82,6 +85,14 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val bottomSheetDialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         isCancelable = true
+
+        // Why: targetSdk 35 forces dialog windows into edge-to-edge by default, but Material
+        // 1.9's BottomSheetDialog doesn't auto-pad the sheet for system bars in that mode
+        // (tall sheets like AddPlan end up with the Continue button behind the nav bar).
+        // Opt this dialog window back into the legacy "fits system windows" mode so Android
+        // applies status/nav bar insets to the decor view itself — sheets sit above the nav
+        // bar automatically without any per-screen padding logic.
+        bottomSheetDialog.window?.let { WindowCompat.setDecorFitsSystemWindows(it, true) }
 
         bottomSheetDialog.setOnShowListener { dialog: DialogInterface ->
             val dg = dialog as BottomSheetDialog
@@ -160,6 +171,23 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
 
         viewModel.arguments = arguments
         viewModel.onViewCreated(savedInstanceState)
+
+        // Bridge the VM's lottie loading events to LottieLoading on the host activity.
+        // LottieLoading attaches its own DialogFragment via the activity's FragmentManager,
+        // which puts the loader in a window above this bottom sheet — the sheet stays
+        // open underneath the loader. Re-usable: any BaseBottomDialogFragment subclass
+        // whose VM calls showBottomSheetLoader/showLottieLoading gets this for free.
+        // We deliberately skip executePendingTransactions() — onPause fires a hide event
+        // while FragmentManager is already executing, and forcing another pass throws.
+        viewModel.lottieLoadingEvent.observe(viewLifecycleOwner) { event ->
+            if (event == null) return@observe
+            val host = activity as? FragmentActivity ?: return@observe
+            if (event.show) {
+                LottieLoading.show(host, event.presentation, event.text)
+            } else {
+                LottieLoading.hide(host)
+            }
+        }
 
         setListeners()
         setReceivers()

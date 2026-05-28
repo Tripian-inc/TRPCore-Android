@@ -79,72 +79,62 @@ data class ItineraryWithActivities(
     }
 
     /**
-     * Converts tripItems to TimelineSegmentSettings list and adds empty segments
-     * for start/end dates if no activity exists on those dates.
+     * Converts tripItems to TimelineSegmentSettings list and appends a single
+     * TimelineDate control segment carrying the trip's date range.
      *
-     * Logic:
-     * 1. Create segments from tripItems (booked_activity type)
-     * 2. Check if startDate has an activity, if not add empty segment at index 0
-     * 3. Check if endDate has an activity, if not add empty segment at end
-     *
-     * @param defaultCityId Fallback cityId to use when segment cityId is null (e.g., from timeline)
+     * @param defaultCityId Fallback cityId for TimelineDate when destinationItems has none
      */
     fun createSegmentsFromTripItems(defaultCityId: Int? = null): List<TimelineSegmentSettings> {
-        val adults = getAdultCount()
-        val children = getChildCount()
-        // Use provided defaultCityId as fallback if getFirstCityId() returns null
-        val cityId = getFirstCityId() ?: defaultCityId
-
-        // Create segments from tripItems (booked activities)
         val segments = tripItems?.map { item ->
             createBookedActivitySegment(item)
         }?.toMutableList() ?: mutableListOf()
 
-        // Extract date strings (yyyy-MM-dd format)
-        val startDateStr = extractDateString(startDatetime) ?: return segments
-        val endDateStr = extractDateString(endDatetime) ?: return segments
-
-        // Check if there's a tripItem on the start date
-        val hasItemOnStartDate = tripItems?.any { item ->
-            val itemDate = item.startDatetime ?: return@any false
-            extractDateString(itemDate) == startDateStr
-        } ?: false
-
-        // Check if there's a tripItem on the end date
-        val hasItemOnEndDate = tripItems?.any { item ->
-            val itemDate = item.startDatetime ?: return@any false
-            extractDateString(itemDate) == endDateStr
-        } ?: false
-
-        // Add empty segment for start date if needed (at index 0)
-        if (!hasItemOnStartDate) {
-            val emptyStartSegment = createEmptySegment(
-                date = startDateStr,
-                adults = adults,
-                children = children,
-                cityId = cityId
-            )
-            segments.add(0, emptyStartSegment)
-        }
-
-        // Add empty segment for end date if needed (and different from start)
-        if (!hasItemOnEndDate && startDateStr != endDateStr) {
-            val emptyEndSegment = createEmptySegment(
-                date = endDateStr,
-                adults = adults,
-                children = children,
-                cityId = cityId
-            )
-            segments.add(emptyEndSegment)
-        }
+        buildTimelineDateSegment(defaultCityId)?.let { segments.add(it) }
 
         return segments
     }
 
     /**
-     * Creates a booked activity segment from SegmentActivityItem
+     * Builds the TimelineDate control segment matching the iOS payload:
+     * yyyy-MM-dd HH:mm format, available=false, doNotGenerate=1, distinctPlan=true.
      */
-    private fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
+    internal fun buildTimelineDateSegment(defaultCityId: Int? = null): TimelineSegmentSettings? {
+        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
+
+        val startDate = runCatching { dateFormat.parse(startDatetime) }.getOrNull() ?: return null
+        val endDate = runCatching { dateFormat.parse(endDatetime) }.getOrNull() ?: return null
+
+        val cal = java.util.Calendar.getInstance()
+        cal.time = startDate
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        cal.set(java.util.Calendar.MINUTE, 0)
+        val timelineStart = dateFormat.format(cal.time)
+
+        cal.time = endDate
+        cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
+        cal.set(java.util.Calendar.MINUTE, 59)
+        val timelineEnd = dateFormat.format(cal.time)
+
+        return TimelineSegmentSettings().apply {
+            this.title = "TimelineDate"
+            this.startDate = timelineStart
+            this.endDate = timelineEnd
+            this.segmentType = "itinerary"
+            this.cityId = destinationItems.firstOrNull()?.cityId ?: defaultCityId
+            this.adults = getAdultCount()
+            this.children = getChildCount()
+            this.available = false
+            this.doNotGenerate = 1
+            this.distinctPlan = true
+            this.currency = TRPCore.core.getCurrentCurrency()
+        }
+    }
+
+    /**
+     * Creates a booked activity segment from SegmentActivityItem.
+     * Single source of truth — both initial create and sync paths must use this.
+     */
+    internal fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
         // Calculate endDatetime if not provided (use startDatetime + duration)
         val calculatedEndDatetime = calculateEndDatetime(
             item.startDatetime,
@@ -197,43 +187,6 @@ data class ItineraryWithActivities(
     }
 
     /**
-     * Creates an empty segment for days without activities.
-     * This ensures the timeline covers the full trip date range.
-     *
-     * @param date Date string in "yyyy-MM-dd" format
-     * @param adults Number of adults
-     * @param children Number of children
-     * @param cityId City ID from destination
-     */
-    private fun createEmptySegment(
-        date: String,
-        adults: Int,
-        children: Int,
-        cityId: Int?
-    ): TimelineSegmentSettings {
-        return TimelineSegmentSettings().apply {
-            this.title = "Empty"
-            this.startDate = "$date 00:00"
-            this.endDate = "$date 23:59"
-            this.segmentType = "itinerary"
-            this.available = false
-            this.cityId = cityId
-            this.adults = adults
-            this.children = children
-            this.doNotGenerate = 1
-            this.currency = TRPCore.core.getCurrentCurrency()
-        }
-    }
-
-    /**
-     * Extracts date string (yyyy-MM-dd) from datetime string (yyyy-MM-dd HH:mm)
-     */
-    private fun extractDateString(datetime: String): String? {
-        val parts = datetime.split(" ")
-        return parts.firstOrNull()
-    }
-
-    /**
      * Calculates endDatetime from startDatetime and duration.
      * If endDatetime is already provided, returns it as-is.
      * If endDatetime is null but startDatetime and duration exist, calculates it.
@@ -259,7 +212,7 @@ data class ItineraryWithActivities(
         }
 
         return try {
-            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault())
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
             val startDate = formatter.parse(startDatetime) ?: return null
 
             // Add duration (in minutes) to start time

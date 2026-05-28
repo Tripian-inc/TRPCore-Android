@@ -14,6 +14,7 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
+import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
@@ -31,7 +32,8 @@ import javax.inject.Inject
  */
 class ACActivityListingVM @Inject constructor(
     private val searchToursUseCase: SearchToursUseCase,
-    private val createReservedActivitySegmentUseCase: CreateReservedActivitySegmentUseCase
+    private val createReservedActivitySegmentUseCase: CreateReservedActivitySegmentUseCase,
+    private val fetchTimelineUseCase: FetchTimelineUseCase
 ) : BaseViewModel() {
 
     // =====================
@@ -60,11 +62,20 @@ class ACActivityListingVM @Inject constructor(
     private val _showTimeSelection = MutableLiveData<TourProduct?>()
     val showTimeSelection: LiveData<TourProduct?> = _showTimeSelection
 
-    private val _segmentCreated = MutableLiveData<Boolean>()
-    val segmentCreated: LiveData<Boolean> = _segmentCreated
+    /**
+     * Emitted after the reserved-activity segment was created AND the timeline was
+     * re-fetched successfully. Carries the tour title and the selected date so the
+     * Activity can format and show the success toast. Activity sets it back to null
+     * after consuming.
+     */
+    data class AddedToItineraryResult(val activityName: String, val selectedDate: Date)
 
-    private val _isCreatingSegment = MutableLiveData<Boolean>()
-    val isCreatingSegment: LiveData<Boolean> = _isCreatingSegment
+    private val _addedToItinerarySuccess = MutableLiveData<AddedToItineraryResult?>()
+    val addedToItinerarySuccess: LiveData<AddedToItineraryResult?> = _addedToItinerarySuccess
+
+    fun clearAddedToItinerarySuccess() {
+        _addedToItinerarySuccess.value = null
+    }
 
     // Filter state
     private val _currentFilter = MutableLiveData(ActivityFilterData.default())
@@ -126,7 +137,7 @@ class ACActivityListingVM @Inject constructor(
 
         // Extract selected date and format as "yyyy-MM-dd"
         planData.selectedDay?.let { date ->
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             this.selectedDateString = dateFormat.format(date)
         }
 
@@ -181,7 +192,38 @@ class ACActivityListingVM @Inject constructor(
      */
     fun onCategorySelectionChanged(selectedIndices: Set<Int>) {
         _selectedCategoryIndices.value = selectedIndices
+        // Category-triggered reloads use the bottom-sheet variant (no text) so
+        // the user keeps visual context of the list while it refreshes.
+        showBottomSheetLoaderNoText()
+        suppressNextIsLoadingLoader = true
         resetAndSearch()
+    }
+
+    /**
+     * When `true`, the next `_isLoading = true` transition will NOT trigger the
+     * default full-screen loader from the Activity — the VM has already shown
+     * a specific loader (e.g. bottom-sheet) and the Activity should only update
+     * non-loader state. Cleared automatically when consumed by the Activity.
+     */
+    private var suppressNextIsLoadingLoader: Boolean = false
+
+    fun consumeLoaderSuppression(): Boolean {
+        val v = suppressNextIsLoadingLoader
+        suppressNextIsLoadingLoader = false
+        return v
+    }
+
+    /**
+     * When `true`, the next `_isLoading = true` transition should be rendered
+     * as an inline shimmer skeleton (filter/sort reload) instead of a Lottie
+     * loader. Cleared automatically when consumed by the Activity.
+     */
+    private var useSkeletonForNextLoad: Boolean = false
+
+    fun consumeSkeletonRequest(): Boolean {
+        val v = useSkeletonForNextLoad
+        useSkeletonForNextLoad = false
+        return v
     }
 
     // =====================
@@ -194,6 +236,8 @@ class ACActivityListingVM @Inject constructor(
      */
     fun applyFilter(filter: ActivityFilterData) {
         _currentFilter.value = filter
+        useSkeletonForNextLoad = true
+        suppressNextIsLoadingLoader = true
         resetAndSearch()
     }
 
@@ -223,6 +267,8 @@ class ACActivityListingVM @Inject constructor(
      */
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
+        useSkeletonForNextLoad = true
+        suppressNextIsLoadingLoader = true
         resetAndSearch()
     }
 
@@ -314,9 +360,12 @@ class ACActivityListingVM @Inject constructor(
 
         // Get filter values
         val filter = _currentFilter.value ?: ActivityFilterData.default()
+        // tour-api hiçbir filtre yokken de minPrice=1 ile çağrılır (free/teaser
+        // listings dışarıda bırakılır). Kullanıcı daha yüksek bir alt sınır
+        // seçtiyse onun değeri geçer.
         val minPrice = if (filter.minPrice > ActivityFilterData.DEFAULT_MIN_PRICE) {
             filter.minPrice.toInt()
-        } else null
+        } else 1
         val maxPrice = if (filter.maxPrice < ActivityFilterData.DEFAULT_MAX_PRICE) {
             filter.maxPrice.toInt()
         } else null
@@ -436,10 +485,23 @@ class ACActivityListingVM @Inject constructor(
     // CREATE SEGMENT
     // =====================
 
-    fun createReservedActivitySegment(tour: TourProduct, selectedDate: Date, timeSlot: String, slotPrice: Double?) {
-        _isCreatingSegment.value = true
+    /**
+     * Confirm flow from [ActivityTimeSelectionBottomSheet]: keep the time picker open,
+     * show a bottom-sheet "adding to itinerary" loader, create the reserved-activity
+     * segment, then re-fetch the timeline so the host has the latest state cached.
+     * Only after the fetch completes do we hide the loader and emit the success event
+     * — the Activity then dismisses the sheet, shows the toast and finishes.
+     */
+    fun createReservedActivitySegment(
+        tour: TourProduct,
+        selectedDate: Date,
+        timeSlot: String,
+        slotPrice: Double?,
+        isFlexible: Boolean = false
+    ) {
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary")
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
         createReservedActivitySegmentUseCase.on(
@@ -450,16 +512,38 @@ class ACActivityListingVM @Inject constructor(
                 selectedTimeSlot = timeSlot,
                 adults = planData?.travelers ?: 1,
                 cityId = cityId,
-                slotPrice = slotPrice
+                slotPrice = slotPrice,
+                isFlexible = isFlexible
             ),
             success = { _ ->
-                _isCreatingSegment.value = false
-                _segmentCreated.value = true
-                // Notify host app that activity was added
+                // Notify host app that activity was added (matches pre-refactor behavior)
                 tour.productId?.let { TRPCore.notifyActivityAdded(it) }
+                refreshTimelineAfterSegment(tour, selectedDate)
             },
             error = { error ->
-                _isCreatingSegment.value = false
+                hideLottieLoading()
+                showAlert(
+                    AlertType.ERROR,
+                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                )
+            }
+        )
+    }
+
+    /** Second leg of the add-activity flow: re-fetch the timeline so we have the latest
+     *  state before signaling success to the UI. */
+    private fun refreshTimelineAfterSegment(tour: TourProduct, selectedDate: Date) {
+        fetchTimelineUseCase.on(
+            params = FetchTimelineUseCase.Params(tripHash = tripHash),
+            success = { _ ->
+                hideLottieLoading()
+                _addedToItinerarySuccess.value = AddedToItineraryResult(
+                    activityName = tour.title.orEmpty(),
+                    selectedDate = selectedDate
+                )
+            },
+            error = { error ->
+                hideLottieLoading()
                 showAlert(
                     AlertType.ERROR,
                     error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)

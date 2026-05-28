@@ -6,9 +6,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.tripian.one.api.cities.model.City
@@ -69,6 +67,19 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         // Initial max height; final value is recomputed once system bar insets are known
         adjustFragmentContainerMaxHeight(topInset = 0, bottomInset = 0)
 
+        // Why: base now opts the dialog window out of edge-to-edge (decor fits system windows),
+        // so the sheet sits inside (screen − statusBar − navBar). displayMetrics.heightPixels
+        // still reports the full screen, so maxHeight must subtract the system bar heights
+        // explicitly or the fragmentContainer's cap leaves no room for the footer and the
+        // Continue button gets clipped once optional sections (manual categories, travelers)
+        // expand the inner content.
+        view.post {
+            val rootInsets = view.rootWindowInsets ?: return@post
+            val sysBars = WindowInsetsCompat.toWindowInsetsCompat(rootInsets)
+                .getInsets(WindowInsetsCompat.Type.systemBars())
+            adjustFragmentContainerMaxHeight(topInset = sysBars.top, bottomInset = sysBars.bottom)
+        }
+
         // Initialize from arguments
         arguments?.let { args ->
             sharedVM.initializeFromArgs(args)
@@ -100,20 +111,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 
     override fun setListeners() {
         super.setListeners()
-
-        // Re-apply insets listener to also recompute the fragmentContainer max height,
-        // so the footer (Continue button) stays above the system navigation bar.
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(
-                left = insets.left,
-                top = 0,
-                right = insets.right,
-                bottom = insets.bottom
-            )
-            adjustFragmentContainerMaxHeight(insets.top, insets.bottom)
-            WindowInsetsCompat.CONSUMED
-        }
 
         // Close button
         binding.ivClose.setOnClickListener {

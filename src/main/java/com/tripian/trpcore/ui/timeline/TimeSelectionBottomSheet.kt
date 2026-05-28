@@ -90,6 +90,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     }
 
     private fun setupListeners() {
+        binding.ivClose.setOnClickListener { dismiss() }
+
         // Start time field click
         binding.llStartTime.setOnClickListener {
             showStartTimePicker()

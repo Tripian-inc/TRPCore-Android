@@ -246,9 +246,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     override fun setReceivers() {
         // Onboarding
-        android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline.setReceivers() called, setting up onboarding observer")
         viewModel.showOnboarding.observe(this) { shouldShow ->
-            android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline onboarding observer triggered, shouldShow=$shouldShow")
             if (shouldShow) {
                 showOnboardingBottomSheet()
             }
@@ -1426,14 +1424,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * Called when SDK starts and onboarding should be shown.
      */
     private fun showOnboardingBottomSheet() {
-        android.util.Log.d("ONBOARDING_DEBUG", "ACTimeline.showOnboardingBottomSheet() called")
         val bottomSheet = OnboardingBottomSheet.newInstance()
         bottomSheet.setOnCompleteListener {
-            android.util.Log.d("ONBOARDING_DEBUG", "Onboarding completed, calling viewModel.onOnboardingComplete()")
             viewModel.onOnboardingComplete()
         }
         bottomSheet.show(supportFragmentManager, "onboarding")
-        android.util.Log.d("ONBOARDING_DEBUG", "OnboardingBottomSheet.show() called")
     }
 
     // =====================

@@ -2,6 +2,7 @@ package com.tripian.trpcore.base
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Looper
 import android.text.TextUtils
 import androidx.annotation.CallSuper
 import androidx.fragment.app.FragmentActivity
@@ -200,11 +201,22 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
         presentation: LottieLoadingPresentation = LottieLoadingPresentation.FULL_SCREEN,
         text: LottieLoadingText = LottieLoadingText.Rotating.default()
     ) {
-        _lottieLoadingEvent.postValue(LottieLoadingEvent(true, presentation, text))
+        dispatchLottieEvent(LottieLoadingEvent(true, presentation, text))
     }
 
     fun hideLottieLoading() {
-        _lottieLoadingEvent.postValue(LottieLoadingEvent(false))
+        dispatchLottieEvent(LottieLoadingEvent(false))
+    }
+
+    private fun dispatchLottieEvent(event: LottieLoadingEvent) {
+        // setValue on main thread fires the observer synchronously, so the
+        // loader dialog can be committed in the same onCreate pass and shown
+        // alongside the first frame instead of one tick after it.
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            _lottieLoadingEvent.value = event
+        } else {
+            _lottieLoadingEvent.postValue(event)
+        }
     }
 
     /** Convenience for bottom-sheet "refreshing" loader. */
@@ -240,6 +252,14 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
     fun showFullScreenLoaderNoText() {
         showLottieLoading(
             LottieLoadingPresentation.FULL_SCREEN,
+            LottieLoadingText.None
+        )
+    }
+
+    /** Bottom-sheet loader showing only the animation (no text). */
+    fun showBottomSheetLoaderNoText() {
+        showLottieLoading(
+            LottieLoadingPresentation.BOTTOM_SHEET,
             LottieLoadingText.None
         )
     }

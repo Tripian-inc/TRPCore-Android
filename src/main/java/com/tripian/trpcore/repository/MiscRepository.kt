@@ -56,10 +56,16 @@ class MiscRepository @Inject constructor(
             return Observable.just(true)
         }
 
-        // If offline, try to use cached data
-        if (app.isConnectedNet().not()) {
-            setLanguages(preferences.getString(Preferences.Keys.APP_LANGUAGE_TRANSLATIONS, ""))
+        // Fresh-enough cache from a prior session — skip the network call. The
+        // backend bundle changes rarely, so a 1-hour TTL keeps cold-starts fast
+        // without serving badly stale strings.
+        if (loadFreshCachedLanguages()) {
             return Observable.just(true)
+        }
+
+        // If offline, try to use cached data (any age — better than nothing).
+        if (app.isConnectedNet().not()) {
+            return Observable.just(tryLoadCachedLanguages())
         }
 
         // If fetch already in progress, return subject that will emit when done
@@ -73,14 +79,21 @@ class MiscRepository @Inject constructor(
             .subscribeOn(Schedulers.io())
             .map {
                 setLanguages(it.string())
-                true
+                // Stamp the network success so subsequent cold starts within
+                // LANGUAGE_CACHE_TTL_MS skip the request entirely.
+                if (isLanguagesLoaded) {
+                    preferences.setLong(
+                        Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
+                        System.currentTimeMillis()
+                    )
+                }
+                isLanguagesLoaded
             }
+            // Network/server failure should not lock the user out if they have
+            // previously loaded translations — fall back to the cached blob.
+            .onErrorReturn { tryLoadCachedLanguages() }
             .doOnNext { success ->
                 languagesLoadedSubject.onNext(success)
-            }
-            .doOnError {
-                isFetchInProgress = false
-                languagesLoadedSubject.onNext(false)
             }
             .doFinally {
                 isFetchInProgress = false
@@ -98,6 +111,84 @@ class MiscRepository @Inject constructor(
             return Observable.just(true)
         }
         return getLanguageValues()
+    }
+
+    /**
+     * Forces a fresh /languages fetch, bypassing the shared in-progress subject.
+     * Callers that ended up with a stale `false` from a previous failed fetch
+     * (or that timed out waiting on a still-in-flight init fetch) use this to
+     * guarantee a definitive answer.
+     */
+    fun refetchLanguages(): Observable<Boolean> {
+        if (isLanguagesLoaded) {
+            return Observable.just(true)
+        }
+        // Even the "forced" path respects the fresh-cache TTL — the retry exists
+        // for stuck/stale subject states, not to defeat the cache.
+        if (loadFreshCachedLanguages()) {
+            return Observable.just(true)
+        }
+        if (app.isConnectedNet().not()) {
+            return Observable.just(tryLoadCachedLanguages())
+        }
+        isFetchInProgress = true
+        return service.getLanguageValues()
+            .subscribeOn(Schedulers.io())
+            .map {
+                setLanguages(it.string())
+                // Stamp the network success so subsequent cold starts within
+                // LANGUAGE_CACHE_TTL_MS skip the request entirely.
+                if (isLanguagesLoaded) {
+                    preferences.setLong(
+                        Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
+                        System.currentTimeMillis()
+                    )
+                }
+                isLanguagesLoaded
+            }
+            // Same fallback as the shared path: a network/server miss must not
+            // close the SDK if cached translations from a prior session exist.
+            .onErrorReturn { tryLoadCachedLanguages() }
+            .doOnNext { success ->
+                languagesLoadedSubject.onNext(success)
+            }
+            .doFinally {
+                isFetchInProgress = false
+            }
+    }
+
+    /**
+     * Loads the JSON blob persisted by the most recent successful `/languages`
+     * response from preferences. Returns `true` only if [setLanguages] completes
+     * without throwing AND flips [isLanguagesLoaded]. Callers use this as a
+     * last-resort fallback when the live fetch fails.
+     */
+    private fun tryLoadCachedLanguages(): Boolean {
+        val cached = preferences.getString(Preferences.Keys.APP_LANGUAGE_TRANSLATIONS, "")
+        if (cached.isNullOrEmpty()) return false
+        return try {
+            setLanguages(cached)
+            isLanguagesLoaded
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    /**
+     * Loads cached translations only when the persisted blob is younger than
+     * [LANGUAGE_CACHE_TTL_MS]. Returns `true` on a successful in-window hit.
+     * On a miss (no cache / stale / parse failure) the caller falls through to
+     * the network path so a fresh bundle is fetched.
+     */
+    private fun loadFreshCachedLanguages(): Boolean {
+        val fetchedAt = preferences.getLong(
+            Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
+            0L
+        )
+        if (fetchedAt <= 0L) return false
+        val age = System.currentTimeMillis() - fetchedAt
+        if (age !in 0 until LANGUAGE_CACHE_TTL_MS) return false
+        return tryLoadCachedLanguages()
     }
 
     fun getConfigList(): Observable<ConfigList> {
@@ -253,5 +344,11 @@ class MiscRepository @Inject constructor(
         } catch (_: Exception) {
             key
         }
+    }
+
+    companion object {
+        // 1 hour. Frontend translation bundle changes rarely, so a cold start
+        // within this window can load from preferences and skip /languages.
+        private const val LANGUAGE_CACHE_TTL_MS: Long = 60L * 60L * 1000L
     }
 }

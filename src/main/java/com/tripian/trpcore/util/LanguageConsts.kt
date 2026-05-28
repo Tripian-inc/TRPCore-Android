@@ -402,9 +402,8 @@ object LanguageConst {
     const val TIMELINE_FLEXIBLE_TITLE = "timeline.flexible.title"
     const val TIMELINE_FLEXIBLE_SUBTITLE = "timeline.flexible.subtitle"
     const val TIMELINE_FLEXIBLE_SHORT = "timeline.flexible.short"
-    const val ADD_PLAN_FLEXIBLE_INFO_TITLE = "addPlan.flexible.title"
-    const val ADD_PLAN_FLEXIBLE_INFO_DESC = "addPlan.flexible.description"
-    const val ADD_PLAN_FLEXIBLE_PIN_TOP = "addPlan.flexible.pinToTop"
+    const val ADD_PLAN_FLEXIBLE_INFO_TITLE = "addPlan.time.flexibleInfo"
+    const val ADD_PLAN_FLEXIBLE_TOP_OF_ITINERARY = "addPlan.time.flexibleTopOfItinerary"
     const val ADD_PLAN_FLEXIBLE_ANY_TIME = "addPlan.flexible.anyTime"
 
     // =====================
@@ -440,5 +439,10 @@ object LanguageConst {
     const val LOADING_TEXT_REMOVING_FROM_PLAN = "loading.text.removingFromPlan"
     const val LOADING_TEXT_CHANGING_TIME = "loading.text.changingTime"
     const val LOADING_TEXT_GETTING_ITINERARY_PLAN = "loading.text.gettingYourItineraryPlan"
+
+    // Toast template — default backend value: "%1$@ has been added to %2$@"
+    // %1$@ = place / activity name, %2$@ = day label. iOS-style placeholders are
+    // replaced on the Kotlin side via String.replace.
+    const val ADD_PLAN_TOAST_ACTIVITY_ADDED = "addPlan.toast.activityAdded"
 
 }

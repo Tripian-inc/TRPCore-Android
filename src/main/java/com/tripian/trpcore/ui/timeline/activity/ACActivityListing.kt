@@ -16,7 +16,11 @@ import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.AcActivityListingBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.BottomToast
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * ACActivityListing
@@ -33,11 +37,33 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     // Theme 16: paginated scroll listener kept around so we can detach it on
     // destroy and avoid leaking the activity into RecyclerView.
     private var paginationScrollListener: RecyclerView.OnScrollListener? = null
+    // True while the inline shimmer skeleton is visible (filter/sort reloads).
+    // The initial load uses the full-screen Lottie and category changes use
+    // the bottom-sheet Lottie — neither sets this flag.
+    private var isSkeletonVisible: Boolean = false
 
     override fun onDestroy() {
         paginationScrollListener?.let { binding.rvActivities.removeOnScrollListener(it) }
         paginationScrollListener = null
+        binding.skeletonList.root.stopShimmer()
         super.onDestroy()
+    }
+
+    private fun showSkeleton() {
+        with(binding.skeletonList.root) {
+            visibility = View.VISIBLE
+            startShimmer()
+        }
+        isSkeletonVisible = true
+    }
+
+    private fun hideSkeleton() {
+        if (!isSkeletonVisible) return
+        with(binding.skeletonList.root) {
+            stopShimmer()
+            visibility = View.GONE
+        }
+        isSkeletonVisible = false
     }
 
     override fun getViewBinding() = AcActivityListingBinding.inflate(layoutInflater)
@@ -64,12 +90,33 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         viewModel.activities.observe(this) { activities ->
             activityAdapter?.submitList(activities)
             updateEmptyState(activities.isEmpty())
+            hideSkeleton()
         }
 
-        // Observe loading state — show full-screen Lottie loader with rotating texts
-        // (legacy DGLockScreen is disabled SDK-wide).
+        // Observe loading state. Default: full-screen Lottie with the
+        // "getting activities" text. Filter/sort reloads switch to an inline
+        // shimmer skeleton; category reloads switch to a bottom-sheet Lottie.
+        // Those alternative paths set flags on the VM that we consume here.
         viewModel.isLoading.observe(this) { isLoading ->
-            if (isLoading) viewModel.showLottieLoading() else viewModel.hideLottieLoading()
+            if (isLoading) {
+                // Consume both flags up-front — filter/sort sets both so the
+                // skeleton branch wins, but the suppression flag must still be
+                // cleared so the next non-skeleton reload doesn't accidentally
+                // skip its Lottie.
+                val useSkeleton = viewModel.consumeSkeletonRequest()
+                val loaderSuppressed = viewModel.consumeLoaderSuppression()
+                when {
+                    useSkeleton -> showSkeleton()
+                    loaderSuppressed -> Unit
+                    else -> viewModel.showFullScreenLoader(
+                        LanguageConst.LOADING_TEXT_GETTING_ACTIVITIES,
+                        ""
+                    )
+                }
+            } else {
+                viewModel.hideLottieLoading()
+                hideSkeleton()
+            }
         }
 
         // Observe searching state
@@ -97,28 +144,13 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             activity?.let { showTimeSelectionBottomSheet(it) }
         }
 
-        // Observe segment creation loading state — full-screen Lottie while the
-        // new reserved activity segment is being created on the server.
-        viewModel.isCreatingSegment.observe(this) { isCreating ->
-            if (isCreating) {
-                // Dismiss bottom sheet and show Lottie loader
-                timeSelectionBottomSheet?.dismiss()
-                viewModel.showLottieLoading()
-            } else {
-                viewModel.hideLottieLoading()
-            }
-        }
-
-        // Observe segment creation
-        viewModel.segmentCreated.observe(this) { created ->
-            if (created) {
-                // Return success result with selectedDayIndex for auto-selecting the day
-                val resultIntent = Intent().apply {
-                    putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
-                }
-                setResult(Activity.RESULT_OK, resultIntent)
-                finish()
-            }
+        // Add-to-itinerary completion: VM keeps the time-selection sheet open while it
+        // shows its own bottom-sheet "Adding to itinerary" loader, runs the segment
+        // create → timeline fetch chain, then signals success here. The sheet then
+        // dismisses, a confirmation toast appears, and we finish with RESULT_OK after
+        // the toast has had time to play.
+        viewModel.addedToItinerarySuccess.observe(this) { result ->
+            result?.let { handleAddedToItinerarySuccess(it) }
         }
 
         // Observe filter state changes
@@ -310,8 +342,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             availableDays = viewModel.getAvailableDays(),
             initialSelectedDay = viewModel.getSelectedDate()
         )
-        timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice ->
-            viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice)
+        timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
+            viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)
         }
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
@@ -321,6 +353,44 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         currentFocus?.let {
             imm.hideSoftInputFromWindow(it.windowToken, 0)
         }
+    }
+
+    /**
+     * Final step of the add-activity flow. Dismisses the still-open time selection
+     * sheet and shows a confirmation toast — but stays on the listing so the user
+     * can add more activities in the same session. RESULT_OK is set eagerly so when
+     * the user eventually navigates back, AddPlanContainerBottomSheet sees the
+     * positive result and re-syncs the timeline UI.
+     */
+    private fun handleAddedToItinerarySuccess(result: ACActivityListingVM.AddedToItineraryResult) {
+        viewModel.clearAddedToItinerarySuccess()
+        timeSelectionBottomSheet?.dismiss()
+        timeSelectionBottomSheet = null
+
+        // Day label, e.g. "Friday 29/05" — locale-aware day name, fixed dd/MM date.
+        val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault())
+            .format(result.selectedDate)
+
+        // iOS-style placeholders: backend default is "%1$@ has been added to %2$@".
+        val template = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
+            .ifBlank { "%1\$@ has been added to %2\$@" }
+        val message = template
+            .replace("%1\$@", result.activityName)
+            .replace("%2\$@", dayLabel)
+
+        BottomToast.show(
+            activity = this,
+            message = message,
+            alertType = AlertType.SUCCESS
+        )
+
+        // Pre-arm the result so back navigation hands control back to AddPlan with
+        // the day index that should be reselected. We don't finish here — the user
+        // may add more activities in the same session.
+        val resultIntent = Intent().apply {
+            putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
+        }
+        setResult(Activity.RESULT_OK, resultIntent)
     }
 
     /**

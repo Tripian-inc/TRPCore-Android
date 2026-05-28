@@ -37,6 +37,22 @@ class DayFilterAdapter(
             }
         }
 
+    /**
+     * Subset of days (in "yyyy-MM-dd" form) that are available for selection.
+     * Days outside this set render muted and swallow taps. `null` means "no
+     * availability filter" — every day stays selectable (default behavior).
+     * Used by Activity Time Selection to disable days with no schedule slots.
+     */
+    var availableDateStrings: Set<String>? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
+    private val isoDateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
     fun setDays(newDays: List<Date>) {
         days = newDays
         notifyDataSetChanged()
@@ -90,6 +106,8 @@ class DayFilterAdapter(
             val context = binding.root.context
             val isPast = date.isPastDay()
             val isPastDisabled = disablePastDays && isPast
+            val isUnavailable = availableDateStrings?.let { isoDateFormatter.format(date) !in it } ?: false
+            val isDisabled = isPastDisabled || isUnavailable
 
             // Background: same drawable for past/future — selected gets the border
             // ring, unselected has no border. Past days do NOT dim the container
@@ -101,9 +119,10 @@ class DayFilterAdapter(
                 binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_unselected)
             }
 
-            // Text styling: past days keep the muted "unselected" typography even
-            // when selected — only the border ring indicates the selection.
-            val applyActiveText = isSelected && !isPast
+            // Text styling: past or unavailable days keep the muted "unselected"
+            // typography even when selected — only the border ring indicates the
+            // selection.
+            val applyActiveText = isSelected && !isPast && !isUnavailable
 
             if (applyActiveText) {
                 // Selected (future): all text primary color, day number bold
@@ -127,18 +146,18 @@ class DayFilterAdapter(
                 }
             }
 
-            // Past days dim only their text. The container (and therefore the
-            // selection border) stays at full opacity.
-            val textAlpha = if (isPast) 0.4f else 1.0f
+            // Past and unavailable days dim only their text. The container (and
+            // therefore the selection border) stays at full opacity.
+            val textAlpha = if (isPast || isUnavailable) 0.4f else 1.0f
             binding.tvDayLetter.alpha = textAlpha
             binding.tvDayNumber.alpha = textAlpha
             binding.tvMonth.alpha = textAlpha
             binding.llDayContainer.alpha = 1.0f
-            binding.llDayContainer.isEnabled = !isPastDisabled
+            binding.llDayContainer.isEnabled = !isDisabled
 
             // Click listener
             binding.llDayContainer.setOnClickListener {
-                if (isPastDisabled) return@setOnClickListener
+                if (isDisabled) return@setOnClickListener
                 if (position != selectedPosition) {
                     onDaySelected(position)
                 }

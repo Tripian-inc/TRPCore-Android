@@ -13,7 +13,6 @@
         android:layout_height="wrap_content"
         android:paddingTop="@dimen/_10sdp">
 
-        <!-- Back Button -->
         <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/imBack"
             android:layout_width="@dimen/_18sdp"
@@ -24,7 +23,6 @@
             android:focusable="true"
             app:srcCompat="@drawable/ic_back" />
 
-        <!-- Title -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -63,100 +61,126 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- Fixed: Filter & Sort Buttons Row -->
-    <LinearLayout
-        android:id="@+id/llFilterSort"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_18sdp"
-        android:orientation="horizontal">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnFilters"
-            style="@style/TrpButtonOutlinedFilter"
-            android:layout_width="0dp"
-            android:layout_marginEnd="@dimen/_6sdp"
-            android:layout_weight="1"
-            app:icon="@drawable/ic_filter_activity"
-            app:iconTint="@null"
-            tools:text="Filters" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSortBy"
-            style="@style/TrpButtonOutlinedFilter"
-            android:layout_width="0dp"
-            android:layout_marginStart="@dimen/_6sdp"
-            android:layout_weight="1"
-            app:icon="@drawable/ic_order_activity"
-            app:iconTint="@color/trp_text_primary"
-            tools:text="Sort by" />
-    </LinearLayout>
-
-    <!-- Fixed: Category Filter -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvCategories"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/_68sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:clipToPadding="false"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/_16sdp"
-        android:paddingEnd="@dimen/_16sdp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-    <!-- Fixed: Result Count -->
-    <com.tripian.trpcore.util.widget.TextView
-        android:id="@+id/tvResultCount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:layout_marginBottom="@dimen/_4sdp"
-        android:fontFamily="@font/regular"
-        android:textColor="@color/trp_activity_count_label"
-        android:textSize="12sp"
-        tools:text="150 activities found" />
-
-    <!-- Scrollable: Activity List Container -->
-    <FrameLayout
+    <!-- Collapsible region: filter+sort, categories, result count scroll off
+         when the activities list is scrolled. -->
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvActivities"
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/trp_white"
+            android:stateListAnimator="@null"
+            app:elevation="0dp"
+            app:liftOnScroll="false">
+
+            <!-- Scrollable: Filter & Sort Buttons Row -->
+            <LinearLayout
+                android:id="@+id/llFilterSort"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_12sdp"
+                android:layout_marginTop="@dimen/_18sdp"
+                android:orientation="horizontal"
+                app:layout_scrollFlags="scroll|enterAlways">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnFilters"
+                    style="@style/TrpButtonOutlinedFilter"
+                    android:layout_width="0dp"
+                    android:layout_marginEnd="@dimen/_6sdp"
+                    android:layout_weight="1"
+                    app:icon="@drawable/ic_filter_activity"
+                    app:iconTint="@null"
+                    tools:text="Filters" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSortBy"
+                    style="@style/TrpButtonOutlinedFilter"
+                    android:layout_width="0dp"
+                    android:layout_marginStart="@dimen/_6sdp"
+                    android:layout_weight="1"
+                    app:icon="@drawable/ic_order_activity"
+                    app:iconTint="@color/trp_text_primary"
+                    tools:text="Sort by" />
+            </LinearLayout>
+
+            <!-- Scrollable: Category Filter -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/_68sdp"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/_16sdp"
+                android:paddingEnd="@dimen/_16sdp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_scrollFlags="scroll|enterAlways" />
+
+            <!-- Scrollable: Result Count -->
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvResultCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:layout_marginBottom="@dimen/_4sdp"
+                android:fontFamily="@font/regular"
+                android:textColor="@color/trp_activity_count_label"
+                android:textSize="12sp"
+                app:layout_scrollFlags="scroll|enterAlways"
+                tools:text="150 activities found" />
+
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:overScrollMode="never"
-            android:paddingBottom="@dimen/_16sdp" />
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- Empty State -->
-        <com.tripian.trpcore.util.widget.TextView
-            android:id="@+id/tvEmpty"
-            style="@style/TextBody1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="@dimen/_24sdp"
-            android:textColor="@color/trp_grey_30"
-            android:visibility="gone"
-            tools:text="No activities found" />
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvActivities"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingBottom="@dimen/_16sdp" />
 
-        <!-- Error State -->
-        <com.tripian.trpcore.util.widget.TextView
-            android:id="@+id/tvError"
-            style="@style/TextBody1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="@dimen/_24sdp"
-            android:textColor="@color/trp_error"
-            android:visibility="gone"
-            tools:text="An error occurred" />
-    </FrameLayout>
+            <!-- Shimmering skeleton shown during the first load. Overlays the
+                 RecyclerView and is hidden as soon as the first batch arrives. -->
+            <include
+                android:id="@+id/skeletonList"
+                layout="@layout/view_activity_skeleton_list" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvEmpty"
+                style="@style/TextBody1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="@dimen/_24sdp"
+                android:textColor="@color/trp_grey_30"
+                android:visibility="gone"
+                tools:text="No activities found" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvError"
+                style="@style/TextBody1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="@dimen/_24sdp"
+                android:textColor="@color/trp_error"
+                android:visibility="gone"
+                tools:text="An error occurred" />
+        </FrameLayout>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
 </LinearLayout>

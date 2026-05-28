@@ -99,6 +99,13 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
                     LottieLoading.hide(host)
                     (host as? BaseActivity<*, *>)?.hideLoading()
                 }
+                // Force-commit the DialogFragment transaction so the loader
+                // attaches in the same frame as the first draw rather than one
+                // FragmentManager idle pass later.
+                val fm = host.supportFragmentManager
+                if (!fm.isStateSaved) {
+                    fm.executePendingTransactions()
+                }
             }
 
             setListeners()

@@ -154,6 +154,10 @@
     <color name="trp_warning_text">#8A5A00</color>
     <color name="trp_warning_icon">#D6771A</color>
 
+    <!-- Flexible-time info card (Theme 4) -->
+    <color name="trp_info_bg">#E8F4FD</color>
+    <color name="trp_info_icon">#2A7AB8</color>
+
     <!-- Availability Expired (Theme 7, 17) -->
     <color name="trp_expired_bg">#FFF6F7</color>
     <color name="trp_expired_border">#F4C7C3</color>

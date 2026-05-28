@@ -22,10 +22,14 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         val tripHash: String,
         val tour: TourProduct,
         val selectedDate: String,      // Format: "yyyy-MM-dd"
-        val selectedTimeSlot: String,  // Format: "HH:mm"
+        val selectedTimeSlot: String,  // Format: "HH:mm". Ignored when [isFlexible].
         val adults: Int = 1,
         val cityId: Int,
-        val slotPrice: Double? = null  // Minimum price from selected time slot (if available)
+        val slotPrice: Double? = null, // Minimum price from selected time slot (if available)
+        // Flexible (any-time) activity flag. When true, the segment is created
+        // with 00:00–23:59 placeholders and duration = -1; timeline rendering
+        // recognises this shape and shows the FlexibleActivity cell.
+        val isFlexible: Boolean = false
     )
 
     companion object {
@@ -34,9 +38,21 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
 
     override fun on(params: Params?) {
         params?.let { p ->
-            // Build start and end datetime (format: "yyyy-MM-dd HH:mm")
-            val startDatetime = "${p.selectedDate} ${p.selectedTimeSlot}"
-            val endDatetime = calculateEndTime(p.selectedDate, p.selectedTimeSlot, p.tour.duration)
+            // Build start and end datetime (format: "yyyy-MM-dd HH:mm").
+            // Flexible activities are pinned to the full-day window 00:00–23:59
+            // and carry duration -1 so timeline rendering can recognise them.
+            val startDatetime: String
+            val endDatetime: String
+            val effectiveDuration: Double?
+            if (p.isFlexible) {
+                startDatetime = "${p.selectedDate} 00:00"
+                endDatetime = "${p.selectedDate} 23:59"
+                effectiveDuration = -1.0
+            } else {
+                startDatetime = "${p.selectedDate} ${p.selectedTimeSlot}"
+                endDatetime = calculateEndTime(p.selectedDate, p.selectedTimeSlot, p.tour.duration)
+                effectiveDuration = p.tour.duration
+            }
 
             // Build coordinate from tour location
             val coordinate = p.tour.locations?.firstOrNull()?.let { loc ->
@@ -56,7 +72,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 this.startDatetime = startDatetime
                 this.endDatetime = endDatetime
                 this.coordinate = coordinate
-                duration = p.tour.duration
+                duration = effectiveDuration
                 price = p.slotPrice ?: p.tour.price
                 currency = p.tour.currency ?: "EUR"
             }

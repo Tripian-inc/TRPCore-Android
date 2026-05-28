@@ -36,7 +36,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'maven-publish'
 
 group = "com.github.Tripian-inc"
-version = "1.2.0"
+version = "1.3.0"
 
 android {
     namespace 'com.tripian.trpcore'
@@ -158,6 +158,9 @@ dependencies {
 
     // Lottie - Loading animations
     implementation 'com.airbnb.android:lottie:6.6.0'
+
+    // Shimmer - Skeleton loading effect
+    implementation 'com.facebook.shimmer:shimmer:0.5.0'
 
     // Alerter
     implementation 'com.github.tapadoo:alerter:7.2.4'

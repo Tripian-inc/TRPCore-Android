@@ -105,6 +105,13 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
                 LottieLoading.hide(this)
                 hideLoading()
             }
+            // Force the DialogFragment transaction to run now so the loader
+            // attaches in the same frame as the activity's first draw — without
+            // this the dialog commit waits for the FragmentManager's next idle
+            // pass and the empty screen flashes briefly.
+            if (!supportFragmentManager.isStateSaved) {
+                supportFragmentManager.executePendingTransactions()
+            }
         }
 
         setListeners()

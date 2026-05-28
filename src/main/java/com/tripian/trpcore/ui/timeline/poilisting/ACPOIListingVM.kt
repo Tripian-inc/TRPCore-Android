@@ -16,8 +16,7 @@ import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.extensions.hideLoading
-import com.tripian.trpcore.util.extensions.showLoading
+import com.tripian.trpcore.util.LanguageConst
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -186,7 +185,7 @@ class ACPOIListingVM @Inject constructor(
         // isLoadingMore = true means pagination, false means fresh load
         val isPagination = isLoadingMore
         if (!isPagination) {
-            showLoading()
+            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
             currentPage = 1
         }
 
@@ -225,7 +224,7 @@ class ACPOIListingVM @Inject constructor(
                 sortingType = sortingType
             ),
             success = { response ->
-                hideLoading()
+                hideLottieLoading()
                 isLoadingMore = false
 
                 val newPois = response.data ?: emptyList()
@@ -246,7 +245,7 @@ class ACPOIListingVM @Inject constructor(
                 _hasMorePages.value = allPois.size < totalCount
             },
             error = { error ->
-                hideLoading()
+                hideLottieLoading()
                 isLoadingMore = false
                 showAlert(AlertType.ERROR, error.errorDesc)
                 if (!isPagination) {
@@ -313,7 +312,7 @@ class ACPOIListingVM @Inject constructor(
     fun createManualPoiSegment(poi: Poi, selectedDate: Date, startTime: String, endTime: String) {
         _isCreatingSegment.value = true
 
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
         createManualPoiSegmentUseCase.on(

@@ -99,18 +99,13 @@ class FlexibleActivityVH(
 
         // Change-time is hidden for flexible items: their start/end are 00:00–23:59
         // placeholders, so picking a real time would conceptually convert the item
-        // into a non-flexible reserved activity. Keep the icon out of the layout
-        // for past-day mode as well.
-        binding.btnChangeTime.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
+        // into a non-flexible reserved activity.
+        binding.btnChangeTime.visibility = View.GONE
 
         // Click handlers — no-op when past-day.
         binding.root.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
             onItemClick(item)
-        }
-        binding.btnChangeTime.setOnClickListener {
-            if (isPastDayMode) return@setOnClickListener
-            onChangeTimeClick(item)
         }
         binding.btnDelete.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
