@@ -42,7 +42,7 @@
 
 <!--                    <com.tripian.trpcore.util.widget.TextView-->
 <!--                        android:id="@+id/tvTitle"-->
-<!--                        style="@style/TextHeader2"-->
+<!--                        style="@style/TrpTextHeader2"-->
 <!--                        android:layout_width="wrap_content"-->
 <!--                        android:layout_height="50dp"-->
 <!--                        android:gravity="center"-->
@@ -81,7 +81,7 @@
                 app:tabMode="fixed"
                 app:tabRippleColor="@color/trp_pink_soft"
                 app:tabSelectedTextColor="@color/trp_primary"
-                app:tabTextAppearance="@style/TextSubhead1">
+                app:tabTextAppearance="@style/TrpTextSubhead1">
 
                 <com.google.android.material.tabs.TabItem
                     android:layout_width="match_parent"

@@ -14,7 +14,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTitleCompanion"
-        style="@style/TextHeadline"
+        style="@style/TrpTextHeadline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/viTop"
@@ -53,7 +53,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvManage"
-            style="@style/TextBody2"
+            style="@style/TrpTextBody2"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_32sdp"
             android:layout_marginStart="@dimen/_24sdp"

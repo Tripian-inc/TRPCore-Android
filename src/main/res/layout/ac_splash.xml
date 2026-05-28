@@ -7,7 +7,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTradeMark"
-        style="@style/TextBody3"
+        style="@style/TrpTextBody3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"

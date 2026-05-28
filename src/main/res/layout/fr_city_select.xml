@@ -9,7 +9,7 @@
 
     <com.tripian.trpcore.util.widget.EditText
         android:id="@+id/etSearch"
-        style="@style/TextFormField"
+        style="@style/TrpTextFormField"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_36sdp"
         android:layout_marginStart="@dimen/_12sdp"

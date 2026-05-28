@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             tools:text="Time"
-            style="@style/TextHeader2" />
+            style="@style/TrpTextHeader2" />
 
         <ImageView
             android:id="@+id/ivClose"

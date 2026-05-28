@@ -36,7 +36,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvTitle1"
-                    style="@style/TextTitle2"
+                    style="@style/TrpTextTitle2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:includeFontPadding="false"
@@ -63,7 +63,7 @@
                 android:background="@color/trp_blue_soft">
 
                 <com.tripian.trpcore.util.widget.TextView
-                    style="@style/TextCaption1"
+                    style="@style/TrpTextCaption1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"

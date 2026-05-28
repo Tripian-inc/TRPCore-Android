@@ -34,7 +34,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextSubhead2"
+                style="@style/TrpTextSubhead2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -44,7 +44,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTag"
-                style="@style/TextCaption2"
+                style="@style/TrpTextCaption2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"
@@ -62,7 +62,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDescription"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_8sdp"
@@ -98,7 +98,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvScore"
-            style="@style/TextCaption2"
+            style="@style/TrpTextCaption2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/trp_bg_butterfly_match"
@@ -135,7 +135,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvUndo"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -144,7 +144,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTellUs"
-                style="@style/TextTitle2"
+                style="@style/TrpTextTitle2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"

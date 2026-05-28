@@ -17,7 +17,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvTraveler"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="start"
@@ -38,7 +38,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvAdults"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -60,7 +60,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvAdultCount"
-                    style="@style/TextDisplay"
+                    style="@style/TrpTextDisplay"
                     android:layout_width="@dimen/_22sdp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_4sdp"
@@ -91,7 +91,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvChildren"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -113,7 +113,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvChildCount"
-                    style="@style/TextDisplay"
+                    style="@style/TrpTextDisplay"
                     android:layout_width="@dimen/_22sdp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_4sdp"
@@ -139,12 +139,12 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvWhereWillStay"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"/>
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="start"
@@ -167,7 +167,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvHotelPlaceholder"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -176,7 +176,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvHotel"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -188,7 +188,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvWhoTravelWith"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_20sdp" />
@@ -208,7 +208,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvCompanionPlaceholder"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:gravity="start"
@@ -245,7 +245,7 @@
 
 <!--            <com.tripian.trpcore.util.widget.TextView-->
 <!--                android:id="@+id/tvCompanionPlaceholder"-->
-<!--                style="@style/TextBody2Regular"-->
+<!--                style="@style/TrpTextBody2Regular"-->
 <!--                android:layout_width="wrap_content"-->
 <!--                android:layout_height="wrap_content"-->
 <!--                android:paddingTop="@dimen/_12sdp"-->
@@ -279,7 +279,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvCreateCompanion"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:gravity="start"

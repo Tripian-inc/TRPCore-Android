@@ -47,10 +47,10 @@ abstract class AdapterPoiCategoriesSub(
 
             if (selectedItems.contains(item)) {
                 imCheck.setImageResource(R.drawable.trp_ic_check_new)
-                tvName.setTextAppearance(R.style.Medium_14_Black)
+                tvName.setTextAppearance(R.style.TrpMedium_14_Black)
             } else {
                 imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
-                tvName.setTextAppearance(R.style.Regular_14_DarkGray)
+                tvName.setTextAppearance(R.style.TrpRegular_14_DarkGray)
             }
 
             itemView.tag = position

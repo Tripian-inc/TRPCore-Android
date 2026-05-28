@@ -21,7 +21,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvName"
-            style="@style/TextBody2"
+            style="@style/TrpTextBody2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -30,7 +30,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvDescription"
-            style="@style/TextBody2Regular"
+            style="@style/TrpTextBody2Regular"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_toRightOf="@+id/imImage"

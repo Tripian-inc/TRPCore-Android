@@ -19,7 +19,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvWhereAreYouGoing"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="start"
@@ -27,7 +27,7 @@
                 android:singleLine="true"/>
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="start"
@@ -51,7 +51,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDestinationPlaceholder"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -60,7 +60,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDestination"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -73,7 +73,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvSelectDates"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_20sdp"
@@ -95,7 +95,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDateArrival"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -104,7 +104,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvArrivalDate"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="end"
@@ -129,7 +129,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDateDeparture"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -138,7 +138,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDepartureDate"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="end"
@@ -151,7 +151,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvSelectHours"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_20sdp"
@@ -172,7 +172,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvHourArrival"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -181,7 +181,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvArrivalTime"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="end"
@@ -206,7 +206,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvHourDeparture"
-                style="@style/TextBody2Regular"
+                style="@style/TrpTextBody2Regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingTop="@dimen/_12sdp"
@@ -215,7 +215,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDepartureTime"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="end"

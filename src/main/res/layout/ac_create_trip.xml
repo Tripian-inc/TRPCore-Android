@@ -51,7 +51,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvPrevTitle"
-                    style="@style/TextHeader2"
+                    style="@style/TrpTextHeader2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_minus30sdp"
@@ -78,7 +78,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvTitle"
-                    style="@style/TextHeader2"
+                    style="@style/TrpTextHeader2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:paddingStart="@dimen/_10sdp"
@@ -104,7 +104,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvNextTitle"
-                    style="@style/TextHeader2"
+                    style="@style/TrpTextHeader2"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/_20sdp"
@@ -151,7 +151,7 @@
 
     <com.tripian.trpcore.util.widget.Button
         android:id="@+id/btnNext"
-        style="@style/TextButton"
+        style="@style/TrpTextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"

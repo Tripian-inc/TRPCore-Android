@@ -12,7 +12,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvName"
-        style="@style/TextHeader2Regular"
+        style="@style/TrpTextHeader2Regular"
         android:gravity="center_vertical"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"

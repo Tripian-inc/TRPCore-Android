@@ -91,7 +91,7 @@
     <style name="TrpChipCompanionSelectBackground" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="chipCornerRadius">@dimen/_10sdp</item>
         <item name="chipBackgroundColor">@color/trp_extra_sub</item>
-        <item name="android:textAppearance">@style/TextBody2Regular</item>
+        <item name="android:textAppearance">@style/TrpTextBody2Regular</item>
     </style>
 
     <style name="Trp.Widget.PillInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">

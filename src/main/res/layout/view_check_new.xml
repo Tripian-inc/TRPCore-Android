@@ -21,7 +21,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvText"
-        style="@style/TextHeader2Regular"
+        style="@style/TrpTextHeader2Regular"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_8sdp"

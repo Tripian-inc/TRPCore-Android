@@ -24,7 +24,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader1"
+                style="@style/TrpTextHeader1"
                 android:textSize="18sp"
                 android:layout_width="match_parent"
                 android:gravity="center_horizontal"
@@ -34,7 +34,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDescription"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="match_parent"
                 android:textAlignment="center"
                 android:textSize="14sp"
@@ -51,7 +51,7 @@
                 <com.tripian.trpcore.util.widget.Button
                     android:id="@+id/btnNegative"
                     android:layout_weight="1"
-                    style="@style/TextButton"
+                    style="@style/TrpTextButton"
                     android:layout_width="0dp"
                     android:layout_marginEnd="@dimen/_4sdp"
                     android:textColor="@color/trp_primary"

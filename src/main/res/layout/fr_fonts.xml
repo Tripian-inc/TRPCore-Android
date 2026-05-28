@@ -9,7 +9,7 @@
         android:orientation="vertical">
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextDisplay2"
+            style="@style/TrpTextDisplay2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -18,7 +18,7 @@
             android:text="Display 2" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextDisplay1"
+            style="@style/TrpTextDisplay1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -27,7 +27,7 @@
             android:text="Display 1" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextHeadline"
+            style="@style/TrpTextHeadline"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -36,7 +36,7 @@
             android:text="Headline" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextTitle2"
+            style="@style/TrpTextTitle2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -45,7 +45,7 @@
             android:text="Title 2" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextTitle1"
+            style="@style/TrpTextTitle1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -54,7 +54,7 @@
             android:text="Title 1" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextSubhead2"
+            style="@style/TrpTextSubhead2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -63,7 +63,7 @@
             android:text="Subhead 2" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextSubhead1"
+            style="@style/TrpTextSubhead1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -72,7 +72,7 @@
             android:text="Subhead 1" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextFormField"
+            style="@style/TrpTextFormField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -81,7 +81,7 @@
             android:text="Form Field" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextBody2"
+            style="@style/TrpTextBody2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -90,7 +90,7 @@
             android:text="Body 2" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextBody1"
+            style="@style/TrpTextBody1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -99,7 +99,7 @@
             android:text="Body 1" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextCaption2"
+            style="@style/TrpTextCaption2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -108,7 +108,7 @@
             android:text="Caption 2" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextCaption1"
+            style="@style/TrpTextCaption1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
@@ -117,7 +117,7 @@
             android:text="Caption 1" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"

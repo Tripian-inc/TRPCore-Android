@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             tools:text="Sort by" />
 
         <ImageView

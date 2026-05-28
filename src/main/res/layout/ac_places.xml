@@ -39,7 +39,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvTitle"
-                    style="@style/TextHeader2"
+                    style="@style/TrpTextHeader2"
                     android:layout_width="wrap_content"
                     android:layout_height="50dp"
                     android:gravity="center" />
@@ -66,7 +66,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvCategoryPlaceholder"
-                    style="@style/TextBody2Regular"
+                    style="@style/TrpTextBody2Regular"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:maxLines="1"
@@ -76,7 +76,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvCategory"
-                    style="@style/TextBody2"
+                    style="@style/TrpTextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:maxLines="1"
@@ -99,7 +99,7 @@
 
                 <com.tripian.trpcore.util.widget.EditText
                     android:id="@+id/etSearch"
-                    style="@style/TextFormField"
+                    style="@style/TrpTextFormField"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/_36sdp"
                     android:layout_marginHorizontal="@dimen/_12sdp"
@@ -124,7 +124,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/btnCancel"
-                    style="@style/TextBody2"
+                    style="@style/TrpTextBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignTop="@+id/etSearch"
@@ -152,7 +152,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvError"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_48sdp"

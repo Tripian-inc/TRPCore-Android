@@ -33,7 +33,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             android:gravity="center"
             android:paddingHorizontal="48dp"
             app:layout_constraintBottom_toBottomOf="parent"

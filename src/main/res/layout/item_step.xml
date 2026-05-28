@@ -28,7 +28,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvOrder"
-            style="@style/TextCaption2"
+            style="@style/TrpTextCaption2"
             android:layout_width="@dimen/_16sdp"
             android:layout_height="@dimen/_16sdp"
             android:layout_alignTop="@+id/imPoi"
@@ -55,7 +55,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvHours"
-                style="@style/TextCaption2"
+                style="@style/TrpTextCaption2"
                 android:layout_marginStart="@dimen/_2sdp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvTitle"
-            style="@style/TextSubhead1"
+            style="@style/TrpTextSubhead1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_8sdp"
@@ -91,7 +91,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvCategory"
-                style="@style/TextCaption1"
+                style="@style/TrpTextCaption1"
                 tools:text="Restaurants"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -128,7 +128,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvRate"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_4sdp"
@@ -138,7 +138,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvReview"
-                style="@style/TextCaption1"
+                style="@style/TrpTextCaption1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_4sdp"
@@ -148,7 +148,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvCategoryPrice"
-                style="@style/TextCaption1"
+                style="@style/TrpTextCaption1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_4sdp"
@@ -207,7 +207,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvReplace"
-                style="@style/TextCaption1"
+                style="@style/TrpTextCaption1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -231,7 +231,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvRemove"
-                style="@style/TextCaption1"
+                style="@style/TrpTextCaption1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -294,7 +294,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvDistance"
-            style="@style/TextCaption2"
+            style="@style/TrpTextCaption2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="@color/trp_text_primary"
@@ -303,7 +303,7 @@
 
     <com.tripian.trpcore.util.widget.Button
         android:id="@+id/btnBookARide"
-        style="@style/TextCaption2"
+        style="@style/TrpTextCaption2"
         android:layout_width="wrap_content"
         android:layout_height="28dp"
         android:layout_below="@+id/rlItem"

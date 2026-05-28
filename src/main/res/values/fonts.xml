@@ -3,7 +3,7 @@
 
     <!-- Display -->
 
-    <style name="TextDisplay">
+    <style name="TrpTextDisplay">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_display</item>
         <item name="android:textColor">@color/trp_head</item>
@@ -13,21 +13,21 @@
 
     <!-- Header -->
 
-    <style name="TextHeader1">
+    <style name="TrpTextHeader1">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_header_1</item>
         <item name="android:textColor">@color/trp_text_primary</item>
         <item name="android:textColorHint">@color/trp_text_primary</item>
     </style>
 
-    <style name="TextHeader2">
+    <style name="TrpTextHeader2">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/trp_text_primary</item>
         <item name="android:textColorHint">@color/trp_text_primary</item>
     </style>
 
-    <style name="TextHeader2Regular">
+    <style name="TrpTextHeader2Regular">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_header_2</item>
         <item name="android:textColor">@color/trp_head</item>
@@ -38,42 +38,42 @@
 
     <!-- Body -->
 
-    <style name="TextBody1">
+    <style name="TrpTextBody1">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_body_1</item>
         <item name="android:textColor">@color/trp_head</item>
         <item name="android:textColorHint">@color/trp_text_primary</item>
     </style>
 
-<!--    <style name="TextBody1">-->
+<!--    <style name="TrpTextBody1">-->
 <!--        <item name="android:fontFamily">@font/poppins_medium</item>-->
 <!--        <item name="android:textSize">@dimen/trp_text_body_1</item>-->
 <!--        <item name="android:textColor">@color/trp_main_dark</item>-->
 <!--        <item name="android:textColorHint">@color/trp_text_primary</item>-->
 <!--    </style>-->
 
-    <style name="TextBody2">
+    <style name="TrpTextBody2">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_body_2</item>
         <item name="android:textColor">@color/trp_head</item>
         <item name="android:textColorHint">@color/trp_body_dark</item>
     </style>
 
-    <style name="TextBody2Regular">
+    <style name="TrpTextBody2Regular">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_body_2</item>
         <item name="android:textColor">@color/trp_head</item>
         <item name="android:textColorHint">@color/trp_text_primary</item>
     </style>
 
-    <style name="TextBody3">
+    <style name="TrpTextBody3">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_body_3</item>
         <item name="android:textColor">@color/trp_head</item>
         <item name="android:textColorHint">@color/trp_text_primary</item>
     </style>
 
-    <style name="TextBodyCreateTrip">
+    <style name="TrpTextBodyCreateTrip">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_body_2</item>
         <item name="android:textColor">@color/trp_head</item>
@@ -85,7 +85,7 @@
 
     <!-- Button -->
 
-    <style name="TextButton">
+    <style name="TrpTextButton">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_button</item>
         <item name="android:textColor">@color/trp_head</item>
@@ -100,7 +100,7 @@
     <!-- *********************************************************** -->
     <!-- *********************************************************** -->
     <!-- *********************************************************** -->
-    <style name="TextDisplay2">
+    <style name="TrpTextDisplay2">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_size_display_2</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -108,7 +108,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextDisplay1">
+    <style name="TrpTextDisplay1">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_size_display_1</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -117,7 +117,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextHeadline">
+    <style name="TrpTextHeadline">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_size_headline</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -125,7 +125,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextTitle2">
+    <style name="TrpTextTitle2">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_size_title_2</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -133,7 +133,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextTitle1">
+    <style name="TrpTextTitle1">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_size_title_1</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -141,7 +141,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextSubhead2">
+    <style name="TrpTextSubhead2">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_size_subhead</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -149,13 +149,13 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextSubhead1">
+    <style name="TrpTextSubhead1">
         <item name="android:fontFamily">@font/semibold</item>
         <item name="android:textSize">@dimen/trp_text_size_subhead</item>
         <item name="android:textColor">@color/trp_black_soft</item>
     </style>
 
-    <style name="TextSubhead1_Regular">
+    <style name="TrpTextSubhead1_Regular">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_size_subhead</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -163,7 +163,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextFormField">
+    <style name="TrpTextFormField">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_size_form_field</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -172,7 +172,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextCaption2">
+    <style name="TrpTextCaption2">
         <item name="android:fontFamily">@font/bold</item>
         <item name="android:textSize">@dimen/trp_text_size_caption_2</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -180,7 +180,7 @@
 
     <!-- *********************************************************** -->
 
-    <style name="TextCaption1">
+    <style name="TrpTextCaption1">
         <item name="android:fontFamily">@font/regular</item>
         <item name="android:textSize">@dimen/trp_text_size_caption_1</item>
         <item name="android:textColor">@color/trp_black_soft</item>
@@ -190,103 +190,103 @@
     <!-- *********************************************************** -->
     <!-- REGULAR -->
 
-    <style name="InterTight_Regular">
+    <style name="TrpInterTight_Regular">
         <item name="android:fontFamily">@font/inter_tight_regular</item>
     </style>
 
-    <style name="InterTight_Regular.16">
+    <style name="TrpInterTight_Regular.16">
         <item name="android:textSize">16sp</item>
     </style>
 
-    <style name="InterTight_Regular.16.Hint">
+    <style name="TrpInterTight_Regular.16.Hint">
         <item name="android:textColor">@color/trp_text_dark_64</item>
     </style>
 
-    <style name="Regular">
+    <style name="TrpRegular">
         <item name="android:fontFamily">@font/regular</item>
     </style>
 
-    <style name="Regular.10">
+    <style name="TrpRegular.10">
         <item name="android:textSize">10sp</item>
     </style>
 
-    <style name="Regular.12">
+    <style name="TrpRegular.12">
         <item name="android:textSize">12sp</item>
     </style>
 
-    <style name="Regular.13">
+    <style name="TrpRegular.13">
         <item name="android:textSize">13sp</item>
     </style>
 
-    <style name="Regular.14">
+    <style name="TrpRegular.14">
         <item name="android:textSize">14sp</item>
     </style>
 
-    <style name="Regular.16">
+    <style name="TrpRegular.16">
         <item name="android:textSize">16sp</item>
     </style>
 
-    <style name="Regular.12.Blue">
+    <style name="TrpRegular.12.Blue">
         <item name="android:textColor">@color/trp_blue</item>
     </style>
 
-    <style name="Regular.12.Gray">
+    <style name="TrpRegular.12.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Regular.12.DarkGray">
+    <style name="TrpRegular.12.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Regular.12.Black">
+    <style name="TrpRegular.12.Black">
         <item name="android:textColor">@color/trp_head</item>
     </style>
 
-    <style name="Regular.13.Black">
+    <style name="TrpRegular.13.Black">
         <item name="android:textColor">@color/trp_head</item>
     </style>
 
-    <style name="Regular.13.White">
+    <style name="TrpRegular.13.White">
         <item name="android:textColor">@color/trp_white</item>
     </style>
 
-    <style name="Regular.14.SoftGray">
+    <style name="TrpRegular.14.SoftGray">
         <item name="android:textColor">@color/trp_light_grey</item>
     </style>
 
-    <style name="Regular.14.Gray">
+    <style name="TrpRegular.14.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Regular.14.DarkGray">
+    <style name="TrpRegular.14.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Regular.14.Blue">
+    <style name="TrpRegular.14.Blue">
         <item name="android:textColor">@color/trp_blue</item>
     </style>
 
-    <style name="Regular.14.Black">
+    <style name="TrpRegular.14.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Regular.14.Red">
+    <style name="TrpRegular.14.Red">
         <item name="android:textColor">@color/pink</item>
     </style>
 
-    <style name="Regular.16.Gray">
+    <style name="TrpRegular.16.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Regular.16.Black">
+    <style name="TrpRegular.16.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Regular.16.DarkGray">
+    <style name="TrpRegular.16.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Regular.16.White">
+    <style name="TrpRegular.16.White">
         <item name="android:textColor">@color/trp_white</item>
     </style>
 
@@ -297,103 +297,103 @@
     <!-- *********************************************************** -->
     <!-- REGULAR -->
 
-    <style name="InterTight_Medium">
+    <style name="TrpInterTight_Medium">
         <item name="android:fontFamily">@font/inter_tight_medium</item>
     </style>
 
-    <style name="InterTight_Medium.12">
+    <style name="TrpInterTight_Medium.12">
         <item name="android:textSize">12sp</item>
     </style>
 
-    <style name="InterTight_Medium.12.Dark">
+    <style name="TrpInterTight_Medium.12.Dark">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Medium">
+    <style name="TrpMedium">
         <item name="android:fontFamily">@font/semibold</item>
     </style>
 
-    <style name="Medium.10">
+    <style name="TrpMedium.10">
         <item name="android:textSize">10sp</item>
     </style>
 
-    <style name="Medium.12">
+    <style name="TrpMedium.12">
         <item name="android:textSize">12sp</item>
     </style>
 
-    <style name="Medium.13">
+    <style name="TrpMedium.13">
         <item name="android:textSize">13sp</item>
     </style>
 
-    <style name="Medium.14">
+    <style name="TrpMedium.14">
         <item name="android:textSize">14sp</item>
     </style>
 
-    <style name="Medium.16">
+    <style name="TrpMedium.16">
         <item name="android:textSize">16sp</item>
     </style>
 
-    <style name="Medium.12.Blue">
+    <style name="TrpMedium.12.Blue">
         <item name="android:textColor">@color/trp_blue</item>
     </style>
 
-    <style name="Medium.12.Gray">
+    <style name="TrpMedium.12.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Medium.12.DarkGray">
+    <style name="TrpMedium.12.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Medium.12.Black">
+    <style name="TrpMedium.12.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Medium.13.Black">
+    <style name="TrpMedium.13.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Medium.13.White">
+    <style name="TrpMedium.13.White">
         <item name="android:textColor">@color/trp_white</item>
     </style>
 
-    <style name="Medium.14.SoftGray">
+    <style name="TrpMedium.14.SoftGray">
         <item name="android:textColor">@color/trp_light_grey</item>
     </style>
 
-    <style name="Medium.14.Gray">
+    <style name="TrpMedium.14.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Medium.14.DarkGray">
+    <style name="TrpMedium.14.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Medium.14.Blue">
+    <style name="TrpMedium.14.Blue">
         <item name="android:textColor">@color/trp_blue</item>
     </style>
 
-    <style name="Medium.14.Black">
+    <style name="TrpMedium.14.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Medium.14.Red">
+    <style name="TrpMedium.14.Red">
         <item name="android:textColor">@color/pink</item>
     </style>
 
-    <style name="Medium.16.Gray">
+    <style name="TrpMedium.16.Gray">
         <item name="android:textColor">@color/trp_grey</item>
     </style>
 
-    <style name="Medium.16.Black">
+    <style name="TrpMedium.16.Black">
         <item name="android:textColor">@color/trp_main_dark</item>
     </style>
 
-    <style name="Medium.16.DarkGray">
+    <style name="TrpMedium.16.DarkGray">
         <item name="android:textColor">@color/trp_body</item>
     </style>
 
-    <style name="Medium.16.White">
+    <style name="TrpMedium.16.White">
         <item name="android:textColor">@color/trp_white</item>
     </style>
 

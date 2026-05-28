@@ -13,7 +13,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvWelcome"
-            style="@style/TextHeadline"
+            style="@style/TrpTextHeadline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_16sdp"
@@ -37,7 +37,7 @@
                 app:srcCompat="@drawable/trp_ic_edit" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
@@ -60,7 +60,7 @@
                 app:srcCompat="@drawable/trp_ic_friends" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -82,7 +82,7 @@
                 app:srcCompat="@drawable/trp_ic_password" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -104,7 +104,7 @@
                 app:srcCompat="@drawable/trp_ic_help" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -127,7 +127,7 @@
                 app:srcCompat="@drawable/trp_ic_info" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_8sdp"
@@ -150,7 +150,7 @@
             app:srcCompat="@drawable/trp_ic_logout" />
 
         <com.tripian.trpcore.util.widget.TextView
-            style="@style/TextBody2"
+            style="@style/TrpTextBody2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"

@@ -35,7 +35,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center" />
@@ -68,7 +68,7 @@
                 app:tabMode="scrollable"
                 app:tabRippleColor="@color/trp_pink_soft"
                 app:tabSelectedTextColor="@color/trp_black_soft"
-                app:tabTextAppearance="@style/TextSubhead1" />
+                app:tabTextAppearance="@style/TrpTextSubhead1" />
         </com.tripian.trpcore.util.widget.CardView>
 
         <ProgressBar
@@ -95,7 +95,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvStep"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -103,7 +103,7 @@
                 android:textColor="@color/trp_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody3"
+                style="@style/TrpTextBody3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_2sdp"
@@ -114,7 +114,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTotalStep"
-                style="@style/TextBody3"
+                style="@style/TrpTextBody3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -134,7 +134,7 @@
 
     <com.tripian.trpcore.util.widget.Button
         android:id="@+id/btnDone"
-        style="@style/TextButton"
+        style="@style/TrpTextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"

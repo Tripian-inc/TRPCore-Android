@@ -60,18 +60,18 @@ abstract class AdapterCreateTripAnswerMultiple(
                 imCheck.setImageResource(R.drawable.trp_ic_check_new)
                 imArrow.setImageResource(R.drawable.trp_ic_arrow_up)
                 if (isSubAnswers) {
-                    tvName.setTextAppearance(R.style.Medium_14_Black)
+                    tvName.setTextAppearance(R.style.TrpMedium_14_Black)
                 } else {
-                    tvName.setTextAppearance(R.style.Medium_16_Black)
+                    tvName.setTextAppearance(R.style.TrpMedium_16_Black)
                 }
                 rvInnerList.visibility = View.VISIBLE
             } else {
                 imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
                 imArrow.setImageResource(R.drawable.trp_ic_arrow_down)
                 if (isSubAnswers) {
-                    tvName.setTextAppearance(R.style.Regular_14_DarkGray)
+                    tvName.setTextAppearance(R.style.TrpRegular_14_DarkGray)
                 } else {
-                    tvName.setTextAppearance(R.style.Regular_16_DarkGray)
+                    tvName.setTextAppearance(R.style.TrpRegular_16_DarkGray)
                 }
                 rvInnerList.visibility = View.GONE
             }

@@ -36,7 +36,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextSubhead1"
+                style="@style/TrpTextSubhead1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/trp_black_soft"
@@ -52,7 +52,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvMatch"
-                    style="@style/TextCaption2"
+                    style="@style/TrpTextCaption2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/pink"
@@ -61,7 +61,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvSplitter"
-                    style="@style/TextCaption1"
+                    style="@style/TrpTextCaption1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text=" • "
@@ -70,7 +70,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvPartOfDay"
-                    style="@style/TextCaption1"
+                    style="@style/TrpTextCaption1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/trp_grey"
@@ -80,7 +80,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvCategory"
-                style="@style/TextCaption2"
+                style="@style/TrpTextCaption2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"

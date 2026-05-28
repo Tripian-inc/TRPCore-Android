@@ -43,7 +43,7 @@ abstract class AdapterSelectCompanion(val context: Context, val items: ArrayList
 
             if (selectedItems.containsKey(position) && selectedItems[position]!!) {
                 imCancel.isVisible = true
-                tvName.setTextAppearance(R.style.TextSubhead1)
+                tvName.setTextAppearance(R.style.TrpTextSubhead1)
                 cardView.setCardBackgroundColor(
                     ContextCompat.getColor(
                         context,
@@ -52,7 +52,7 @@ abstract class AdapterSelectCompanion(val context: Context, val items: ArrayList
                 )
             } else {
                 imCancel.isVisible = false
-                tvName.setTextAppearance(R.style.TextSubhead1_Regular)
+                tvName.setTextAppearance(R.style.TrpTextSubhead1_Regular)
                 cardView.setCardBackgroundColor(
                     ContextCompat.getColor(
                         context,

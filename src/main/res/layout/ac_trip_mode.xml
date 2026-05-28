@@ -76,7 +76,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvPlanCity"
-                style="@style/TextDisplay"
+                style="@style/TrpTextDisplay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -92,7 +92,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvPlanDay"
-                    style="@style/TextBody3"
+                    style="@style/TrpTextBody3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Day 1 - OCT 10" />
@@ -135,7 +135,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvFavorites"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -159,7 +159,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvItinerary"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"/>
@@ -182,7 +182,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvExperiences"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -206,7 +206,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvPlaces"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -306,7 +306,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvSearchThisArea"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -335,7 +335,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvClearResults"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -356,7 +356,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvAlternatives"
-            style="@style/TextCaption1"
+            style="@style/TrpTextCaption1"
             android:layout_width="@dimen/_100sdp"
             android:layout_height="@dimen/_36sdp"
             android:layout_gravity="center"

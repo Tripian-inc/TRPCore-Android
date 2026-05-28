@@ -46,7 +46,7 @@
 
                     <com.tripian.trpcore.util.widget.TextInputEditText
                         android:id="@+id/etSearch"
-                        style="@style/TextFormField"
+                        style="@style/TrpTextFormField"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:background="@color/trp_white"
@@ -71,7 +71,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvError"
-        style="@style/TextHeader2"
+        style="@style/TrpTextHeader2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"

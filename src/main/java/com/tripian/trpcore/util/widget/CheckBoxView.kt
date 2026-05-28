@@ -61,11 +61,11 @@ class CheckBoxView @JvmOverloads constructor(
 
         if (isChecked) {
             imCheck.setImageResource(R.drawable.trp_ic_check_new)
-            tvText.setTextAppearance(R.style.TextHeader2)
+            tvText.setTextAppearance(R.style.TrpTextHeader2)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_black))
         } else {
             imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
-            tvText.setTextAppearance(R.style.TextHeader2Regular)
+            tvText.setTextAppearance(R.style.TrpTextHeader2Regular)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_text_primary))
         }
     }
