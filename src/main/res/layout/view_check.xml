@@ -3,7 +3,7 @@
     android:id="@+id/root"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_oval_gray_large_radius"
+    android:background="@drawable/trp_bg_oval_gray_large_radius"
     android:gravity="center"
     android:minWidth="@dimen/_64sdp"
     android:minHeight="@dimen/_32sdp"
@@ -13,7 +13,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvText"
-        style="@style/TextBody2"
+        style="@style/TrpTextBody2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_4sdp"

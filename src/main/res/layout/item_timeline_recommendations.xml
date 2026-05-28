@@ -52,7 +52,7 @@
                 android:layout_width="16dp"
                 android:layout_marginStart="@dimen/_7sdp"
                 android:layout_height="16dp"
-                android:src="@drawable/ic_chevron_down"
+                android:src="@drawable/trp_ic_chevron_down"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/titleContainer"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -64,7 +64,7 @@
                 android:layout_height="@dimen/_30sdp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Delete"
-                android:src="@drawable/ic_delete_recommendation"
+                android:src="@drawable/trp_ic_delete_recommendation"
                 android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -121,7 +121,7 @@
             android:layout_marginHorizontal="16dp"
             android:paddingHorizontal="6dp"
             android:paddingVertical="6dp"
-            android:background="@drawable/bg_starting_point"
+            android:background="@drawable/trp_bg_starting_point"
             tools:visibility="visible"
             android:visibility="gone">
 
@@ -130,7 +130,7 @@
                 android:id="@+id/ivStartingPointPin"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_starting_point_pin" />
+                android:src="@drawable/trp_ic_starting_point_pin" />
 
             <!-- Starting Point Name - Medium 14px primaryText -->
             <TextView
@@ -168,7 +168,7 @@
                 android:layout_marginStart="4dp"
                 android:layout_height="14dp"
                 android:contentDescription="Transport Mode"
-                android:src="@drawable/ic_itinerary_walk"
+                android:src="@drawable/trp_ic_itinerary_walk"
                 app:tint="#8C8C8C" />
 
             <!-- Route Info Text -->

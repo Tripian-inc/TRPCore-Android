@@ -24,7 +24,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvRate"
-            style="@style/TextSubhead1"
+            style="@style/TrpTextSubhead1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -38,13 +38,13 @@
             android:layout_height="3dp"
             android:layout_gravity="center"
             android:layout_marginStart="@dimen/_6sdp"
-            android:background="@drawable/bg_circle_black_full"
+            android:background="@drawable/trp_bg_circle_black_full"
             android:textColor="@color/trp_extra_main"
             android:visibility="visible" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvReviewDate"
-            style="@style/TextSubhead1"
+            style="@style/TrpTextSubhead1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -55,7 +55,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvComment"
-        style="@style/TextBody1"
+        style="@style/TrpTextBody1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -65,7 +65,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvAuthor"
-        style="@style/TextCaption2"
+        style="@style/TrpTextCaption2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"

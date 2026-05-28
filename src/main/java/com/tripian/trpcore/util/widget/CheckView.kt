@@ -38,9 +38,9 @@ class CheckView @JvmOverloads constructor(
         tvText = findViewById(R.id.tvText)
 
         if (attrs != null) {
-            context!!.withStyledAttributes(attrs, R.styleable.CheckView) {
+            context!!.withStyledAttributes(attrs, R.styleable.TrpCheckView) {
 
-                getString(R.styleable.CheckView_text).let {
+                getString(R.styleable.TrpCheckView_trpText).let {
                     tvText.text = it
                 }
 
@@ -58,10 +58,10 @@ class CheckView @JvmOverloads constructor(
         }
 
         if (isChecked) {
-            root.setBackgroundResource(R.drawable.bg_oval_purple_large_radius)
+            root.setBackgroundResource(R.drawable.trp_bg_oval_purple_large_radius)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_white))
         } else {
-            root.setBackgroundResource(R.drawable.bg_oval_gray_large_radius)
+            root.setBackgroundResource(R.drawable.trp_bg_oval_gray_large_radius)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_body))
         }
     }

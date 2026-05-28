@@ -8,7 +8,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTitle"
-        style="@style/TextTitle1"
+        style="@style/TrpTextTitle1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_24sdp"
@@ -17,7 +17,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvDescription"
-        style="@style/TextSubhead1"
+        style="@style/TrpTextSubhead1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_24sdp"

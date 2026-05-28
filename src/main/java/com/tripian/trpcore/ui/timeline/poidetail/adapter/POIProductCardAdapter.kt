@@ -46,7 +46,7 @@ class POIProductCardAdapter(
 
         fun bind(product: Product) {
             // Image
-            val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.poi_product_card_corner_radius)
+            val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_poi_product_card_corner_radius)
             Glide.with(binding.root.context)
                 .load(product.image)
                 .placeholder(R.color.trp_grey_10)

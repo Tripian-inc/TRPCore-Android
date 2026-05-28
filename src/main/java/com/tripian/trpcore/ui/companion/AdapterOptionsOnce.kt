@@ -46,9 +46,9 @@ abstract class AdapterOptionsOnce constructor(val context: Context, val items: L
             tvName.text = item.name
 
             if (selectedItem == position) {
-                imCheck.setImageResource(R.drawable.ic_check_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_new)
             } else {
-                imCheck.setImageResource(R.drawable.ic_check_empty_new)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
             }
 
             itemView.tag = position

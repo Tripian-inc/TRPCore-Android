@@ -286,49 +286,49 @@ class ACActivityListingVM @Inject constructor(
             ActivityCategoryItem(
                 id = "all",
                 languageKey = LanguageConst.ADD_PLAN_CAT_ALL,
-                iconRes = R.drawable.ic_all_categories,
+                iconRes = R.drawable.trp_ic_all_categories,
                 keywords = null
             ),
             ActivityCategoryItem(
                 id = "guided_tours",
                 languageKey = LanguageConst.ADD_PLAN_CAT_GUIDED_TOURS,
-                iconRes = R.drawable.ic_cat_activities,
+                iconRes = R.drawable.trp_ic_cat_activities,
                 keywords = "guided tours, free tours"
             ),
             ActivityCategoryItem(
                 id = "tickets",
                 languageKey = LanguageConst.ADD_PLAN_CAT_TICKETS,
-                iconRes = R.drawable.ic_cat_tickets,
+                iconRes = R.drawable.trp_ic_cat_tickets,
                 keywords = "tickets"
             ),
             ActivityCategoryItem(
                 id = "excursions",
                 languageKey = LanguageConst.ADD_PLAN_CAT_EXCURSIONS,
-                iconRes = R.drawable.ic_cat_excursions,
+                iconRes = R.drawable.trp_ic_cat_excursions,
                 keywords = "day trip"
             ),
             ActivityCategoryItem(
                 id = "poi",
                 languageKey = LanguageConst.ADD_PLAN_CAT_POI,
-                iconRes = R.drawable.ic_cat_poi,
+                iconRes = R.drawable.trp_ic_cat_poi,
                 keywords = "things to do"
             ),
             ActivityCategoryItem(
                 id = "food",
                 languageKey = LanguageConst.ADD_PLAN_CAT_FOOD,
-                iconRes = R.drawable.ic_cat_food_drinks,
+                iconRes = R.drawable.trp_ic_cat_food_drinks,
                 keywords = "food, tasting tour"
             ),
             ActivityCategoryItem(
                 id = "shows",
                 languageKey = LanguageConst.ADD_PLAN_CAT_SHOWS,
-                iconRes = R.drawable.ic_cat_shows,
+                iconRes = R.drawable.trp_ic_cat_shows,
                 keywords = "show"
             ),
 //            ActivityCategoryItem(
 //                id = "transport",
 //                languageKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT,
-//                iconRes = R.drawable.ic_cat_transfers,
+//                iconRes = R.drawable.trp_ic_cat_transfers,
 //                keywords = "transfer service, transportation"
 //            )
         )

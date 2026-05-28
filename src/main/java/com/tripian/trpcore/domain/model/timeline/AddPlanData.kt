@@ -265,37 +265,37 @@ enum class SmartCategory(
 ) {
     GUIDED_TOURS(
         apiValue = "guided tours, free tours",
-        iconRes = R.drawable.ic_cat_activities,
+        iconRes = R.drawable.trp_ic_cat_activities,
         titleKey = LanguageConst.ADD_PLAN_CAT_GUIDED_TOURS
     ),
     TICKETS(
         apiValue = "tickets",
-        iconRes = R.drawable.ic_cat_tickets,
+        iconRes = R.drawable.trp_ic_cat_tickets,
         titleKey = LanguageConst.ADD_PLAN_CAT_TICKETS
     ),
     EXCURSIONS(
         apiValue = "day trip",
-        iconRes = R.drawable.ic_cat_excursions,
+        iconRes = R.drawable.trp_ic_cat_excursions,
         titleKey = LanguageConst.ADD_PLAN_CAT_EXCURSIONS
     ),
     POI(
         apiValue = "things to do",
-        iconRes = R.drawable.ic_cat_poi,
+        iconRes = R.drawable.trp_ic_cat_poi,
         titleKey = LanguageConst.ADD_PLAN_CAT_POI
     ),
     FOOD(
         apiValue = "food, tasting tour",
-        iconRes = R.drawable.ic_cat_food_drinks,
+        iconRes = R.drawable.trp_ic_cat_food_drinks,
         titleKey = LanguageConst.ADD_PLAN_CAT_FOOD
     ),
     SHOWS(
         apiValue = "show",
-        iconRes = R.drawable.ic_cat_shows,
+        iconRes = R.drawable.trp_ic_cat_shows,
         titleKey = LanguageConst.ADD_PLAN_CAT_SHOWS
     ),
 //    TRANSPORT(
 //        apiValue = "transfer service, transportation",
-//        iconRes = R.drawable.ic_cat_transfers,
+//        iconRes = R.drawable.trp_ic_cat_transfers,
 //        titleKey = LanguageConst.ADD_PLAN_CAT_TRANSPORT
 //    )
 }
@@ -309,15 +309,15 @@ enum class ManualCategory(
     val titleKey: String
 ) {
     ACTIVITIES(
-        iconRes = R.drawable.ic_cat_activities,
+        iconRes = R.drawable.trp_ic_cat_activities,
         titleKey = LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES
     ),
     PLACES_OF_INTEREST(
-        iconRes = R.drawable.ic_see_do,
+        iconRes = R.drawable.trp_ic_see_do,
         titleKey = LanguageConst.ADD_PLAN_CAT_MANUAL_PLACES
     ),
     EAT_AND_DRINK(
-        iconRes = R.drawable.ic_eat_drink,
+        iconRes = R.drawable.trp_ic_eat_drink,
         titleKey = LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK
     )
 }

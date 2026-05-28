@@ -27,7 +27,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -43,7 +43,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvCityName"
-                    style="@style/TextBody3"
+                    style="@style/TrpTextBody3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:ellipsize="end"
@@ -59,13 +59,13 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="@dimen/_8sdp"
-            android:background="@drawable/bg_oval_primary"
+            android:background="@drawable/trp_bg_oval_primary"
             android:gravity="center"
             android:orientation="vertical">
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDate"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -90,8 +90,8 @@
         android:padding="@dimen/_8sdp"
         android:layout_marginTop="@dimen/_6sdp"
         android:layout_marginEnd="@dimen/_8sdp"
-        android:background="@drawable/bg_circle_white"
-        app:srcCompat="@drawable/ic_delete_trip" />
+        android:background="@drawable/trp_bg_circle_white"
+        app:srcCompat="@drawable/trp_ic_delete_trip" />
 
     <com.tripian.trpcore.util.widget.ImageView
         android:id="@+id/imEdit"
@@ -101,8 +101,8 @@
         android:layout_marginEnd="@dimen/_48sdp"
         android:layout_marginTop="@dimen/_6sdp"
         android:padding="@dimen/_8sdp"
-        android:background="@drawable/bg_circle_white"
-        app:srcCompat="@drawable/ic_edit_trip"/>
+        android:background="@drawable/trp_bg_circle_white"
+        app:srcCompat="@drawable/trp_ic_edit_trip"/>
 </com.tripian.trpcore.util.widget.CardView><!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
     <!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
     <!--    xmlns:tools="http://schemas.android.com/tools"-->
@@ -127,7 +127,7 @@
 
     <!--        <com.tripian.trpcore.util.widget.ImageView-->
     <!--            android:id="@+id/imMore"-->
-    <!--            style="@style/TextBody2"-->
+    <!--            style="@style/TrpTextBody2"-->
     <!--            android:layout_width="0dp"-->
     <!--            android:layout_height="wrap_content"-->
     <!--            android:layout_margin="@dimen/_12sdp"-->
@@ -137,7 +137,7 @@
     <!--            android:paddingBottom="@dimen/_4sdp"-->
     <!--            app:layout_constraintEnd_toEndOf="@id/imImage"-->
     <!--            app:layout_constraintTop_toTopOf="@id/imImage"-->
-    <!--            app:srcCompat="@drawable/ic_edit_trip" />-->
+    <!--            app:srcCompat="@drawable/trp_ic_edit_trip" />-->
 
     <!--        <com.tripian.trpcore.util.widget.CardView-->
     <!--            android:id="@+id/cvItem"-->
@@ -164,7 +164,7 @@
 
     <!--                <com.tripian.trpcore.util.widget.TextView-->
     <!--                    android:id="@+id/tvTitle"-->
-    <!--                    style="@style/TextHeader2"-->
+    <!--                    style="@style/TrpTextHeader2"-->
     <!--                    android:layout_width="match_parent"-->
     <!--                    android:layout_height="wrap_content"-->
     <!--                    android:layout_marginTop="@dimen/_12sdp"-->
@@ -174,16 +174,16 @@
 
     <!--                <com.tripian.trpcore.util.widget.ImageView-->
     <!--                    android:id="@+id/imOpen"-->
-    <!--                    style="@style/TextBody2"-->
+    <!--                    style="@style/TrpTextBody2"-->
     <!--                    android:layout_width="wrap_content"-->
     <!--                    android:layout_height="wrap_content"-->
     <!--                    android:layout_alignTop="@+id/tvDate"-->
     <!--                    android:layout_alignBottom="@+id/tvDate"-->
-    <!--                    app:srcCompat="@drawable/ic_open" />-->
+    <!--                    app:srcCompat="@drawable/trp_ic_open" />-->
 
     <!--                <com.tripian.trpcore.util.widget.TextView-->
     <!--                    android:id="@+id/tvDate"-->
-    <!--                    style="@style/TextBody3"-->
+    <!--                    style="@style/TrpTextBody3"-->
     <!--                    android:layout_width="match_parent"-->
     <!--                    android:layout_height="wrap_content"-->
     <!--                    android:layout_below="@+id/tvTitle"-->
@@ -198,12 +198,12 @@
 
     <!--                <com.tripian.trpcore.util.widget.ImageView-->
     <!--                    android:id="@+id/imNext"-->
-    <!--                    style="@style/TextBody2"-->
+    <!--                    style="@style/TrpTextBody2"-->
     <!--                    android:layout_width="wrap_content"-->
     <!--                    android:layout_height="wrap_content"-->
     <!--                    android:layout_alignParentEnd="true"-->
     <!--                    android:layout_centerVertical="true"-->
-    <!--                    app:srcCompat="@drawable/ic_next_purple" />-->
+    <!--                    app:srcCompat="@drawable/trp_ic_next_purple" />-->
     <!--            </RelativeLayout>-->
     <!--        </com.tripian.trpcore.util.widget.CardView>-->
 

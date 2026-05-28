@@ -8,11 +8,11 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="@dimen/_16sdp"
-        android:background="@drawable/bg_rounded_top_black" />
+        android:background="@drawable/trp_bg_rounded_top_black" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvVisitedBefore"
-        style="@style/TextBody2"
+        style="@style/TrpTextBody2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
         android:background="@color/trp_black_soft"
@@ -22,7 +22,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvNotLike"
-        style="@style/TextBody2"
+        style="@style/TrpTextBody2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_40sdp"
         android:background="@color/trp_black_soft"

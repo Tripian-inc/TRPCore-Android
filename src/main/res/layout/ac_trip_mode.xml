@@ -39,7 +39,7 @@
             android:layout_height="@dimen/_36sdp"
             android:layout_marginStart="@dimen/_20sdp"
             android:layout_marginTop="@dimen/_12sdp"
-            app:srcCompat="@drawable/ic_create_trip_back" />
+            app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
         <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/imBooking"
@@ -50,7 +50,7 @@
             android:layout_marginEnd="@dimen/_10sdp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="visible"
-            app:srcCompat="@drawable/ic_my_offers" />
+            app:srcCompat="@drawable/trp_ic_my_offers" />
 
         <com.tripian.trpcore.util.widget.ImageView
             android:id="@+id/imMyOffers"
@@ -61,7 +61,7 @@
             android:layout_marginEnd="@dimen/_10sdp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:visibility="gone"
-            app:srcCompat="@drawable/ic_offer_search" />
+            app:srcCompat="@drawable/trp_ic_offer_search" />
 
         <LinearLayout
             android:id="@+id/llTitle"
@@ -76,7 +76,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvPlanCity"
-                style="@style/TextDisplay"
+                style="@style/TrpTextDisplay"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
@@ -92,7 +92,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvPlanDay"
-                    style="@style/TextBody3"
+                    style="@style/TrpTextBody3"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     tools:text="Day 1 - OCT 10" />
@@ -102,7 +102,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:visibility="gone"
-                    app:srcCompat="@drawable/ic_arrow_down_gold" />
+                    app:srcCompat="@drawable/trp_ic_arrow_down_gold" />
             </LinearLayout>
         </LinearLayout>
     </RelativeLayout>
@@ -131,11 +131,11 @@
                 android:layout_width="@dimen/_20sdp"
                 android:layout_height="@dimen/_20sdp"
                 android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_favorite_tab" />
+                app:srcCompat="@drawable/trp_ic_favorite_tab" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvFavorites"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -155,11 +155,11 @@
                 android:layout_width="@dimen/_20sdp"
                 android:layout_height="@dimen/_20sdp"
                 android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_itinerary" />
+                app:srcCompat="@drawable/trp_ic_itinerary" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvItinerary"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"/>
@@ -178,11 +178,11 @@
                 android:layout_width="@dimen/_20sdp"
                 android:layout_height="@dimen/_20sdp"
                 android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_local_experience" />
+                app:srcCompat="@drawable/trp_ic_local_experience" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvExperiences"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -202,11 +202,11 @@
                 android:layout_width="@dimen/_20sdp"
                 android:layout_height="@dimen/_20sdp"
                 android:layout_gravity="center"
-                app:srcCompat="@drawable/ic_explore_place" />
+                app:srcCompat="@drawable/trp_ic_explore_place" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvPlaces"
-                style="@style/Regular.13.Black"
+                style="@style/TrpRegular.13.Black"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp" />
@@ -235,7 +235,7 @@
     <!--                android:layout_width="@dimen/_28sdp"-->
     <!--                android:layout_height="@dimen/_28sdp"-->
     <!--                android:layout_gravity="center"-->
-    <!--                app:srcCompat="@drawable/ic_tripian_map" />-->
+    <!--                app:srcCompat="@drawable/trp_ic_tripian_map" />-->
     <!--        </FrameLayout>-->
 
     <!--        <FrameLayout-->
@@ -250,7 +250,7 @@
     <!--                android:layout_width="@dimen/_16sdp"-->
     <!--                android:layout_height="@dimen/_16sdp"-->
     <!--                android:layout_gravity="center"-->
-    <!--                app:srcCompat="@drawable/ic_itinerary" />-->
+    <!--                app:srcCompat="@drawable/trp_ic_itinerary" />-->
     <!--        </FrameLayout>-->
 
     <!--        <FrameLayout-->
@@ -265,7 +265,7 @@
     <!--                android:layout_width="@dimen/_20sdp"-->
     <!--                android:layout_height="@dimen/_20sdp"-->
     <!--                android:layout_gravity="center"-->
-    <!--                app:srcCompat="@drawable/ic_favorite" />-->
+    <!--                app:srcCompat="@drawable/trp_ic_favorite" />-->
     <!--        </FrameLayout>-->
 
     <!--        <FrameLayout-->
@@ -280,7 +280,7 @@
     <!--                android:layout_width="@dimen/_20sdp"-->
     <!--                android:layout_height="@dimen/_20sdp"-->
     <!--                android:layout_gravity="center"-->
-    <!--                app:srcCompat="@drawable/ic_home_search_unselected" />-->
+    <!--                app:srcCompat="@drawable/trp_ic_home_search_unselected" />-->
     <!--        </FrameLayout>-->
     <!--    </LinearLayout>-->
 
@@ -289,7 +289,7 @@
         android:layout_width="wrap_content"
         android:layout_height="@dimen/_26sdp"
         android:layout_marginTop="@dimen/_20sdp"
-        android:background="@drawable/selector_button_primary"
+        android:background="@drawable/trp_selector_button_primary"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingStart="@dimen/_12sdp"
@@ -302,11 +302,11 @@
         <com.tripian.trpcore.util.widget.ImageView
             android:layout_width="@dimen/_10sdp"
             android:layout_height="@dimen/_10sdp"
-            app:srcCompat="@drawable/ic_search_white" />
+            app:srcCompat="@drawable/trp_ic_search_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvSearchThisArea"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -318,7 +318,7 @@
         android:layout_width="wrap_content"
         android:layout_height="@dimen/_26sdp"
         android:layout_marginTop="@dimen/_16sdp"
-        android:background="@drawable/selector_button_blue"
+        android:background="@drawable/trp_selector_button_blue"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingStart="@dimen/_12sdp"
@@ -331,11 +331,11 @@
         <com.tripian.trpcore.util.widget.ImageView
             android:layout_width="@dimen/_8sdp"
             android:layout_height="@dimen/_8sdp"
-            app:srcCompat="@drawable/ic_close_white" />
+            app:srcCompat="@drawable/trp_ic_close_white" />
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvClearResults"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_4sdp"
@@ -356,7 +356,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvAlternatives"
-            style="@style/TextCaption1"
+            style="@style/TrpTextCaption1"
             android:layout_width="@dimen/_100sdp"
             android:layout_height="@dimen/_36sdp"
             android:layout_gravity="center"
@@ -380,7 +380,7 @@
         app:layout_constraintTop_toTopOf="@+id/cvAlternatives"
         app:maxImageSize="@dimen/_18sdp"
         app:rippleColor="@color/trp_white"
-        app:srcCompat="@drawable/ic_btn_alternatives" />
+        app:srcCompat="@drawable/trp_ic_btn_alternatives" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btnReturn"
@@ -397,7 +397,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:maxImageSize="@dimen/_12sdp"
         app:rippleColor="@color/trp_white"
-        app:srcCompat="@drawable/btn_return"
+        app:srcCompat="@drawable/trp_btn_return"
         tools:visibility="visible"
         app:tint="@color/trp_blue_dark" />
 
@@ -416,7 +416,7 @@
         app:layout_constraintTop_toTopOf="@+id/btnAlternative"
         app:maxImageSize="@dimen/_16sdp"
         app:rippleColor="@color/trp_blue_soft"
-        app:srcCompat="@drawable/ic_btn_user_location"
+        app:srcCompat="@drawable/trp_ic_btn_user_location"
         app:tint="@color/trp_black" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -433,7 +433,7 @@
         app:layout_constraintTop_toBottomOf="@+id/rlTop"
         app:maxImageSize="@dimen/_16sdp"
         app:rippleColor="@color/trp_blue_soft"
-        app:srcCompat="@drawable/ic_offer_search"
+        app:srcCompat="@drawable/trp_ic_offer_search"
         app:tint="@color/trp_black" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -450,6 +450,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/rlTop"
         app:maxImageSize="@dimen/_16sdp"
-        app:srcCompat="@drawable/btn_google_export"
+        app:srcCompat="@drawable/trp_btn_google_export"
         android:tintMode="screen" />
 </androidx.constraintlayout.widget.ConstraintLayout>

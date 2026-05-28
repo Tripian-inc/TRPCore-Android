@@ -21,7 +21,7 @@
             android:layout_marginTop="@dimen/_10sdp"
             android:clickable="true"
             android:focusable="true"
-            app:srcCompat="@drawable/ic_back" />
+            app:srcCompat="@drawable/trp_ic_back" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -32,7 +32,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center"
@@ -93,7 +93,7 @@
                     android:layout_width="0dp"
                     android:layout_marginEnd="@dimen/_6sdp"
                     android:layout_weight="1"
-                    app:icon="@drawable/ic_filter_activity"
+                    app:icon="@drawable/trp_ic_filter_activity"
                     app:iconTint="@null"
                     tools:text="Filters" />
 
@@ -103,7 +103,7 @@
                     android:layout_width="0dp"
                     android:layout_marginStart="@dimen/_6sdp"
                     android:layout_weight="1"
-                    app:icon="@drawable/ic_order_activity"
+                    app:icon="@drawable/trp_ic_order_activity"
                     app:iconTint="@color/trp_text_primary"
                     tools:text="Sort by" />
             </LinearLayout>
@@ -158,7 +158,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvEmpty"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -170,7 +170,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvError"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"

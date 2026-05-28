@@ -308,14 +308,14 @@ class TripRepository @Inject constructor(
 
     fun getContinentImage(slug: String): Int {
         return when(slug) {
-            "europe" -> R.drawable.im_europa
-            "north-america" -> R.drawable.im_north_america
-            "south-america" -> R.drawable.im_south_america
-            "africa" -> R.drawable.im_africa
-            "asia" -> R.drawable.im_asia
-            "australia", "oceania" -> R.drawable.im_australia
+            "europe" -> R.drawable.trp_im_europa
+            "north-america" -> R.drawable.trp_im_north_america
+            "south-america" -> R.drawable.trp_im_south_america
+            "africa" -> R.drawable.trp_im_africa
+            "asia" -> R.drawable.trp_im_asia
+            "australia", "oceania" -> R.drawable.trp_im_australia
             else -> {
-                R.drawable.im_europa}
+                R.drawable.trp_im_europa}
         }
     }
 }

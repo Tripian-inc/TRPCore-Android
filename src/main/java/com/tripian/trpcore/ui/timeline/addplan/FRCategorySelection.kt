@@ -90,7 +90,7 @@ class FRCategorySelection : Fragment() {
                     state: androidx.recyclerview.widget.RecyclerView.State
                 ) {
                     val spacing = resources.getDimensionPixelSize(
-                        com.tripian.trpcore.R.dimen.category_grid_spacing
+                        com.tripian.trpcore.R.dimen.trp_category_grid_spacing
                     )
                     outRect.left = spacing / 2
                     outRect.right = spacing / 2

@@ -27,7 +27,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_320sdp"
-                android:background="@drawable/bg_transparent_black_layer"
+                android:background="@drawable/trp_bg_transparent_black_layer"
                 app:layout_collapseMode="pin" />
 
             <com.tripian.trpcore.util.widget.ImageView
@@ -40,11 +40,11 @@
                 app:layout_collapseParallaxMultiplier="0.5"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:srcCompat="@drawable/ic_create_trip_back" />
+                app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvName"
-                style="@style/TextTitle2"
+                style="@style/TrpTextTitle2"
                 android:layout_width="@dimen/_180sdp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|bottom"
@@ -61,7 +61,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                android:background="@drawable/bg_rounded_top_white"
+                android:background="@drawable/trp_bg_rounded_top_white"
                 android:elevation="@dimen/_8sdp"
                 android:minHeight="@dimen/_56sdp"
                 android:paddingBottom="@dimen/_4sdp"
@@ -70,7 +70,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvDescription"
-                    style="@style/TextCaption2"
+                    style="@style/TrpTextCaption2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
@@ -84,7 +84,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvWhereToTry"
-                    style="@style/TextTitle1"
+                    style="@style/TrpTextTitle1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_below="@+id/tvDescription"

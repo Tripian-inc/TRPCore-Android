@@ -8,7 +8,7 @@
         android:id="@+id/rlTop"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_135sdp"
-        android:background="@drawable/bg_rounded_bottom_white"
+        android:background="@drawable/trp_bg_rounded_bottom_white"
         android:elevation="@dimen/_3sdp"
         android:paddingBottom="@dimen/_12sdp"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -22,7 +22,7 @@
             android:layout_marginStart="@dimen/_20sdp"
             android:layout_marginTop="@dimen/_20sdp"
             android:clickable="true"
-            app:srcCompat="@drawable/ic_create_trip_back" />
+            app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
         <LinearLayout
             android:id="@+id/llTitle"
@@ -35,7 +35,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center" />
@@ -44,7 +44,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"
-                app:srcCompat="@drawable/im_line" />
+                app:srcCompat="@drawable/trp_im_line" />
         </LinearLayout>
 
         <com.tripian.trpcore.util.widget.CardView
@@ -68,7 +68,7 @@
                 app:tabMode="scrollable"
                 app:tabRippleColor="@color/trp_pink_soft"
                 app:tabSelectedTextColor="@color/trp_black_soft"
-                app:tabTextAppearance="@style/TextSubhead1" />
+                app:tabTextAppearance="@style/TrpTextSubhead1" />
         </com.tripian.trpcore.util.widget.CardView>
 
         <ProgressBar
@@ -87,7 +87,7 @@
             android:layout_marginTop="@dimen/_26sdp"
             android:layout_marginEnd="@dimen/_16sdp"
             android:visibility="gone"
-            android:background="@drawable/bg_oval_gray_without_line"
+            android:background="@drawable/trp_bg_oval_gray_without_line"
             android:gravity="center"
             android:orientation="horizontal"
             android:paddingStart="@dimen/_16sdp"
@@ -95,7 +95,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvStep"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -103,7 +103,7 @@
                 android:textColor="@color/trp_primary" />
 
             <com.tripian.trpcore.util.widget.TextView
-                style="@style/TextBody3"
+                style="@style/TrpTextBody3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_2sdp"
@@ -114,7 +114,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTotalStep"
-                style="@style/TextBody3"
+                style="@style/TrpTextBody3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -134,14 +134,14 @@
 
     <com.tripian.trpcore.util.widget.Button
         android:id="@+id/btnDone"
-        style="@style/TextButton"
+        style="@style/TrpTextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:layout_marginStart="@dimen/_24sdp"
         android:layout_marginEnd="@dimen/_24sdp"
         android:layout_marginBottom="@dimen/_12sdp"
-        android:background="@drawable/selector_button_primary"
+        android:background="@drawable/trp_selector_button_primary"
         android:visibility="visible"
         android:textAllCaps="false"
         android:textColor="@color/trp_white" />

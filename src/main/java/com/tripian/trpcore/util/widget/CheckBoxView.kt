@@ -40,9 +40,9 @@ class CheckBoxView @JvmOverloads constructor(
         imCheck = findViewById(R.id.imCheck)
 
         if (attrs != null) {
-            context!!.withStyledAttributes(attrs, R.styleable.CheckView) {
+            context!!.withStyledAttributes(attrs, R.styleable.TrpCheckView) {
 
-                getString(R.styleable.CheckView_text).let {
+                getString(R.styleable.TrpCheckView_trpText).let {
                     tvText.text = it
                 }
 
@@ -60,12 +60,12 @@ class CheckBoxView @JvmOverloads constructor(
         }
 
         if (isChecked) {
-            imCheck.setImageResource(R.drawable.ic_check_new)
-            tvText.setTextAppearance(R.style.TextHeader2)
+            imCheck.setImageResource(R.drawable.trp_ic_check_new)
+            tvText.setTextAppearance(R.style.TrpTextHeader2)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_black))
         } else {
-            imCheck.setImageResource(R.drawable.ic_check_empty_new)
-            tvText.setTextAppearance(R.style.TextHeader2Regular)
+            imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
+            tvText.setTextAppearance(R.style.TrpTextHeader2Regular)
             tvText.setTextColor(ContextCompat.getColor(context, R.color.trp_text_primary))
         }
     }

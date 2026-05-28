@@ -28,7 +28,7 @@
         android:layout_height="32dp"
         android:background="@android:color/transparent"
         android:padding="6dp"
-        android:src="@drawable/ic_add_to_plan"
+        android:src="@drawable/trp_ic_add_to_plan"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -78,7 +78,7 @@
             android:layout_height="@dimen/_9sdp"
             android:layout_marginBottom="@dimen/_1sdp"
             android:layout_marginStart="@dimen/_1sdp"
-            android:src="@drawable/ic_rating_star" />
+            android:src="@drawable/trp_ic_rating_star" />
 
         <!-- Rating Count - Regular 14sp -->
         <com.tripian.trpcore.util.widget.TextView

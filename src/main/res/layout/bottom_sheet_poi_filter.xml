@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_bottom_sheet_white"
+    android:background="@drawable/trp_bg_bottom_sheet_white"
     android:orientation="vertical"
     android:paddingBottom="32dp">
 
@@ -14,7 +14,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle" />
+        android:background="@drawable/trp_bg_drag_handle" />
 
     <!-- Header -->
     <RelativeLayout
@@ -27,7 +27,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             tools:text="Filters" />
 
         <com.tripian.trpcore.util.widget.ImageView
@@ -37,7 +37,7 @@
             android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_close" />
+            android:src="@drawable/trp_ic_close" />
 
     </RelativeLayout>
 

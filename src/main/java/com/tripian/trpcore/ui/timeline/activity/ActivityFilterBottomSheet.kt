@@ -85,7 +85,7 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
 
     private fun setupSliders() {
         // Custom thumb drawable for both sliders
-        val thumbDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.bg_slider_thumb)
+        val thumbDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.trp_bg_slider_thumb)
 
         // Thumb radius in pixels (12.5dp = 25dp diameter / 2)
         val thumbRadiusPx = (12.5f * resources.displayMetrics.density).toInt()

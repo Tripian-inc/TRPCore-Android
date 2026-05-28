@@ -16,7 +16,7 @@
         android:id="@+id/vImage"
         android:layout_width="@dimen/_62sdp"
         android:layout_height="@dimen/_62sdp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -26,7 +26,7 @@
         android:layout_height="14dp"
         android:layout_marginStart="@dimen/_12sdp"
         android:layout_marginEnd="@dimen/_30sdp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/vImage"
         app:layout_constraintTop_toTopOf="@id/vImage" />
@@ -37,7 +37,7 @@
         android:layout_height="14dp"
         android:layout_marginTop="6dp"
         android:layout_marginEnd="@dimen/_60sdp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/vTitleLine1"
         app:layout_constraintTop_toBottomOf="@id/vTitleLine1" />
@@ -47,7 +47,7 @@
         android:layout_width="80dp"
         android:layout_height="12dp"
         android:layout_marginTop="10dp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintStart_toStartOf="@id/vTitleLine1"
         app:layout_constraintTop_toBottomOf="@id/vTitleLine2" />
 
@@ -56,7 +56,7 @@
         android:layout_width="60dp"
         android:layout_height="12dp"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintStart_toStartOf="@id/vTitleLine1"
         app:layout_constraintTop_toBottomOf="@id/vRating" />
 
@@ -65,7 +65,7 @@
         android:layout_width="70dp"
         android:layout_height="16dp"
         android:layout_marginEnd="@dimen/_12sdp"
-        android:background="@drawable/bg_skeleton_placeholder"
+        android:background="@drawable/trp_bg_skeleton_placeholder"
         app:layout_constraintBottom_toBottomOf="@id/vDuration"
         app:layout_constraintEnd_toEndOf="parent" />
 

@@ -17,11 +17,11 @@
         android:id="@+id/imCheck"
         android:layout_width="@dimen/_25sdp"
         android:layout_height="@dimen/_25sdp"
-        app:srcCompat="@drawable/ic_check_empty_new" />
+        app:srcCompat="@drawable/trp_ic_check_empty_new" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvText"
-        style="@style/TextHeader2Regular"
+        style="@style/TrpTextHeader2Regular"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/_8sdp"

@@ -61,10 +61,10 @@ class POISelectionAdapter(
                 Glide.with(binding.ivImage)
                     .load(url)
                     .centerCrop()
-                    .placeholder(R.drawable.bg_place_holder_image)
+                    .placeholder(R.drawable.trp_bg_place_holder_image)
                     .into(binding.ivImage)
             } ?: run {
-                binding.ivImage.setImageResource(R.drawable.bg_place_holder_image)
+                binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
             }
 
             // Rating

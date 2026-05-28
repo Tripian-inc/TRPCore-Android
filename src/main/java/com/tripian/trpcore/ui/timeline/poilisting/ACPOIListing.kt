@@ -214,9 +214,9 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
         // Update icon - use badge version when filters are active
         val iconRes = if (filter.hasActiveFilter) {
-            R.drawable.ic_filter_activity_badge
+            R.drawable.trp_ic_filter_activity_badge
         } else {
-            R.drawable.ic_filter_activity
+            R.drawable.trp_ic_filter_activity
         }
         binding.btnFilters.setIconResource(iconRes)
     }

@@ -11,7 +11,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvName"
-        style="@style/TextSubhead1"
+        style="@style/TrpTextSubhead1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
@@ -25,5 +25,5 @@
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:padding="@dimen/_2sdp"
-        app:srcCompat="@drawable/ic_check_new" />
+        app:srcCompat="@drawable/trp_ic_check_new" />
 </RelativeLayout>

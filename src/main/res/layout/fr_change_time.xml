@@ -24,14 +24,14 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeadline"
+                style="@style/TrpTextHeadline"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textColor="@color/trp_black_soft" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDescription"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_8sdp" />
@@ -44,7 +44,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvStartTime"
-                    style="@style/TextDisplay1"
+                    style="@style/TrpTextDisplay1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -55,7 +55,7 @@
                     android:textColor="@color/trp_black_soft" />
 
                 <com.tripian.trpcore.util.widget.TextView
-                    style="@style/TextDisplay1"
+                    style="@style/TrpTextDisplay1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="-"
@@ -63,7 +63,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvEndTime"
-                    style="@style/TextDisplay1"
+                    style="@style/TrpTextDisplay1"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -82,7 +82,7 @@
 
                 <com.tripian.trpcore.util.widget.Button
                     android:id="@+id/btnNegative"
-                    style="@style/TextButton"
+                    style="@style/TrpTextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="?selectableItemBackgroundBorderless"
@@ -90,7 +90,7 @@
 
                 <com.tripian.trpcore.util.widget.Button
                     android:id="@+id/btnPositive"
-                    style="@style/TextButton"
+                    style="@style/TrpTextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"

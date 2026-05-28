@@ -64,11 +64,11 @@ class BottomToast private constructor(
 
         // Set icon based on alert type
         val iconRes = when (alertType) {
-            AlertType.SUCCESS -> R.drawable.ic_check_circle_green
-            AlertType.WARNING -> R.drawable.ic_info
-            AlertType.ERROR -> R.drawable.ic_close
-            AlertType.INFO -> R.drawable.ic_info
-            else -> R.drawable.ic_check_circle_green
+            AlertType.SUCCESS -> R.drawable.trp_ic_check_circle_green
+            AlertType.WARNING -> R.drawable.trp_ic_info
+            AlertType.ERROR -> R.drawable.trp_ic_close
+            AlertType.INFO -> R.drawable.trp_ic_info
+            else -> R.drawable.trp_ic_check_circle_green
         }
         binding?.ivToastIcon?.setImageResource(iconRes)
         // Set icon tint to match accent color

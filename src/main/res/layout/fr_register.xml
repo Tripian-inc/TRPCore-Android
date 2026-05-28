@@ -18,7 +18,7 @@
             android:layout_marginStart="@dimen/_20sdp"
             android:layout_marginTop="@dimen/_20sdp"
             android:clickable="true"
-            app:srcCompat="@drawable/ic_create_trip_back" />
+            app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -30,7 +30,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center" />
@@ -39,7 +39,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"
-                app:srcCompat="@drawable/im_line" />
+                app:srcCompat="@drawable/trp_im_line" />
         </LinearLayout>
     </RelativeLayout>
 
@@ -61,11 +61,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etFirstName"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_16sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:imeOptions="actionNext"
                 android:inputType="text"
                 android:paddingStart="@dimen/_10sdp"
@@ -73,11 +73,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etLastName"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_16sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:imeOptions="actionNext"
                 android:inputType="text"
                 android:paddingStart="@dimen/_10sdp"
@@ -85,11 +85,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etMail"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_16sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:imeOptions="actionNext"
                 android:inputType="textEmailAddress"
                 android:paddingStart="@dimen/_10sdp"
@@ -104,10 +104,10 @@
 
                 <com.tripian.trpcore.util.widget.EditText
                     android:id="@+id/etPassword"
-                    style="@style/TextFormField"
+                    style="@style/TrpTextFormField"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/_36sdp"
-                    android:background="@drawable/bg_oval_gray"
+                    android:background="@drawable/trp_bg_oval_gray"
                     android:imeOptions="actionNext"
                     android:inputType="textPassword"
                     android:paddingStart="@dimen/_10sdp"
@@ -120,7 +120,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:padding="@dimen/_9sdp"
-                    app:srcCompat="@drawable/ic_eye_off" />
+                    app:srcCompat="@drawable/trp_ic_eye_off" />
             </RelativeLayout>
 
 
@@ -132,10 +132,10 @@
 
                 <com.tripian.trpcore.util.widget.EditText
                     android:id="@+id/etPassword2"
-                    style="@style/TextFormField"
+                    style="@style/TrpTextFormField"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/_36sdp"
-                    android:background="@drawable/bg_oval_gray"
+                    android:background="@drawable/trp_bg_oval_gray"
                     android:imeOptions="actionDone"
                     android:inputType="textPassword"
                     android:paddingStart="@dimen/_10sdp"
@@ -148,16 +148,16 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:padding="@dimen/_9sdp"
-                    app:srcCompat="@drawable/ic_eye_off" />
+                    app:srcCompat="@drawable/trp_ic_eye_off" />
             </RelativeLayout>
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etBirthDate"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_16sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:inputType="number"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
@@ -173,7 +173,7 @@
                     android:id="@+id/chkToe"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
-                    android:background="@drawable/ic_check_empty_new"/>
+                    android:background="@drawable/trp_ic_check_empty_new"/>
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvToe"
                     android:layout_width="wrap_content"
@@ -186,14 +186,14 @@
 
     <com.tripian.trpcore.util.widget.Button
         android:id="@+id/btnRegister"
-        style="@style/TextButton"
+        style="@style/TrpTextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_marginStart="@dimen/_32sdp"
         android:layout_marginEnd="@dimen/_32sdp"
         android:layout_marginBottom="@dimen/_24sdp"
-        android:background="@drawable/selector_button_primary"
+        android:background="@drawable/trp_selector_button_primary"
         android:textAllCaps="false"
         android:textColor="@color/trp_white" />
 </RelativeLayout>

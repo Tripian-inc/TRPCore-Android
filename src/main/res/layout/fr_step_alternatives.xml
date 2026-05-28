@@ -29,7 +29,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvTitle"
-                    style="@style/TextHeader2"
+                    style="@style/TrpTextHeader2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
@@ -42,7 +42,7 @@
                     android:layout_alignParentRight="true"
                     android:layout_gravity="center_vertical"
                     android:padding="@dimen/_13sdp"
-                    app:srcCompat="@drawable/ic_close_black" />
+                    app:srcCompat="@drawable/trp_ic_close_black" />
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView

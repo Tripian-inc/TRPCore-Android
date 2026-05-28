@@ -77,7 +77,7 @@ class SmartCategoryAdapter(
                 // When spanning 3 columns but we want same visual width as other items
                 // Set width to WRAP_CONTENT and let the FrameLayout center it
                 contentParams.width = binding.root.context.resources.displayMetrics.widthPixels / 3 -
-                    binding.root.context.resources.getDimensionPixelSize(R.dimen.category_grid_spacing) * 2
+                    binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_category_grid_spacing) * 2
                 contentParams.gravity = android.view.Gravity.CENTER
             } else {
                 contentParams.width = ViewGroup.LayoutParams.MATCH_PARENT

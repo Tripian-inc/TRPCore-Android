@@ -10,7 +10,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvCityName"
-        style="@style/TextBody1"
+        style="@style/TrpTextBody1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/trp_body"
@@ -18,7 +18,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvCountyName"
-        style="@style/TextCaption1"
+        style="@style/TrpTextCaption1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_4sdp"

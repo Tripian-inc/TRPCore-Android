@@ -14,7 +14,7 @@
         android:id="@+id/orderTimeContainer"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
-        android:background="@drawable/bg_order_time_container"
+        android:background="@drawable/trp_bg_order_time_container"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -24,7 +24,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_marginStart="6dp"
-            android:background="@drawable/bg_step_order_new"
+            android:background="@drawable/trp_bg_step_order_new"
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
@@ -137,7 +137,7 @@
                             android:layout_height="12dp"
                             android:layout_marginStart="2dp"
                             android:contentDescription="Rating"
-                            android:src="@drawable/ic_rating_star" />
+                            android:src="@drawable/trp_ic_rating_star" />
 
                         <!-- Review Count - Light 14px fgWeak -->
                         <TextView
@@ -167,7 +167,7 @@
                             android:layout_width="16dp"
                             android:layout_height="16dp"
                             android:contentDescription="Duration"
-                            android:src="@drawable/ic_duration" />
+                            android:src="@drawable/trp_ic_duration" />
 
                         <TextView
                             android:id="@+id/tvDuration"
@@ -210,7 +210,7 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="Change Time"
                         android:padding="6dp"
-                        android:src="@drawable/ic_change_time" />
+                        android:src="@drawable/trp_ic_change_time" />
 
                     <!-- Remove Step Button -->
                     <ImageButton
@@ -220,7 +220,7 @@
                         android:layout_marginStart="4dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="Remove"
-                        android:src="@drawable/ic_remove_step" />
+                        android:src="@drawable/trp_ic_remove_step" />
 
                 </LinearLayout>
 

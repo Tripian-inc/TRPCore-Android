@@ -30,7 +30,7 @@
                     android:layout_marginStart="@dimen/_20sdp"
                     android:layout_marginTop="@dimen/_20sdp"
                     android:clickable="true"
-                    app:srcCompat="@drawable/ic_profile" />
+                    app:srcCompat="@drawable/trp_ic_profile" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -42,7 +42,7 @@
 
 <!--                    <com.tripian.trpcore.util.widget.TextView-->
 <!--                        android:id="@+id/tvTitle"-->
-<!--                        style="@style/TextHeader2"-->
+<!--                        style="@style/TrpTextHeader2"-->
 <!--                        android:layout_width="wrap_content"-->
 <!--                        android:layout_height="50dp"-->
 <!--                        android:gravity="center"-->
@@ -53,7 +53,7 @@
                         android:id="@+id/imLogo"
                         android:layout_width="102dp"
                         android:layout_height="46dp"
-                        app:srcCompat="@drawable/ic_tripian_new_logo" />
+                        app:srcCompat="@drawable/trp_ic_tripian_new_logo" />
                 </LinearLayout>
 
                 <com.tripian.trpcore.util.widget.ImageView
@@ -63,7 +63,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_marginTop="@dimen/_20sdp"
                     android:layout_marginEnd="@dimen/_20sdp"
-                    app:srcCompat="@drawable/ic_add_trip" />
+                    app:srcCompat="@drawable/trp_ic_add_trip" />
             </RelativeLayout>
 
             <com.google.android.material.tabs.TabLayout
@@ -81,7 +81,7 @@
                 app:tabMode="fixed"
                 app:tabRippleColor="@color/trp_pink_soft"
                 app:tabSelectedTextColor="@color/trp_primary"
-                app:tabTextAppearance="@style/TextSubhead1">
+                app:tabTextAppearance="@style/TrpTextSubhead1">
 
                 <com.google.android.material.tabs.TabItem
                     android:layout_width="match_parent"

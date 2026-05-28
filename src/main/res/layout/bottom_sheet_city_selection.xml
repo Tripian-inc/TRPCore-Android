@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:background="@drawable/bg_rounded_top_white"
+    android:background="@drawable/trp_bg_rounded_top_white"
     android:paddingBottom="32dp">
 
     <!-- Drag Handle -->
@@ -14,7 +14,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle" />
+        android:background="@drawable/trp_bg_drag_handle" />
 
     <!-- Header -->
     <RelativeLayout
@@ -28,7 +28,7 @@
             android:layout_centerInParent="true"
             android:id="@+id/tvTitle"
             tools:text="Select City"
-            style="@style/TextHeader2"/>
+            style="@style/TrpTextHeader2"/>
 
         <ImageView
             android:id="@+id/ivClose"
@@ -37,7 +37,7 @@
             android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/trp_ic_close"
             android:contentDescription="Close"
             app:tint="@color/trp_text_primary" />
 

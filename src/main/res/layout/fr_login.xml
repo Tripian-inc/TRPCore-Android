@@ -19,7 +19,7 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvLogin"
-            style="@style/TextHeader1"
+            style="@style/TrpTextHeader1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_12sdp"
@@ -34,7 +34,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvDontHaveAccount"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
@@ -43,7 +43,7 @@
 
             <com.tripian.trpcore.util.widget.Button
                 android:id="@+id/btnRegister"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/_18sdp"
                 android:layout_marginStart="@dimen/_2sdp"
@@ -59,7 +59,7 @@
             android:layout_height="@dimen/_51sdp"
             android:layout_marginTop="@dimen/_24sdp"
             android:inputType="textEmailAddress"
-            app:isPasswordToggleEnabled="false" />
+            app:trpIsPasswordToggleEnabled="false" />
 
         <com.tripian.trpcore.util.widget.TextInputView
             android:id="@+id/inputPassword"
@@ -67,16 +67,16 @@
             android:layout_height="@dimen/_51sdp"
             android:layout_marginTop="@dimen/_9sdp"
             android:inputType="textPassword"
-            app:isPasswordToggleEnabled="true" />
+            app:trpIsPasswordToggleEnabled="true" />
 
 
         <com.tripian.trpcore.util.widget.Button
             android:id="@+id/btnLogin"
-            style="@style/TextBody1"
+            style="@style/TrpTextBody1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/_18sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:paddingHorizontal="@dimen/_18sdp"
             android:textAllCaps="false"
             android:textColor="@color/trp_white"
@@ -96,7 +96,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitleOr"
-                style="@style/TextCaption2"
+                style="@style/TrpTextCaption2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_marginHorizontal="@dimen/_8sdp"
@@ -117,7 +117,7 @@
             android:layout_width="match_parent"
             android:layout_height="@dimen/_31sdp"
             android:layout_marginHorizontal="@dimen/_36sdp"
-            android:background="@drawable/selector_button_grey"
+            android:background="@drawable/trp_selector_button_grey"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -127,11 +127,11 @@
                 android:layout_gravity="center_vertical"
                 android:layout_marginEnd="@dimen/_1sdp"
                 android:elevation="@dimen/_12sdp"
-                app:srcCompat="@drawable/ic_google" />
+                app:srcCompat="@drawable/trp_ic_google" />
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvGoogle"
-                style="@style/TextBody1"
+                style="@style/TrpTextBody1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/_3sdp"

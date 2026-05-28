@@ -102,7 +102,7 @@ class MapBottomListAdapter(
             if (item.isSelected) {
                 binding.tvOrderBadge.background = ContextCompat.getDrawable(
                     binding.root.context,
-                    R.drawable.bg_marker_red
+                    R.drawable.trp_bg_marker_red
                 )
                 binding.tvOrderBadge.setTextColor(
                     ContextCompat.getColor(binding.root.context, R.color.trp_white)
@@ -110,7 +110,7 @@ class MapBottomListAdapter(
             } else {
                 binding.tvOrderBadge.background = ContextCompat.getDrawable(
                     binding.root.context,
-                    R.drawable.bg_marker_white
+                    R.drawable.trp_bg_marker_white
                 )
                 binding.tvOrderBadge.setTextColor(
                     ContextCompat.getColor(binding.root.context, R.color.trp_black_soft)
@@ -122,7 +122,7 @@ class MapBottomListAdapter(
 
             // Thumbnail image
             if (!item.imageUrl.isNullOrEmpty()) {
-                val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.corner_radius_3dp)
+                val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_corner_radius_3dp)
                 Glide.with(binding.ivThumbnail)
                     .load(item.imageUrl)
                     .transform(CenterCrop(), RoundedCorners(cornerRadius))

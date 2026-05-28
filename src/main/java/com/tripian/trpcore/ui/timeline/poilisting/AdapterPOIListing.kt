@@ -50,7 +50,7 @@ class AdapterPOIListing(
             // Image
             val imageUrl = poi.image?.url
             if (!imageUrl.isNullOrEmpty()) {
-                val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.corner_radius_3dp)
+                val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_corner_radius_3dp)
                 Glide.with(binding.ivPOIImage)
                     .load(imageUrl)
                     .transform(CenterCrop(), RoundedCorners(cornerRadius))

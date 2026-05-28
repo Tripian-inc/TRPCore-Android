@@ -9,7 +9,7 @@
 
     <com.tripian.trpcore.util.widget.EditText
         android:id="@+id/etSearch"
-        style="@style/TextFormField"
+        style="@style/TrpTextFormField"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_36sdp"
         android:layout_marginStart="@dimen/_12sdp"
@@ -20,8 +20,8 @@
         android:focusedByDefault="true"
         android:inputType="text"
         android:imeOptions="actionDone"
-        android:background="@drawable/bg_oval_gray"
-        android:drawableStart="@drawable/ic_search_gray"
+        android:background="@drawable/trp_bg_oval_gray"
+        android:drawableStart="@drawable/trp_ic_search_gray"
         android:drawablePadding="@dimen/_8sdp"
         android:paddingStart="@dimen/_10sdp"
         android:paddingEnd="@dimen/_10sdp" />

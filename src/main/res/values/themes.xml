@@ -61,7 +61,7 @@
     <style name="TrpDefaultNumberPickerTheme" parent="TrpAppTheme">
         <item name="colorControlNormal">@color/trp_ultra_light_grey</item>
         <item name="android:fontFamily">@font/semibold</item>
-        <item name="android:textSize">@dimen/text_size_headline</item>
+        <item name="android:textSize">@dimen/trp_text_size_headline</item>
         <item name="android:textColor">@color/trp_black87</item>
     </style>
 
@@ -91,7 +91,7 @@
     <style name="TrpChipCompanionSelectBackground" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="chipCornerRadius">@dimen/_10sdp</item>
         <item name="chipBackgroundColor">@color/trp_extra_sub</item>
-        <item name="android:textAppearance">@style/TextBody2Regular</item>
+        <item name="android:textAppearance">@style/TrpTextBody2Regular</item>
     </style>
 
     <style name="Trp.Widget.PillInputLayout" parent="Widget.Material3.TextInputLayout.FilledBox.Dense">
@@ -159,7 +159,7 @@
     </style>
 
     <style name="TrpTimelineBottomSheet" parent="Widget.Design.BottomSheet.Modal">
-        <item name="android:background">@drawable/bg_bottom_sheet</item>
+        <item name="android:background">@drawable/trp_bg_bottom_sheet</item>
     </style>
 
     <!-- AddPlan Continue Button Style -->

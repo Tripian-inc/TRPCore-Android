@@ -24,7 +24,7 @@
                 android:layout_height="@dimen/_38sdp"
                 android:layout_gravity="center_vertical"
                 android:padding="@dimen/_13sdp"
-                app:srcCompat="@drawable/ic_close_black" />
+                app:srcCompat="@drawable/trp_ic_close_black" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -36,7 +36,7 @@
 
                 <com.tripian.trpcore.util.widget.TextView
                     android:id="@+id/tvTitle1"
-                    style="@style/TextTitle2"
+                    style="@style/TrpTextTitle2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:includeFontPadding="false"
@@ -63,7 +63,7 @@
                 android:background="@color/trp_blue_soft">
 
                 <com.tripian.trpcore.util.widget.TextView
-                    style="@style/TextCaption1"
+                    style="@style/TrpTextCaption1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
@@ -78,7 +78,7 @@
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
                     android:padding="@dimen/_11sdp"
-                    app:srcCompat="@drawable/ic_close_black" />
+                    app:srcCompat="@drawable/trp_ic_close_black" />
             </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView

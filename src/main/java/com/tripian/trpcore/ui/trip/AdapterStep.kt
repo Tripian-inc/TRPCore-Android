@@ -120,17 +120,17 @@ abstract class AdapterStep(
                     .placeholder(
                         ContextCompat.getDrawable(
                             context,
-                            R.drawable.bg_place_holder_image
+                            R.drawable.trp_bg_place_holder_image
                         )
                     )
                     .into(imPoi)
             }
 
             if (item.homeBase) {
-                Glide.with(context).load(R.drawable.ic_map_icon_homebase)
+                Glide.with(context).load(R.drawable.trp_ic_map_icon_homebase)
                     .centerInside()
                     .into(imPoi)
-                imPoi.setBackgroundResource(R.drawable.bg_circle_black_full)
+                imPoi.setBackgroundResource(R.drawable.trp_bg_circle_black_full)
                 imPoi.scaleType = android.widget.ImageView.ScaleType.CENTER
             }
 
@@ -171,7 +171,7 @@ abstract class AdapterStep(
 
                 imDrive.visibility = View.VISIBLE
                 if (distance.compareTo(BigDecimal(1.8)) == 1) {
-                    imDrive.setImageResource(R.drawable.ic_itinerary_car)
+                    imDrive.setImageResource(R.drawable.trp_ic_itinerary_car)
 //                    distanceTextKey = LanguageConst.DURATION_CAR
                     createUberInfo(position).let { uber ->
                         btnBookARide.isVisible = uber != null
@@ -179,7 +179,7 @@ abstract class AdapterStep(
                     }
                 } else {
                     btnBookARide.isVisible = false
-                    imDrive.setImageResource(R.drawable.ic_itinerary_walk)
+                    imDrive.setImageResource(R.drawable.trp_ic_itinerary_walk)
                 }
 
                 var min = item.leg!!.duration!! / 60

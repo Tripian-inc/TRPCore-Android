@@ -47,11 +47,11 @@ abstract class AdapterPoiCategories(
             tvName.text = item.name
 
             if (checkAllCategoriesSelected(item)) {
-                imCheck.setImageResource(R.drawable.ic_check_new)
-                tvName.setTextAppearance(R.style.Medium_16_Black)
+                imCheck.setImageResource(R.drawable.trp_ic_check_new)
+                tvName.setTextAppearance(R.style.TrpMedium_16_Black)
             } else {
-                imCheck.setImageResource(R.drawable.ic_check_empty_new)
-                tvName.setTextAppearance(R.style.Regular_16_DarkGray)
+                imCheck.setImageResource(R.drawable.trp_ic_check_empty_new)
+                tvName.setTextAppearance(R.style.TrpRegular_16_DarkGray)
             }
 
             if (adapters.containsKey(position)) {

@@ -10,11 +10,11 @@
         android:id="@+id/viTop"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_16sdp"
-        android:background="@drawable/bg_companion_top" />
+        android:background="@drawable/trp_bg_companion_top" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTitleCompanion"
-        style="@style/TextHeadline"
+        style="@style/TrpTextHeadline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/viTop"
@@ -31,7 +31,7 @@
         android:layout_gravity="center_vertical"
         android:layout_marginStart="@dimen/_4sdp"
         android:padding="@dimen/_13sdp"
-        app:srcCompat="@drawable/ic_close_black" />
+        app:srcCompat="@drawable/trp_ic_close_black" />
 
     <com.tripian.trpcore.util.widget.ImageView
         android:id="@+id/imOk"
@@ -42,7 +42,7 @@
         android:layout_gravity="center_vertical"
         android:layout_marginEnd="@dimen/_4sdp"
         android:padding="@dimen/_11sdp"
-        app:srcCompat="@drawable/ic_tick_black" />
+        app:srcCompat="@drawable/trp_ic_tick_black" />
 
     <FrameLayout
         android:id="@+id/flManage"
@@ -53,12 +53,12 @@
 
         <com.tripian.trpcore.util.widget.TextView
             android:id="@+id/tvManage"
-            style="@style/TextBody2"
+            style="@style/TrpTextBody2"
             android:layout_width="match_parent"
             android:layout_height="@dimen/_32sdp"
             android:layout_marginStart="@dimen/_24sdp"
             android:layout_marginEnd="@dimen/_24sdp"
-            android:background="@drawable/selector_trip_companion"
+            android:background="@drawable/trp_selector_trip_companion"
             android:gravity="center" />
     </FrameLayout>
 

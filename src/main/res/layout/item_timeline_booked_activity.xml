@@ -14,7 +14,7 @@
         android:id="@+id/orderTimeContainer"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
-        android:background="@drawable/bg_order_time_container"
+        android:background="@drawable/trp_bg_order_time_container"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -24,7 +24,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_marginStart="6dp"
-            android:background="@drawable/bg_step_order_new"
+            android:background="@drawable/trp_bg_step_order_new"
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
@@ -104,7 +104,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="@drawable/bg_confirmed_badge"
+                android:background="@drawable/trp_bg_confirmed_badge"
                 android:fontFamily="@font/medium"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="4dp"
@@ -125,7 +125,7 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:contentDescription="Travelers"
-                    android:src="@drawable/ic_traveler_count" />
+                    android:src="@drawable/trp_ic_traveler_count" />
 
                 <TextView
                     android:id="@+id/tvTravelers"

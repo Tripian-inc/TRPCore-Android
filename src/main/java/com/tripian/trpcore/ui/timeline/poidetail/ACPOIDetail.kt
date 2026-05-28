@@ -88,7 +88,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             binding.tvReadMore.paintFlags = binding.tvReadMore.paintFlags or Paint.UNDERLINE_TEXT_FLAG
             // Toggle chevron icon
             binding.ivReadMoreChevron.setImageResource(
-                if (isExpanded) R.drawable.ic_chevron_up else R.drawable.ic_chevron_down
+                if (isExpanded) R.drawable.trp_ic_chevron_up else R.drawable.trp_ic_chevron_down
             )
         }
 
@@ -327,18 +327,18 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         for (i in 0 until count) {
             val dot = View(this).apply {
                 val size = if (i == 0) {
-                    resources.getDimensionPixelSize(R.dimen.poi_indicator_active_width)
+                    resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_active_width)
                 } else {
-                    resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                    resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
                 }
-                val height = resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                val height = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
                 layoutParams = android.widget.LinearLayout.LayoutParams(size, height).apply {
-                    marginEnd = resources.getDimensionPixelSize(R.dimen.poi_indicator_margin)
+                    marginEnd = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_margin)
                 }
                 background = if (i == 0) {
-                    ContextCompat.getDrawable(context, R.drawable.bg_poi_page_indicator_active)
+                    ContextCompat.getDrawable(context, R.drawable.trp_bg_poi_page_indicator_active)
                 } else {
-                    ContextCompat.getDrawable(context, R.drawable.bg_poi_page_indicator)
+                    ContextCompat.getDrawable(context, R.drawable.trp_bg_poi_page_indicator)
                 }
             }
             binding.llPageIndicator.addView(dot)
@@ -350,18 +350,18 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             val dot = binding.llPageIndicator.getChildAt(i)
             val isActive = i == position
             val size = if (isActive) {
-                resources.getDimensionPixelSize(R.dimen.poi_indicator_active_width)
+                resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_active_width)
             } else {
-                resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+                resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
             }
-            val height = resources.getDimensionPixelSize(R.dimen.poi_indicator_inactive_size)
+            val height = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_inactive_size)
             dot.layoutParams = android.widget.LinearLayout.LayoutParams(size, height).apply {
-                marginEnd = resources.getDimensionPixelSize(R.dimen.poi_indicator_margin)
+                marginEnd = resources.getDimensionPixelSize(R.dimen.trp_poi_indicator_margin)
             }
             dot.background = if (isActive) {
-                ContextCompat.getDrawable(this, R.drawable.bg_poi_page_indicator_active)
+                ContextCompat.getDrawable(this, R.drawable.trp_bg_poi_page_indicator_active)
             } else {
-                ContextCompat.getDrawable(this, R.drawable.bg_poi_page_indicator)
+                ContextCompat.getDrawable(this, R.drawable.trp_bg_poi_page_indicator)
             }
         }
     }
@@ -380,7 +380,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             val annotationApi = binding.mapView.annotations
             val pointAnnotationManager = annotationApi.createPointAnnotationManager()
 
-            val markerBitmap = ContextCompat.getDrawable(this, R.drawable.ic_civi_point)?.let { drawable ->
+            val markerBitmap = ContextCompat.getDrawable(this, R.drawable.trp_ic_civi_point)?.let { drawable ->
                 val bitmap = createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight)
                 val canvas = android.graphics.Canvas(bitmap)
                 drawable.setBounds(0, 0, canvas.width, canvas.height)

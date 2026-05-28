@@ -57,9 +57,9 @@ class FRRegister : BaseFragment<FrRegisterBinding, FRRegisterVM>(FrRegisterBindi
 
         binding.chkToe.setOnClickListener {
             if (viewModel.isToeChecked) {
-                binding.chkToe.setBackgroundResource(R.drawable.ic_check_empty_new)
+                binding.chkToe.setBackgroundResource(R.drawable.trp_ic_check_empty_new)
             } else {
-                binding.chkToe.setBackgroundResource(R.drawable.ic_check_new)
+                binding.chkToe.setBackgroundResource(R.drawable.trp_ic_check_new)
             }
             viewModel.isToeChecked = !viewModel.isToeChecked
         }
@@ -94,11 +94,11 @@ class FRRegister : BaseFragment<FrRegisterBinding, FRRegisterVM>(FrRegisterBindi
             if (im.tag == null || im.tag == false) {
                 et.transformationMethod = HideReturnsTransformationMethod.getInstance()
                 im.tag = true
-                im.setImageResource(R.drawable.ic_eye_on)
+                im.setImageResource(R.drawable.trp_ic_eye_on)
             } else {
                 et.transformationMethod = PasswordTransformationMethod.getInstance()
                 im.tag = false
-                im.setImageResource(R.drawable.ic_eye_off)
+                im.setImageResource(R.drawable.trp_ic_eye_off)
             }
         }
     }

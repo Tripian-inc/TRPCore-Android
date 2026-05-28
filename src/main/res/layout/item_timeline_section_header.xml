@@ -30,7 +30,7 @@
         android:layout_height="20dp"
         android:contentDescription="Collapse / expand section"
         android:rotation="0"
-        android:src="@drawable/ic_arrow_down_black"
+        android:src="@drawable/trp_ic_arrow_down_black"
         android:visibility="gone"
         tools:visibility="visible" />
 </LinearLayout>

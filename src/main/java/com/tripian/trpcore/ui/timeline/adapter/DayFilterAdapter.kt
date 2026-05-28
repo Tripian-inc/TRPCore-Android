@@ -114,9 +114,9 @@ class DayFilterAdapter(
             // (we dim individual texts instead) so the selection border keeps its
             // full opacity, "default black" look.
             if (isSelected) {
-                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_selected)
+                binding.llDayContainer.setBackgroundResource(R.drawable.trp_bg_day_filter_selected)
             } else {
-                binding.llDayContainer.setBackgroundResource(R.drawable.bg_day_filter_unselected)
+                binding.llDayContainer.setBackgroundResource(R.drawable.trp_bg_day_filter_unselected)
             }
 
             // Text styling: past or unavailable days keep the muted "unselected"

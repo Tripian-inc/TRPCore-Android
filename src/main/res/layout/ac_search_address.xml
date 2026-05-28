@@ -9,7 +9,7 @@
         android:id="@+id/rlTop"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_135sdp"
-        android:background="@drawable/bg_rounded_bottom_white"
+        android:background="@drawable/trp_bg_rounded_bottom_white"
         android:elevation="@dimen/_3sdp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -22,7 +22,7 @@
             android:layout_marginStart="@dimen/_20sdp"
             android:layout_marginTop="@dimen/_20sdp"
             android:clickable="true"
-            app:srcCompat="@drawable/ic_create_trip_back" />
+            app:srcCompat="@drawable/trp_ic_create_trip_back" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -34,7 +34,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvTitle"
-                style="@style/TextHeader2"
+                style="@style/TrpTextHeader2"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center"/>
@@ -43,7 +43,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/_4sdp"
-                app:srcCompat="@drawable/im_line" />
+                app:srcCompat="@drawable/trp_im_line" />
         </LinearLayout>
 
         <RelativeLayout
@@ -58,14 +58,14 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etSearch"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginStart="@dimen/_12sdp"
                 android:layout_marginEnd="@dimen/_12sdp"
                 android:layout_toStartOf="@+id/btnCancel"
-                android:background="@drawable/bg_oval_gray"
-                android:drawableStart="@drawable/ic_search_gray"
+                android:background="@drawable/trp_bg_oval_gray"
+                android:drawableStart="@drawable/trp_ic_search_gray"
                 android:drawablePadding="@dimen/_8sdp"
                 android:imeOptions="actionDone"
                 android:inputType="text"
@@ -87,7 +87,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/btnCancel"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignTop="@+id/etSearch"
@@ -102,7 +102,7 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvError"
-        style="@style/TextHeader2"
+        style="@style/TrpTextHeader2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:gravity="center"

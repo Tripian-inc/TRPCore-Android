@@ -62,7 +62,7 @@ public class MarkerView extends RelativeLayout {
         iconView.setPadding(padding, padding, padding, padding);
         leftPoiImageParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
         iconView.setLayoutParams(leftPoiImageParams);
-        iconView.setBackground(ContextCompat.getDrawable(context, R.drawable.bg_marker_black));
+        iconView.setBackground(ContextCompat.getDrawable(context, R.drawable.trp_bg_marker_black));
 
         int sizeBackground = (int) UtilityKt.dp2Px(46);
         iconViewBackground = new ImageView(context);
@@ -70,7 +70,7 @@ public class MarkerView extends RelativeLayout {
         iconViewBackground.setPadding(padding, padding, padding, padding);
         iconViewParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.TRUE);
         iconViewBackground.setLayoutParams(iconViewParams);
-        iconViewBackground.setBackground(ContextCompat.getDrawable(context, R.drawable.bg_map_icon_oval));
+        iconViewBackground.setBackground(ContextCompat.getDrawable(context, R.drawable.trp_bg_map_icon_oval));
 
         imageViewRelativeLyt.addView(iconViewBackground);
         imageViewRelativeLyt.addView(iconView);
@@ -86,7 +86,7 @@ public class MarkerView extends RelativeLayout {
         poiOrderTv.setGravity(Gravity.CENTER);
         poiOrderTv.setTextSize(18);
         poiOrderTv.setTypeface(poiOrderTv.getTypeface(), Typeface.BOLD);
-        poiOrderTv.setBackground(ContextCompat.getDrawable(context, R.drawable.bg_marker_red));
+        poiOrderTv.setBackground(ContextCompat.getDrawable(context, R.drawable.trp_bg_marker_red));
 
         orderFrameLayout.addView(poiOrderTv);
 
@@ -122,10 +122,10 @@ public class MarkerView extends RelativeLayout {
     public void setSelected(boolean selected) {
         this.isSelected = selected;
         if (selected) {
-            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_red));
+            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.trp_bg_marker_red));
             poiOrderTv.setTextColor(Color.WHITE);
         } else {
-            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.bg_marker_white));
+            poiOrderTv.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.trp_bg_marker_white));
             poiOrderTv.setTextColor(ContextCompat.getColor(getContext(), R.color.trp_black_soft));
         }
     }
@@ -149,7 +149,7 @@ public class MarkerView extends RelativeLayout {
     public void setCityMarker(boolean isCityMarker) {
         if (isCityMarker) {
             // City marker: show city icon, hide number badge
-            iconView.setImageResource(R.drawable.ic_city_marker);
+            iconView.setImageResource(R.drawable.trp_ic_city_marker);
             iconView.setVisibility(View.VISIBLE);
             iconView.setBackground(null);  // No background for city marker icon
             iconView.setPadding(0, 0, 0, 0);  // Remove padding for full icon size

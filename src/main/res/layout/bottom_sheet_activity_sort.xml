@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_bottom_sheet_white"
+    android:background="@drawable/trp_bg_bottom_sheet_white"
     android:paddingBottom="32dp">
 
     <!-- Handle Bar -->
@@ -15,7 +15,7 @@
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:background="@drawable/bg_drag_handle"/>
+        android:background="@drawable/trp_bg_drag_handle"/>
 
     <!-- Header -->
     <RelativeLayout
@@ -28,7 +28,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            style="@style/TextHeader2"
+            style="@style/TrpTextHeader2"
             tools:text="Sort by" />
 
         <ImageView
@@ -38,7 +38,7 @@
             android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_close"
+            android:src="@drawable/trp_ic_close"
             android:contentDescription="Close"
             app:tint="@color/trp_text_primary" />
 
@@ -59,7 +59,7 @@
             android:layout_height="52dp"
             android:paddingHorizontal="16dp"
             android:button="@null"
-            android:drawableEnd="@drawable/selector_radio_button"
+            android:drawableEnd="@drawable/trp_selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
             android:textColor="@color/trp_text_primary"
@@ -72,7 +72,7 @@
             android:layout_height="52dp"
             android:paddingHorizontal="16dp"
             android:button="@null"
-            android:drawableEnd="@drawable/selector_radio_button"
+            android:drawableEnd="@drawable/trp_selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
             android:textColor="@color/trp_text_primary"
@@ -85,7 +85,7 @@
             android:layout_height="52dp"
             android:paddingHorizontal="16dp"
             android:button="@null"
-            android:drawableEnd="@drawable/selector_radio_button"
+            android:drawableEnd="@drawable/trp_selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
             android:textColor="@color/trp_text_primary"
@@ -98,7 +98,7 @@
             android:layout_height="52dp"
             android:paddingHorizontal="16dp"
             android:button="@null"
-            android:drawableEnd="@drawable/selector_radio_button"
+            android:drawableEnd="@drawable/trp_selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
             android:textColor="@color/trp_text_primary"
@@ -111,7 +111,7 @@
             android:layout_height="52dp"
             android:paddingHorizontal="16dp"
             android:button="@null"
-            android:drawableEnd="@drawable/selector_radio_button"
+            android:drawableEnd="@drawable/trp_selector_radio_button"
             android:fontFamily="@font/regular"
             android:textSize="16sp"
             android:textColor="@color/trp_text_primary"

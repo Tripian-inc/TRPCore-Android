@@ -17,11 +17,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etMail"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_8sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
                 android:inputType="textPersonName|textCapWords"
@@ -33,11 +33,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etFirstName"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 tools:hint="First name"
                 android:imeOptions="actionNext"
                 android:inputType="textPersonName|textCapWords"
@@ -48,11 +48,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etLastName"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 tools:hint="Last name"
                 android:imeOptions="actionDone"
                 android:inputType="textPersonName|textCapWords"
@@ -63,11 +63,11 @@
 
             <com.tripian.trpcore.util.widget.EditText
                 android:id="@+id/etAge"
-                style="@style/TextFormField"
+                style="@style/TrpTextFormField"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
-                android:background="@drawable/bg_oval_gray"
+                android:background="@drawable/trp_bg_oval_gray"
                 android:inputType="number"
                 android:maxLines="1"
                 android:focusable="false"
@@ -78,7 +78,7 @@
 
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvChangePassword"
-                style="@style/TextBody2"
+                style="@style/TrpTextBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="@dimen/_36sdp"
                 android:layout_marginTop="@dimen/_12sdp"
@@ -96,7 +96,7 @@
 
             <com.tripian.trpcore.util.widget.Button
                 android:id="@+id/btnDeleteAccount"
-                style="@style/TextButton"
+                style="@style/TrpTextButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -117,14 +117,14 @@
 
         <com.tripian.trpcore.util.widget.Button
             android:id="@+id/btnCreate"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_24sdp"
             android:layout_marginTop="@dimen/_4sdp"
             android:layout_marginEnd="@dimen/_24sdp"
             android:layout_marginBottom="@dimen/_16sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:textAllCaps="false"
             android:textColor="@color/trp_white" />
     </LinearLayout>

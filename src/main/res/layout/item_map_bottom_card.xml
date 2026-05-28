@@ -33,7 +33,7 @@
             android:layout_height="24dp"
             android:layout_marginStart="4dp"
             android:layout_marginTop="6dp"
-            android:background="@drawable/bg_marker_red"
+            android:background="@drawable/trp_bg_marker_red"
             android:fontFamily="@font/semibold"
             android:gravity="center"
             android:includeFontPadding="false"
@@ -82,7 +82,7 @@
                     android:layout_height="14dp"
                     android:layout_gravity="center_vertical"
                     android:contentDescription="Date"
-                    android:src="@drawable/ic_calendar"
+                    android:src="@drawable/trp_ic_calendar"
                     app:tint="@color/trp_timeline_subtitle_color" />
 
                 <!-- Date Text -->
@@ -103,7 +103,7 @@
                     android:layout_gravity="center_vertical"
                     android:layout_marginStart="12dp"
                     android:contentDescription="Time"
-                    android:src="@drawable/ic_time"
+                    android:src="@drawable/trp_ic_time"
                     app:tint="@color/trp_timeline_subtitle_color" />
 
                 <!-- Time Text -->

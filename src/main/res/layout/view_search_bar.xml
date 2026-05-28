@@ -7,7 +7,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="48dp"
-    android:background="@drawable/bg_addplan_search_bar">
+    android:background="@drawable/trp_bg_addplan_search_bar">
 
     <!-- Search Icon - shown when no text -->
     <ImageView
@@ -16,7 +16,7 @@
         android:layout_height="24dp"
         android:layout_gravity="start|center_vertical"
         android:layout_marginStart="18dp"
-        android:src="@drawable/ic_search"
+        android:src="@drawable/trp_ic_search"
         android:contentDescription="Search" />
 
     <!-- EditText - marginStart changes based on search icon visibility -->
@@ -48,7 +48,7 @@
         android:clickable="true"
         android:focusable="true"
         android:padding="3dp"
-        android:src="@drawable/ic_close"
+        android:src="@drawable/trp_ic_close"
         android:visibility="gone"
         android:contentDescription="Clear"
         tools:visibility="visible" />

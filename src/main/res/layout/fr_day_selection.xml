@@ -7,10 +7,10 @@
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvTitle"
-        style="@style/TextHeader2"
+        style="@style/TrpTextHeader2"
         android:layout_width="match_parent"
         android:layout_height="@dimen/_56sdp"
-        android:background="@drawable/bg_rounded_top_white"
+        android:background="@drawable/trp_bg_rounded_top_white"
         android:gravity="center"
         android:paddingTop="@dimen/_16sdp" />
 
@@ -30,14 +30,14 @@
 
         <com.tripian.trpcore.util.widget.Button
             android:id="@+id/btnCancel"
-            style="@style/TextButton"
+            style="@style/TrpTextButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_24sdp"
             android:layout_marginTop="@dimen/_16sdp"
             android:layout_marginEnd="@dimen/_24sdp"
             android:layout_marginBottom="@dimen/_16sdp"
-            android:background="@drawable/selector_button_primary"
+            android:background="@drawable/trp_selector_button_primary"
             android:textColor="@color/trp_white" />
     </FrameLayout>
 </RelativeLayout>

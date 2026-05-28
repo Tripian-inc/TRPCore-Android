@@ -12,14 +12,14 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="@dimen/_51sdp"
-        android:background="@drawable/bg_text_input_view"
+        android:background="@drawable/trp_bg_text_input_view"
         android:paddingStart="@dimen/_18sdp"
         android:paddingEnd="@dimen/_4sdp"
         android:paddingVertical="@dimen/_9sdp">
 
         <TextView
             android:id="@+id/tvLabel"
-            style="@style/InterTight_Medium.12.Dark"
+            style="@style/TrpInterTight_Medium.12.Dark"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:singleLine="true"
@@ -58,7 +58,7 @@
                 android:paddingBottom="0dp"
                 android:scrollHorizontally="true"
                 android:singleLine="true"
-                android:textAppearance="@style/InterTight_Regular.16.Hint"
+                android:textAppearance="@style/TrpInterTight_Regular.16.Hint"
                 tools:hint="asds"
                 tools:ignore="RtlSymmetry"
                 tools:text="asdasdsd  uodashd ıhasıdh ıashd ıhasıod hıoasha " />
@@ -66,7 +66,7 @@
 
         <!--        <com.tripian.trpcore.util.widget.EditText-->
         <!--            android:id="@+id/editText"-->
-        <!--            style="@style/InterTight_Regular.16.Hint"-->
+        <!--            style="@style/TrpInterTight_Regular.16.Hint"-->
         <!--            android:layout_width="0dp"-->
         <!--            android:layout_height="0dp"-->
         <!--            android:background="@color/trp_transparent"-->
