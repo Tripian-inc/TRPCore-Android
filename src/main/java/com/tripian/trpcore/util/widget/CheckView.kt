@@ -38,9 +38,9 @@ class CheckView @JvmOverloads constructor(
         tvText = findViewById(R.id.tvText)
 
         if (attrs != null) {
-            context!!.withStyledAttributes(attrs, R.styleable.CheckView) {
+            context!!.withStyledAttributes(attrs, R.styleable.TrpCheckView) {
 
-                getString(R.styleable.CheckView_text).let {
+                getString(R.styleable.TrpCheckView_trpText).let {
                     tvText.text = it
                 }
 

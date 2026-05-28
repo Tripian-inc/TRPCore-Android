@@ -31,23 +31,23 @@ class TextInputView @JvmOverloads constructor(
         orientation = VERTICAL
 
         // Optional: still read XML attrs, but programmatic calls override them
-        context?.withStyledAttributes(attrs, R.styleable.PillInputView) {
-            setLabel(getString(R.styleable.PillInputView_labelText))
-            setPlaceholder(getString(R.styleable.PillInputView_placeholderText))
+        context?.withStyledAttributes(attrs, R.styleable.TrpPillInputView) {
+            setLabel(getString(R.styleable.TrpPillInputView_trpLabelText))
+            setPlaceholder(getString(R.styleable.TrpPillInputView_trpPlaceholderText))
 
-            val inputType = getInt(R.styleable.PillInputView_android_inputType, InputType.TYPE_CLASS_TEXT)
+            val inputType = getInt(R.styleable.TrpPillInputView_android_inputType, InputType.TYPE_CLASS_TEXT)
             setInputType(inputType)
 
-            val toggle = getBoolean(R.styleable.PillInputView_isPasswordToggleEnabled, false)
+            val toggle = getBoolean(R.styleable.TrpPillInputView_trpIsPasswordToggleEnabled, false)
             setPasswordToggleEnabled(toggle)
 
-            getResourceId(R.styleable.PillInputView_labelTextAppearance, 0).takeIf { it != 0 }?.let {
+            getResourceId(R.styleable.TrpPillInputView_trpLabelTextAppearance, 0).takeIf { it != 0 }?.let {
                 binding.tvLabel.setTextAppearance(it)
             }
-            getResourceId(R.styleable.PillInputView_fieldTextAppearance, 0).takeIf { it != 0 }?.let {
+            getResourceId(R.styleable.TrpPillInputView_trpFieldTextAppearance, 0).takeIf { it != 0 }?.let {
                 binding.et.setTextAppearance(it)
             }
-            getResourceId(R.styleable.PillInputView_placeholderTextAppearance, 0).takeIf { it != 0 }?.let {
+            getResourceId(R.styleable.TrpPillInputView_trpPlaceholderTextAppearance, 0).takeIf { it != 0 }?.let {
                 binding.til.setPlaceholderTextAppearance(it)
             }
         }

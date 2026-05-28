@@ -59,7 +59,7 @@
             android:layout_height="@dimen/_51sdp"
             android:layout_marginTop="@dimen/_24sdp"
             android:inputType="textEmailAddress"
-            app:isPasswordToggleEnabled="false" />
+            app:trpIsPasswordToggleEnabled="false" />
 
         <com.tripian.trpcore.util.widget.TextInputView
             android:id="@+id/inputPassword"
@@ -67,7 +67,7 @@
             android:layout_height="@dimen/_51sdp"
             android:layout_marginTop="@dimen/_9sdp"
             android:inputType="textPassword"
-            app:isPasswordToggleEnabled="true" />
+            app:trpIsPasswordToggleEnabled="true" />
 
 
         <com.tripian.trpcore.util.widget.Button

@@ -40,9 +40,9 @@ class CheckBoxView @JvmOverloads constructor(
         imCheck = findViewById(R.id.imCheck)
 
         if (attrs != null) {
-            context!!.withStyledAttributes(attrs, R.styleable.CheckView) {
+            context!!.withStyledAttributes(attrs, R.styleable.TrpCheckView) {
 
-                getString(R.styleable.CheckView_text).let {
+                getString(R.styleable.TrpCheckView_trpText).let {
                     tvText.text = it
                 }
 
