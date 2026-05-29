@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/white"
+    android:background="@drawable/trp_bg_bottom_sheet"
     android:minHeight="250dp"
     android:paddingTop="24dp"
     android:paddingBottom="32dp">
@@ -30,7 +30,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="32dp"
         android:gravity="center"
-        android:fontFamily="@font/montserrat_bold"
+        android:fontFamily="@font/bold"
         android:textColor="@color/trp_text_primary"
         android:textSize="18sp"
         app:layout_constraintBottom_toBottomOf="parent"

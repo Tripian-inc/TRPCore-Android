@@ -192,9 +192,10 @@ class ACActivityListingVM @Inject constructor(
      */
     fun onCategorySelectionChanged(selectedIndices: Set<Int>) {
         _selectedCategoryIndices.value = selectedIndices
-        // Category-triggered reloads use the bottom-sheet variant (no text) so
-        // the user keeps visual context of the list while it refreshes.
-        showBottomSheetLoaderNoText()
+        // Category-triggered reloads keep the bottom-sheet variant (so the
+        // list stays visible behind the loader) but show the same "Getting
+        // activities" copy as the initial load instead of running text-less.
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_GETTING_ACTIVITIES, "")
         suppressNextIsLoadingLoader = true
         resetAndSearch()
     }

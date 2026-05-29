@@ -7,6 +7,8 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetActivityFilterBinding
 import com.tripian.trpcore.util.FormatUtils
+import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * ActivityFilterBottomSheet
@@ -90,9 +92,14 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         // Thumb radius in pixels (12.5dp = 25dp diameter / 2)
         val thumbRadiusPx = (12.5f * resources.displayMetrics.density).toInt()
 
-        // Price slider
-        val priceFrom = minPriceBound ?: ActivityFilterData.DEFAULT_MIN_PRICE
-        val priceTo = (maxPriceBound ?: ActivityFilterData.DEFAULT_MAX_PRICE)
+        // Price slider. Facet bounds (e.g. 3.43 – 220.0) are snapped to the
+        // PRICE_STEP grid: Material Slider throws when (valueTo - valueFrom)
+        // isn't an exact multiple of stepSize.
+        val priceFromRaw = minPriceBound ?: ActivityFilterData.DEFAULT_MIN_PRICE
+        val priceToRaw = (maxPriceBound ?: ActivityFilterData.DEFAULT_MAX_PRICE)
+            .coerceAtLeast(priceFromRaw + ActivityFilterData.PRICE_STEP)
+        val priceFrom = snapDown(priceFromRaw, ActivityFilterData.PRICE_STEP)
+        val priceTo = snapUp(priceToRaw, ActivityFilterData.PRICE_STEP)
             .coerceAtLeast(priceFrom + ActivityFilterData.PRICE_STEP)
         binding.sliderPrice.apply {
             valueFrom = priceFrom
@@ -117,9 +124,12 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             }
         }
 
-        // Duration slider
-        val durationFrom = minDurationBound ?: ActivityFilterData.DEFAULT_MIN_DURATION
-        val durationTo = (maxDurationBound ?: ActivityFilterData.DEFAULT_MAX_DURATION)
+        // Duration slider. Same snap-to-grid treatment as the price slider.
+        val durationFromRaw = minDurationBound ?: ActivityFilterData.DEFAULT_MIN_DURATION
+        val durationToRaw = (maxDurationBound ?: ActivityFilterData.DEFAULT_MAX_DURATION)
+            .coerceAtLeast(durationFromRaw + ActivityFilterData.DURATION_STEP)
+        val durationFrom = snapDown(durationFromRaw, ActivityFilterData.DURATION_STEP)
+        val durationTo = snapUp(durationToRaw, ActivityFilterData.DURATION_STEP)
             .coerceAtLeast(durationFrom + ActivityFilterData.DURATION_STEP)
         binding.sliderDuration.apply {
             valueFrom = durationFrom
@@ -144,6 +154,14 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             }
         }
     }
+
+    /** Snap a value down to the nearest multiple of [step]. */
+    private fun snapDown(value: Float, step: Float): Float =
+        if (step <= 0f) value else floor(value / step) * step
+
+    /** Snap a value up to the nearest multiple of [step]. */
+    private fun snapUp(value: Float, step: Float): Float =
+        if (step <= 0f) value else ceil(value / step) * step
 
     private fun setupListeners() {
         // Close button

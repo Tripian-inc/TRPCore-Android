@@ -101,6 +101,31 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             dayAdapter?.availableDateStrings = available
             jumpToFirstAvailableIfNeeded(available)
         }
+
+        // Replace day filter + slot grid with a single warning card when the
+        // trip range has zero availability for this activity.
+        viewModel.isUnavailableForTrip.observe(viewLifecycleOwner) { unavailable ->
+            applyTripUnavailableState(unavailable)
+        }
+    }
+
+    private fun applyTripUnavailableState(unavailable: Boolean) {
+        if (unavailable) {
+            // Day filter stays visible (every cell disabled via empty
+            // availableDateStrings). Only the slot grid area is replaced.
+            binding.tripUnavailableCard.visibility = View.VISIBLE
+            binding.tvSelectTime.visibility = View.GONE
+            binding.flexTimeSlots.visibility = View.GONE
+            binding.tvNoTimeSlots.visibility = View.GONE
+            binding.flexibleInfoCard.visibility = View.GONE
+            binding.tvFlexibleTopOfItinerary.visibility = View.GONE
+            selectedTimeSlot = null
+            selectedPrice = null
+            isFlexibleSelected = false
+            updateContinueButtonState()
+        } else {
+            binding.tripUnavailableCard.visibility = View.GONE
+        }
     }
 
     private val dayKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
@@ -136,6 +161,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         binding.tvTitle.text = getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
+        binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
         binding.btnContinue.text = getLanguageForKey(LanguageConst.ADD_PLAN_CONTINUE)
     }
 
@@ -251,6 +277,11 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      * [TimeSelectionMode] for the three shapes.
      */
     private fun updateSchedule(resolved: ResolvedSchedule?) {
+        // Trip-wide unavailability takes over the whole sheet — skip per-day
+        // grid/flexible-card rendering so the warning card isn't overridden by
+        // a late `resolvedSchedule` emission.
+        if (viewModel.isUnavailableForTrip.value == true) return
+
         val safe = resolved ?: ResolvedSchedule(
             mode = TimeSelectionMode.TIMED,
             timedSlots = emptyList(),

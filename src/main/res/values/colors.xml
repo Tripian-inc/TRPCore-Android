@@ -144,8 +144,8 @@
     <color name="trp_error_bg">#FFF6F7</color>
 
     <!-- No-Location Badge (Theme 6) -->
-    <color name="trp_no_location_bg">#E8F1FF</color>
-    <color name="trp_no_location_fg">#1F5BB8</color>
+    <color name="trp_no_location_bg">#D4EEF8</color>
+    <color name="trp_no_location_fg">#098AC3</color>
 
     <!-- Conflict / Warning (Theme 7, 8) -->
     <color name="trp_civi_orange">#F39C12</color>

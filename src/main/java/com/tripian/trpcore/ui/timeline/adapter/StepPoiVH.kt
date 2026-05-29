@@ -67,11 +67,11 @@ class StepPoiVH(
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            if (showTimeOverlapText) {
+            binding.tvTime.text = if (showTimeOverlapText) {
                 val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                binding.tvTime.text = "$timeText $overlapText"
+                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
             } else {
-                binding.tvTime.text = timeText
+                timeText
             }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {

@@ -69,11 +69,11 @@ class StepActivityVH(
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            if (showTimeOverlapText) {
+            binding.tvTime.text = if (showTimeOverlapText) {
                 val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                binding.tvTime.text = "$timeText $overlapText"
+                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
             } else {
-                binding.tvTime.text = timeText
+                timeText
             }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
@@ -85,6 +85,30 @@ class StepActivityVH(
 
         // Title
         binding.tvTitle.text = poi?.name ?: ""
+
+        // Activity badge — only on activity-type steps. Mirrors the badge that
+        // ReservedActivity / FlexibleActivity cells show at the top-level
+        // segment so users can tell at a glance that this step is a bookable
+        // activity rather than a regular POI.
+        if (step.stepType == "activity") {
+            binding.tvActivityBadge.text = getLanguage(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
+            binding.tvActivityBadge.visibility = View.VISIBLE
+        } else {
+            binding.tvActivityBadge.visibility = View.GONE
+        }
+
+        // No-Location badge (Theme 6) — shown next to the activity chip when
+        // the step's POI has no usable coordinate (null, or the (0.0, 0.0)
+        // placeholder our backend uses for online tours / audio guides).
+        val coord = poi?.coordinate
+        val isNoLocation = coord == null || (coord.lat == 0.0 && coord.lng == 0.0)
+        binding.noLocationBadge.llNoLocationBadge.visibility = if (isNoLocation) {
+            binding.noLocationBadge.tvNoLocationLabel.text =
+                getLanguage(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
 
         // Image - 80x80, 4dp corner radius
         poi?.image?.url?.let { url ->

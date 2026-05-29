@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Flexible-time activity cell. Mirrors the reserved-activity cell layout but the
-  order/time header is replaced by FlexibleTimeBadgeView (dashed circle with the
-  U+2212 minus + "Flexible entry / Check the timetable" labels), and the duration
+  Flexible-time activity cell. Mirrors the reserved-activity cell layout, but the
+  order-time container uses a dashed border and its text track shows
+  "Flexible entry / Check the timetable" in place of a time range. The duration
   row is omitted (a flexible activity has additionalData.duration == -1).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -15,16 +15,69 @@
     android:layout_marginTop="16dp"
     android:paddingHorizontal="16dp">
 
-    <!-- Flexible time badge in place of order/time row -->
-    <com.tripian.trpcore.ui.timeline.views.FlexibleTimeBadgeView
-        android:id="@+id/flexibleTimeBadge"
+    <!-- Order-Time Container — same structure as the reserved-activity cell, just
+         with a dashed border and Flexible entry / Check the timetable text in place
+         of the time range. -->
+    <LinearLayout
+        android:id="@+id/orderTimeContainer"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="32dp"
+        android:background="@drawable/trp_bg_order_time_container_flexible"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <!-- Spacer between badge and content -->
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="8dp" />
+        <!-- Order Badge with U+2212 minus character -->
+        <TextView
+            android:id="@+id/tvOrder"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="6dp"
+            android:background="@drawable/trp_bg_step_order_new"
+            android:fontFamily="@font/semibold"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="−"
+            android:textColor="@color/trp_white"
+            android:textSize="16sp" />
+
+        <!-- "Flexible entry" — bold, replaces the time range -->
+        <TextView
+            android:id="@+id/tvFlexibleTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginStart="10dp"
+            android:fontFamily="@font/semibold"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="Flexible entry" />
+
+        <!-- "Check the timetable" — medium 11sp, primary-text colour (#333333). -->
+        <TextView
+            android:id="@+id/tvFlexibleSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="10dp"
+            android:fontFamily="@font/medium"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="11sp"
+            tools:text="Check the timetable" />
+
+    </LinearLayout>
+
+    <!-- Vertical Line (matches reserved-activity layout) -->
+    <View
+        android:id="@+id/verticalLine"
+        android:layout_width="1dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="16dp"
+        android:background="@color/trp_lineWeak" />
 
     <!-- Content Row (Image + Details) -->
     <LinearLayout
@@ -131,13 +184,38 @@
 
             </LinearLayout>
 
-            <!-- No-Location badge (Theme 6) -->
-            <include
-                android:id="@+id/noLocationBadge"
-                layout="@layout/include_no_location_badge"
+            <!-- Badge row: activity chip + "no exact location" chip side-by-side.
+                 Activity chip is always shown for FlexibleActivity cells; the
+                 no-location chip is toggled by the VH based on segment data. -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvActivityBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/trp_bg_category_badge"
+                    android:fontFamily="@font/medium"
+                    android:gravity="center"
+                    android:includeFontPadding="false"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="6dp"
+                    android:textColor="@color/trp_grayFg"
+                    android:textSize="12sp"
+                    tools:text="Activity" />
+
+                <include
+                    android:id="@+id/noLocationBadge"
+                    layout="@layout/include_no_location_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp" />
+
+            </LinearLayout>
 
             <!-- Cancellation (advantage colour) -->
             <TextView

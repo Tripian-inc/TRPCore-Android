@@ -311,7 +311,10 @@ class MapView : MapView {
                             view.iconViewBackground.visibility = GONE
                         }
 
-                        if (item.position != -1) {
+                        if (item.isFlexible) {
+                            view.poiOrderTv.text = "−"
+                            view.poiOrderTv.visibility = VISIBLE
+                        } else if (item.position != -1) {
                             view.poiOrderTv.text = item.position.toString()
                             view.poiOrderTv.visibility = VISIBLE
                         } else {
@@ -632,7 +635,10 @@ class MapView : MapView {
 
         view.iconViewBackground.visibility = GONE
 
-        if (item.position != -1) {
+        if (item.isFlexible) {
+            view.poiOrderTv.text = "−"
+            view.poiOrderTv.visibility = VISIBLE
+        } else if (item.position != -1) {
             view.poiOrderTv.text = item.position.toString()
             view.poiOrderTv.visibility = VISIBLE
         } else {
@@ -794,7 +800,10 @@ class MapView : MapView {
             view.iconViewBackground.visibility = GONE
         }
 
-        if (item.position != -1) {
+        if (item.isFlexible) {
+            view.poiOrderTv.text = "−"
+            view.poiOrderTv.visibility = VISIBLE
+        } else if (item.position != -1) {
             view.poiOrderTv.text = item.position.toString()
             view.poiOrderTv.visibility = VISIBLE
         } else {

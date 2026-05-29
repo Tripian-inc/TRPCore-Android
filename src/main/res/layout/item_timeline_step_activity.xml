@@ -111,6 +111,43 @@
                         android:textSize="16sp"
                         tools:text="Guided tour of the Basilica" />
 
+                    <!-- Badge row: activity chip + "no exact location" chip
+                         sit side-by-side. Either may be hidden individually
+                         depending on stepType / coordinate availability. -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- Activity Badge (only for stepType == "activity").
+                             Visually identical to the POI category badge. -->
+                        <TextView
+                            android:id="@+id/tvActivityBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/trp_bg_category_badge"
+                            android:fontFamily="@font/medium"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:textColor="@color/trp_grayFg"
+                            android:textSize="12sp"
+                            android:visibility="gone"
+                            tools:text="Activity"
+                            tools:visibility="visible" />
+
+                        <include
+                            android:id="@+id/noLocationBadge"
+                            layout="@layout/include_no_location_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp" />
+
+                    </LinearLayout>
+
                     <LinearLayout
                         android:id="@+id/llRating"
                         android:layout_width="wrap_content"

@@ -1,6 +1,7 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.View
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
@@ -14,13 +15,14 @@ import java.util.Locale
 /**
  * ViewHolder for Flexible-Time Activities.
  *
- * Differences vs [ReservedActivityVH]:
- *  - Dashed-circle order chip with U+2212 minus instead of a numeric order.
- *  - "Flexible entry / Check the timetable" labels (FlexibleTimeBadgeView).
- *  - No duration row — flexible items carry `additionalData.duration == -1` which is
- *    a sentinel, not a real duration.
+ * The layout now mirrors [ReservedActivityVH] — same order-time container, vertical
+ * line and content row — but the container uses a dashed border and its text track
+ * shows "Flexible entry / Check the timetable" instead of a time range.
+ *
  *  - No conflict / time-overlap styling — flexible items are excluded from conflict
  *    detection (the 00:00–23:59 envelope is a placeholder, not a real interval).
+ *  - No duration row — flexible items carry `additionalData.duration == -1` which is
+ *    a sentinel, not a real duration.
  */
 class FlexibleActivityVH(
     private val binding: ItemTimelineFlexibleActivityBinding
@@ -31,6 +33,12 @@ class FlexibleActivityVH(
 
     private val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
 
+    private fun getLanguage(key: String): String = try {
+        TRPCore.core.miscRepository.getLanguageValueForKey(key)
+    } catch (e: Exception) {
+        key
+    }
+
     fun bind(
         item: TimelineDisplayItem.FlexibleActivity,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -38,8 +46,20 @@ class FlexibleActivityVH(
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
         onReservationClick: (TimelineDisplayItem.FlexibleActivity) -> Unit
     ) {
+        // Order-time row content
+        binding.tvFlexibleTitle.text =
+            getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE).ifBlank { "Flexible entry" }
+        binding.tvFlexibleSubtitle.text =
+            getLanguage(LanguageConst.TIMELINE_FLEXIBLE_SUBTITLE).ifBlank { "Check the timetable" }
+        applyOrderRowStyle(muted = isPastDayMode)
+
         // Title
         binding.tvTitle.text = item.title
+
+        // Activity badge — always shown on FlexibleActivity cells (these cells
+        // exist precisely because the segment is a flexible-time activity).
+        binding.tvActivityBadge.text =
+            TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
 
         // Image
         item.imageUrl?.let { url ->
@@ -90,11 +110,9 @@ class FlexibleActivityVH(
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
         binding.btnReservation.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
-        // Past-day style (Theme 3 will wire this from the adapter).
+        // Past-day style for non-order-row text.
         if (isPastDayMode) {
             applyPastDayStyle()
-        } else {
-            binding.flexibleTimeBadge.applyDefaultStyle()
         }
 
         // Change-time is hidden for flexible items: their start/end are 00:00–23:59
@@ -117,12 +135,22 @@ class FlexibleActivityVH(
         }
     }
 
-    private fun applyPastDayStyle() {
-        val muted = androidx.core.content.ContextCompat.getColor(
-            binding.root.context,
-            R.color.trp_fgWeak
+    private fun applyOrderRowStyle(muted: Boolean) {
+        val ctx = binding.root.context
+        val titleColor = ContextCompat.getColor(
+            ctx,
+            if (muted) R.color.trp_fgWeak else R.color.trp_text_primary
         )
-        binding.flexibleTimeBadge.applyMutedStyle(muted)
+        val subtitleColor = ContextCompat.getColor(
+            ctx,
+            if (muted) R.color.trp_fgWeak else R.color.trp_text_secondary
+        )
+        binding.tvFlexibleTitle.setTextColor(titleColor)
+        binding.tvFlexibleSubtitle.setTextColor(subtitleColor)
+    }
+
+    private fun applyPastDayStyle() {
+        val muted = ContextCompat.getColor(binding.root.context, R.color.trp_fgWeak)
         binding.tvTitle.setTextColor(muted)
         binding.tvCancellation.setTextColor(muted)
         binding.tvRating.setTextColor(muted)

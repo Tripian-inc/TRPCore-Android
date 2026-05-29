@@ -15,6 +15,7 @@ import com.tripian.trpcore.databinding.ItemTimelineReservedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineSectionFooterBinding
 import com.tripian.trpcore.databinding.ItemTimelineSectionHeaderBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.ui.timeline.views.ConflictWarningView
 
 /**
  * TimelineAdapter
@@ -39,7 +40,10 @@ class TimelineAdapter(
     private val onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null,
     // Theme 12: section collapse/expand. Both must be non-null to render the chevron.
     private val onSectionToggle: ((cityId: Int) -> Unit)? = null,
-    private val isSectionCollapsed: ((cityId: Int) -> Boolean)? = null
+    private val isSectionCollapsed: ((cityId: Int) -> Boolean)? = null,
+    // Conflict warning banner — tap and dismiss handlers.
+    private val onConflictTap: (() -> Unit)? = null,
+    private val onConflictDismiss: (() -> Unit)? = null
 ) : ListAdapter<TimelineDisplayItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
 
     companion object {
@@ -52,6 +56,7 @@ class TimelineAdapter(
         private const val TYPE_SECTION_FOOTER = 6
         private const val TYPE_RESERVED_ACTIVITY = 7
         private const val TYPE_FLEXIBLE_ACTIVITY = 8
+        private const val TYPE_CONFLICT_WARNING = 9
 
         // Payload constants for partial updates
         const val PAYLOAD_ROUTE_INFO_UPDATE = "route_info_update"
@@ -70,6 +75,7 @@ class TimelineAdapter(
             is TimelineDisplayItem.EmptyState -> TYPE_EMPTY_STATE
             is TimelineDisplayItem.GeneratingState -> TYPE_GENERATING
             is TimelineDisplayItem.SectionFooter -> TYPE_SECTION_FOOTER
+            is TimelineDisplayItem.ConflictWarning -> TYPE_CONFLICT_WARNING
         }
     }
 
@@ -103,6 +109,14 @@ class TimelineAdapter(
             TYPE_SECTION_FOOTER -> SectionFooterVH(
                 ItemTimelineSectionFooterBinding.inflate(inflater, parent, false)
             )
+            TYPE_CONFLICT_WARNING -> {
+                val view = inflater.inflate(
+                    com.tripian.trpcore.R.layout.item_timeline_conflict_warning,
+                    parent,
+                    false
+                ) as ConflictWarningView
+                ConflictWarningVH(view)
+            }
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
     }
@@ -173,6 +187,10 @@ class TimelineAdapter(
             is EmptyStateVH -> holder.bind(item as TimelineDisplayItem.EmptyState, onAddPlanClick)
             is GeneratingStateVH -> holder.bind(item as TimelineDisplayItem.GeneratingState)
             is SectionFooterVH -> { /* No binding needed - just separator */ }
+            is ConflictWarningVH -> holder.bind(
+                onTap = onConflictTap ?: {},
+                onDismiss = onConflictDismiss ?: {}
+            )
         }
     }
 }
@@ -202,6 +220,8 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
                 true
             oldItem is TimelineDisplayItem.SectionFooter && newItem is TimelineDisplayItem.SectionFooter ->
                 oldItem.city?.id == newItem.city?.id
+            oldItem is TimelineDisplayItem.ConflictWarning && newItem is TimelineDisplayItem.ConflictWarning ->
+                true
             else -> false
         }
     }

@@ -332,6 +332,20 @@ sealed class TimelineDisplayItem : Serializable {
         override val order: Int = 0
         override val planId: String? = null
     }
+
+    /**
+     * Conflict warning banner. Inserted at the top of the day's list when at least one
+     * item carries a conflict and the user hasn't dismissed it on this day. Scrolls with
+     * the list (lives inside the RecyclerView, not as a sticky header above it).
+     */
+    object ConflictWarning : TimelineDisplayItem() {
+        override val startTime: Date? = null
+        override val city: City? = null
+        override val segmentIndex: Int? = null
+        override val order: Int = 0
+        override val planId: String? = null
+        private fun readResolve(): Any = ConflictWarning
+    }
 }
 
 /**

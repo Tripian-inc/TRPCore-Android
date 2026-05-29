@@ -78,6 +78,14 @@ class ActivityTimeSelectionVM @Inject constructor(
     val availableDateStrings: LiveData<Set<String>?> = _availableDateStrings
 
     /**
+     * True when the schedule response is in but no day in the trip range has
+     * any slot. The sheet uses this to swap the day filter / slot grid for a
+     * trip-wide "not available" warning card.
+     */
+    private val _isUnavailableForTrip = MutableLiveData(false)
+    val isUnavailableForTrip: LiveData<Boolean> = _isUnavailableForTrip
+
+    /**
      * Cached range response. Populated once by [loadSchedule] for the trip's full
      * date range; subsequent day switches go through [selectDate] which filters
      * this cache client-side instead of hitting the API again.
@@ -153,6 +161,7 @@ class ActivityTimeSelectionVM @Inject constructor(
         resetExpansionState()
         cachedSchedule = null
         _availableDateStrings.value = null
+        _isUnavailableForTrip.value = false
 
         val formattedId = formatActivityIdForSchedule(activityId, cityId)
         val fromString = dateFormatter.format(availableDays.first())
@@ -170,13 +179,16 @@ class ActivityTimeSelectionVM @Inject constructor(
             success = { response ->
                 hideLottieLoading()
                 cachedSchedule = response.data
-                _availableDateStrings.value = computeAvailableDateStrings(response.data)
+                val available = computeAvailableDateStrings(response.data)
+                _availableDateStrings.value = available
+                _isUnavailableForTrip.value = available.isEmpty()
                 publishSlotsFor(selectedDate)
             },
             error = {
                 hideLottieLoading()
                 cachedSchedule = null
                 _availableDateStrings.value = emptySet()
+                _isUnavailableForTrip.value = true
                 _scheduleSlots.value = emptyList()
                 _resolvedSchedule.value = ResolvedSchedule(
                     mode = TimeSelectionMode.TIMED,
@@ -314,6 +326,7 @@ class ActivityTimeSelectionVM @Inject constructor(
         _scheduleSlots.value = null
         _resolvedSchedule.value = null
         _availableDateStrings.value = null
+        _isUnavailableForTrip.value = false
     }
 
     /**

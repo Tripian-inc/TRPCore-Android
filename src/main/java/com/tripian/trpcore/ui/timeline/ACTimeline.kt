@@ -94,31 +94,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     override fun getViewBinding() = ActivityTimelineBinding.inflate(layoutInflater)
 
-    /**
-     * Theme 8: per-day index that the user dismissed the conflict warning banner on.
-     * -1 means no dismissal in effect. Reset on full timeline refresh so a new round
-     * of conflicts shows the banner again.
-     */
-    private var conflictBannerDismissedDayIndex: Int = -1
-
-    /**
-     * Theme 8: recompute conflict banner visibility. The banner is shown when:
-     *  - at least one display item carries `hasConflict == true` AND
-     *  - the current day hasn't been dismissed by the user.
-     */
-    private fun updateConflictWarningVisibility() {
-        val items = viewModel.displayItems.value ?: emptyList()
-        val hasConflict = items.any {
-            (it is TimelineDisplayItem.BookedActivity && it.hasConflict) ||
-            (it is TimelineDisplayItem.ManualPoi && it.hasConflict) ||
-            (it is TimelineDisplayItem.Recommendations && it.conflictingStepIds.isNotEmpty())
-        }
-        val currentDayIndex = viewModel.selectedDayIndex.value ?: 0
-        val dismissed = conflictBannerDismissedDayIndex == currentDayIndex
-        binding.conflictWarningView.visibility =
-            if (hasConflict && !dismissed) android.view.View.VISIBLE
-            else android.view.View.GONE
-    }
 
     override fun setListeners() {
         // Handle navigation bar insets for FAB
@@ -155,16 +130,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             handleBackNavigation()
         }
 
-        // Conflict warning banner (Theme 8) — dismiss is tracked per-day
-        binding.conflictWarningView.onDismiss = {
-            conflictBannerDismissedDayIndex = viewModel.selectedDayIndex.value ?: 0
-            updateConflictWarningVisibility()
-        }
-        binding.conflictWarningView.onTap = {
-            // Optional: scroll to the first conflicting item. Left as a no-op for now;
-            // users see the conflict styling on the badges themselves.
-        }
-
         // Map FAB - switches to map mode
         binding.fabMap.setOnClickListener {
             viewModel.toggleMapMode()
@@ -185,6 +150,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             viewModel.selectDay(index)
             // Scroll to top when day changes
             binding.rvTimeline.scrollToPosition(0)
+            // If on map view, recenter the camera to fit the new day's items.
+            // selectDay() synchronously updates mapSteps; the observer has already
+            // refreshed mapView's icons by the time we reach this line.
+            if (viewModel.isMapMode.value == true) {
+                lifecycleScope.launch {
+                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+                }
+            }
         }
 
         // Saved plans button
@@ -262,7 +235,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         viewModel.displayItems.observe(this) { items ->
             timelineAdapter.submitList(items)
             updateEmptyState(items.isEmpty() || items.all { it is TimelineDisplayItem.EmptyState })
-            updateConflictWarningVisibility()
         }
 
         // Available days
@@ -273,9 +245,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // Selected day
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
-            // Day changed — re-evaluate banner visibility. The dismiss flag is
-            // tracked per-day so switching back to the same day later restores it.
-            updateConflictWarningVisibility()
         }
 
         // Map mode
@@ -556,6 +525,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             },
             isSectionCollapsed = { cityId ->
                 viewModel.isSectionCollapsed(cityId)
+            },
+            // Conflict banner — scrolls inline with the list now
+            onConflictTap = {
+                // No-op for now; conflict styling on item badges is the primary cue.
+            },
+            onConflictDismiss = {
+                viewModel.dismissConflictBanner()
             }
         )
 
@@ -580,8 +556,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             if (item.isSelected) {
                 // Item is already selected - navigate to detail
                 when {
-                    // Booked or reserved activities
-                    item.type == "booked" || item.type == "reserved" -> {
+                    // Booked, reserved, or flexible activities
+                    item.type == "booked" || item.type == "reserved" || item.type == "flexible" -> {
                         viewModel.onActivityDetailRequested(item.id)
                     }
                     // Step with activity type - treat like reserved
@@ -600,21 +576,31 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                 }
             } else {
-                // Item is not selected - select it via ViewModel
-                // This will update mapSteps, mapBottomItems and switch to step markers mode if needed
-                viewModel.selectStepOnMap(item.id)
-
-                // Select marker on map (will work after mode switches to step markers)
-                binding.mapView.selectMarker(item.id)
-
-                // Zoom to the item's coordinate
+                // Item is not selected. If it has a real map marker, run the normal
+                // select-and-zoom flow. If it has no marker (no-location / missing
+                // coord, flexible or otherwise), bypass mapSteps selection (which
+                // would mis-deselect other markers in city 0) and just update the
+                // bottom-list selection + center the camera on the item's city.
                 val mapStep = viewModel.mapSteps.value?.find { it.poiId == item.id }
-                mapStep?.coordinate?.let { coord ->
+                val markerCoord = mapStep?.coordinate
+
+                if (markerCoord != null) {
+                    viewModel.selectStepOnMap(item.id)
+                    binding.mapView.selectMarker(item.id)
                     binding.mapView.zoomToCoordinate(
-                        lng = coord.lng,
-                        lat = coord.lat,
+                        lng = markerCoord.lng,
+                        lat = markerCoord.lat,
                         zoomLevel = ACTimelineVM.STEP_MARKER_ZOOM_LEVEL
                     )
+                } else {
+                    mapBottomListAdapter?.selectItem(item.id)
+                    viewModel.getCityCoordinate(item.cityId)?.let { cityCoord ->
+                        binding.mapView.zoomToCoordinate(
+                            lng = cityCoord.lng,
+                            lat = cityCoord.lat,
+                            zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
+                        )
+                    }
                 }
 
                 // Show Main View button when focusing on a marker (multi-city mode)

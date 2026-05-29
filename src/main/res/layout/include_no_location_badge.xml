@@ -3,6 +3,9 @@
   Reusable "No exact location" badge for timeline cells.
   Include with: <include android:id="@+id/noLocationBadge" layout="@layout/include_no_location_badge"/>
   Default visibility is GONE — VH bind sets it visible when item.isNoLocation == true.
+
+  Sizing matches the category / activity chips (Montserrat Medium 12sp,
+  8dp horiz + 6dp vert padding) so badges line up visually in the same row.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
@@ -10,26 +13,20 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/trp_bg_no_location_badge"
-    android:gravity="center_vertical"
+    android:gravity="center"
     android:orientation="horizontal"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="6dp"
     android:visibility="gone"
     tools:visibility="visible">
-
-    <ImageView
-        android:id="@+id/ivNoLocationIcon"
-        android:layout_width="14dp"
-        android:layout_height="14dp"
-        android:contentDescription="No exact location"
-        android:src="@drawable/trp_ic_location_off"
-        android:tint="@color/trp_no_location_fg" />
 
     <TextView
         android:id="@+id/tvNoLocationLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
         android:fontFamily="@font/medium"
+        android:includeFontPadding="false"
         android:textColor="@color/trp_no_location_fg"
-        android:textSize="11sp"
+        android:textSize="12sp"
         tools:text="No exact location" />
 </LinearLayout>

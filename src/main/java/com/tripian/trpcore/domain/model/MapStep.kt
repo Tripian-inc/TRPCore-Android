@@ -38,6 +38,7 @@ class MapStep : BaseModel() {
     var cityIndex: Int = 0  // 0 = first city, 1+ = secondary cities (for different marker colors)
     var isCityMarker: Boolean = false  // true if this is a city marker (not a step marker)
     var cityId: Int? = null  // City ID for city markers
+    var isFlexible: Boolean = false  // true → render marker order chip as "−" (matches bottom-list flexible row)
 
     fun isRatingAvailable(): Boolean {
         return rating != -1f && ratingCount > 0

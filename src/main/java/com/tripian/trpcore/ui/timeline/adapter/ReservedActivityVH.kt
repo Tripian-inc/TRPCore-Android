@@ -74,22 +74,28 @@ class ReservedActivityVH(
         // Title - semibold 16px
         binding.tvTitle.text = item.title
 
+        // Activity badge — always shown on ReservedActivity cells.
+        binding.tvActivityBadge.text =
+            TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
+
         // Time (startTime - endTime format)
         // Status suffix precedence (Theme 7): "Not available" > "Time Overlap" > none
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            val statusSuffix = when {
-                item.isAvailabilityExpired ->
-                    " " + getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
+            binding.tvTime.text = when {
+                item.isAvailabilityExpired -> {
+                    val label = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
                         .ifBlank { "Not available" }
-                item.showTimeOverlapText ->
-                    " " + getLanguage(LanguageConst.TIMELINE_LABEL_TIME_OVERLAP)
-                        .ifBlank { getLanguage(LanguageConst.TIME_OVERLAP) }
-                else -> ""
+                    "$timeText $label"
+                }
+                item.showTimeOverlapText -> {
+                    val label = getLanguage(LanguageConst.TIME_OVERLAP)
+                    TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, label)
+                }
+                else -> timeText
             }
-            binding.tvTime.text = "$timeText$statusSuffix"
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)

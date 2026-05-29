@@ -151,6 +151,10 @@ class ACTimelineVM @Inject constructor(
     // Route info cache - maps segmentIndex to route info list
     private val _routeInfoCache = mutableMapOf<Int, List<StepRouteInfo>>()
 
+    // Conflict banner dismissal: the day index on which the user dismissed it.
+    // -1 = no dismissal in effect. Tracked per-day so switching back restores the dismiss.
+    private var conflictBannerDismissedDayIndex: Int = -1
+
     // LiveData to notify UI when route info is updated for a segment
     private val _routeInfoUpdated = MutableLiveData<Int?>()
     val routeInfoUpdated: LiveData<Int?> = _routeInfoUpdated
@@ -1156,10 +1160,39 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        _displayItems.value = itemsWithPreservedState
+        _displayItems.value = injectConflictBannerIfNeeded(itemsWithPreservedState, selectedIndex)
 
         // Always update map steps so they're ready when user switches to map mode
         updateMapSteps()
+    }
+
+    /**
+     * Prepends a [TimelineDisplayItem.ConflictWarning] when the day's items contain a
+     * conflict and the user hasn't dismissed the banner on this day. The banner now lives
+     * inside the RecyclerView so it scrolls with the content instead of sitting sticky.
+     */
+    private fun injectConflictBannerIfNeeded(
+        items: List<TimelineDisplayItem>,
+        dayIndex: Int
+    ): List<TimelineDisplayItem> {
+        if (dayIndex == conflictBannerDismissedDayIndex) return items
+        val hasConflict = items.any {
+            (it is TimelineDisplayItem.BookedActivity && it.hasConflict) ||
+                    (it is TimelineDisplayItem.ManualPoi && it.hasConflict) ||
+                    (it is TimelineDisplayItem.Recommendations && it.conflictingStepIds.isNotEmpty())
+        }
+        if (!hasConflict) return items
+        return listOf(TimelineDisplayItem.ConflictWarning) + items
+    }
+
+    /**
+     * Dismiss the conflict banner for the current day. The flag is per-day, so switching
+     * to a different day reopens the banner there if conflicts exist; coming back later
+     * still keeps it dismissed on the original day.
+     */
+    fun dismissConflictBanner() {
+        conflictBannerDismissedDayIndex = _selectedDayIndex.value ?: 0
+        updateDisplayItems()
     }
 
     /**
@@ -1798,36 +1831,35 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        // Phase 6: Update items with final flags
+        // Phase 6: Update items with final flags.
+        // New rule: every conflicting item shows Time Overlap text — the only
+        // exception is non-reserved BookedActivity, which keeps the conflict styling
+        // (orange border/badge) but never gets the text. Same-plan / oldest-plan
+        // filters from earlier phases are intentionally ignored here.
         return items.mapIndexed { index, item ->
             when (item) {
                 is TimelineDisplayItem.BookedActivity -> {
-                    // Booked activity: NEVER shows Time Overlap (booked_activity)
-                    // Reserved activity: CAN show Time Overlap (reserved_activity, normal segment)
-                    val showOverlap = if (item.isReserved) {
-                        index in timeOverlapIndices
-                    } else {
-                        false  // Booked activity never shows Time Overlap
-                    }
+                    val inConflict = index in visualConflictIndices
+                    val showOverlap = if (item.isReserved) inConflict else false
                     item.copy(
-                        hasConflict = index in visualConflictIndices,
+                        hasConflict = inConflict,
                         showTimeOverlapText = showOverlap
                     )
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
+                    val inConflict = index in visualConflictIndices
                     item.copy(
-                        hasConflict = index in visualConflictIndices,
-                        showTimeOverlapText = index in timeOverlapIndices
+                        hasConflict = inConflict,
+                        showTimeOverlapText = inConflict
                     )
                 }
 
                 is TimelineDisplayItem.Recommendations -> {
                     val conflictStepIds = visualConflictStepIds[index] ?: emptySet()
-                    val overlapStepIds = timeOverlapStepIds[index] ?: emptySet()
                     item.copy(
                         conflictingStepIds = conflictStepIds,  // ALL conflicting steps (visual conflict)
-                        timeOverlapStepIds = overlapStepIds    // Steps with Time Overlap text
+                        timeOverlapStepIds = conflictStepIds   // Same set — every conflicting step shows the text
                     )
                 }
 
@@ -2035,8 +2067,11 @@ class ACTimelineVM @Inject constructor(
         deleteStepUseCase.on(
             params = DeleteStepUseCase.Params(stepId),
             success = {
+                // Hand the loader off to refreshTimeline — it keeps the Lottie visible
+                // while the timeline is re-fetched and hides it on completion. Hiding
+                // here would close the loader the instant delete returns, before the
+                // timeline refresh finishes.
                 refreshTimeline()
-                hideLottieLoading()
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
@@ -2579,7 +2614,10 @@ class ACTimelineVM @Inject constructor(
 
                 is TimelineDisplayItem.FlexibleActivity -> {
                     // Theme 4 + 6: flexible items only get a map marker when they
-                    // carry a real coordinate (typically they do not).
+                    // carry a real coordinate (typically they do not). The marker
+                    // chip is rendered as "−" (no numeric position) so it matches
+                    // the bottom-list flexible row and keeps the numeric sequence
+                    // aligned with non-flexible items.
                     if (!item.isNoLocation) {
                         val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
                         coord?.let {
@@ -2595,7 +2633,8 @@ class ACTimelineVM @Inject constructor(
                                             lng = it.lng
                                         }
                                         markerIcon = -1
-                                        this.position = getNextPosition()
+                                        // No getNextPosition() — flexible doesn't consume a number
+                                        isFlexible = true
                                         isOffer = false
                                         this.cityIndex = currentCityIndex
                                     }
@@ -2729,7 +2768,8 @@ class ACTimelineVM @Inject constructor(
                                 time = dateTime?.let { outputTimeFormat.format(it) },
                                 type = "step",
                                 stepType = step.stepType,  // "poi" or "activity"
-                                cityIndex = currentCityIndex
+                                cityIndex = currentCityIndex,
+                                cityId = item.city?.id
                             )
                         )
                     }
@@ -2754,7 +2794,8 @@ class ACTimelineVM @Inject constructor(
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
                             type = if (item.isReserved) "reserved" else "booked",
-                            cityIndex = currentCityIndex
+                            cityIndex = currentCityIndex,
+                            cityId = item.city?.id
                         )
                     )
                 }
@@ -2778,7 +2819,36 @@ class ACTimelineVM @Inject constructor(
                             date = dateTime?.let { outputDateFormat.format(it) },
                             time = dateTime?.let { outputTimeFormat.format(it) },
                             type = "manual",
-                            cityIndex = currentCityIndex
+                            cityIndex = currentCityIndex,
+                            cityId = item.city?.id
+                        )
+                    )
+                }
+
+                is TimelineDisplayItem.FlexibleActivity -> {
+                    // Always include flexible — even when isNoLocation. List-only entry
+                    // (no map marker tap), order chip is rendered as "−".
+                    val data = item.segment.additionalData
+                    val dateTime = data?.startDatetime?.let {
+                        try {
+                            inputDateFormat.parse(it)
+                        } catch (e: Exception) {
+                            null
+                        }
+                    }
+
+                    bottomItems.add(
+                        MapBottomItem(
+                            id = data?.activityId ?: "flexible_${item.segmentIndex}",
+                            order = 0,  // ignored when isFlexible == true
+                            title = item.title,
+                            imageUrl = item.imageUrl,
+                            date = dateTime?.let { outputDateFormat.format(it) },
+                            time = null,  // flexible has no fixed time
+                            type = "flexible",
+                            cityIndex = currentCityIndex,
+                            isFlexible = true,
+                            cityId = item.city?.id
                         )
                     )
                 }
@@ -2789,10 +2859,15 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        // Select first item of each city by default
+        // Select first item of each city by default — but skip flexible items
+        // that have no map marker (isNoLocation / missing coord). Those would
+        // desync from the focused marker, since mapSteps only contains items
+        // with valid coordinates.
+        val markerIds = _mapSteps.value?.mapNotNull { it.poiId }?.toSet() ?: emptySet()
         val selectedCities = mutableSetOf<Int>()
         val itemsWithSelection = bottomItems.map { item ->
-            if (!selectedCities.contains(item.cityIndex)) {
+            val canFocus = !item.isFlexible || item.id in markerIds
+            if (canFocus && !selectedCities.contains(item.cityIndex)) {
                 selectedCities.add(item.cityIndex)
                 item.copy(isSelected = true)
             } else {
@@ -2835,6 +2910,18 @@ class ACTimelineVM @Inject constructor(
         return if (coord != null && coord.lat != 0.0 && coord.lng != 0.0) {
             Point.fromLngLat(coord.lng, coord.lat)
         } else null
+    }
+
+    /**
+     * Returns the coordinate for the given cityId, used to center the camera on a
+     * bottom-list item that has no map marker (no exact location). Returns null when
+     * the city has no usable coordinate.
+     */
+    fun getCityCoordinate(cityId: Int?): Coordinate? {
+        if (cityId == null) return null
+        val city = _cities.value?.find { it.id == cityId } ?: return null
+        val coord = city.coordinate ?: return null
+        return if (coord.lat != 0.0 && coord.lng != 0.0) coord else null
     }
 
     fun getItinerary(): ItineraryWithActivities? = itinerary

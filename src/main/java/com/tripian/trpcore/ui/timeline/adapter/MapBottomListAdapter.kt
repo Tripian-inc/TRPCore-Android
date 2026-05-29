@@ -23,10 +23,12 @@ data class MapBottomItem(
     val imageUrl: String?,
     val date: String?,
     val time: String?,
-    val type: String,  // "step", "booked", "reserved", "manual"
+    val type: String,  // "step", "booked", "reserved", "manual", "flexible"
     val stepType: String? = null,  // "poi" or "activity" - only for step type items
     val isSelected: Boolean = false,
-    val cityIndex: Int = 0  // 0 = first city, 1+ = secondary cities (for different badge colors)
+    val cityIndex: Int = 0,  // 0 = first city, 1+ = secondary cities (for different badge colors)
+    val isFlexible: Boolean = false,  // true → render order chip as "−", never selectable as map focus
+    val cityId: Int? = null  // city id for the item — used to center the camera when the item has no marker
 )
 
 /**
@@ -95,8 +97,8 @@ class MapBottomListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: MapBottomItem) {
-            // Order badge
-            binding.tvOrderBadge.text = item.order.toString()
+            // Order badge — flexible items use U+2212 minus, matching FlexibleActivityVH chip
+            binding.tvOrderBadge.text = if (item.isFlexible) "−" else item.order.toString()
 
             // Apply selection styling to badge - same color for all cities
             if (item.isSelected) {

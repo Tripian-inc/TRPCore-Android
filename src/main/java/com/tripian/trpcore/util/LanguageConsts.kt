@@ -251,6 +251,7 @@ object LanguageConst {
     const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
+    const val ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS = "addPlan.time.activityNotAvailableForTrip"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
 
     // Categories (Smart Mode)
@@ -399,9 +400,9 @@ object LanguageConst {
     // =====================
     // FLEXIBLE ACTIVITY (timeline + AddPlan)
     // =====================
-    const val TIMELINE_FLEXIBLE_TITLE = "timeline.flexible.title"
-    const val TIMELINE_FLEXIBLE_SUBTITLE = "timeline.flexible.subtitle"
-    const val TIMELINE_FLEXIBLE_SHORT = "timeline.flexible.short"
+    const val TIMELINE_FLEXIBLE_TITLE = "timeline.flexibleActivity.entryTitle"
+    const val TIMELINE_FLEXIBLE_SUBTITLE = "timeline.flexibleActivity.entrySubtitle"
+    const val TIMELINE_FLEXIBLE_SHORT = "timeline.flexibleActivity.short"
     const val ADD_PLAN_FLEXIBLE_INFO_TITLE = "addPlan.time.flexibleInfo"
     const val ADD_PLAN_FLEXIBLE_TOP_OF_ITINERARY = "addPlan.time.flexibleTopOfItinerary"
     const val ADD_PLAN_FLEXIBLE_ANY_TIME = "addPlan.flexible.anyTime"
@@ -410,8 +411,8 @@ object LanguageConst {
     // TIMELINE — NO LOCATION, CONFLICT, AVAILABILITY
     // =====================
     const val TIMELINE_NO_EXACT_LOCATION = "timeline.label.noExactLocation"
-    const val TIMELINE_LABEL_TIME_OVERLAP = "timeline.label.timeOverlap"
     const val TIMELINE_LABEL_NOT_AVAILABLE = "timeline.label.notAvailable"
+    const val TIMELINE_LABEL_ACTIVITY_BADGE = "timeline.label.activityBadge"
     const val TIMELINE_CONFLICT_BANNER = "timeline.conflictWarning"
     const val TIMELINE_CONFLICT_BANNER_ACTION = "timeline.conflict.banner.action"
 
@@ -444,5 +445,25 @@ object LanguageConst {
     // %1$@ = place / activity name, %2$@ = day label. iOS-style placeholders are
     // replaced on the Kotlin side via String.replace.
     const val ADD_PLAN_TOAST_ACTIVITY_ADDED = "addPlan.toast.activityAdded"
+
+    // AddPlan — destination section titles (Cities list)
+    const val ADD_PLAN_SECTION_CITIES_FOR_SELECTED_DATE = "addPlan.section.citiesForSelectedDate"
+    const val ADD_PLAN_SECTION_OTHER_CITIES = "addPlan.section.otherCities"
+
+    // AddPlan — time-screen notices
+    const val ADD_PLAN_BOOKING_AVAILABILITY_NOTICE = "addPlan.time.bookingAvailabilityNotice"
+    const val ADD_PLAN_SOLD_OUT_WARNING = "addPlan.time.soldOutWarning"
+
+    // AddPlan — error messages (new addPlan.error.* namespace)
+    const val ADD_PLAN_ERROR_TIMELINE_NOT_FOUND = "addPlan.error.timelineNotFound"
+    const val ADD_PLAN_ERROR_ACTIVITY_LOCATION_NOT_AVAILABLE = "addPlan.error.activityLocationNotAvailable"
+    const val ADD_PLAN_ERROR_SELECT_DATE = "addPlan.error.selectDate"
+    const val ADD_PLAN_ERROR_SELECT_TIME_SLOT = "addPlan.error.selectTimeSlot"
+    const val ADD_PLAN_ERROR_CREATE_RESERVATION_FAILED = "addPlan.error.createReservationFailed"
+    const val ADD_PLAN_ERROR_SEGMENT_NOT_FOUND = "addPlan.error.segmentNotFound"
+    const val ADD_PLAN_ERROR_UPDATE_TIME_FAILED = "addPlan.error.updateTimeFailed"
+    const val ADD_PLAN_ERROR_STEP_NOT_FOUND = "addPlan.error.stepNotFound"
+    const val ADD_PLAN_ERROR_INVALID_TIME_FORMAT = "addPlan.error.invalidTimeFormat"
+    const val ADD_PLAN_ERROR_NO_DATE_SELECTED = "addPlan.error.noDateSelected"
 
 }

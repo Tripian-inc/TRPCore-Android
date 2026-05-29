@@ -63,11 +63,11 @@ class BookedActivityVH(
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            if (item.showTimeOverlapText) {
+            binding.tvTime.text = if (item.showTimeOverlapText) {
                 val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                binding.tvTime.text = "$timeText $overlapText"
+                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
             } else {
-                binding.tvTime.text = timeText
+                timeText
             }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {

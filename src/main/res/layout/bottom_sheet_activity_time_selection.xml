@@ -121,7 +121,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_8sdp"
             android:layout_weight="1"
-            android:fontFamily="@font/montserrat_medium"
+            android:fontFamily="@font/medium"
             android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="Valid at any time on the chosen day. Check the opening hours." />
@@ -136,11 +136,46 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_8sdp"
-        android:fontFamily="@font/montserrat_medium"
+        android:fontFamily="@font/medium"
         android:textColor="@color/trp_fgWeak"
         android:textSize="14sp"
         android:visibility="gone"
         tools:text="Add it to top of your itinerary." />
+
+    <!-- Trip-wide unavailability card — shown when no day in the trip
+         range has any schedule slot. Occupies the slot grid area while the
+         day filter stays visible above (flexible-card sibling). -->
+    <LinearLayout
+        android:id="@+id/tripUnavailableCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:background="@drawable/trp_bg_conflict_warning"
+        android:gravity="top"
+        android:orientation="horizontal"
+        android:padding="@dimen/_12sdp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:contentDescription="@null"
+            android:src="@drawable/trp_ic_warning" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvTripUnavailable"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_weight="1"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="This activity is not available on the days of your trip." />
+
+    </LinearLayout>
 
     <!-- Continue Button -->
     <com.google.android.material.button.MaterialButton
