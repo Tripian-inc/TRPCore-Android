@@ -82,6 +82,7 @@ class MapView : MapView {
     private var mapLoadListener: (() -> Unit)? = null
     private var mapZoomLevelListener: ((Double) -> Unit)? = null
     private var mapItemClickListener: ((MapStep) -> Unit)? = null
+    private var mapEmptyClickListener: (() -> Unit)? = null
     private var mapInteractionListener: (() -> Unit)? = null
 
     private var mapItems = ArrayList<MapStep>()
@@ -209,6 +210,7 @@ class MapView : MapView {
                     RenderedQueryOptions(null, literal(true)),
                     callback = { callback ->
                         val features = callback.value
+                        var hitPoi = false
                         if (!features.isNullOrEmpty()) {
                             run loop@{
                                 features.forEach { feature ->
@@ -222,11 +224,16 @@ class MapView : MapView {
                                             )
 
                                         mapItemClickListener?.invoke(annotation)
+                                        hitPoi = true
 
                                         return@loop
                                     }
                                 }
                             }
+                        }
+                        if (!hitPoi) {
+                            // Click landed on empty map space (no POI feature underneath).
+                            mapEmptyClickListener?.invoke()
                         }
                     })
             }
@@ -558,6 +565,14 @@ class MapView : MapView {
 
     fun setOnMapClickListener(task: (MapStep) -> Unit) {
         mapItemClickListener = task
+    }
+
+    /**
+     * Called when the user taps empty map space (no POI marker under the tap).
+     * Use to toggle UI overlays like the bottom card list.
+     */
+    fun setOnMapEmptyClickListener(task: () -> Unit) {
+        mapEmptyClickListener = task
     }
 
     /**

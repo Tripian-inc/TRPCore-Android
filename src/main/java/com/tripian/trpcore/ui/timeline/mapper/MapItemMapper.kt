@@ -1,0 +1,355 @@
+package com.tripian.trpcore.ui.timeline.mapper
+
+import com.tripian.one.api.cities.model.City
+import com.tripian.one.api.pois.model.Coordinate
+import com.tripian.trpcore.domain.model.MapStep
+import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.toDate
+import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
+import java.text.SimpleDateFormat
+import java.util.Locale
+import javax.inject.Inject
+
+/**
+ * Output of [MapItemMapper.buildMapSteps].
+ *
+ * @property mapSteps the marker list with `isSelected` already applied to the first
+ *                    marker of every city group.
+ * @property hasMultipleCities `true` when the day spans more than one city.
+ * @property firstStepIdOfFirstCity poiId of the first marker in city 0; consumed by
+ *                                  the VM as the default selected step id when none
+ *                                  has been picked yet.
+ */
+data class MapStepsResult(
+    val mapSteps: List<MapStep>,
+    val hasMultipleCities: Boolean,
+    val firstStepIdOfFirstCity: String?
+)
+
+/**
+ * Pure domain → UI mappers for the map view layer. No state, no side effects —
+ * inputs in, models out. Kept separate so [com.tripian.trpcore.ui.timeline.ACTimelineVM]
+ * stays focused on lifecycle and reactive state orchestration instead of carrying
+ * hundreds of lines of conversion code.
+ */
+class MapItemMapper @Inject constructor() {
+
+    /**
+     * Builds the per-step map markers for the given day's display items.
+     *
+     * Numbering rule: a global sequential counter (1, 2, 3…) is consumed by
+     * non-flexible items only. Flexible markers render a "−" chip on the map
+     * (no numeric position) and therefore do NOT advance the counter — this
+     * keeps the numeric sequence in lockstep with [buildMapBottomItems].
+     */
+    fun buildMapSteps(items: List<TimelineDisplayItem>): MapStepsResult {
+        val mapSteps = mutableListOf<MapStep>()
+        val cityOrder = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+        var globalPosition = 0
+
+        fun nextPosition(): Int {
+            globalPosition++
+            return globalPosition
+        }
+
+        items.forEach { item ->
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
+            when (item) {
+                is TimelineDisplayItem.Recommendations -> {
+                    item.steps.forEach { step ->
+                        step.poi?.let { poi ->
+                            poi.coordinate?.let { coord ->
+                                if (coord.lat != 0.0 && coord.lng != 0.0) {
+                                    mapSteps.add(
+                                        MapStep().apply {
+                                            group = "step"
+                                            poiId = poi.id ?: ""
+                                            name = poi.name ?: ""
+                                            coordinate = Coordinate().apply {
+                                                lat = coord.lat
+                                                lng = coord.lng
+                                            }
+                                            markerIcon = -1
+                                            this.position = nextPosition()
+                                            isOffer = false
+                                            this.cityIndex = currentCityIndex
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                is TimelineDisplayItem.BookedActivity -> {
+                    if (!item.isNoLocation) {
+                        val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
+                        coord?.let {
+                            if (it.lat != 0.0 && it.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "booked"
+                                        poiId = item.segment.additionalData?.activityId
+                                            ?: "booked_${item.segmentIndex}"
+                                        name = item.segment.additionalData?.title ?: item.segment.title ?: ""
+                                        coordinate = Coordinate().apply {
+                                            lat = it.lat
+                                            lng = it.lng
+                                        }
+                                        markerIcon = -1
+                                        this.position = nextPosition()
+                                        isOffer = false
+                                        this.cityIndex = currentCityIndex
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is TimelineDisplayItem.FlexibleActivity -> {
+                    if (!item.isNoLocation) {
+                        val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
+                        coord?.let {
+                            if (it.lat != 0.0 && it.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "flexible"
+                                        poiId = item.segment.additionalData?.activityId
+                                            ?: "flexible_${item.segmentIndex}"
+                                        name = item.title
+                                        coordinate = Coordinate().apply {
+                                            lat = it.lat
+                                            lng = it.lng
+                                        }
+                                        markerIcon = -1
+                                        isFlexible = true
+                                        isOffer = false
+                                        this.cityIndex = currentCityIndex
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is TimelineDisplayItem.ManualPoi -> {
+                    item.step.poi?.let { poi ->
+                        poi.coordinate?.let { coord ->
+                            if (coord.lat != 0.0 && coord.lng != 0.0) {
+                                mapSteps.add(
+                                    MapStep().apply {
+                                        group = "manual"
+                                        poiId = poi.id ?: ""
+                                        name = poi.name ?: ""
+                                        coordinate = Coordinate().apply {
+                                            lat = coord.lat
+                                            lng = coord.lng
+                                        }
+                                        markerIcon = -1
+                                        this.position = nextPosition()
+                                        isOffer = false
+                                        this.cityIndex = currentCityIndex
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                else -> Unit
+            }
+        }
+
+        // Auto-select the first marker of each city; remember the very first
+        // city-0 marker as the default selection candidate for the VM.
+        var firstStepIdOfFirstCity: String? = null
+        val seenCities = mutableSetOf<Int>()
+        mapSteps.forEach { step ->
+            if (seenCities.add(step.cityIndex)) {
+                step.isSelected = true
+                if (firstStepIdOfFirstCity == null && step.cityIndex == 0) {
+                    firstStepIdOfFirstCity = step.poiId
+                }
+            }
+        }
+
+        return MapStepsResult(
+            mapSteps = mapSteps,
+            hasMultipleCities = cityOrder.size > 1,
+            firstStepIdOfFirstCity = firstStepIdOfFirstCity
+        )
+    }
+
+    /**
+     * Builds the horizontal bottom-list items. Auto-selects the first item per city
+     * that actually has a corresponding map marker (membership tested via [markerIds]),
+     * so the list highlight always tracks a real focused marker.
+     */
+    fun buildMapBottomItems(
+        items: List<TimelineDisplayItem>,
+        markerIds: Set<String>
+    ): List<MapBottomItem> {
+        val bottomItems = mutableListOf<MapBottomItem>()
+        val cityOrder = mutableMapOf<Int, Int>()
+        var nextCityIndex = 0
+        var globalPosition = 0
+
+        fun nextPosition(): Int {
+            globalPosition++
+            return globalPosition
+        }
+
+        val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+        items.forEach { item ->
+            val cityId = item.city?.id ?: 0
+            val currentCityIndex = if (cityId != 0) {
+                cityOrder.getOrPut(cityId) { nextCityIndex++ }
+            } else {
+                0
+            }
+
+            when (item) {
+                is TimelineDisplayItem.Recommendations -> {
+                    item.steps.forEach { step ->
+                        val dateTime = step.startDateTimes.toDate()
+                        val stepCoord = step.poi?.coordinate
+                        val stepHasLocation = stepCoord != null && stepCoord.lat != 0.0 && stepCoord.lng != 0.0
+
+                        bottomItems.add(
+                            MapBottomItem(
+                                id = step.poi?.id ?: "step_${step.id}",
+                                order = nextPosition(),
+                                title = step.poi?.name ?: "",
+                                imageUrl = step.poi?.image?.url,
+                                time = dateTime?.let { outputTimeFormat.format(it) },
+                                type = "step",
+                                stepType = step.stepType,
+                                cityIndex = currentCityIndex,
+                                cityId = item.city?.id,
+                                cityName = item.city?.name,
+                                isNoLocation = !stepHasLocation
+                            )
+                        )
+                    }
+                }
+
+                is TimelineDisplayItem.BookedActivity -> {
+                    val data = item.segment.additionalData
+                    val dateTime = data?.startDatetime.toDate()
+
+                    bottomItems.add(
+                        MapBottomItem(
+                            id = data?.activityId ?: "booked_${item.segmentIndex}",
+                            order = nextPosition(),
+                            title = data?.title ?: item.segment.title ?: "",
+                            imageUrl = data?.imageUrl,
+                            time = dateTime?.let { outputTimeFormat.format(it) },
+                            type = if (item.isReserved) "reserved" else "booked",
+                            cityIndex = currentCityIndex,
+                            cityId = item.city?.id,
+                            cityName = item.city?.name,
+                            isNoLocation = item.isNoLocation
+                        )
+                    )
+                }
+
+                is TimelineDisplayItem.ManualPoi -> {
+                    val step = item.step
+                    val dateTime = step.startDateTimes.toDate()
+
+                    bottomItems.add(
+                        MapBottomItem(
+                            id = step.poi?.id ?: "manual_${step.id}",
+                            order = nextPosition(),
+                            title = step.poi?.name ?: "",
+                            imageUrl = step.poi?.image?.url,
+                            time = dateTime?.let { outputTimeFormat.format(it) },
+                            type = "manual",
+                            cityIndex = currentCityIndex,
+                            cityId = item.city?.id,
+                            cityName = item.city?.name,
+                            isNoLocation = item.isNoLocation
+                        )
+                    )
+                }
+
+                is TimelineDisplayItem.FlexibleActivity -> {
+                    val data = item.segment.additionalData
+
+                    bottomItems.add(
+                        MapBottomItem(
+                            id = data?.activityId ?: "flexible_${item.segmentIndex}",
+                            order = 0,
+                            title = item.title,
+                            imageUrl = item.imageUrl,
+                            time = null,
+                            type = "flexible",
+                            cityIndex = currentCityIndex,
+                            isFlexible = true,
+                            cityId = item.city?.id,
+                            cityName = item.city?.name,
+                            isNoLocation = item.isNoLocation
+                        )
+                    )
+                }
+
+                else -> Unit
+            }
+        }
+
+        // Select the first marker-bearing item per city. Items without a marker
+        // (flexible isNoLocation, recommendations with invalid coord, no-location
+        // booked/manual…) are skipped so the highlight stays in sync with mapSteps.
+        val selectedCities = mutableSetOf<Int>()
+        return bottomItems.map { item ->
+            val hasMarker = item.id in markerIds
+            if (hasMarker && selectedCities.add(item.cityIndex)) {
+                item.copy(isSelected = true)
+            } else {
+                item
+            }
+        }
+    }
+
+    /**
+     * Builds one MapStep per unique city for the day. Used in multi-city overview
+     * mode (CITY_MARKERS) before the user drills into a specific city.
+     */
+    fun buildCityMarkers(items: List<TimelineDisplayItem>): List<MapStep> {
+        val cities = linkedMapOf<Int, City>()
+
+        items.forEach { item ->
+            val city = item.city ?: return@forEach
+            val id = city.id ?: return@forEach
+            if (city.coordinate == null) return@forEach
+            cities.putIfAbsent(id, city)
+        }
+
+        return cities.values.mapNotNull { city ->
+            city.coordinate?.let { coord ->
+                MapStep().apply {
+                    poiId = "city_${city.id}"
+                    coordinate = Coordinate().apply {
+                        lat = coord.lat
+                        lng = coord.lng
+                    }
+                    isCityMarker = true
+                    cityId = city.id
+                    group = "city"
+                    position = -1
+                    markerIcon = -1
+                    isSelected = false
+                }
+            }
+        }
+    }
+}

@@ -180,6 +180,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             handleMapItemClick(mapStep)
         }
 
+        // Tapping empty map space toggles the bottom list visibility — only when
+        // the current day actually has content (otherwise there is nothing to show).
+        binding.mapView.setOnMapEmptyClickListener {
+            if (viewModel.mapSteps.value.isNullOrEmpty()) return@setOnMapEmptyClickListener
+            if (isBottomListVisible) {
+                hideMapBottomList()
+            } else {
+                showMapBottomList()
+            }
+        }
+
         // Map load listener
         binding.mapView.setOnMapLoadListener {
             // Map is ready, we can now show markers
@@ -298,9 +309,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     MapMarkersMode.STEP_MARKERS -> showStepMarkersMode()
                     else -> showStepMarkersMode()
                 }
-                // Handle FAB position based on whether there are items
+                // Toggle the bottom list to match the new day's content. Without the
+                // else branch, switching from an empty day to a plan-bearing day
+                // would leave the list hidden forever (hideCompletely was sticky).
                 if (mapSteps.isNullOrEmpty()) {
                     hideMapBottomListCompletely()
+                } else {
+                    showMapBottomList()
                 }
             }
         }

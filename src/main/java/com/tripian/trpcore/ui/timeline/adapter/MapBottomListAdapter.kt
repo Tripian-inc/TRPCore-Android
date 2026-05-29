@@ -11,7 +11,9 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.tripian.trpcore.R
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemMapBottomCardBinding
+import com.tripian.trpcore.util.LanguageConst
 
 /**
  * Data model for map bottom list items
@@ -21,14 +23,15 @@ data class MapBottomItem(
     val order: Int,
     val title: String,
     val imageUrl: String?,
-    val date: String?,
     val time: String?,
     val type: String,  // "step", "booked", "reserved", "manual", "flexible"
     val stepType: String? = null,  // "poi" or "activity" - only for step type items
     val isSelected: Boolean = false,
     val cityIndex: Int = 0,  // 0 = first city, 1+ = secondary cities (for different badge colors)
     val isFlexible: Boolean = false,  // true → render order chip as "−", never selectable as map focus
-    val cityId: Int? = null  // city id for the item — used to center the camera when the item has no marker
+    val cityId: Int? = null,  // city id for the item — used to center the camera when the item has no marker
+    val cityName: String? = null,  // displayed above the title
+    val isNoLocation: Boolean = false  // when true → show the "no exact location" badge
 )
 
 /**
@@ -119,6 +122,14 @@ class MapBottomListAdapter(
                 )
             }
 
+            // City name above title
+            if (!item.cityName.isNullOrBlank()) {
+                binding.tvCityName.visibility = View.VISIBLE
+                binding.tvCityName.text = item.cityName
+            } else {
+                binding.tvCityName.visibility = View.GONE
+            }
+
             // Title
             binding.tvTitle.text = item.title
 
@@ -134,27 +145,32 @@ class MapBottomListAdapter(
                 binding.ivThumbnail.setImageResource(R.color.trp_grey_10)
             }
 
-            // Date and time
-            if (!item.date.isNullOrEmpty() || !item.time.isNullOrEmpty()) {
-                binding.llDateTime.visibility = View.VISIBLE
-                binding.tvDate.text = item.date ?: ""
-                binding.tvTime.text = item.time ?: ""
-
-                // Hide date views if no date
-                if (item.date.isNullOrEmpty()) {
-                    binding.tvDate.visibility = View.GONE
-                } else {
-                    binding.tvDate.visibility = View.VISIBLE
-                }
-
-                // Hide time views if no time
-                if (item.time.isNullOrEmpty()) {
-                    binding.tvTime.visibility = View.GONE
-                } else {
-                    binding.tvTime.visibility = View.VISIBLE
-                }
+            // No-exact-location badge — shared include used by timeline cells
+            binding.noLocationBadge.llNoLocationBadge.visibility = if (item.isNoLocation) {
+                binding.noLocationBadge.tvNoLocationLabel.text = TRPCore.core.miscRepository
+                    .getLanguageValueForKey(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
+                View.VISIBLE
             } else {
-                binding.llDateTime.visibility = View.GONE
+                View.GONE
+            }
+
+            // Start time row.
+            // Flexible items: render the short "Flexible" label in place of the time —
+            // the clock icon stays since this row is the time slot for the item.
+            when {
+                item.isFlexible -> {
+                    binding.llStartTime.visibility = View.VISIBLE
+                    binding.tvTime.text = TRPCore.core.miscRepository
+                        .getLanguageValueForKey(LanguageConst.TIMELINE_FLEXIBLE_SHORT)
+                        .ifBlank { "Flexible" }
+                }
+                !item.time.isNullOrEmpty() -> {
+                    binding.llStartTime.visibility = View.VISIBLE
+                    binding.tvTime.text = item.time
+                }
+                else -> {
+                    binding.llStartTime.visibility = View.GONE
+                }
             }
 
             // Click listener
