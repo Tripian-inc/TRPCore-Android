@@ -153,19 +153,32 @@ class RecommendationsVH(
     }
 
     private fun setupStepsAdapter() {
-        // Always recreate adapter to ensure all callbacks and startingOrder are properly set
-        stepsAdapter = TimelineStepsAdapter(
-            startingOrder = currentStartingOrder,
-            onStepClick = currentStepClickListener,
-            onChangeTimeClick = currentChangeTimeClickListener,
-            onDeleteClick = currentDeleteClickListener,
-            onReservationClick = currentReservationClickListener
-        )
-        binding.rvSteps.apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = stepsAdapter
-            setHasFixedSize(false)
-            isNestedScrollingEnabled = false
+        // Reuse adapter across bind() calls. Swapping RecyclerView.adapter on every
+        // bind detaches/recreates child views and causes the day-switch flicker.
+        // Mutable callbacks + startingOrder keep behavior identical while letting
+        // ListAdapter's DiffUtil reuse already-attached views.
+        val existing = stepsAdapter
+        if (existing == null) {
+            val newAdapter = TimelineStepsAdapter(
+                startingOrder = currentStartingOrder,
+                onStepClick = currentStepClickListener,
+                onChangeTimeClick = currentChangeTimeClickListener,
+                onDeleteClick = currentDeleteClickListener,
+                onReservationClick = currentReservationClickListener
+            )
+            stepsAdapter = newAdapter
+            binding.rvSteps.apply {
+                layoutManager = LinearLayoutManager(context)
+                adapter = newAdapter
+                setHasFixedSize(false)
+                isNestedScrollingEnabled = false
+            }
+        } else {
+            existing.startingOrder = currentStartingOrder
+            existing.onStepClick = currentStepClickListener
+            existing.onChangeTimeClick = currentChangeTimeClickListener
+            existing.onDeleteClick = currentDeleteClickListener
+            existing.onReservationClick = currentReservationClickListener
         }
     }
 

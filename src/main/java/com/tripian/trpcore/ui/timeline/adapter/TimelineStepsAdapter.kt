@@ -26,11 +26,11 @@ import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
  * @param onReservationClick Callback for reservation button clicks (Activity type only)
  */
 class TimelineStepsAdapter(
-    private val startingOrder: Int = 1,
-    private val onStepClick: ((TimelineStep) -> Unit)? = null,
-    private val onChangeTimeClick: ((TimelineStep) -> Unit)? = null,
-    private val onDeleteClick: ((TimelineStep) -> Unit)? = null,
-    private val onReservationClick: ((TimelineStep) -> Unit)? = null
+    var startingOrder: Int = 1,
+    var onStepClick: ((TimelineStep) -> Unit)? = null,
+    var onChangeTimeClick: ((TimelineStep) -> Unit)? = null,
+    var onDeleteClick: ((TimelineStep) -> Unit)? = null,
+    var onReservationClick: ((TimelineStep) -> Unit)? = null
 ) : ListAdapter<TimelineStepItem, RecyclerView.ViewHolder>(StepItemDiffCallback()) {
 
     companion object {

@@ -563,6 +563,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             layoutManager = LinearLayoutManager(this@ACTimeline)
             adapter = timelineAdapter
             setHasFixedSize(false)
+            // Disable add/remove/change animations. Day switching otherwise fades the
+            // previous day's items out while fading the new day in, leaving stale
+            // items visible for ~250ms.
+            itemAnimator = null
         }
     }
 

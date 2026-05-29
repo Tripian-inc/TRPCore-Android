@@ -7,8 +7,8 @@ import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 
 /**
  * SectionHeaderVH
- * Section header for city grouping. Theme 12: tappable to collapse/expand its
- * section — the chevron rotates between 0° (expanded, ▼) and -90° (collapsed, ▶).
+ * Section header for city grouping. Display-only — no collapse/expand.
+ * Collapse interactions live only on the Recommendations cards.
  */
 class SectionHeaderVH(
     private val binding: ItemTimelineSectionHeaderBinding
@@ -20,15 +20,8 @@ class SectionHeaderVH(
         onToggle: ((cityId: Int) -> Unit)? = null
     ) {
         binding.tvCityName.text = item.cityName
-        val cityId = item.city?.id
-        if (cityId != null && cityId != 0 && onToggle != null) {
-            binding.ivCollapseChevron.visibility = View.VISIBLE
-            // Rotate the down-arrow to point right when collapsed.
-            binding.ivCollapseChevron.rotation = if (isCollapsed) -90f else 0f
-            binding.root.setOnClickListener { onToggle(cityId) }
-        } else {
-            binding.ivCollapseChevron.visibility = View.GONE
-            binding.root.setOnClickListener(null)
-        }
+        binding.ivCollapseChevron.visibility = View.GONE
+        binding.root.setOnClickListener(null)
+        binding.root.isClickable = false
     }
 }
