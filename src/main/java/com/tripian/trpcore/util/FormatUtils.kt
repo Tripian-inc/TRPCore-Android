@@ -32,7 +32,9 @@ object FormatUtils {
     }
 
     /**
-     * Format price with currency symbol
+     * Format price with currency symbol. Always renders two decimals (",00"
+     * for whole values) so price layouts stay visually aligned across the app.
+     *
      * @param price The price value
      * @param currency The currency code (EUR, USD, GBP, TRY, etc.)
      * @return Formatted price string with currency symbol
@@ -44,11 +46,7 @@ object FormatUtils {
      * - TRY: "₺25,00" (symbol before, comma decimal separator)
      */
     fun formatPriceWithCurrency(price: Double, currency: String): String {
-        val formattedPrice = if (price == price.toLong().toDouble()) {
-            price.toLong().toString()
-        } else {
-            String.format(turkishLocale, "%.2f", price)
-        }
+        val formattedPrice = String.format(turkishLocale, "%.2f", price)
 
         val symbol = when (currency.uppercase()) {
             "EUR" -> "€"

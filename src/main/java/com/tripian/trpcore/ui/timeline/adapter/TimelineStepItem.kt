@@ -18,12 +18,16 @@ sealed class TimelineStepItem : Serializable {
      * @param order Display order number (1-based)
      * @param hasConflict Whether this step has a time conflict with another item
      * @param showTimeOverlapText Whether to show "Time Overlap" text next to time
+     * @param isAvailabilityExpired Whether the activity step's booked time is no longer
+     *   offered (set by the post-load schedule-bulk sweep). Takes precedence over
+     *   conflict styling when true.
      */
     data class Step(
         val step: TimelineStep,
         val order: Int,
         val hasConflict: Boolean = false,
-        val showTimeOverlapText: Boolean = false
+        val showTimeOverlapText: Boolean = false,
+        val isAvailabilityExpired: Boolean = false
     ) : TimelineStepItem() {
         // Unique identifier for DiffUtil
         val id: String get() = "step_${step.id}"

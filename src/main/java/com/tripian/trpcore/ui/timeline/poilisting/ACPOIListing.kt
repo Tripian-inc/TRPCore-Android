@@ -155,6 +155,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         }
         binding.searchBar.setOnSearchActionListener {
             hideKeyboard()
+            viewModel.submitSearch()
         }
     }
 

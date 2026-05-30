@@ -34,17 +34,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var timeSelectionBottomSheet: ActivityTimeSelectionBottomSheet? = null
     private var filterBottomSheet: ActivityFilterBottomSheet? = null
     private var sortBottomSheet: ActivitySortBottomSheet? = null
-    // Theme 16: paginated scroll listener kept around so we can detach it on
-    // destroy and avoid leaking the activity into RecyclerView.
-    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
-    // True while the inline shimmer skeleton is visible (filter/sort reloads).
-    // The initial load uses the full-screen Lottie and category changes use
-    // the bottom-sheet Lottie — neither sets this flag.
+    // True while the inline shimmer skeleton is visible (filter/sort/category/
+    // search reloads). The initial load uses the full-screen Lottie instead.
     private var isSkeletonVisible: Boolean = false
 
     override fun onDestroy() {
-        paginationScrollListener?.let { binding.rvActivities.removeOnScrollListener(it) }
-        paginationScrollListener = null
         binding.skeletonList.root.stopShimmer()
         super.onDestroy()
     }
@@ -119,10 +113,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             }
         }
 
-        // Observe searching state
-        viewModel.isSearching.observe(this) { isSearching ->
-            binding.pbSearchProgress.visibility = if (isSearching) View.VISIBLE else View.GONE
-        }
+        // The in-flight search spinner became obsolete once filtering moved
+        // fully client-side — keep the view hidden permanently.
+        binding.pbSearchProgress.visibility = View.GONE
 
         // Observe activity count
         viewModel.activityCount.observe(this) { count ->
@@ -216,23 +209,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
             // Add separator decoration (skip last item)
             addItemDecoration(ActivitySeparatorDecoration(this@ACActivityListing))
-
-            // Pagination — Theme 16: keep a reference so we can detach on destroy
-            // (prevents the listener leaking the activity after rotation).
-            paginationScrollListener = object : RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    if (dy <= 0) return  // Only paginate when scrolling forward
-                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
-                    val totalItemCount = layoutManager.itemCount
-                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
-
-                    if (lastVisibleItem >= totalItemCount - 5) {
-                        viewModel.loadMoreActivities()
-                    }
-                }
-            }
-            addOnScrollListener(paginationScrollListener!!)
         }
 
         // Category filter with icon and multi-selection support
@@ -270,6 +246,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         }
         binding.searchBar.setOnSearchActionListener {
             hideKeyboard()
+            viewModel.submitSearch()
         }
     }
 

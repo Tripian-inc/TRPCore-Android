@@ -207,7 +207,7 @@ object LanguageConst {
     const val TIMELINE_FORMAT_DISTANCE = "timeline.format.distance"
     const val TIMELINE_MAIN_VIEW = "timeline.map.mainView"
     const val TIME_OVERLAP = "timeline.timeOverlap"
-    const val CHANGE_TIME = "timeline.changeTime.title"
+    const val CHANGE_TIME = "timeline.label.changeTime"
 
     // No City Available
     const val TIMELINE_NO_CITY_TITLE = "timeline.noCity.title"
@@ -411,7 +411,7 @@ object LanguageConst {
     // TIMELINE — NO LOCATION, CONFLICT, AVAILABILITY
     // =====================
     const val TIMELINE_NO_EXACT_LOCATION = "timeline.label.noExactLocation"
-    const val TIMELINE_LABEL_NOT_AVAILABLE = "timeline.label.notAvailable"
+    const val TIMELINE_LABEL_NOT_AVAILABLE = "timeline.notAvailable"
     const val TIMELINE_LABEL_ACTIVITY_BADGE = "timeline.label.activityBadge"
     const val TIMELINE_CONFLICT_BANNER = "timeline.conflictWarning"
     const val TIMELINE_CONFLICT_BANNER_ACTION = "timeline.conflict.banner.action"

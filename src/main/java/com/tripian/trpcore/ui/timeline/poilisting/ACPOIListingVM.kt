@@ -1,7 +1,5 @@
 package com.tripian.trpcore.ui.timeline.poilisting
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.pois.model.Poi
@@ -91,10 +89,6 @@ class ACPOIListingVM @Inject constructor(
     private var isLoadingMore: Boolean = false
     private var totalCount: Int = 0
 
-    private var searchHandler: Handler? = Handler(Looper.getMainLooper())
-    private var searchRunnable: Runnable? = null
-    private val searchDebounceMs = 500L
-
     // =====================
     // INITIALIZATION
     // =====================
@@ -106,13 +100,20 @@ class ACPOIListingVM @Inject constructor(
         this.listingType = listingType
         this.selectedDayIndex = planData.selectedDayIndex
 
+        // Show the loader synchronously here — POICategoryManager.prefetchIfNeeded
+        // may have to hit the network before loadPOIs() (and its own loader call)
+        // can run, and we don't want a blank-screen flash in the meantime.
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
+
         // Fetch categories for filter UI
         fetchCategories()
 
         // Prefetch categories for POICategoryManager (for listing type filtering)
         POICategoryManager.prefetchIfNeeded(poiRepository) {
-            // Initial load after categories are ready
-            loadPOIs()
+            // Initial load after categories are ready — keep the full-screen
+            // loader; subsequent calls (filter / sort / search) fall back to
+            // the lighter bottom-sheet loader.
+            loadPOIs(useFullScreen = true)
         }
     }
 
@@ -157,35 +158,52 @@ class ACPOIListingVM @Inject constructor(
     // SEARCH
     // =====================
 
+    /**
+     * Cache the latest query without firing a request. The actual search only
+     * runs when the user submits via the keyboard's Enter/IME action (see
+     * [submitSearch]) — this keeps typing cheap and avoids spamming the API
+     * while the user is mid-word.
+     */
     fun updateSearchText(query: String) {
         currentSearchQuery = query
+    }
 
-        // Cancel previous search
-        searchRunnable?.let { searchHandler?.removeCallbacks(it) }
-
-        // Debounce search
-        searchRunnable = Runnable {
-            resetAndSearch()
-        }
-        searchHandler?.postDelayed(searchRunnable!!, searchDebounceMs)
+    /**
+     * Triggered by the keyboard's Enter / IME search action. Resets pagination
+     * and refetches with the cached query.
+     */
+    fun submitSearch() {
+        resetAndSearch()
     }
 
     private fun resetAndSearch() {
         isLoadingMore = false  // Ensure fresh load, not pagination
-        loadPOIs()
+        // Filter / sort / search updates use the bottom-sheet loader so the
+        // user's chips and search field stay visible while the new page loads.
+        loadPOIs(useFullScreen = false)
     }
 
     // =====================
     // LOAD POIs
     // =====================
 
-    fun loadPOIs() {
+    /**
+     * @param useFullScreen `true` for the very first load (covers the empty-list
+     *   flash with the full-screen Lottie). `false` for every subsequent fresh
+     *   load — filter, sort, search — which uses the lighter bottom-sheet Lottie
+     *   so the filter chips and search field remain visible while loading.
+     */
+    fun loadPOIs(useFullScreen: Boolean = false) {
         if (cityId <= 0) return
 
         // isLoadingMore = true means pagination, false means fresh load
         val isPagination = isLoadingMore
         if (!isPagination) {
-            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
+            if (useFullScreen) {
+                showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
+            } else {
+                showBottomSheetLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
+            }
             currentPage = 1
         }
 
@@ -347,15 +365,6 @@ class ACPOIListingVM @Inject constructor(
 
     fun getSelectedDayIndex(): Int = selectedDayIndex
 
-    // =====================
-    // CLEANUP
-    // =====================
-
-    override fun onDestroy() {
-        searchRunnable?.let { searchHandler?.removeCallbacks(it) }
-        searchHandler = null
-        super.onDestroy()
-    }
 }
 
 /**

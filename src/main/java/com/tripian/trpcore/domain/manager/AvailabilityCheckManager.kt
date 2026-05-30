@@ -179,7 +179,7 @@ class AvailabilityCheckManager @Inject constructor(
                     val rawId = segment.additionalData?.activityId ?: return@forEachIndexed
                     val activityId = normalizeActivityId(rawId, providerId)
                     val expectedTime = if (segment.isFlexibleActivity) null
-                    else segment.startDate?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() }
+                    else extractHourMinute(segment.startDate)
                     targets += Target(
                         segmentIndex = index,
                         stepId = null,
@@ -196,8 +196,7 @@ class AvailabilityCheckManager @Inject constructor(
                             segmentIndex = index,
                             stepId = step.id,
                             activityId = normalizeActivityId(rawId, providerId),
-                            expectedTime = step.startDateTimes?.substringAfter(' ', "")
-                                ?.takeIf { it.isNotEmpty() }
+                            expectedTime = extractHourMinute(step.startDateTimes)
                         )
                     }
                 }
@@ -257,6 +256,16 @@ class AvailabilityCheckManager @Inject constructor(
 
     private fun normalizeActivityId(raw: String, providerId: Int): String =
         if (raw.startsWith("C_")) raw else "C_${raw}_${providerId}"
+
+    /**
+     * Extracts the "HH:mm" portion of a datetime string. The timeline payload mixes
+     * "yyyy-MM-dd HH:mm" (segments) and "yyyy-MM-dd HH:mm:ss" (steps); slot.time on
+     * the bulk response is always "HH:mm", so we trim to length 5 to match.
+     */
+    private fun extractHourMinute(dateTime: String?): String? {
+        val timePart = dateTime?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() } ?: return null
+        return if (timePart.length >= 5) timePart.substring(0, 5) else timePart
+    }
 
     private data class DayInfo(val dateString: String, val date: Date)
     private data class Target(

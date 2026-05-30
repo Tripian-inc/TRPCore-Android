@@ -49,10 +49,6 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
             updateEmptyState(pois.isEmpty())
         }
 
-        viewModel.isLoading.observe(this) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
         viewModel.categories.observe(this) { categories ->
             updateCategoryChips(categories)
         }

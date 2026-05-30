@@ -57,44 +57,38 @@ class TripRepository @Inject constructor(
 
     /**
      * Pre-fetch cities and cache them.
-     * Called at SDK initialization to ensure cities are available throughout the app.
-     * Runs on IO thread to avoid blocking main thread (ANR prevention).
+     * Called from SDK start entry points after [appLanguage] is set so the
+     * fetched city names match the requested language. Safe to call multiple
+     * times — every invocation hits the API to refresh translations.
      *
      * Flow:
      * 1. If memory cache is empty, load from SharedPreferences first (fast)
-     * 2. Then fetch from API and update both memory and SharedPreferences cache
-     * 3. If API fails, use cached data
-     *
-     * @return Observable<Boolean> - true if cities were fetched/cached successfully
+     * 2. Always fetch from API and update both memory and SharedPreferences cache
+     * 3. If API fails, fall back to whatever is already in the in-memory cache
      */
     fun prefetchCities(): Observable<Boolean> {
-        return if (items.isEmpty()) {
-            // First try to load from SharedPreferences cache (fast)
+        if (items.isEmpty()) {
             val cachedCities = loadCitiesFromCache()
             if (cachedCities.isNotEmpty()) {
                 items.clear()
                 items.addAll(cachedCities)
             }
-
-            // Then fetch from API and update cache
-            service.getCities(null, 1000, null)
-                .subscribeOn(Schedulers.io())
-                .map { response ->
-                    response.data?.let { list ->
-                        val sortedCities = list.sortedBy { it.name }
-                        items.clear()
-                        items.addAll(sortedCities)
-                        saveCitiesToCache()  // Save to SharedPreferences
-                    }
-                    true
-                }
-                .onErrorReturn { error ->
-                    // API failed, but we may have cache - return success if we have data
-                    items.isNotEmpty()
-                }
-        } else {
-            Observable.just(true)
         }
+
+        return service.getCities(null, 1000, null)
+            .subscribeOn(Schedulers.io())
+            .map { response ->
+                response.data?.let { list ->
+                    val sortedCities = list.sortedBy { it.name }
+                    items.clear()
+                    items.addAll(sortedCities)
+                    saveCitiesToCache()
+                }
+                true
+            }
+            .onErrorReturn {
+                items.isNotEmpty()
+            }
     }
 
     /**

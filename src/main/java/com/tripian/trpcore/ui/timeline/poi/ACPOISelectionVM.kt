@@ -75,11 +75,36 @@ class ACPOISelectionVM @Inject constructor(
         this.city = city
     }
 
+    /** Initial screen load — full-screen Lottie covers the empty list flash. */
     fun loadPois() {
+        fetchPois(useFullScreen = true)
+    }
+
+    fun search(query: String) {
+        currentSearchQuery = query
+        fetchPois(useFullScreen = false)
+    }
+
+    fun selectCategory(categoryId: String?) {
+        _selectedCategory.value = categoryId
+        val updatedCategories = _categories.value?.map {
+            it.copy(isSelected = it.id == categoryId)
+        }
+        _categories.value = updatedCategories
+        fetchPois(useFullScreen = false)
+    }
+
+    /**
+     * @param useFullScreen `true` for the first fetch of the screen (full-screen
+     *   Lottie), `false` for search / category / any subsequent fetch
+     *   (bottom-sheet Lottie — keeps the user's filters and the list in view).
+     */
+    private fun fetchPois(useFullScreen: Boolean) {
         val cityId = city?.id ?: return
         _isLoading.value = true
 
-        // Get selected category IDs
+        if (useFullScreen) showFullScreenLoaderNoText() else showBottomSheetLoaderNoText()
+
         val categoryIds = _selectedCategory.value?.let { listOf(it.toIntOrNull() ?: -1) }
 
         val observable = if (currentSearchQuery.isNotBlank()) {
@@ -95,30 +120,17 @@ class ACPOISelectionVM @Inject constructor(
                 .subscribe(
                     { response ->
                         _isLoading.value = false
+                        hideLottieLoading()
                         _pois.value = response.data ?: emptyList()
                     },
                     { error ->
                         _isLoading.value = false
+                        hideLottieLoading()
                         showAlert(AlertType.ERROR, error.message ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
                         _pois.value = emptyList()
                     }
                 )
         )
-    }
-
-    fun search(query: String) {
-        currentSearchQuery = query
-        loadPois()
-    }
-
-    fun selectCategory(categoryId: String?) {
-        _selectedCategory.value = categoryId
-        // Update category selection state
-        val updatedCategories = _categories.value?.map {
-            it.copy(isSelected = it.id == categoryId)
-        }
-        _categories.value = updatedCategories
-        loadPois()
     }
 
     // =====================

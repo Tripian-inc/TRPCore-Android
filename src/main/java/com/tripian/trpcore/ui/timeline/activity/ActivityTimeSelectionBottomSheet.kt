@@ -53,6 +53,14 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var favoriteDuration: Double? = null
     private var onFavoriteTimeSelectedListener: ((Date, String?, String?) -> Unit)? = null
 
+    // Step-edit mode shares the favorite schedule load path (activityId + cityId)
+    // but routes the confirm action to a different callback that returns HH:mm
+    // start/end so the caller can patch the existing step's time. We also seed
+    // the time grid with the step's current slot on first render.
+    private var isStepEditMode: Boolean = false
+    private var pendingInitialTimeSlot: String? = null
+    private var onStepTimeSelectedListener: ((Date, String, String?) -> Unit)? = null
+
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
     override fun setListeners() {
@@ -68,6 +76,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteCityId = args.getInt(ARG_FAVORITE_CITY_ID, 0).takeIf { it > 0 }
             favoriteTitle = args.getString(ARG_FAVORITE_TITLE)
             favoriteDuration = args.getDouble(ARG_FAVORITE_DURATION, 0.0).takeIf { it > 0 }
+            isStepEditMode = args.getBoolean(ARG_STEP_EDIT_MODE, false)
+            pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
 
             val initialDay = args.getSerializable(ARG_INITIAL_SELECTED_DAY) as? Date
             selectedDayIndex = if (initialDay != null) {
@@ -158,7 +168,11 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     private fun updateTexts() {
-        binding.tvTitle.text = getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
+        binding.tvTitle.text = if (isStepEditMode) {
+            getLanguageForKey(LanguageConst.CHANGE_TIME)
+        } else {
+            getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
+        }
         binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
         binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
@@ -217,7 +231,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
         val timeSlot = selectedTimeSlot ?: return
 
-        if (isFavoriteMode) {
+        if (isStepEditMode) {
+            // Step-edit emits HH:mm start/end for the host VM to patch via
+            // updateStepTime. End time is computed from the step's stored
+            // duration (same recipe as the favorite path).
+            val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
+            onStepTimeSelectedListener?.invoke(date, timeSlot, endTime)
+        } else if (isFavoriteMode) {
             // For favorites - calculate end time from duration
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
             onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime)
@@ -255,8 +275,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      * the response and serve day switches client-side via [ActivityTimeSelectionVM.selectDate].
      */
     private fun requestScheduleLoad() {
-        // Get activity ID from either tour or favorite
-        val activityId = if (isFavoriteMode) {
+        // Step-edit shares the favorite-mode load path: it already has an
+        // activityId + cityId in hand (from the existing step's POI).
+        val activityId = if (isFavoriteMode || isStepEditMode) {
             favoriteActivityId
         } else {
             activity?.id
@@ -266,8 +287,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         if (availableDays.isEmpty()) return
         val selectedDate = availableDays.getOrNull(selectedDayIndex) ?: availableDays.first()
 
-        // For favorites, pass cityId for proper activityId formatting
-        val cityId = if (isFavoriteMode) favoriteCityId else null
+        // For favorites and step-edit, pass cityId for proper activityId formatting
+        val cityId = if (isFavoriteMode || isStepEditMode) favoriteCityId else null
         viewModel.loadSchedule(activityId, availableDays, selectedDate, cityId)
     }
 
@@ -295,6 +316,18 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         selectedTimeSlot = null
         selectedPrice = null
         isFlexibleSelected = false
+
+        // Step-edit mode: the very first render for the step's original day
+        // re-applies the step's current HH:mm if it still exists in the slot
+        // grid. Consumed on first match so day switches don't keep forcing it.
+        pendingInitialTimeSlot?.let { initialSlot ->
+            val match = currentSlots.firstOrNull { it.time == initialSlot }
+            if (match != null) {
+                selectedTimeSlot = match.time
+                selectedPrice = match.minPrice
+            }
+            pendingInitialTimeSlot = null
+        }
 
         when (safe.mode) {
             TimeSelectionMode.FLEXIBLE_ONLY -> {
@@ -488,6 +521,15 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         onFavoriteTimeSelectedListener = listener
     }
 
+    /**
+     * Set listener for step-edit time selection (used when changing the time
+     * of an existing activity-type timeline step).
+     * @param listener Callback with (selectedDate, startTime HH:mm, endTime HH:mm or null)
+     */
+    fun setOnStepTimeSelectedListener(listener: (Date, String, String?) -> Unit) {
+        onStepTimeSelectedListener = listener
+    }
+
     companion object {
         const val TAG = "ActivityTimeSelectionBottomSheet"
         private const val ARG_ACTIVITY = "activity"
@@ -498,6 +540,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         private const val ARG_FAVORITE_CITY_ID = "favorite_city_id"
         private const val ARG_FAVORITE_TITLE = "favorite_title"
         private const val ARG_FAVORITE_DURATION = "favorite_duration"
+        private const val ARG_STEP_EDIT_MODE = "step_edit_mode"
+        private const val ARG_INITIAL_TIME_SLOT = "initial_time_slot"
 
         /**
          * Create instance for TourProduct (with API schedule loading)
@@ -536,6 +580,35 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                     favoriteDuration?.let { putDouble(ARG_FAVORITE_DURATION, it) }
                     putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
                     initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
+                }
+            }
+        }
+
+        /**
+         * Create instance for changing the time of an existing activity-type
+         * timeline step. Reuses the favorite-mode schedule loading path
+         * (activityId + cityId) and seeds the slot grid with the step's
+         * current HH:mm.
+         */
+        fun newInstanceForStepEdit(
+            activityId: String?,
+            cityId: Int?,
+            title: String,
+            duration: Double?,
+            availableDays: List<Date>,
+            initialSelectedDay: Date? = null,
+            initialTimeSlot: String? = null
+        ): ActivityTimeSelectionBottomSheet {
+            return ActivityTimeSelectionBottomSheet().apply {
+                arguments = Bundle().apply {
+                    putBoolean(ARG_STEP_EDIT_MODE, true)
+                    activityId?.let { putString(ARG_FAVORITE_ACTIVITY_ID, it) }
+                    cityId?.let { putInt(ARG_FAVORITE_CITY_ID, it) }
+                    putString(ARG_FAVORITE_TITLE, title)
+                    duration?.let { putDouble(ARG_FAVORITE_DURATION, it) }
+                    putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
+                    initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
+                    initialTimeSlot?.let { putString(ARG_INITIAL_TIME_SLOT, it) }
                 }
             }
         }

@@ -48,32 +48,52 @@ class StepActivityVH(
         onDeleteClick: ((TimelineStep) -> Unit)?,
         onReservationClick: ((TimelineStep) -> Unit)?,
         hasConflict: Boolean = false,
-        showTimeOverlapText: Boolean = false
+        showTimeOverlapText: Boolean = false,
+        isAvailabilityExpired: Boolean = false
     ) {
         val poi = step.poi
 
         // Order badge
         binding.tvOrder.text = order.toString()
 
-        // Apply conflict styling
-        if (hasConflict) {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
-            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
-        } else {
-            binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container)
-            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
+        // Apply badge styling — precedence (Theme 17): expired > conflict > normal.
+        // Expired wins over conflict so the "Not available" cue is never hidden by a
+        // time-overlap badge on the same step.
+        when {
+            isAvailabilityExpired -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container_expired)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
+            }
+            hasConflict -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
+            }
+            else -> {
+                binding.orderTimeContainer
+                    .setBackgroundResource(R.drawable.trp_bg_order_time_container)
+                binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
+            }
         }
 
-        // Time (startTime - endTime format)
+        // Time (startTime - endTime format). Suffix precedence (Theme 17):
+        // "Not available" > "Time Overlap" > none.
         val startTime = step.startDateTimes?.toDate()
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            binding.tvTime.text = if (showTimeOverlapText) {
-                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
-            } else {
-                timeText
+            binding.tvTime.text = when {
+                isAvailabilityExpired -> {
+                    val label = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
+                        .ifBlank { "Not available" }
+                    "$timeText $label"
+                }
+                showTimeOverlapText -> {
+                    val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
+                    TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
+                }
+                else -> timeText
             }
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {

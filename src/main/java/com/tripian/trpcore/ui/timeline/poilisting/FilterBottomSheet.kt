@@ -64,7 +64,7 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
                 } else {
                     selectedCategoryIds.remove(categoryId)
                 }
-                updateClearButtonState()
+                updateButtonStates()
             }
         )
 
@@ -73,7 +73,10 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
             adapter = categoryAdapter
         }
 
-        updateClearButtonState()
+        // Reflect the restored selection on initial paint — the layout defaults
+        // btnConfirm to disabled, so without this the confirm stays greyed out
+        // even when categories were already chosen before the sheet was reopened.
+        updateButtonStates()
     }
 
     private fun setupListeners() {
@@ -85,7 +88,7 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
             // Clear all selections
             selectedCategoryIds.clear()
             categoryAdapter?.clearSelections()
-            updateClearButtonState()
+            updateButtonStates()
         }
 
         binding.btnConfirm.setOnClickListener {
@@ -95,8 +98,10 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
         }
     }
 
-    private fun updateClearButtonState() {
-        binding.btnClear.alpha = if (selectedCategoryIds.isNotEmpty()) 1f else 0.5f
+    private fun updateButtonStates() {
+        val hasSelection = selectedCategoryIds.isNotEmpty()
+        binding.btnClear.alpha = if (hasSelection) 1f else 0.5f
+        binding.btnConfirm.isEnabled = hasSelection
     }
 
     private fun getLanguageText(key: String): String {

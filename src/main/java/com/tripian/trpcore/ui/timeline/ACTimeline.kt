@@ -29,6 +29,8 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.toDate
+import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
 import com.tripian.trpcore.ui.timeline.adapter.TimelineAdapter
@@ -1038,19 +1040,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun updateFabPositions() {
         val extraFabSpacing = 16.dp
-        val extraListSpacing = 24.dp
+        // Peek-hide translates the list 50% of a card down (see hideMapBottomList).
+        // Mirror that here so the FAB tracks the list's *visible* top edge.
+        val peekHidePx = (104f * resources.displayMetrics.density * 0.5f).toInt()
 
         val safeBottomForAddFab = maxOf(
             fabAddInitialBottomMargin,
             navigationBarInsetBottom + extraFabSpacing
         )
 
-        val listExtra = if (isBottomListVisible) {
-            bottomListHeight
-        } else if (!isBottomListCompletelyHidden) {
-            extraListSpacing
-        } else {
-            0
+        val listExtra = when {
+            isBottomListCompletelyHidden -> 0
+            isBottomListVisible -> bottomListHeight
+            // Peek: list slid down by `peekHidePx`, so the FAB rides the same
+            // distance — it ends up sitting on top of the peeking card edge.
+            else -> (bottomListHeight - peekHidePx).coerceAtLeast(0)
         }
         animateBottomMargin(
             view = binding.fabAddPlan,
@@ -1192,13 +1196,54 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     private fun handleStepChangeTimeClick(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        // Show change time picker for the step
-        viewModel.showStepChangeTimePicker(step)
+        // Activity-type steps go through the same time-slot picker as the
+        // ACActivityListing add flow so the user sees real availability for
+        // the activity instead of an empty HH:mm spinner.
+        if (step.stepType == "activity") {
+            showActivityStepChangeTimeSheet(step)
+        } else {
+            viewModel.showStepChangeTimePicker(step)
+        }
     }
 
     private fun handleManualPoiChangeTimeClick(manualPoi: TimelineDisplayItem.ManualPoi) {
         // Show change time picker for the ManualPoi step
         viewModel.showStepChangeTimePicker(manualPoi.step)
+    }
+
+    /**
+     * Reuses ActivityTimeSelectionBottomSheet (the "add" flow's sheet) to edit
+     * an existing activity-type step's time. The step's POI carries the
+     * productId / cityId / duration needed to load the schedule, and the
+     * step's existing HH:mm is passed in so the matching slot lands selected.
+     */
+    private fun showActivityStepChangeTimeSheet(step: com.tripian.one.api.timeline.model.TimelineStep) {
+        val poi = step.poi ?: return
+        val activityId = poi.additionalData?.productId ?: poi.id
+        val availableDays = viewModel.availableDays.value ?: emptyList()
+        if (availableDays.isEmpty()) return
+
+        val startDateTime = step.startDateTimes
+        val initialDay = startDateTime.toDate()
+        val initialTimeSlot = startDateTime
+            ?.takeIf { it.length >= 16 }
+            ?.substring(11, 16)
+
+        val sheet = ActivityTimeSelectionBottomSheet.newInstanceForStepEdit(
+            activityId = activityId,
+            cityId = poi.cityId,
+            title = poi.name.orEmpty(),
+            duration = poi.duration?.toDouble(),
+            availableDays = availableDays,
+            initialSelectedDay = initialDay,
+            initialTimeSlot = initialTimeSlot
+        )
+
+        sheet.setOnStepTimeSelectedListener { _, startTime, endTime ->
+            viewModel.updateStepTime(step.id, startTime, endTime)
+        }
+
+        sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 
     private fun handleStepDeleteClick(step: com.tripian.one.api.timeline.model.TimelineStep) {

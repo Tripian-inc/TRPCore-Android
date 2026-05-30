@@ -87,7 +87,8 @@ class TimelineStepsAdapter(
                         onDeleteClick = onDeleteClick,
                         onReservationClick = onReservationClick,
                         hasConflict = item.hasConflict,
-                        showTimeOverlapText = item.showTimeOverlapText
+                        showTimeOverlapText = item.showTimeOverlapText,
+                        isAvailabilityExpired = item.isAvailabilityExpired
                     )
                 }
             }

@@ -241,13 +241,16 @@ class RecommendationsVH(
             val hasConflict = stepId in conflictingStepIds  // Visual conflict (red border)
             val showTimeOverlap = stepId in timeOverlapStepIds  // Time Overlap text
 
-            // Add the step with correct order number and conflict flags
+            // Add the step with correct order number, conflict and availability flags.
+            // Theme 17: expired wins over conflict in the VH; we still pass both so
+            // the VH can render the proper precedence.
             items.add(
                 TimelineStepItem.Step(
                     step = step,
                     order = currentStartingOrder + index,
                     hasConflict = hasConflict,
-                    showTimeOverlapText = showTimeOverlap
+                    showTimeOverlapText = showTimeOverlap,
+                    isAvailabilityExpired = step.isAvailabilityExpired
                 )
             )
         }

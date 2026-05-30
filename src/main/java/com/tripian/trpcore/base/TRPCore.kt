@@ -443,9 +443,6 @@ class TRPCore {
         // Fetch languages on SDK initialization
         fetchLanguages()
 
-        // Pre-fetch cities on SDK initialization
-        prefetchCities()
-
         return this
     }
 
@@ -501,6 +498,7 @@ class TRPCore {
         appLanguage: String,
         appCurrency: String
     ) {
+        applyLanguageAndPrefetchCities(appLanguage)
 
         val intent = Intent(context, ACSplash::class.java)
         intent.putExtra("email", email)
@@ -573,6 +571,8 @@ class TRPCore {
         val effectiveUniqueId = uniqueId ?: itinerary.uniqueId
         val effectiveTripHash = tripHash ?: itinerary.tripianHash
 
+        applyLanguageAndPrefetchCities(appLanguage)
+
         // Fire-and-forget log - send itinerary parameters to backend
         sendItineraryLog(itinerary, tripHash, uniqueId, appLanguage, appCurrency)
 
@@ -622,17 +622,22 @@ class TRPCore {
 
 
     /**
-     * Pre-fetches cities from server and caches them.
-     * Called automatically during SDK initialization.
-     * This ensures city data is available throughout the app for all city-related operations.
-     * Runs on IO thread to avoid blocking main thread (ANR prevention).
+     * Applies the caller's [appLanguage] to AppConfig + TRPOne and then
+     * background-refreshes the city cache so its translations match the
+     * requested language. Invoked from every SDK start entry point — host apps
+     * can re-open the SDK in a different language and get fresh city names
+     * without an init-time mismatch.
      */
-    private fun prefetchCities() {
+    private fun applyLanguageAndPrefetchCities(appLanguage: String) {
+        if (appLanguage.isNotEmpty()) {
+            appConfig.appLanguage = appLanguage
+            trpRest.setLanguage(appLanguage)
+        }
         tripRepository.prefetchCities()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(
-                { success ->
+                {
                     Log.d("TRPCore", "Cities pre-fetched successfully: ${tripRepository.getCachedCities().size} cities cached")
                 },
                 { error ->
