@@ -7,7 +7,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.Window
+import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -16,15 +16,21 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.DialogLottieBottomSheetBinding
-import com.tripian.trpcore.databinding.DialogLottieFullScreenBinding
 import com.tripian.trpcore.util.LanguageConst
 
 /**
  * Lottie loading API.
  *
  * Two presentation modes:
- *  - [LottieLoadingPresentation.FULL_SCREEN] — overlay on top of current activity. Supports rotating text.
- *  - [LottieLoadingPresentation.BOTTOM_SHEET] — modal bottom sheet. Single text only, drag disabled.
+ *  - [LottieLoadingPresentation.FULL_SCREEN] — view-attached overlay added
+ *    directly to the activity's content frame (android.R.id.content). This
+ *    avoids the one-frame delay that a DialogFragment incurs from its
+ *    asynchronous WindowManager.addView() — the loader is part of the
+ *    activity's own window and therefore renders on the first frame the
+ *    activity is drawn.
+ *  - [LottieLoadingPresentation.BOTTOM_SHEET] — modal bottom sheet. Single
+ *    text only, drag disabled. Still a DialogFragment because its
+ *    slide-from-bottom semantics need a separate window.
  *
  * Used for long-running operations (timeline create, segment create, step delete/edit, refresh).
  * Existing simple progress (DGLockScreen) is kept for short network calls.
@@ -57,13 +63,22 @@ sealed class LottieLoadingText {
 }
 
 /**
- * Singleton helper to show/hide Lottie loading dialogs. Prevents double-show by checking
- * existing fragment tags.
+ * Singleton helper to show/hide Lottie loaders. Prevents double-show by checking
+ * existing tags / fragments.
  */
 object LottieLoading {
 
-    private const val TAG_FULL_SCREEN = "lottie_loading_full_screen"
+    private const val TAG_FULL_SCREEN_VIEW = "lottie_loading_full_screen_view"
     private const val TAG_BOTTOM_SHEET = "lottie_loading_bottom_sheet"
+
+    private const val ROTATION_INTERVAL_MS = 3_500L
+    private const val OVERLAY_ELEVATION_DP = 32f
+
+    // One rotation handle per activity — WeakHashMap so we don't pin the
+    // FragmentActivity once it's gone.
+    private val rotations = java.util.WeakHashMap<FragmentActivity, RotationHandle>()
+
+    private data class RotationHandle(val handler: Handler, val runnable: Runnable)
 
     @JvmStatic
     fun show(
@@ -71,160 +86,107 @@ object LottieLoading {
         presentation: LottieLoadingPresentation,
         text: LottieLoadingText
     ) {
-        val fm = activity.supportFragmentManager
-        if (fm.isStateSaved || fm.isDestroyed) return
-
         when (presentation) {
-            LottieLoadingPresentation.FULL_SCREEN -> {
-                if (fm.findFragmentByTag(TAG_FULL_SCREEN) != null) return
-                LottieFullScreenDialog.newInstance(text).show(fm, TAG_FULL_SCREEN)
-            }
-            LottieLoadingPresentation.BOTTOM_SHEET -> {
-                if (fm.findFragmentByTag(TAG_BOTTOM_SHEET) != null) return
-                LottieBottomSheetDialog.newInstance(text).show(fm, TAG_BOTTOM_SHEET)
-            }
+            LottieLoadingPresentation.FULL_SCREEN -> showFullScreenView(activity, text)
+            LottieLoadingPresentation.BOTTOM_SHEET -> showBottomSheet(activity, text)
         }
     }
 
     @JvmStatic
     fun hide(activity: FragmentActivity) {
-        val fm = activity.supportFragmentManager
-        if (fm.isStateSaved || fm.isDestroyed) return
-        (fm.findFragmentByTag(TAG_FULL_SCREEN) as? DialogFragment)?.dismissAllowingStateLoss()
-        (fm.findFragmentByTag(TAG_BOTTOM_SHEET) as? DialogFragment)?.dismissAllowingStateLoss()
-    }
-}
-
-class LottieFullScreenDialog : DialogFragment() {
-
-    private var _binding: DialogLottieFullScreenBinding? = null
-    private val binding get() = _binding!!
-
-    private val handler = Handler(Looper.getMainLooper())
-    private var rotateRunnable: Runnable? = null
-    private var rotatingTexts: List<String> = emptyList()
-    private var rotatingIndex = 0
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setStyle(STYLE_NO_FRAME, R.style.TrpFullScreenTransparentDialog)
-        isCancelable = false
+        hideFullScreenView(activity)
+        hideBottomSheet(activity)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        _binding = DialogLottieFullScreenBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    // ------------------------------------------------------------------
+    // FULL_SCREEN — view-attached overlay
+    // ------------------------------------------------------------------
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        val mode = argText()
-        applyText(mode)
-    }
-
-    override fun onStart() {
-        super.onStart()
-        dialog?.window?.setLayout(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-    }
-
-    override fun onDestroyView() {
-        stopRotation()
-        _binding = null
-        super.onDestroyView()
-    }
-
-    private fun argText(): LottieLoadingText {
-        val mode = arguments?.getString(ARG_MODE) ?: MODE_ROTATING
-        return when (mode) {
-            MODE_NONE -> LottieLoadingText.None
-            MODE_SINGLE -> LottieLoadingText.Single(
-                arguments?.getString(ARG_TEXT_SINGLE).orEmpty()
-            )
-            MODE_ROTATING -> {
-                val texts = arguments?.getStringArrayList(ARG_TEXT_LIST).orEmpty()
-                if (texts.isEmpty()) LottieLoadingText.Rotating.default()
-                else LottieLoadingText.Rotating(texts)
-            }
-            else -> LottieLoadingText.None
+    private fun showFullScreenView(activity: FragmentActivity, text: LottieLoadingText) {
+        val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+        val existing = content.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW)
+        if (existing != null) {
+            // Already attached — just refresh the text.
+            applyText(activity, existing, text)
+            return
         }
+        val overlay = LayoutInflater.from(activity)
+            .inflate(R.layout.dialog_lottie_full_screen, content, false)
+        overlay.tag = TAG_FULL_SCREEN_VIEW
+        overlay.isClickable = true
+        overlay.isFocusable = true
+        overlay.elevation = OVERLAY_ELEVATION_DP * activity.resources.displayMetrics.density
+        applyText(activity, overlay, text)
+        content.addView(overlay)
     }
 
-    private fun applyText(text: LottieLoadingText) {
+    private fun hideFullScreenView(activity: FragmentActivity) {
+        cancelRotation(activity)
+        val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
+        val overlay = content.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW) ?: return
+        content.removeView(overlay)
+    }
+
+    private fun applyText(activity: FragmentActivity, overlay: View, text: LottieLoadingText) {
+        val tv = overlay.findViewById<TextView>(R.id.tvLoadingText) ?: return
+        cancelRotation(activity)
         when (text) {
-            is LottieLoadingText.None -> binding.tvLoadingText.visibility = View.GONE
+            is LottieLoadingText.None -> tv.visibility = View.GONE
             is LottieLoadingText.Single -> {
-                binding.tvLoadingText.text = text.text
-                binding.tvLoadingText.visibility = View.VISIBLE
+                tv.text = text.text
+                tv.visibility = View.VISIBLE
             }
             is LottieLoadingText.Rotating -> {
-                rotatingTexts = text.texts.filter { it.isNotBlank() }
-                if (rotatingTexts.isEmpty()) {
-                    binding.tvLoadingText.visibility = View.GONE
-                    return
+                val texts = text.texts.filter { it.isNotBlank() }
+                if (texts.isEmpty()) {
+                    tv.visibility = View.GONE
+                } else {
+                    tv.visibility = View.VISIBLE
+                    tv.text = texts[0]
+                    startRotation(activity, tv, texts)
                 }
-                binding.tvLoadingText.visibility = View.VISIBLE
-                rotatingIndex = 0
-                binding.tvLoadingText.text = rotatingTexts[rotatingIndex]
-                startRotation()
             }
         }
     }
 
-    private fun startRotation() {
-        if (rotatingTexts.size <= 1) return
-        rotateRunnable = object : Runnable {
+    private fun startRotation(activity: FragmentActivity, tv: TextView, texts: List<String>) {
+        if (texts.size <= 1) return
+        val handler = Handler(Looper.getMainLooper())
+        val runnable = object : Runnable {
+            private var index = 0
             override fun run() {
-                if (_binding == null) return
-                rotatingIndex += 1
-                if (rotatingIndex >= rotatingTexts.size) {
-                    // Last text stays visible
-                    return
-                }
-                binding.tvLoadingText.text = rotatingTexts[rotatingIndex]
-                if (rotatingIndex < rotatingTexts.size - 1) {
+                index += 1
+                if (index >= texts.size) return // Last text stays visible.
+                tv.text = texts[index]
+                if (index < texts.size - 1) {
                     handler.postDelayed(this, ROTATION_INTERVAL_MS)
                 }
             }
         }
-        handler.postDelayed(rotateRunnable!!, ROTATION_INTERVAL_MS)
+        rotations[activity] = RotationHandle(handler, runnable)
+        handler.postDelayed(runnable, ROTATION_INTERVAL_MS)
     }
 
-    private fun stopRotation() {
-        rotateRunnable?.let { handler.removeCallbacks(it) }
-        rotateRunnable = null
+    private fun cancelRotation(activity: FragmentActivity) {
+        val handle = rotations.remove(activity) ?: return
+        handle.handler.removeCallbacks(handle.runnable)
     }
 
-    companion object {
-        private const val ROTATION_INTERVAL_MS = 3_500L
-        private const val ARG_MODE = "lottie_text_mode"
-        private const val ARG_TEXT_SINGLE = "lottie_text_single"
-        private const val ARG_TEXT_LIST = "lottie_text_list"
-        private const val MODE_NONE = "none"
-        private const val MODE_SINGLE = "single"
-        private const val MODE_ROTATING = "rotating"
+    // ------------------------------------------------------------------
+    // BOTTOM_SHEET — DialogFragment (semantics need a separate window)
+    // ------------------------------------------------------------------
 
-        fun newInstance(text: LottieLoadingText) = LottieFullScreenDialog().apply {
-            arguments = Bundle().apply {
-                when (text) {
-                    is LottieLoadingText.None -> putString(ARG_MODE, MODE_NONE)
-                    is LottieLoadingText.Single -> {
-                        putString(ARG_MODE, MODE_SINGLE)
-                        putString(ARG_TEXT_SINGLE, text.text)
-                    }
-                    is LottieLoadingText.Rotating -> {
-                        putString(ARG_MODE, MODE_ROTATING)
-                        putStringArrayList(ARG_TEXT_LIST, ArrayList(text.texts))
-                    }
-                }
-            }
-        }
+    private fun showBottomSheet(activity: FragmentActivity, text: LottieLoadingText) {
+        val fm = activity.supportFragmentManager
+        if (fm.isStateSaved || fm.isDestroyed) return
+        if (fm.findFragmentByTag(TAG_BOTTOM_SHEET) != null) return
+        LottieBottomSheetDialog.newInstance(text).show(fm, TAG_BOTTOM_SHEET)
+    }
+
+    private fun hideBottomSheet(activity: FragmentActivity) {
+        val fm = activity.supportFragmentManager
+        if (fm.isStateSaved || fm.isDestroyed) return
+        (fm.findFragmentByTag(TAG_BOTTOM_SHEET) as? DialogFragment)?.dismissAllowingStateLoss()
     }
 }
 

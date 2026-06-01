@@ -933,6 +933,29 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
+    /**
+     * Light-weight UI refresh for in-place timeline mutations (e.g. the
+     * TimelineDate optimistic update). Re-publishes the LiveData, recomputes
+     * available days, clamps the selected index, and re-renders display items
+     * without re-running sync or the availability sweep.
+     */
+    private fun republishCurrentTimeline() {
+        val timeline = _timeline.value ?: return
+        _timeline.value = timeline
+
+        val days = calculateAvailableDays(timeline)
+        _availableDays.value = days
+
+        if (days.isNotEmpty()) {
+            val currentIndex = _selectedDayIndex.value ?: 0
+            if (currentIndex >= days.size) {
+                _selectedDayIndex.value = 0
+            }
+        }
+
+        updateDisplayItems()
+    }
+
     private fun processTimeline(timeline: Timeline) {
         // Server returns booked/reserved/itinerary segments without a cityId in
         // many multi-city responses; the plan at the same index always carries
@@ -1126,6 +1149,21 @@ class ACTimelineVM @Inject constructor(
     private fun calculateAvailableDays(timeline: Timeline): List<Date> {
         val segments = timeline.tripProfile?.segments ?: return emptyList()
 
+        // STEP 1 — Prefer the TimelineDate sentinel segment. It is the single
+        // source of truth for the trip's date range; orphan segments left
+        // outside the current range (e.g. after the host shortened the trip)
+        // could otherwise distort the boundaries.
+        segments.firstOrNull { it.title == "TimelineDate" && !it.available }
+            ?.let { sentinel ->
+                val start = sentinel.startDate?.toDate()
+                val end = sentinel.endDate?.toDate()
+                if (start != null && end != null) {
+                    return generateDateRange(start, end)
+                }
+            }
+
+        // STEP 2 — Fallback: scan every segment for min/max (legacy timelines
+        // that pre-date the TimelineDate sentinel).
         var minDate: Date? = null
         var maxDate: Date? = null
 
@@ -2220,8 +2258,10 @@ class ACTimelineVM @Inject constructor(
     private fun syncDateRangeOnly(timeline: Timeline) {
         updateDateRangeUseCase.on(
             params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
-            success = { refreshTimelineAfterSync() },
-            error = { refreshTimelineAfterSync() }
+            success = { result ->
+                if (result.mutated) republishCurrentTimeline()
+            },
+            error = { /* fire-and-forget — silent */ }
         )
     }
 
@@ -2268,10 +2308,16 @@ class ACTimelineVM @Inject constructor(
             }
         )
 
-        // Parallel Op 3: Update date range
+        // Parallel Op 3: Update date range — iOS optimistic flow. Mutation is
+        // already applied to the in-memory segment by the use case; we refresh
+        // the UI here before signalling completion so the user sees the new day
+        // range without waiting for the rest of the sync pipeline.
         updateDateRangeUseCase.on(
             params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
-            success = { onParallelComplete() },
+            success = { result ->
+                if (result.mutated) republishCurrentTimeline()
+                onParallelComplete()
+            },
             error = {
                 onParallelComplete()
             }

@@ -89,36 +89,29 @@ data class ItineraryWithActivities(
             createBookedActivitySegment(item)
         }?.toMutableList() ?: mutableListOf()
 
-        buildTimelineDateSegment(defaultCityId)?.let { segments.add(it) }
+        // iOS contract: TimelineDate is inserted at index 0 so server-side
+        // index stability holds across re-fetches.
+        buildTimelineDateSegment(defaultCityId)?.let { segments.add(0, it) }
 
         return segments
     }
 
     /**
      * Builds the TimelineDate control segment matching the iOS payload:
-     * yyyy-MM-dd HH:mm format, available=false, doNotGenerate=1, distinctPlan=true.
+     * "yyyy-MM-dd 00:00" / "yyyy-MM-dd 23:59", available=false, doNotGenerate=1,
+     * distinctPlan=true.
+     *
+     * Accepts host date strings in any of: "yyyy-MM-dd HH:mm", "yyyy-MM-dd",
+     * or "yyyy-MM-dd'T'HH:mm:ss" — we only need the date prefix.
      */
     internal fun buildTimelineDateSegment(defaultCityId: Int? = null): TimelineSegmentSettings? {
-        val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
-
-        val startDate = runCatching { dateFormat.parse(startDatetime) }.getOrNull() ?: return null
-        val endDate = runCatching { dateFormat.parse(endDatetime) }.getOrNull() ?: return null
-
-        val cal = java.util.Calendar.getInstance()
-        cal.time = startDate
-        cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
-        cal.set(java.util.Calendar.MINUTE, 0)
-        val timelineStart = dateFormat.format(cal.time)
-
-        cal.time = endDate
-        cal.set(java.util.Calendar.HOUR_OF_DAY, 23)
-        cal.set(java.util.Calendar.MINUTE, 59)
-        val timelineEnd = dateFormat.format(cal.time)
+        val startDatePart = extractDatePart(startDatetime) ?: return null
+        val endDatePart = extractDatePart(endDatetime) ?: return null
 
         return TimelineSegmentSettings().apply {
             this.title = "TimelineDate"
-            this.startDate = timelineStart
-            this.endDate = timelineEnd
+            this.startDate = "$startDatePart 00:00"
+            this.endDate = "$endDatePart 23:59"
             this.segmentType = "itinerary"
             this.cityId = destinationItems.firstOrNull()?.cityId ?: defaultCityId
             this.adults = getAdultCount()
@@ -128,6 +121,19 @@ data class ItineraryWithActivities(
             this.distinctPlan = true
             this.currency = TRPCore.core.getCurrentCurrency()
         }
+    }
+
+    /**
+     * Pulls the "yyyy-MM-dd" prefix off a host-supplied datetime. Mirrors iOS
+     * `extractDateString` but is tolerant of the ISO `T` separator so hosts
+     * that send `"2026-06-15T09:00:00"` still get a usable TimelineDate.
+     */
+    private fun extractDatePart(datetime: String): String? {
+        if (datetime.isEmpty()) return null
+        // Date prefix is always the first 10 chars when the string starts with
+        // "yyyy-MM-dd". Anything shorter is malformed.
+        val candidate = datetime.take(10)
+        return candidate.takeIf { it.length == 10 && it[4] == '-' && it[7] == '-' }
     }
 
     /**
@@ -144,8 +150,10 @@ data class ItineraryWithActivities(
 
         return TimelineSegmentSettings().apply {
             title = item.title
-            startDate = item.startDatetime
-            endDate = calculatedEndDatetime
+            // iOS fallback: a tripItem without datetime borrows the trip-level
+            // range so the segment is never left without bounds.
+            startDate = item.startDatetime ?: this@ItineraryWithActivities.startDatetime
+            endDate = calculatedEndDatetime ?: this@ItineraryWithActivities.endDatetime
             segmentType = "booked_activity"
             available = true
             // NOTE: cityId is NOT set - host app sends garbage/invalid cityIds
