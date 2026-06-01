@@ -40,6 +40,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveOutOfRangeSegmentsUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveSegmentsForDeletedCitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncReservedToBookedUseCase
@@ -87,6 +88,7 @@ class ACTimelineVM @Inject constructor(
     private val syncReservedToBookedUseCase: SyncReservedToBookedUseCase,
     private val addMissingBookedActivitiesUseCase: AddMissingBookedActivitiesUseCase,
     private val updateDateRangeUseCase: UpdateDateRangeUseCase,
+    private val removeOutOfRangeSegmentsUseCase: RemoveOutOfRangeSegmentsUseCase,
     private val removeSegmentsForDeletedCitiesUseCase: RemoveSegmentsForDeletedCitiesUseCase,
     private val availabilityCheckManager: com.tripian.trpcore.domain.manager.AvailabilityCheckManager,
     private val mapItemMapper: com.tripian.trpcore.ui.timeline.mapper.MapItemMapper,
@@ -199,6 +201,12 @@ class ACTimelineVM @Inject constructor(
 
     // Sync operations flag - ensures sync only runs once after initial fetch
     private var syncOperationsCompleted = false
+
+    // Onboarding is deferred until after the first timeline load so the user
+    // sees populated data behind the bottom sheet, not an empty placeholder.
+    // Flag flips on first processTimeline so subsequent refreshes/syncs don't
+    // re-trigger the sheet.
+    private var onboardingDispatched = false
 
     // True once we've auto-selected the initial day (today, or trip's first day
     // when today falls outside the trip range). Subsequent timeline refreshes
@@ -343,20 +351,21 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Called after languages are loaded.
-     * Sets language, checks onboarding, then resolves cities and starts login flow.
-     * The unified loader stays open — fetchTimeline() reuses it.
+     * Applies the language, then waits for the parallel light-login to finish
+     * and kicks off city resolution + the timeline fetch. Onboarding is NOT
+     * shown here — it's deferred until [processTimeline] confirms the
+     * timeline data is on screen so the user never sees a blank itinerary
+     * behind the onboarding sheet.
      */
     private fun proceedAfterLanguagesLoaded() {
-        // Apply language change after languages are loaded
         val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
         if (!language.isNullOrEmpty()) {
             miscRepository.changeLanguage(language)
         }
 
-        // Loader intentionally stays visible — the next step (timeline fetch)
-        // continues to use the same loader so the user sees one continuous
-        // "Getting your itinerary plan" screen until the timeline is ready.
-        checkAndShowOnboarding()
+        waitForLoginThenProceed {
+            resolveDestinationCitiesAndProceed()
+        }
     }
 
     /**
@@ -776,24 +785,18 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Updates the saved plans count from itinerary favouriteItems
-     * Filters out items that are already added as reserved_activity in the timeline
+     * Updates the saved plans badge count. Delegates to [getFilteredFavorites]
+     * so the badge and the SavedPlans list always agree on which favourites
+     * are still actionable — booked_activity items as well as
+     * reserved_activity items are excluded, matching the list behaviour.
+     *
+     * `timeline` is accepted for API compatibility with existing callers but
+     * not consulted directly; [getFilteredFavorites] reads `_timeline.value`,
+     * which the [processTimeline] caller has already assigned by this point.
      */
+    @Suppress("UNUSED_PARAMETER")
     private fun updateSavedPlansCount(timeline: Timeline? = null) {
-        val favourites = itinerary?.favouriteItems ?: emptyList()
-
-        // Get activityIds of reserved_activity segments from timeline
-        val reservedActivityIds = timeline?.tripProfile?.segments
-            ?.filter { it.segmentType == SegmentType.RESERVED_ACTIVITY }
-            ?.mapNotNull { it.additionalData?.activityId }
-            ?.toSet() ?: emptySet()
-
-        // Filter out favourites that are already in timeline as reserved_activity
-        val filteredCount = favourites.count { favourite ->
-            favourite.activityId !in reservedActivityIds
-        }
-
-        _savedPlansCount.value = filteredCount
+        _savedPlansCount.value = getFilteredFavorites().size
     }
 
     // =====================
@@ -1002,6 +1005,17 @@ class ACTimelineVM @Inject constructor(
 
         // Generate display items for selected day
         updateDisplayItems()
+
+        // Onboarding deferred until the FIRST timeline is on screen so the
+        // user sees real content behind the sheet, not the empty placeholder.
+        // Posted to the next looper cycle so the LiveData updates above
+        // commit + render before the bottom sheet steals the viewport.
+        if (!onboardingDispatched) {
+            onboardingDispatched = true
+            android.os.Handler(android.os.Looper.getMainLooper()).post {
+                checkAndShowOnboarding()
+            }
+        }
 
         // iOS Guide: Perform sync operations after initial timeline fetch
         if (!syncOperationsCompleted && itinerary != null) {
@@ -1891,6 +1905,16 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
+     * Called when user taps on a booked_activity card.
+     * Forwards booking detail request to host app.
+     *
+     * @param bookingId ID of the tapped booking
+     */
+    fun onBookingDetailRequested(bookingId: String) {
+        TRPCore.notifyBookingDetailRequested(bookingId)
+    }
+
+    /**
      * Called when user taps "Reserve" or "Book" button.
      * Forwards reservation request to host app.
      *
@@ -2192,19 +2216,20 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Called when onboarding is completed (either by Continue or Skip).
-     * Waits for login to complete, then continues with city resolution and timeline.
+     * Timeline data is already loaded by the time the sheet appears — this is
+     * just the dismissal hook so the host can react if needed.
      */
     fun onOnboardingComplete() {
         onboardingCompleted = true
 
-        // Wait for login to complete (should already be done in background)
-        // Then proceed with city resolution.
-        // Keep the same single "Getting your itinerary plan" text — calling the
-        // generic showLoading() here posts the rotating default and races ahead
-        // of the SingleLiveEvent observer, replacing the intended single text.
-        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
-        waitForLoginThenProceed {
-            resolveDestinationCitiesAndProceed()
+        // Defensive: if a future caller hits this without the timeline being
+        // loaded yet (e.g. someone calls it manually before fetch), kick off
+        // the original chain so the SDK never wedges on an empty screen.
+        if (_timeline.value == null) {
+            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+            waitForLoginThenProceed {
+                resolveDestinationCitiesAndProceed()
+            }
         }
     }
 
@@ -2260,9 +2285,32 @@ class ACTimelineVM @Inject constructor(
             params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
             success = { result ->
                 if (result.mutated) republishCurrentTimeline()
+                removeOrphanSegmentsAfterDateShift(timeline)
             },
-            error = { /* fire-and-forget — silent */ }
+            error = { removeOrphanSegmentsAfterDateShift(timeline) }
         )
+    }
+
+    /**
+     * When the host shifts the trip range (e.g. 1–5 June → 3–7 June),
+     * activities anchored on days that no longer exist become orphans. We
+     * clean them up locally + on the server so the timeline matches the new
+     * day filter. Safe to call even when the range is unchanged — the use
+     * case no-ops in that case.
+     *
+     * TEMPORARILY DISABLED: out-of-range removal is currently causing
+     * downstream sync regressions. Skip the cleanup for now and leave the
+     * orphan segments on the timeline — the day filter just won't surface
+     * them, which is preferable to the broken state. Re-enable once the
+     * sync pipeline issues are fixed.
+     */
+    private fun removeOrphanSegmentsAfterDateShift(timeline: Timeline) {
+        // val it = itinerary ?: return
+        // removeOutOfRangeSegmentsUseCase.on(
+        //     params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, it, timeline),
+        //     success = { result -> if (result.mutated) republishCurrentTimeline() },
+        //     error = { /* sequential server deletes log their own errors */ }
+        // )
     }
 
     /**
@@ -2350,17 +2398,47 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Sequential Op 2: Remove deleted cities
+     *
+     * TEMPORARILY DISABLED: paired with the out-of-range cleanup pause —
+     * automatic segment removal is causing downstream sync regressions, so
+     * we skip the city-deletion sweep too and forward straight to the next
+     * step. Re-enable both at once when the sync pipeline issues are fixed.
      */
     private fun performCityDeletionSync(timeline: Timeline) {
-        val destinations = itinerary?.destinationItems ?: emptyList()
+        performOutOfRangeSegmentCleanup(timeline)
+        // val destinations = itinerary?.destinationItems ?: emptyList()
+        //
+        // removeSegmentsForDeletedCitiesUseCase.on(
+        //     params = RemoveSegmentsForDeletedCitiesUseCase.Params(_tripHash, timeline, destinations),
+        //     success = { performOutOfRangeSegmentCleanup(timeline) },
+        //     error = {
+        //         performOutOfRangeSegmentCleanup(timeline)
+        //     }
+        // )
+    }
 
-        removeSegmentsForDeletedCitiesUseCase.on(
-            params = RemoveSegmentsForDeletedCitiesUseCase.Params(_tripHash, timeline, destinations),
-            success = { refreshTimelineAfterSync() },
-            error = {
-                refreshTimelineAfterSync()
-            }
-        )
+    /**
+     * Sequential Op 3: Remove segments whose day falls outside the new
+     * TimelineDate range (e.g. host shifted 1–5 June to 3–7 June — June 1
+     * and June 2 segments must go). Runs after city deletion so the two
+     * cleanups never race over the same index space.
+     */
+    private fun performOutOfRangeSegmentCleanup(timeline: Timeline) {
+        // TEMPORARILY DISABLED: out-of-range removal is currently causing
+        // downstream sync regressions. Skip the cleanup but keep the
+        // post-cleanup refresh so the pipeline still flows into the silent
+        // refresh stage. Re-enable once the sync pipeline issues are fixed.
+        refreshTimelineAfterSync()
+        // val it = itinerary
+        // if (it == null) {
+        //     refreshTimelineAfterSync()
+        //     return
+        // }
+        // removeOutOfRangeSegmentsUseCase.on(
+        //     params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, it, timeline),
+        //     success = { refreshTimelineAfterSync() },
+        //     error = { refreshTimelineAfterSync() }
+        // )
     }
 
     /**

@@ -142,6 +142,13 @@ class TRPCore {
         }
 
         /**
+         * Triggers booking detail request callback (booked_activity taps).
+         */
+        internal fun notifyBookingDetailRequested(bookingId: String) {
+            listener?.onRequestBookingDetail(bookingId)
+        }
+
+        /**
          * Triggers activity reservation request callback
          *
          * @param activityId ID of the activity
@@ -751,5 +758,27 @@ class TRPCore {
      */
     fun getCachedCityById(cityId: Int): com.tripian.one.api.cities.model.City? {
         return tripRepository.getCachedCityById(cityId)
+    }
+
+    /**
+     * Refreshes the supported-cities cache from the API and delivers the
+     * resulting list to the host app. Useful when the host has its own city
+     * picker UI (e.g. a demo screen) and needs the full Tripian catalog
+     * before the SDK is launched.
+     *
+     * - Hits the network; falls back to whatever is in the in-memory /
+     *   SharedPreferences cache if the request fails so the callback always
+     *   yields something to show.
+     * - Idempotent — safe to call from multiple entry points.
+     * - Callback is delivered on the main thread.
+     */
+    fun fetchCities(onComplete: (List<com.tripian.one.api.cities.model.City>) -> Unit) {
+        tripRepository.prefetchCities()
+            .subscribeOn(Schedulers.io())
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { onComplete(tripRepository.getCachedCities()) },
+                { onComplete(tripRepository.getCachedCities()) }
+            )
     }
 }

@@ -36,6 +36,22 @@ interface TRPCoreSDKListener {
     fun onRequestActivityDetail(activityId: String)
 
     /**
+     * Called when user taps on a booked_activity card.
+     * Host app should open the booking detail screen in this callback.
+     *
+     * Default implementation delegates to [onRequestActivityDetail] so existing
+     * host integrations keep working without changes. Override this when you
+     * need a dedicated booking detail flow.
+     *
+     * @param bookingId ID of the tapped booking (sourced from segment additionalData)
+     *
+     * iOS equivalent: trpCoreKitDidRequestBookingDetail(bookingId:)
+     */
+    fun onRequestBookingDetail(bookingId: String) {
+        onRequestActivityDetail(bookingId)
+    }
+
+    /**
      * Called when user taps "Reserve" or "Book" button.
      * Host app should start reservation/booking flow in this callback.
      *

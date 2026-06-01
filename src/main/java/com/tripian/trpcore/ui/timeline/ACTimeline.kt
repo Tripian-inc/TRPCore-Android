@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -58,6 +59,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var mapBottomListAdapter: MapBottomListAdapter? = null
     private var isBottomListVisible = false
     private var isBottomListCompletelyHidden = true
+    private var lastMapInteractionAtMs = 0L
+    private var lastMapEmptyClickAtMs = 0L
     private var navigationBarInsetBottom = 0
     private var bottomListHeight = 0
     private var fabAddInitialBottomMargin = 0
@@ -182,10 +185,23 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             handleMapItemClick(mapStep)
         }
 
-        // Tapping empty map space toggles the bottom list visibility — only when
-        // the current day actually has content (otherwise there is nothing to show).
+        // Tapping empty map space toggles the bottom list. Two defenses:
+        //  1) If onMoveBegin fired moments earlier (slop or a pan that's ending),
+        //     the interaction listener already hid the list — skip the toggle so
+        //     we don't flip back to show.
+        //  2) Coalesce rapid empty-click callbacks from the same gesture: a
+        //     single tap was observed to invoke this listener twice (hide then
+        //     immediately re-show). Drop any second invocation within the guard.
         binding.mapView.setOnMapEmptyClickListener {
             if (viewModel.mapSteps.value.isNullOrEmpty()) return@setOnMapEmptyClickListener
+            val now = System.currentTimeMillis()
+            if (now - lastMapInteractionAtMs < MAP_INTERACTION_CLICK_GUARD_MS) {
+                return@setOnMapEmptyClickListener
+            }
+            if (now - lastMapEmptyClickAtMs < MAP_EMPTY_CLICK_DEBOUNCE_MS) {
+                return@setOnMapEmptyClickListener
+            }
+            lastMapEmptyClickAtMs = now
             if (isBottomListVisible) {
                 hideMapBottomList()
             } else {
@@ -200,6 +216,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         // Map interaction listener - hide bottom list when user pans or zooms
         binding.mapView.setOnMapInteractionListener {
+            lastMapInteractionAtMs = System.currentTimeMillis()
             hideMapBottomList()
         }
 
@@ -913,6 +930,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * Also moves the fabList button above the list.
      */
     private fun showMapBottomList() {
+        Log.d("ACTimelineMapList", "showMapBottomList called, visible=$isBottomListVisible", Throwable())
         if (isBottomListVisible) return
         isBottomListVisible = true
         isBottomListCompletelyHidden = false
@@ -954,6 +972,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * Also moves the fabList button back to its original position.
      */
     private fun hideMapBottomList() {
+        Log.d("ACTimelineMapList", "hideMapBottomList called, visible=$isBottomListVisible", Throwable())
         if (!isBottomListVisible) return
         isBottomListVisible = false
         isBottomListCompletelyHidden = false
@@ -1153,9 +1172,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun handleItemClick(item: TimelineDisplayItem) {
         when (item) {
             is TimelineDisplayItem.BookedActivity -> {
-                // Notify host app for activity detail
-                item.segment.additionalData?.activityId?.let { activityId ->
-                    viewModel.onActivityDetailRequested(activityId)
+                // booked_activity → booking detail (uses bookingId);
+                // reserved_activity → activity detail (uses activityId).
+                val data = item.segment.additionalData
+                if (item.isReserved) {
+                    data?.activityId?.let { viewModel.onActivityDetailRequested(it) }
+                } else {
+                    data?.bookingId?.let { viewModel.onBookingDetailRequested(it) }
                 }
             }
             is TimelineDisplayItem.Recommendations -> {
@@ -1549,6 +1572,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     companion object {
         private const val EXTRA_TRIP_HASH = "tripHash"
+        private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L
+        private const val MAP_EMPTY_CLICK_DEBOUNCE_MS = 400L
 
         fun newIntent(context: Context, tripHash: String): Intent {
             return Intent(context, ACTimeline::class.java).apply {
