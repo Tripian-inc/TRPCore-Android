@@ -9,6 +9,8 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
+import com.tripian.trpcore.util.extensions.resolveFlexibleWindow
+import com.tripian.trpcore.util.extensions.toAdditionalDataIso
 import java.util.Date
 import javax.inject.Inject
 
@@ -24,10 +26,13 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         val tripHash: String,
         val favorite: SegmentFavoriteItem,
         val selectedDate: Date,
-        val startTime: String?,  // Format: "HH:mm" (null = use default 10:00)
-        val endTime: String?,    // Format: "HH:mm" (null = calculate from duration)
+        val startTime: String?,  // Format: "HH:mm" (null = use default 10:00). isFlexible=true iken yok sayılır.
+        val endTime: String?,    // Format: "HH:mm" (null = calculate from duration). isFlexible=true iken yok sayılır.
         val adults: Int = 1,
-        val resolvedCityId: Int? = null  // Our system's cityId (resolved from cityName mapping)
+        val resolvedCityId: Int? = null,  // Our system's cityId (resolved from cityName mapping)
+        // Flexible (any-time) favorite. true ise window resolveFlexibleWindow ile
+        // hesaplanır ve duration = -1.0 yazılır (tour flexible path ile parite).
+        val isFlexible: Boolean = false
     )
 
     companion object {
@@ -39,17 +44,31 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
     override fun on(params: Params?) {
         params?.let { p ->
             val dateStr = p.selectedDate.toApiDateString()
-            val startTimeStr = p.startTime ?: DEFAULT_START_TIME
 
-            // Build start datetime
-            val startDatetime = "$dateStr $startTimeStr"
-
-            // Calculate end time from duration or use provided
-            val endDatetime = if (!p.endTime.isNullOrEmpty()) {
-                "$dateStr ${p.endTime}"
+            // Flexible favorite: bottom-sheet placeholder'ı yerine helper'a
+            // güveniyoruz; bugün için window 23:59–23:59'a çekilir (backend
+            // 00:00 startı reddediyor). Duration -1.0 markerı tour flexible
+            // path ile parite sağlar — renderer aynı FlexibleActivity cell'i
+            // gösterir.
+            val startTimeStr: String
+            val endDatetime: String
+            val effectiveDuration: Double?
+            if (p.isFlexible) {
+                val (start, end) = resolveFlexibleWindow(dateStr)
+                startTimeStr = start
+                endDatetime = "$dateStr $end"
+                effectiveDuration = -1.0
             } else {
-                calculateEndTime(dateStr, startTimeStr, p.favorite.duration)
+                startTimeStr = p.startTime ?: DEFAULT_START_TIME
+                endDatetime = if (!p.endTime.isNullOrEmpty()) {
+                    "$dateStr ${p.endTime}"
+                } else {
+                    calculateEndTime(dateStr, startTimeStr, p.favorite.duration)
+                }
+                effectiveDuration = p.favorite.duration
             }
+
+            val startDatetime = "$dateStr $startTimeStr"
 
             // Build coordinate from favorite
             val coordinate = Coordinate().apply {
@@ -63,15 +82,25 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                 title = p.favorite.title
                 imageUrl = p.favorite.photoUrl
                 description = p.favorite.description
-                this.startDatetime = startDatetime
-                this.endDatetime = endDatetime
+                // iOS spec §1 + §3.2: additionalData carries ISO-8601 datetimes
+                // ("yyyy-MM-dd'T'HH:mm:ss") while the segment-level startDate/endDate
+                // stay in the space-separated "yyyy-MM-dd HH:mm" shape. The two
+                // formats are intentional — don't unify them.
+                this.startDatetime = startDatetime.toAdditionalDataIso()
+                this.endDatetime = endDatetime.toAdditionalDataIso()
                 this.coordinate = coordinate
-                duration = p.favorite.duration
+                duration = effectiveDuration
                 p.favorite.price?.let { price ->
                     this.price = price.value
                     this.currency = price.currency ?: "EUR"
                 }
                 cancellation = p.favorite.cancellation
+                // iOS spec section 2.2: carry rating/ratingCount on every reserved
+                // activity write — Saved Plans favorites already store these, so
+                // we propagate them straight through to keep the cell parity
+                // with tour-listing additions.
+                rating = p.favorite.rating
+                reviewCount = p.favorite.ratingCount
             }
 
             // Build segment settings

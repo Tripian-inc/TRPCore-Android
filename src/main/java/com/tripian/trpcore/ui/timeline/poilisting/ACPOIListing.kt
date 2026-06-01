@@ -16,7 +16,11 @@ import com.tripian.trpcore.domain.model.timeline.FilterData
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.BottomToast
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 /**
  * ACPOIListing
@@ -79,16 +83,13 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             poi?.let { showTimeRangeBottomSheet(it) }
         }
 
-        // Observe segment creation
-        viewModel.segmentCreated.observe(this) { created ->
-            if (created) {
-                // Return success result with selectedDayIndex for auto-selecting the day
-                val resultIntent = Intent().apply {
-                    putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
-                }
-                setResult(Activity.RESULT_OK, resultIntent)
-                finish()
-            }
+        // Add-to-itinerary completion: VM keeps the time-selection sheet open while it
+        // shows its own bottom-sheet "Adding to itinerary" loader, runs the segment
+        // create → timeline fetch chain, then signals success here. The sheet then
+        // dismisses, a confirmation toast appears; we stay on the listing so the user
+        // can add more POIs in the same session.
+        viewModel.addedToItinerarySuccess.observe(this) { result ->
+            result?.let { handleAddedToItinerarySuccess(it) }
         }
 
         // Observe filter changes
@@ -253,6 +254,44 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         currentFocus?.let {
             imm.hideSoftInputFromWindow(it.windowToken, 0)
         }
+    }
+
+    /**
+     * Final step of the add-POI flow. Dismisses the still-open time selection
+     * sheet and shows a confirmation toast — but stays on the listing so the user
+     * can add more places in the same session. RESULT_OK is set eagerly so when
+     * the user eventually navigates back, AddPlanContainerBottomSheet sees the
+     * positive result and re-syncs the timeline UI.
+     */
+    private fun handleAddedToItinerarySuccess(result: ACPOIListingVM.AddedToItineraryResult) {
+        viewModel.clearAddedToItinerarySuccess()
+        timeSelectionBottomSheet?.dismiss()
+        timeSelectionBottomSheet = null
+
+        // Day label, e.g. "Friday 29/05" — locale-aware day name, fixed dd/MM date.
+        val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault())
+            .format(result.selectedDate)
+
+        // iOS-style placeholders: backend default is "%1$@ has been added to %2$@".
+        val template = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
+            .ifBlank { "%1\$@ has been added to %2\$@" }
+        val message = template
+            .replace("%1\$@", result.poiName)
+            .replace("%2\$@", dayLabel)
+
+        BottomToast.show(
+            activity = this,
+            message = message,
+            alertType = AlertType.SUCCESS
+        )
+
+        // Pre-arm the result so back navigation hands control back to AddPlan with
+        // the day index that should be reselected. We don't finish here — the user
+        // may add more places in the same session.
+        val resultIntent = Intent().apply {
+            putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
+        }
+        setResult(Activity.RESULT_OK, resultIntent)
     }
 
     companion object {

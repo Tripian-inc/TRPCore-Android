@@ -51,7 +51,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var favoriteCityId: Int? = null
     private var favoriteTitle: String? = null
     private var favoriteDuration: Double? = null
-    private var onFavoriteTimeSelectedListener: ((Date, String?, String?) -> Unit)? = null
+    private var onFavoriteTimeSelectedListener: ((Date, String?, String?, Boolean) -> Unit)? = null
 
     // Step-edit mode shares the favorite schedule load path (activityId + cityId)
     // but routes the confirm action to a different callback that returns HH:mm
@@ -60,6 +60,21 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var isStepEditMode: Boolean = false
     private var pendingInitialTimeSlot: String? = null
     private var onStepTimeSelectedListener: ((Date, String, String?) -> Unit)? = null
+
+    /**
+     * Original booked time (`HH:mm`) kept beyond [pendingInitialTimeSlot]'s
+     * one-shot pre-selection so we can render it as a disabled chip when the
+     * user is on the step's original day and the schedule no longer offers it.
+     * Null in non-step-edit modes.
+     */
+    private var initialTimeSlot: String? = null
+
+    /**
+     * `yyyy-MM-dd` key of the step's original day. The disabled chip should
+     * only surface when the day filter is on this date — switching to another
+     * day clears the visual cue automatically because the keys mismatch.
+     */
+    private var initialDayKey: String? = null
 
     override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
 
@@ -78,8 +93,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteDuration = args.getDouble(ARG_FAVORITE_DURATION, 0.0).takeIf { it > 0 }
             isStepEditMode = args.getBoolean(ARG_STEP_EDIT_MODE, false)
             pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
+            initialTimeSlot = pendingInitialTimeSlot
 
             val initialDay = args.getSerializable(ARG_INITIAL_SELECTED_DAY) as? Date
+            initialDayKey = initialDay?.let { dayKeyFormatter.format(it) }
             selectedDayIndex = if (initialDay != null) {
                 availableDays.indexOfFirst { isSameDay(it, initialDay) }.coerceAtLeast(0)
             } else {
@@ -221,7 +238,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             // string-typed callback contract is preserved; the isFlexible flag
             // is the source of truth.
             if (isFavoriteMode) {
-                onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59")
+                onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59", true)
             } else {
                 val tour = activity ?: return
                 onTimeSelectedListener?.invoke(tour, date, "00:00", currentFlexiblePrice, true)
@@ -240,7 +257,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else if (isFavoriteMode) {
             // For favorites - calculate end time from duration
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
-            onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime)
+            onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime, false)
         } else {
             // For tours - pass selected price (minimum price for the selected time slot)
             val tour = activity ?: return
@@ -388,20 +405,60 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val totalMargins = columnCount * marginPx
         val itemWidthPx = (availableWidth - totalMargins) / columnCount
 
-        slots.forEach { slot ->
+        // Build the full chip set: available slots + (optionally) the disabled
+        // chip representing the step's originally-booked time that the
+        // backend no longer offers. The disabled chip only appears in
+        // step-edit mode AND when the day filter is on the step's original
+        // day — switching days hides it automatically because the day keys
+        // mismatch. Both kinds render in chronological order.
+        val currentDayKey = availableDays.getOrNull(selectedDayIndex)?.let {
+            dayKeyFormatter.format(it)
+        }
+        val disabledTime = initialTimeSlot
+            ?.takeIf {
+                isStepEditMode &&
+                    currentDayKey != null &&
+                    currentDayKey == initialDayKey &&
+                    slots.none { slot -> slot.time == it }
+            }
+
+        data class ChipSpec(val time: String, val price: Double?, val isDisabled: Boolean)
+        val chips = mutableListOf<ChipSpec>()
+        chips += slots.map { ChipSpec(it.time, it.minPrice, isDisabled = false) }
+        disabledTime?.let { chips += ChipSpec(it, price = null, isDisabled = true) }
+        chips.sortBy { it.time }
+
+        val disabledTextColor = androidx.core.content.ContextCompat.getColor(
+            requireContext(),
+            R.color.trp_white
+        )
+
+        chips.forEach { spec ->
             val chipView = inflater.inflate(R.layout.item_time_slot, binding.flexTimeSlots, false) as TextView
-            chipView.text = slot.time
+            chipView.text = spec.time
 
-            val isSelected = !isFlexibleSelected && slot.time == selectedTimeSlot
-            chipView.isSelected = isSelected
-            chipView.isActivated = isSelected
+            if (spec.isDisabled) {
+                // Solid-gray background + white text; chip is non-interactive
+                // because the backend has confirmed this slot is no longer
+                // available. The selector drawable from the layout is replaced
+                // wholesale so selected/activated states cannot kick in.
+                chipView.setBackgroundResource(R.drawable.trp_bg_time_slot_disabled)
+                chipView.setTextColor(disabledTextColor)
+                chipView.isClickable = false
+                chipView.isSelected = false
+                chipView.isActivated = false
+            } else {
+                val isSelected = !isFlexibleSelected && spec.time == selectedTimeSlot
+                chipView.isSelected = isSelected
+                chipView.isActivated = isSelected
 
-            chipView.setOnClickListener {
-                selectedTimeSlot = slot.time
-                selectedPrice = slot.minPrice
-                isFlexibleSelected = false
-                updateTimeSlotSelection()
-                updateContinueButtonState()
+                chipView.setOnClickListener {
+                    selectedTimeSlot = spec.time
+                    selectedPrice = spec.price
+                    isFlexibleSelected = false
+                    updateTimeSlotSelection()
+                    updateContinueButtonState()
+                }
             }
 
             // Set layout params for FlexboxLayout with fixed width for 4 columns
@@ -515,9 +572,12 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
     /**
      * Set listener for favorite time selection (used in favorites mode)
-     * @param listener Callback with (selectedDate, startTime, endTime)
+     * @param listener Callback with (selectedDate, startTime, endTime, isFlexible).
+     *                 isFlexible=true durumunda startTime/endTime placeholder
+     *                 ("00:00"/"23:59") taşır; gerçek window'u use case
+     *                 [resolveFlexibleWindow] ile yeniden hesaplar.
      */
-    fun setOnFavoriteTimeSelectedListener(listener: (Date, String?, String?) -> Unit) {
+    fun setOnFavoriteTimeSelectedListener(listener: (Date, String?, String?, Boolean) -> Unit) {
         onFavoriteTimeSelectedListener = listener
     }
 

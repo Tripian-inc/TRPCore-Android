@@ -265,12 +265,18 @@ class LottieBottomSheetDialog : BottomSheetDialogFragment() {
 
     override fun onStart() {
         super.onStart()
+        val bsDialog = dialog as? BottomSheetDialog
         // Force expanded + lock drag
-        (dialog as? BottomSheetDialog)?.behavior?.apply {
+        bsDialog?.behavior?.apply {
             state = BottomSheetBehavior.STATE_EXPANDED
             isDraggable = false
             skipCollapsed = true
         }
+        // Material's design_bottom_sheet ships with a solid white drawable that
+        // hides the rounded background on our root view. Clear it so the
+        // trp_bg_bottom_sheet drawable's rounded top corners are visible.
+        bsDialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            ?.setBackgroundResource(android.R.color.transparent)
     }
 
     override fun onDestroyView() {

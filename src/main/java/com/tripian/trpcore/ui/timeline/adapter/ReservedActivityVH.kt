@@ -50,9 +50,9 @@ class ReservedActivityVH(
             com.tripian.trpcore.util.extensions.MINUS_SIGN
         else item.order.toString()
 
-        // Apply time badge styling (Theme 7: precedence is expired > conflict > normal).
-        // Expired booking takes precedence over a conflict — even if both flags are
-        // set on the same item, the red "Not available" state wins.
+        // Badge styling precedence (Theme 7): expired > conflict > normal.
+        // Expired wins over conflict so the red "Not available" cue is never
+        // hidden by a time-overlap badge on the same item.
         when {
             item.isAvailabilityExpired -> {
                 binding.orderTimeContainer
@@ -88,7 +88,12 @@ class ReservedActivityVH(
                 item.isAvailabilityExpired -> {
                     val label = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
                         .ifBlank { "Not available" }
-                    "$timeText $label"
+                    TimeOverlapTextBuilder.build(
+                        binding.tvTime.context,
+                        timeText,
+                        label,
+                        TimeBadgeStatus.EXPIRED
+                    )
                 }
                 item.showTimeOverlapText -> {
                     val label = getLanguage(LanguageConst.TIME_OVERLAP)

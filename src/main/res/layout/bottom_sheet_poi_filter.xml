@@ -68,7 +68,7 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:fontFamily="@font/semibold"
+            android:fontFamily="@font/regular"
             android:gravity="center"
             android:paddingHorizontal="16dp"
             android:textColor="@color/trp_fgWeak"

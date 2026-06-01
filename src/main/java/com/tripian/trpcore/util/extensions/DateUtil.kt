@@ -241,6 +241,23 @@ fun today(): String {
     return format.format(Date())
 }
 
+/**
+ * Flexible (any-time) bir activity segmentinin start/end window'unu üretir.
+ * Backend, [dateStr] bugün ise 00:00–23:59 aralığını "geçmişe segment" sayarak
+ * reddediyor. Bugün için start ve end'i 23:59'a sabitleyerek istek hep
+ * "şimdiden ileri"de kalır; diğer günlerde davranış aynen 00:00–23:59 olur.
+ * Renderer flexible cell'i duration == -1 markerı ile tanıdığı için bugünün
+ * dar (23:59–23:59) window'u görsel olarak normal flexible item'dan ayırt
+ * edilmez.
+ */
+fun resolveFlexibleWindow(dateStr: String): Pair<String, String> {
+    return if (dateStr == today()) {
+        "23:59" to "23:59"
+    } else {
+        "00:00" to "23:59"
+    }
+}
+
 fun afterToday(): String {
     val format: DateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.forLanguageTag(appLanguage))
 

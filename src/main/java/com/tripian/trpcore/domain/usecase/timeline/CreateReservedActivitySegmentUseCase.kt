@@ -9,6 +9,8 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
+import com.tripian.trpcore.util.extensions.resolveFlexibleWindow
+import com.tripian.trpcore.util.extensions.toAdditionalDataIso
 import io.reactivex.Single
 import javax.inject.Inject
 
@@ -97,8 +99,13 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         val endDatetime: String
         val effectiveDuration: Double?
         if (p.isFlexible) {
-            startDatetime = "${p.selectedDate} 00:00"
-            endDatetime = "${p.selectedDate} 23:59"
+            // Bugün için backend 00:00 startı reddediyor (geçmişe segment).
+            // resolveFlexibleWindow bugünde start=end=23:59 döndürerek isteği
+            // her zaman "şimdiden ileri"de tutar; diğer günlerde 00:00–23:59
+            // davranışı korunur.
+            val (start, end) = resolveFlexibleWindow(p.selectedDate)
+            startDatetime = "${p.selectedDate} $start"
+            endDatetime = "${p.selectedDate} $end"
             effectiveDuration = -1.0
         } else {
             startDatetime = "${p.selectedDate} ${p.selectedTimeSlot}"
@@ -125,13 +132,22 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             title = tour.title
             imageUrl = tour.images?.firstOrNull()?.url
             description = tour.description
-            this.startDatetime = startDatetime
-            this.endDatetime = endDatetime
+            // iOS spec §1 + §3.2: additionalData carries ISO-8601 datetimes
+            // ("yyyy-MM-dd'T'HH:mm:ss") while the segment-level startDate/endDate
+            // stay in the space-separated "yyyy-MM-dd HH:mm" shape. The two
+            // formats are intentional — don't unify them.
+            this.startDatetime = startDatetime.toAdditionalDataIso()
+            this.endDatetime = endDatetime.toAdditionalDataIso()
             this.coordinate = coordinate
             this.isNoLocation = noLocation
             duration = effectiveDuration
             price = p.slotPrice ?: tour.price
             currency = tour.currency ?: "EUR"
+            // iOS spec section 2.2: rating is copied straight from tour metadata,
+            // independent of the slot/booking. Without these the timeline's
+            // ReservedActivityVH hides the rating row entirely.
+            rating = tour.rating
+            reviewCount = tour.ratingCount
         }
 
         // If we couldn't resolve a city from the user-selected one, fall back

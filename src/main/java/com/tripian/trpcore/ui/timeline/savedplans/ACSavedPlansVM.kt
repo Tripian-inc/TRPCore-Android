@@ -133,14 +133,24 @@ class ACSavedPlansVM @Inject constructor(
      */
     fun createReservedActivitySegment(
         selectedDate: Date,
-        startTime: String?
+        startTime: String?,
+        endTime: String?,
+        isFlexible: Boolean
     ) {
         val favorite = pendingFavorite ?: return
 
         _isCreatingSegment.value = true
 
-        // Calculate end time from duration
-        val endTime = calculateEndTime(startTime, favorite.duration)
+        // Flexible favorite: window'u use case helper'ı belirliyor; lokal
+        // calculateEndTime'ı atlıyoruz. Timed flow için bottom-sheet zaten
+        // hesaplanmış endTime gönderiyor, gönderilmediyse duration'dan
+        // türetiyoruz.
+        val resolvedEndTime = if (isFlexible) {
+            null
+        } else {
+            endTime ?: calculateEndTime(startTime, favorite.duration)
+        }
+        val resolvedStartTime = if (isFlexible) null else startTime
 
         // Get resolved cityId from mapping (our system's ID)
         val resolvedCityId = getResolvedCityId(favorite.cityName)
@@ -150,9 +160,10 @@ class ACSavedPlansVM @Inject constructor(
                 tripHash = tripHash,
                 favorite = favorite,
                 selectedDate = selectedDate,
-                startTime = startTime,
-                endTime = endTime,
-                resolvedCityId = resolvedCityId
+                startTime = resolvedStartTime,
+                endTime = resolvedEndTime,
+                resolvedCityId = resolvedCityId,
+                isFlexible = isFlexible
             ),
             success = {
                 // Wait for generation to complete

@@ -99,9 +99,9 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
     }
 
     private fun updateButtonStates() {
-        val hasSelection = selectedCategoryIds.isNotEmpty()
-        binding.btnClear.alpha = if (hasSelection) 1f else 0.5f
-        binding.btnConfirm.isEnabled = hasSelection
+        // btnClear stays at its full fg color regardless of selection — only
+        // the confirm button reflects whether anything is selected.
+        binding.btnConfirm.isEnabled = selectedCategoryIds.isNotEmpty()
     }
 
     private fun getLanguageText(key: String): String {

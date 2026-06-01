@@ -220,13 +220,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             lifecycleScope.launch {
                 binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
             }
-
-            // Fade out animation
-            binding.btnMainView.animate()
-                .alpha(0f)
-                .setDuration(200)
-                .withEndAction { binding.btnMainView.visibility = View.GONE }
-                .start()
         }
     }
 
@@ -388,19 +381,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Main View button visibility (multi-city map mode)
-        viewModel.showMainViewButton.observe(this) { show ->
-            if (show) {
-                // Fade in
-                binding.btnMainView.alpha = 0f
-                binding.btnMainView.visibility = View.VISIBLE
-                binding.btnMainView.animate()
-                    .alpha(1f)
-                    .setDuration(200)
-                    .start()
-            } else {
-                binding.btnMainView.visibility = View.GONE
-            }
+        // Main View button visibility (multi-city map mode).
+        // The button is only shown when active AND the bottom panel is fully shown;
+        // it must follow the panel's peek/hide state.
+        viewModel.showMainViewButton.observe(this) {
+            updateMainViewButtonVisibility()
         }
     }
 
@@ -490,12 +475,36 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             },
             onReservedActivityChangeTimeClick = { reservedActivity ->
                 reservedActivity.segmentIndex?.let { idx ->
-                    viewModel.showSegmentChangeTimePicker(reservedActivity.segment, idx)
+                    showActivityChangeTimeSheet(
+                        activityId = reservedActivity.segment.additionalData?.activityId,
+                        cityId = reservedActivity.segment.cityId?.takeIf { it > 0 },
+                        title = reservedActivity.title,
+                        duration = reservedActivity.segment.additionalData?.duration,
+                        initialDateTime = reservedActivity.startDateTime,
+                        seedInitialTimeSlot = true
+                    ) { startTime, endTime ->
+                        viewModel.updateSegmentTime(
+                            reservedActivity.segment, idx, startTime, endTime
+                        )
+                    }
                 }
             },
             onFlexibleActivityChangeTimeClick = { flexibleActivity ->
                 flexibleActivity.segmentIndex?.let { idx ->
-                    viewModel.showSegmentChangeTimePicker(flexibleActivity.segment, idx)
+                    showActivityChangeTimeSheet(
+                        activityId = flexibleActivity.segment.additionalData?.activityId,
+                        cityId = flexibleActivity.segment.cityId?.takeIf { it > 0 },
+                        title = flexibleActivity.title,
+                        duration = flexibleActivity.segment.additionalData?.duration,
+                        initialDateTime = flexibleActivity.segment.startDate,
+                        // Flexible items use a 00:00/23:59 placeholder; pre-selecting
+                        // it would mark a non-existent "00:00" slot as the choice.
+                        seedInitialTimeSlot = false
+                    ) { startTime, endTime ->
+                        viewModel.updateSegmentTime(
+                            flexibleActivity.segment, idx, startTime, endTime
+                        )
+                    }
                 }
             },
             onReservationClick = { bookedActivity ->
@@ -907,6 +916,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         if (isBottomListVisible) return
         isBottomListVisible = true
         isBottomListCompletelyHidden = false
+        updateMainViewButtonVisibility()
 
         binding.rvMapBottomList.visibility = View.VISIBLE
 
@@ -947,6 +957,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         if (!isBottomListVisible) return
         isBottomListVisible = false
         isBottomListCompletelyHidden = false
+        updateMainViewButtonVisibility()
 
 //        binding.rvMapBottomList.animate()
 //            .translationY(binding.rvMapBottomList.height.toFloat() * 0.9f)
@@ -996,7 +1007,35 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.rvMapBottomList.visibility = View.GONE
         binding.fabList.translationY = 0f
         binding.fabAddPlan.translationY = 0f
+        updateMainViewButtonVisibility()
         updateFabPositions()
+    }
+
+    /**
+     * Sync btnMainView visibility with both ViewModel state and bottom panel state.
+     * The button is only visible when active AND the bottom panel is fully shown.
+     */
+    private fun updateMainViewButtonVisibility() {
+        val shouldShow = viewModel.showMainViewButton.value == true && isBottomListVisible
+        val isCurrentlyShown =
+            binding.btnMainView.visibility == View.VISIBLE && binding.btnMainView.alpha > 0f
+
+        if (shouldShow && !isCurrentlyShown) {
+            binding.btnMainView.animate().cancel()
+            binding.btnMainView.alpha = 0f
+            binding.btnMainView.visibility = View.VISIBLE
+            binding.btnMainView.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+        } else if (!shouldShow && binding.btnMainView.visibility == View.VISIBLE) {
+            binding.btnMainView.animate().cancel()
+            binding.btnMainView.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction { binding.btnMainView.visibility = View.GONE }
+                .start()
+        }
     }
 
     /**
@@ -1200,7 +1239,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // ACActivityListing add flow so the user sees real availability for
         // the activity instead of an empty HH:mm spinner.
         if (step.stepType == "activity") {
-            showActivityStepChangeTimeSheet(step)
+            val poi = step.poi ?: return
+            showActivityChangeTimeSheet(
+                activityId = poi.additionalData?.productId ?: poi.id,
+                cityId = poi.cityId,
+                title = poi.name.orEmpty(),
+                duration = poi.duration?.toDouble(),
+                initialDateTime = step.startDateTimes,
+                seedInitialTimeSlot = true
+            ) { startTime, endTime ->
+                viewModel.updateStepTime(step.id, startTime, endTime)
+            }
         } else {
             viewModel.showStepChangeTimePicker(step)
         }
@@ -1212,37 +1261,50 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     /**
-     * Reuses ActivityTimeSelectionBottomSheet (the "add" flow's sheet) to edit
-     * an existing activity-type step's time. The step's POI carries the
-     * productId / cityId / duration needed to load the schedule, and the
-     * step's existing HH:mm is passed in so the matching slot lands selected.
+     * Single entry point that opens [ActivityTimeSelectionBottomSheet] for
+     * every activity-bearing cell (Recommendations activity step, top-level
+     * reserved activity, flexible activity). Callers extract the cell-
+     * specific fields (the source of `activityId` / `title` / `duration`
+     * differs between Poi-backed step and segment-backed cells) and hand the
+     * shared parameters in. The terminal action is also caller-supplied:
+     * steps patch via `updateStepTime`, segments via `updateSegmentTime`.
+     *
+     * @param activityId required — schedule-bulk and slot loading need it.
+     *   When null the sheet is not opened.
+     * @param seedInitialTimeSlot `true` for time-bearing cells (the existing
+     *   HH:mm pre-selects in the grid); `false` for flexible cells whose
+     *   recorded time is the 00:00/23:59 placeholder.
      */
-    private fun showActivityStepChangeTimeSheet(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        val poi = step.poi ?: return
-        val activityId = poi.additionalData?.productId ?: poi.id
+    private fun showActivityChangeTimeSheet(
+        activityId: String?,
+        cityId: Int?,
+        title: String,
+        duration: Double?,
+        initialDateTime: String?,
+        seedInitialTimeSlot: Boolean,
+        onConfirm: (startTime: String, endTime: String?) -> Unit
+    ) {
+        if (activityId.isNullOrEmpty()) return
         val availableDays = viewModel.availableDays.value ?: emptyList()
         if (availableDays.isEmpty()) return
 
-        val startDateTime = step.startDateTimes
-        val initialDay = startDateTime.toDate()
-        val initialTimeSlot = startDateTime
-            ?.takeIf { it.length >= 16 }
-            ?.substring(11, 16)
+        val initialDay = initialDateTime.toDate()
+        val initialTimeSlot = if (seedInitialTimeSlot) {
+            initialDateTime?.takeIf { it.length >= 16 }?.substring(11, 16)
+        } else null
 
         val sheet = ActivityTimeSelectionBottomSheet.newInstanceForStepEdit(
             activityId = activityId,
-            cityId = poi.cityId,
-            title = poi.name.orEmpty(),
-            duration = poi.duration?.toDouble(),
+            cityId = cityId,
+            title = title,
+            duration = duration,
             availableDays = availableDays,
             initialSelectedDay = initialDay,
             initialTimeSlot = initialTimeSlot
         )
-
         sheet.setOnStepTimeSelectedListener { _, startTime, endTime ->
-            viewModel.updateStepTime(step.id, startTime, endTime)
+            onConfirm(startTime, endTime)
         }
-
         sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 

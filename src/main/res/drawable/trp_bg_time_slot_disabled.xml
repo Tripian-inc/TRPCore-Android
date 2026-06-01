@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Time-slot chip background for the "originally-booked but no longer available"
+  state shown when the change-time sheet opens on an expired activity. Solid
+  gray fill with no stroke; the chip uses white text to mark itself as disabled.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/trp_grey" />
+    <corners android:radius="20dp" />
+</shape>

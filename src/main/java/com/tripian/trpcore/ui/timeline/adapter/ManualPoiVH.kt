@@ -8,7 +8,6 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineManualPoiBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.util.LanguageConst
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -21,9 +20,6 @@ class ManualPoiVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.US)
-    // Turkish locale for formatting: comma as decimal separator, dot as thousand separator
-    private val turkishLocale = Locale("tr", "TR")
-    private val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
 
     /**
      * Helper function for localization
@@ -89,25 +85,9 @@ class ManualPoiVH(
             binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
 
-        // Rating Row - Bold 14px rating, star icon 12x12, Light 14px fgWeak review count
-        // Rating uses comma as decimal separator (4,2), reviewCount uses dot as thousand separator (49.565)
-        val rating = item.rating
-        val reviewCount = item.reviewCount
-        if (rating != null && rating > 0) {
-            binding.tvRating.text = String.format(turkishLocale, "%.1f", rating)
-
-            if (reviewCount != null && reviewCount > 0) {
-                val opinionsText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_OPINIONS)
-                binding.tvReviewCount.text = "${reviewCountFormat.format(reviewCount)} $opinionsText"
-                binding.tvReviewCount.visibility = View.VISIBLE
-            } else {
-                binding.tvReviewCount.visibility = View.GONE
-            }
-
-            binding.llRating.visibility = View.VISIBLE
-        } else {
-            binding.llRating.visibility = View.GONE
-        }
+        // Manual POIs never show rating — the user added these themselves and
+        // the rating is not meaningful in that context.
+        binding.llRating.visibility = View.GONE
 
         // Category Badge - same style as confirmed badge (green bg, green text)
         item.categoryName?.let { category ->

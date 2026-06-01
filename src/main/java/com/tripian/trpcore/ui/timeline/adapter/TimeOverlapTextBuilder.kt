@@ -5,16 +5,31 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ImageSpan
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import com.tripian.trpcore.R
 
 /**
- * Builds the time-overlap status label rendered in time-bearing timeline cells.
+ * Two visual states the badge can take:
+ *  - [OVERLAP]: orange warning (the vector's own fillColor #D6771A).
+ *  - [EXPIRED]: red warning (`trp_expired_fg`).
  *
- * Format: "HH:mm - HH:mm · <warning icon> <localized overlap label>"
+ * Label text always inherits the TextView's default color — only the icon
+ * tint differs between the two states. The surrounding pill (container
+ * background, order chip) carries the rest of the state's color cue.
+ */
+enum class TimeBadgeStatus { OVERLAP, EXPIRED }
+
+/**
+ * Builds the status label rendered inline in time-bearing timeline cells.
  *
- * The middle dot separates the time range from the warning. The warning glyph
- * is the project's `trp_ic_warning` vector — its own fillColor (#D6771A) gives
- * it the orange warning tint, so no tinting is needed here.
+ * Format with [timeText]:    "HH:mm - HH:mm · <warning icon> <localized status label>"
+ * Format without [timeText]: "<warning icon> <localized status label>"
+ *
+ * The same layout is shared between the time-overlap and availability-expired
+ * states; [TimeBadgeStatus] picks the colors so callers don't recompute them.
+ * Cells without a real time range (flexible activity) pass [timeText] = null
+ * so only the icon + label render, with no leading time prefix or middle dot.
  */
 object TimeOverlapTextBuilder {
 
@@ -26,9 +41,15 @@ object TimeOverlapTextBuilder {
      * Build the spanned label. Falls back to a plain string if the warning drawable
      * cannot be resolved (extremely unlikely — vector is bundled).
      */
-    fun build(context: Context, timeText: String, overlapLabel: String): CharSequence {
+    fun build(
+        context: Context,
+        timeText: String?,
+        statusLabel: String,
+        status: TimeBadgeStatus = TimeBadgeStatus.OVERLAP
+    ): CharSequence {
+        val prefix = if (timeText.isNullOrEmpty()) "" else "$timeText $MIDDLE_DOT "
         val icon = AppCompatResources.getDrawable(context, R.drawable.trp_ic_warning)
-            ?: return "$timeText $MIDDLE_DOT $overlapLabel"
+            ?: return "$prefix$statusLabel"
 
         val density = context.resources.displayMetrics.density
         val sizePx = (ICON_SIZE_DP * density).toInt()
@@ -36,7 +57,12 @@ object TimeOverlapTextBuilder {
         // Add a touch of right padding so the icon doesn't kiss the label text.
         icon.setBounds(0, 0, sizePx + paddingPx, sizePx)
 
-        val builder = SpannableStringBuilder("$timeText $MIDDLE_DOT ")
+        if (status == TimeBadgeStatus.EXPIRED) {
+            val tint = ContextCompat.getColor(context, R.color.trp_expired_fg)
+            DrawableCompat.setTint(icon.mutate(), tint)
+        }
+
+        val builder = SpannableStringBuilder(prefix)
         val iconStart = builder.length
         builder.append(" ")
         builder.setSpan(
@@ -46,7 +72,7 @@ object TimeOverlapTextBuilder {
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
         )
         builder.append(" ")
-        builder.append(overlapLabel)
+        builder.append(statusLabel)
         return builder
     }
 }

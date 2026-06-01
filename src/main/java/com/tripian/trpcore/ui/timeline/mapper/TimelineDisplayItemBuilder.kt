@@ -108,7 +108,9 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 isReserved = true,
                                 segmentIndex = index,
                                 city = getCityForSegment(segment, timeline, cities),
-                                planId = planId
+                                planId = planId,
+                                isAvailabilityExpired =
+                                    segment.additionalData?.isAvailabilityExpired == true
                             )
                         )
                     }
@@ -127,6 +129,15 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             item is TimelineDisplayItem.Recommendations && item.city?.id == cityId
                         } + 1
 
+                        // Snapshot expired flags into a Set so the data class
+                        // equality (and therefore the outer DiffUtil) reacts when
+                        // the availability sweep mutates step.isAvailabilityExpired
+                        // in-place. Without this, RecommendationsVH never re-binds
+                        // after the sweep and the expired pill never reaches the UI.
+                        val expiredStepIds = steps
+                            .filter { it.isAvailabilityExpired }
+                            .map { it.id }
+                            .toSet()
                         items.add(
                             TimelineDisplayItem.Recommendations(
                                 plan = plan,
@@ -134,7 +145,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 segment = segment,
                                 segmentIndex = index,
                                 cachedCity = getCityForSegment(segment, timeline, cities),
-                                recommendationIndex = recommendationIndex
+                                recommendationIndex = recommendationIndex,
+                                expiredStepIds = expiredStepIds
                             )
                         )
                     }

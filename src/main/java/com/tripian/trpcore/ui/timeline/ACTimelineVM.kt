@@ -921,7 +921,26 @@ class ACTimelineVM @Inject constructor(
     // DATA PROCESSING
     // =====================
 
+    private fun populateCitiesInSegments(timeline: Timeline) {
+        val segments = timeline.tripProfile?.segments ?: return
+        val plans = timeline.plans ?: return
+        segments.forEachIndexed { index, segment ->
+            if ((segment.cityId ?: 0) > 0) return@forEachIndexed
+            val planCityId = plans.getOrNull(index)?.city?.id ?: return@forEachIndexed
+            if (planCityId > 0) {
+                segment.cityId = planCityId
+            }
+        }
+    }
+
     private fun processTimeline(timeline: Timeline) {
+        // Server returns booked/reserved/itinerary segments without a cityId in
+        // many multi-city responses; the plan at the same index always carries
+        // the resolved city. Backfill via index mapping (NOT coordinate match —
+        // close-by destinations would collide) before anything downstream reads
+        // tripProfile.segments.
+        populateCitiesInSegments(timeline)
+
         _timeline.value = timeline
 
         // Update saved plans count (filter out already reserved activities)
@@ -967,7 +986,13 @@ class ACTimelineVM @Inject constructor(
             performSyncOperations(timeline)
         }
 
-        // Theme 17: kick off the post-load availability sweep in the background.
+        // Theme 17: every processed timeline is a fresh snapshot — the prior
+        // sweep's `hasRunInitialCheck` guard must be cleared here, otherwise
+        // paths that hand a new Timeline straight to processTimeline (smart
+        // recommendation generation, post-step-add wait, sync ops) would skip
+        // the sweep on the new instance and lose the @Transient expired flag,
+        // letting conflict styling shadow the red "Not available" badge.
+        availabilityCheckManager.reset()
         triggerAvailabilitySweep(timeline)
     }
 
@@ -2160,8 +2185,13 @@ class ACTimelineVM @Inject constructor(
         val tripItems = itinerary?.tripItems ?: emptyList()
         val favouriteItems = itinerary?.favouriteItems ?: emptyList()
 
+        // Host can re-open the SDK with an extended/shortened date range without
+        // changing tripItems/favourites — the TimelineDate segment must still be
+        // realigned to the new range, so date sync runs independently of the
+        // activity-driven sync pipeline.
         if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
-            return  // Sync'e gerek yok
+            syncDateRangeOnly(timeline)
+            return
         }
 
         // STEP 1: City resolution (BLOCKING - diğer operasyonlar bunu bekler)
@@ -2179,6 +2209,19 @@ class ACTimelineVM @Inject constructor(
                 // Fallback: mevcut map ile devam et
                 performParallelSyncOperations(timeline, tripItems, cityNameToIdMap.toMap())
             }
+        )
+    }
+
+    /**
+     * Date-only sync path. Runs when no tripItems/favourites are supplied so
+     * the heavy parallel/sequential pipeline is unnecessary, but the
+     * TimelineDate segment still needs to reflect the host-supplied range.
+     */
+    private fun syncDateRangeOnly(timeline: Timeline) {
+        updateDateRangeUseCase.on(
+            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
+            success = { refreshTimelineAfterSync() },
+            error = { refreshTimelineAfterSync() }
         )
     }
 

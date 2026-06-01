@@ -11,6 +11,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.FilterData
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
+import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.util.AlertType
@@ -28,6 +29,7 @@ import javax.inject.Inject
 class ACPOIListingVM @Inject constructor(
     private val searchPOIsUseCase: SearchPOIsUseCase,
     private val createManualPoiSegmentUseCase: CreateManualPoiSegmentUseCase,
+    private val fetchTimelineUseCase: FetchTimelineUseCase,
     private val getPoiCategoriesUseCase: GetPoiCategories,
     private val poiRepository: PoiRepository
 ) : BaseViewModel() {
@@ -48,11 +50,20 @@ class ACPOIListingVM @Inject constructor(
     private val _showTimeSelection = MutableLiveData<Poi?>()
     val showTimeSelection: LiveData<Poi?> = _showTimeSelection
 
-    private val _segmentCreated = MutableLiveData<Boolean>()
-    val segmentCreated: LiveData<Boolean> = _segmentCreated
+    /**
+     * Emitted after the manual-POI segment was created AND the timeline was
+     * re-fetched successfully. Carries the POI name and the selected date so the
+     * Activity can format and show the success toast. Activity sets it back to null
+     * after consuming.
+     */
+    data class AddedToItineraryResult(val poiName: String, val selectedDate: Date)
 
-    private val _isCreatingSegment = MutableLiveData<Boolean>()
-    val isCreatingSegment: LiveData<Boolean> = _isCreatingSegment
+    private val _addedToItinerarySuccess = MutableLiveData<AddedToItineraryResult?>()
+    val addedToItinerarySuccess: LiveData<AddedToItineraryResult?> = _addedToItinerarySuccess
+
+    fun clearAddedToItinerarySuccess() {
+        _addedToItinerarySuccess.value = null
+    }
 
     // Filter & Sort state
     private val _currentFilter = MutableLiveData(FilterData())
@@ -327,8 +338,15 @@ class ACPOIListingVM @Inject constructor(
     // CREATE SEGMENT
     // =====================
 
+    /**
+     * Confirm flow from [TimeSelectionBottomSheet]: keep the time picker open,
+     * show a bottom-sheet "adding to itinerary" loader, create the manual-POI
+     * segment, then re-fetch the timeline so the host has the latest state cached.
+     * Only after the fetch completes do we hide the loader and emit the success event
+     * — the Activity then dismisses the sheet and shows the toast.
+     */
     fun createManualPoiSegment(poi: Poi, selectedDate: Date, startTime: String, endTime: String) {
-        _isCreatingSegment.value = true
+        showBottomSheetLoader(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary")
 
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
@@ -343,12 +361,33 @@ class ACPOIListingVM @Inject constructor(
                 cityId = cityId
             ),
             success = { _ ->
-                _isCreatingSegment.value = false
-                _segmentCreated.value = true
+                refreshTimelineAfterSegment(poi, selectedDate)
             },
             error = { error ->
-                _isCreatingSegment.value = false
+                hideLottieLoading()
                 showAlert(AlertType.ERROR, error.errorDesc)
+            }
+        )
+    }
+
+    /** Second leg of the add-POI flow: re-fetch the timeline so we have the latest
+     *  state before signaling success to the UI. */
+    private fun refreshTimelineAfterSegment(poi: Poi, selectedDate: Date) {
+        fetchTimelineUseCase.on(
+            params = FetchTimelineUseCase.Params(tripHash = tripHash),
+            success = { _ ->
+                hideLottieLoading()
+                _addedToItinerarySuccess.value = AddedToItineraryResult(
+                    poiName = poi.name.orEmpty(),
+                    selectedDate = selectedDate
+                )
+            },
+            error = { error ->
+                hideLottieLoading()
+                showAlert(
+                    AlertType.ERROR,
+                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                )
             }
         )
     }

@@ -136,9 +136,9 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             initialSelectedDay = viewModel.getSelectedDate()
         )
 
-        timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, _ ->
+        timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible ->
             // Create reserved activity segment with selected date and time
-            viewModel.createReservedActivitySegment(selectedDate, startTime)
+            viewModel.createReservedActivitySegment(selectedDate, startTime, endTime, isFlexible)
         }
 
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)

@@ -56,9 +56,9 @@ class StepActivityVH(
         // Order badge
         binding.tvOrder.text = order.toString()
 
-        // Apply badge styling — precedence (Theme 17): expired > conflict > normal.
-        // Expired wins over conflict so the "Not available" cue is never hidden by a
-        // time-overlap badge on the same step.
+        // Badge styling precedence (Theme 17): expired > conflict > normal.
+        // Expired wins over conflict so the red "Not available" cue is never
+        // hidden by a time-overlap badge on the same step.
         when {
             isAvailabilityExpired -> {
                 binding.orderTimeContainer
@@ -87,7 +87,12 @@ class StepActivityVH(
                 isAvailabilityExpired -> {
                     val label = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
                         .ifBlank { "Not available" }
-                    "$timeText $label"
+                    TimeOverlapTextBuilder.build(
+                        binding.tvTime.context,
+                        timeText,
+                        label,
+                        TimeBadgeStatus.EXPIRED
+                    )
                 }
                 showTimeOverlapText -> {
                     val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)

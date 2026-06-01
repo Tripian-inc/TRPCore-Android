@@ -50,6 +50,18 @@ fun String.containsAnyWord(words: List<String>): Boolean {
     return words.any { word -> this.contains(word, ignoreCase = true) }
 }
 
+/**
+ * Converts a segment-level "yyyy-MM-dd HH:mm" datetime into the ISO-8601
+ * "yyyy-MM-dd'T'HH:mm:ss" shape that `additionalData.startDatetime` /
+ * `additionalData.endDatetime` expect (RESERVED_ACTIVITY_SEGMENT spec §3.2).
+ *
+ * Segment-level and additionalData formats intentionally differ — segment-level
+ * stays space-separated, additionalData uses ISO. Seconds are always emitted as
+ * `:00` because the source string never carries them and the spec example fixes
+ * them to zero.
+ */
+fun String.toAdditionalDataIso(): String = "$this:00".replace(' ', 'T')
+
 fun Uri.addQueryParameterIfAbsent(key: String, value: String): Uri {
     // Check if the key is already present
     if (this.getQueryParameter(key) != null) {

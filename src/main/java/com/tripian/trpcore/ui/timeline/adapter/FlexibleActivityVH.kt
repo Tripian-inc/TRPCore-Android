@@ -46,12 +46,37 @@ class FlexibleActivityVH(
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
         onReservationClick: (TimelineDisplayItem.FlexibleActivity) -> Unit
     ) {
-        // Order-time row content
-        binding.tvFlexibleTitle.text =
-            getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE).ifBlank { "Flexible entry" }
-        binding.tvFlexibleSubtitle.text =
-            getLanguage(LanguageConst.TIMELINE_FLEXIBLE_SUBTITLE).ifBlank { "Check the timetable" }
-        applyOrderRowStyle(muted = isPastDayMode)
+        // Order-time row content. When the activity is no longer available,
+        // the "Flexible entry / Check the timetable" track is replaced with
+        // the same red icon + "Not available" badge used on the timed
+        // activity cells, and the container swaps from the dashed flexible
+        // background to the solid red-bordered expired one so all activity
+        // cells share the same expired pill treatment.
+        if (item.isAvailabilityExpired) {
+            val notAvailableLabel = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
+                .ifBlank { "Not available" }
+            binding.orderTimeContainer
+                .setBackgroundResource(R.drawable.trp_bg_order_time_container_expired)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
+            binding.tvFlexibleTitle.text = TimeOverlapTextBuilder.build(
+                binding.tvFlexibleTitle.context,
+                timeText = null,
+                statusLabel = notAvailableLabel,
+                status = TimeBadgeStatus.EXPIRED
+            )
+            binding.tvFlexibleSubtitle.visibility = View.GONE
+            applyOrderRowStyle(muted = isPastDayMode)
+        } else {
+            binding.orderTimeContainer
+                .setBackgroundResource(R.drawable.trp_bg_order_time_container_flexible)
+            binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
+            binding.tvFlexibleTitle.text =
+                getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE).ifBlank { "Flexible entry" }
+            binding.tvFlexibleSubtitle.text =
+                getLanguage(LanguageConst.TIMELINE_FLEXIBLE_SUBTITLE).ifBlank { "Check the timetable" }
+            binding.tvFlexibleSubtitle.visibility = View.VISIBLE
+            applyOrderRowStyle(muted = isPastDayMode)
+        }
 
         // Title
         binding.tvTitle.text = item.title

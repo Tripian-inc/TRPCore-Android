@@ -62,7 +62,15 @@ sealed class TimelineDisplayItem : Serializable {
         override val order: Int = 1,
         override val planId: String? = null,
         val hasConflict: Boolean = false,
-        val showTimeOverlapText: Boolean = false
+        val showTimeOverlapText: Boolean = false,
+        /**
+         * Captured at construction (snapshot of the @Transient flag on the
+         * segment's additionalData). Stored on the data class so the outer
+         * DiffUtil sees a change when the availability sweep flips it — the
+         * underlying [TimelineSegment] instance is mutated in-place and would
+         * otherwise compare equal across rebuilds.
+         */
+        val isAvailabilityExpired: Boolean = false
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -103,10 +111,6 @@ sealed class TimelineDisplayItem : Serializable {
         /** Whether the activity has no real-world coordinate (Theme 6). */
         val isNoLocation: Boolean
             get() = segment.additionalData?.isNoLocation == true
-
-        /** Whether the booking is no longer available on its booked date (Theme 17). */
-        val isAvailabilityExpired: Boolean
-            get() = segment.additionalData?.isAvailabilityExpired == true
     }
 
     /**
@@ -114,6 +118,11 @@ sealed class TimelineDisplayItem : Serializable {
      *
      * @param conflictingStepIds Set of step IDs that have visual conflicts (ALL overlapping steps)
      * @param timeOverlapStepIds Set of step IDs that should show "Time Overlap" text (only from different plans)
+     * @param expiredStepIds Set of activity-step IDs whose booked time is no longer
+     *   available. Exists so the post-load availability sweep can re-trigger DiffUtil
+     *   rebinds — `step.isAvailabilityExpired` is mutated in-place on the same
+     *   [TimelineStep] instances, so without this set the outer DiffUtil sees the
+     *   step list as unchanged and never re-renders the expired pill on activity steps.
      */
     data class Recommendations(
         val plan: TimelinePlan,
@@ -127,7 +136,8 @@ sealed class TimelineDisplayItem : Serializable {
         val cachedCity: City? = null,  // City from cache with full coordinate data
         val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
         val conflictingStepIds: Set<Int> = emptySet(),  // Step IDs with visual conflicts (ALL overlapping)
-        val timeOverlapStepIds: Set<Int> = emptySet()  // Step IDs that show "Time Overlap" text
+        val timeOverlapStepIds: Set<Int> = emptySet(),  // Step IDs that show "Time Overlap" text
+        val expiredStepIds: Set<Int> = emptySet()
     ) : TimelineDisplayItem() {
         override val planId: String? get() = plan.id
         override val startTime: Date?
