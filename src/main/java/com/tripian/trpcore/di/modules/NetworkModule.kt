@@ -27,6 +27,31 @@ import javax.inject.Singleton
 @Module
 class NetworkModule {
 
+    /**
+     * Mirrors the iOS SDK's User-Agent string:
+     *   TRPCoreKit-Android (<bundleId>/<version>; Build/<build>; Android/<osVersion>; <device>)
+     */
+    private fun buildUserAgent(app: Application): String {
+        val pkg = app.packageName
+        val info = try {
+            app.packageManager.getPackageInfo(pkg, 0)
+        } catch (_: Exception) {
+            null
+        }
+        val appVersion = info?.versionName ?: "0"
+        val buildNumber = when {
+            info == null -> "0"
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P -> info.longVersionCode.toString()
+            else -> {
+                @Suppress("DEPRECATION")
+                info.versionCode.toString()
+            }
+        }
+        val osVersion = Build.VERSION.RELEASE ?: "0"
+        val deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}".trim()
+        return "TRPCoreKit-Android ($pkg/$appVersion; Build/$buildNumber; Android/$osVersion; $deviceModel)"
+    }
+
     @Provides
     @Singleton
     internal fun provideTOne(appConfig: AppConfig, app: Application, pref: Preferences): TRPRest {
@@ -60,7 +85,7 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    internal fun provideOkHttp(appConfig: AppConfig, pinner: CertificatePinner): OkHttpClient {
+    internal fun provideOkHttp(appConfig: AppConfig, app: Application, pinner: CertificatePinner): OkHttpClient {
         val builder = OkHttpClient.Builder()
         val interceptor = HttpLoggingInterceptor {
             Log.e("OkHttp", it)
@@ -74,12 +99,17 @@ class NetworkModule {
 
         builder.certificatePinner(pinner)
 
+        val userAgent = buildUserAgent(app)
+
         builder.addInterceptor { chain ->
             val originalRequest = chain.request()
 
             val newRequestBuilder = originalRequest.newBuilder()
 
+            // `header(...)` (not `addHeader`) so we overwrite OkHttp's default
+            // `okhttp/<ver>` User-Agent rather than appending alongside it.
             newRequestBuilder
+                .header("User-Agent", userAgent)
                 .addHeader("Content-Type", "application/json;charset=UTF-8")
                 .cacheControl(CacheControl.FORCE_NETWORK)
 

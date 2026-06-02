@@ -709,8 +709,29 @@ class TRPCore {
             val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
             val body = jsonBody.toRequestBody(mediaType)
 
+            val ctxForUa = com.tripian.one.network.TConfig.appContext
+            val pkg = ctxForUa.packageName
+            val pInfo = try {
+                ctxForUa.packageManager.getPackageInfo(pkg, 0)
+            } catch (_: Exception) {
+                null
+            }
+            val appVersion = pInfo?.versionName ?: "0"
+            val buildNumber = when {
+                pInfo == null -> "0"
+                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P -> pInfo.longVersionCode.toString()
+                else -> {
+                    @Suppress("DEPRECATION")
+                    pInfo.versionCode.toString()
+                }
+            }
+            val osVersion = android.os.Build.VERSION.RELEASE ?: "0"
+            val deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}".trim()
+            val userAgent = "TRPCoreKit-Android ($pkg/$appVersion; Build/$buildNumber; Android/$osVersion; $deviceModel)"
+
             val request = okhttp3.Request.Builder()
                 .url("${appConfig.tripianServiceUrl()}/${appConfig.apiVersion()}/misc/logs")
+                .header("User-Agent", userAgent)
                 .addHeader("x-api-key", appConfig.apiKey())
                 .post(body)
                 .build()

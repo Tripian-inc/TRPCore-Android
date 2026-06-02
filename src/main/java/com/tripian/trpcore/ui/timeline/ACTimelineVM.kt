@@ -202,6 +202,15 @@ class ACTimelineVM @Inject constructor(
     // Sync operations flag - ensures sync only runs once after initial fetch
     private var syncOperationsCompleted = false
 
+    /**
+     * Segment indices queued for background deletion (city removed from
+     * itinerary, day outside trip range). Hidden from the timeline list
+     * client-side until the background DELETEs complete and the silent
+     * refresh reconciles. Empty during normal operation; populated by
+     * [schedulePostSyncDeletion] and cleared after the post-delete refresh.
+     */
+    private var pendingDeletionSegmentIndices: Set<Int> = emptySet()
+
     // Onboarding is deferred until after the first timeline load so the user
     // sees populated data behind the bottom sheet, not an empty placeholder.
     // Flag flips on first processTimeline so subsequent refreshes/syncs don't
@@ -1226,7 +1235,8 @@ class ACTimelineVM @Inject constructor(
             date = selectedDate,
             cities = _cities.value ?: emptyList(),
             collapsedSectionCityIds = collapsedSectionCityIds,
-            emptyStateMessage = getLanguageForKey(LanguageConst.NO_PLANS_FOR_DAY)
+            emptyStateMessage = getLanguageForKey(LanguageConst.NO_PLANS_FOR_DAY),
+            hiddenSegmentIndices = pendingDeletionSegmentIndices
         )
 
         // Apply preserved collapse states + cached route info to new items.
@@ -2397,48 +2407,21 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Sequential Op 2: Remove deleted cities
-     *
-     * TEMPORARILY DISABLED: paired with the out-of-range cleanup pause —
-     * automatic segment removal is causing downstream sync regressions, so
-     * we skip the city-deletion sweep too and forward straight to the next
-     * step. Re-enable both at once when the sync pipeline issues are fixed.
+     * Sequential Op 2 (was): city/out-of-range deletion. The DELETEs used to
+     * run in the critical sync path right before [refreshTimelineAfterSync],
+     * but their descending-index sweep raced with the AddMissing parallel op
+     * that inserted at the tail — new bookings ended up clobbered or
+     * mis-ordered. Both cleanups are now deferred to
+     * [schedulePostSyncDeletion], which runs strictly AFTER the silent
+     * refresh has finished writing the new state, so this stage simply
+     * forwards to the refresh now.
      */
     private fun performCityDeletionSync(timeline: Timeline) {
         performOutOfRangeSegmentCleanup(timeline)
-        // val destinations = itinerary?.destinationItems ?: emptyList()
-        //
-        // removeSegmentsForDeletedCitiesUseCase.on(
-        //     params = RemoveSegmentsForDeletedCitiesUseCase.Params(_tripHash, timeline, destinations),
-        //     success = { performOutOfRangeSegmentCleanup(timeline) },
-        //     error = {
-        //         performOutOfRangeSegmentCleanup(timeline)
-        //     }
-        // )
     }
 
-    /**
-     * Sequential Op 3: Remove segments whose day falls outside the new
-     * TimelineDate range (e.g. host shifted 1–5 June to 3–7 June — June 1
-     * and June 2 segments must go). Runs after city deletion so the two
-     * cleanups never race over the same index space.
-     */
     private fun performOutOfRangeSegmentCleanup(timeline: Timeline) {
-        // TEMPORARILY DISABLED: out-of-range removal is currently causing
-        // downstream sync regressions. Skip the cleanup but keep the
-        // post-cleanup refresh so the pipeline still flows into the silent
-        // refresh stage. Re-enable once the sync pipeline issues are fixed.
         refreshTimelineAfterSync()
-        // val it = itinerary
-        // if (it == null) {
-        //     refreshTimelineAfterSync()
-        //     return
-        // }
-        // removeOutOfRangeSegmentsUseCase.on(
-        //     params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, it, timeline),
-        //     success = { refreshTimelineAfterSync() },
-        //     error = { refreshTimelineAfterSync() }
-        // )
     }
 
     /**
@@ -2450,9 +2433,117 @@ class ACTimelineVM @Inject constructor(
             success = { timeline ->
                 // processTimeline'ı çağır ama sync tekrar çalışmayacak (syncOperationsCompleted=true)
                 processTimeline(timeline)
+                // Initial sync is fully settled — now we can safely run the
+                // delete sweeps in the background. Doing this last avoids the
+                // index race with the AddMissing/transition operations that
+                // mutate the tail of the segment list.
+                schedulePostSyncDeletion(timeline)
             },
             error = { _ -> }
         )
+    }
+
+    /**
+     * Background deletion of segments that no longer belong on the timeline
+     * (city removed from itinerary; day outside the trip's TimelineDate
+     * range). Computes the target indices client-side, hides them from the
+     * UI immediately by stashing them in [pendingDeletionSegmentIndices], then
+     * fires the two cleanup use cases sequentially. A silent fetch at the
+     * end reconciles local state with the server and clears the hidden set.
+     */
+    private fun schedulePostSyncDeletion(timeline: Timeline) {
+        val itineraryData = itinerary ?: return
+        val indices = computeBackgroundDeletionIndices(timeline, itineraryData)
+        if (indices.isEmpty()) return
+
+        pendingDeletionSegmentIndices = indices
+        updateDisplayItems()
+
+        removeSegmentsForDeletedCitiesUseCase.on(
+            params = RemoveSegmentsForDeletedCitiesUseCase.Params(
+                _tripHash,
+                timeline,
+                itineraryData.destinationItems
+            ),
+            success = { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) },
+            error = { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
+        )
+    }
+
+    private fun runOutOfRangeDeletionThenSilentRefresh(
+        timeline: Timeline,
+        itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+    ) {
+        removeOutOfRangeSegmentsUseCase.on(
+            params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, itineraryData, timeline),
+            success = { silentRefreshAfterBackgroundDeletion() },
+            error = { silentRefreshAfterBackgroundDeletion() }
+        )
+    }
+
+    private fun silentRefreshAfterBackgroundDeletion() {
+        fetchTimelineUseCase.on(
+            params = FetchTimelineUseCase.Params(_tripHash),
+            success = { fresh ->
+                // Server is now in sync; the hidden indices were tied to the
+                // PRE-delete timeline so we drop them before re-rendering.
+                pendingDeletionSegmentIndices = emptySet()
+                processTimeline(fresh)
+            },
+            error = {
+                // Refresh failed but local state already hid the items. Keep
+                // the hidden set so the UI doesn't snap them back; next
+                // successful refresh will reconcile.
+            }
+        )
+    }
+
+    /**
+     * Computes which segment indices should be hidden + deleted in the
+     * background. Combines the deleted-city predicate
+     * ([RemoveSegmentsForDeletedCitiesUseCase]) and the out-of-range predicate
+     * ([RemoveOutOfRangeSegmentsUseCase]) so the UI hides the union before the
+     * server-side sweeps fire.
+     */
+    private fun computeBackgroundDeletionIndices(
+        timeline: Timeline,
+        itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+    ): Set<Int> {
+        val segments = timeline.tripProfile?.segments ?: return emptySet()
+        val currentCityIds = itineraryData.destinationItems
+            .mapNotNull { d -> d.cityId }
+            .filter { id -> id > 0 }
+            .toSet()
+        val tripStart = itineraryData.startDatetime.take(10).takeIf { d ->
+            d.length == 10 && d[4] == '-' && d[7] == '-'
+        }
+        val tripEnd = itineraryData.endDatetime.take(10).takeIf { d ->
+            d.length == 10 && d[4] == '-' && d[7] == '-'
+        }
+
+        val out = mutableSetOf<Int>()
+        segments.forEachIndexed { idx, seg ->
+            if (seg.segmentType == "TimelineDate") return@forEachIndexed
+            if (seg.title == "TimelineDate" && !seg.available) return@forEachIndexed
+
+            // Deleted-city predicate.
+            val cityId = seg.cityId
+            if (cityId == null || cityId <= 0 || cityId !in currentCityIds) {
+                out += idx
+                return@forEachIndexed
+            }
+
+            // Out-of-range predicate.
+            if (tripStart != null && tripEnd != null) {
+                val day = seg.startDate?.take(10)?.takeIf {
+                    it.length == 10 && it[4] == '-' && it[7] == '-'
+                }
+                if (day != null && (day < tripStart || day > tripEnd)) {
+                    out += idx
+                }
+            }
+        }
+        return out
     }
 
     companion object {

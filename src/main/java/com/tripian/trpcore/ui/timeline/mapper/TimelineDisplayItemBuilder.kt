@@ -47,9 +47,10 @@ class TimelineDisplayItemBuilder @Inject constructor(
         date: Date,
         cities: List<City>,
         collapsedSectionCityIds: Set<Int>,
-        emptyStateMessage: String
+        emptyStateMessage: String,
+        hiddenSegmentIndices: Set<Int> = emptySet()
     ): List<TimelineDisplayItem> {
-        val rawItems = generateForDay(timeline, date, cities, emptyStateMessage)
+        val rawItems = generateForDay(timeline, date, cities, emptyStateMessage, hiddenSegmentIndices)
         val withConflicts = detectTimeConflicts(rawItems)
         return groupItemsByCity(withConflicts, collapsedSectionCityIds)
     }
@@ -62,7 +63,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
         timeline: Timeline,
         date: Date,
         cities: List<City>,
-        emptyStateMessage: String
+        emptyStateMessage: String,
+        hiddenSegmentIndices: Set<Int>
     ): List<TimelineDisplayItem> {
         val items = mutableListOf<TimelineDisplayItem>()
         val dateStr = date.toApiDateString()
@@ -70,6 +72,10 @@ class TimelineDisplayItemBuilder @Inject constructor(
 
         segments.forEachIndexed { index, segment ->
             if (segment.startDate?.startsWith(dateStr) != true) return@forEachIndexed
+            // Hide segments that are queued for background deletion (city
+            // removed from itinerary, day outside trip range). The actual
+            // server-side delete happens after initial timeline shows.
+            if (index in hiddenSegmentIndices) return@forEachIndexed
 
             val segmentType = segment.segmentType
             val plan = timeline.plans?.getOrNull(index)
