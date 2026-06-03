@@ -72,8 +72,7 @@ private class CenteredImageSpan(d: Drawable) : ImageSpan(d, ALIGN_BASELINE) {
 object TimeOverlapTextBuilder {
 
     private const val MIDDLE_DOT = " · "
-    private const val ICON_SIZE_DP = 14f
-    private const val ICON_PADDING_DP = 2f
+    private const val ICON_SIZE_DP = 16f
 
     /**
      * Build the spanned label. Falls back to a plain string if the warning drawable
@@ -91,9 +90,14 @@ object TimeOverlapTextBuilder {
 
         val density = context.resources.displayMetrics.density
         val sizePx = (ICON_SIZE_DP * density).toInt()
-        val paddingPx = (ICON_PADDING_DP * density).toInt()
-        // Add a touch of right padding so the icon doesn't kiss the label text.
-        icon.setBounds(0, 0, sizePx + paddingPx, sizePx)
+        // Square bounds so the vector renders at its native 1:1 aspect ratio.
+        // Spacing between the glyph and the label is provided by the trailing
+        // space character appended to the SpannableStringBuilder below — baking
+        // extra width into the drawable bounds (as the older `+ paddingPx`
+        // variant did) horizontally stretches the icon, which is what made the
+        // expired pill's warning triangle look noticeably wider than the same
+        // glyph in the conflict banner.
+        icon.setBounds(0, 0, sizePx, sizePx)
 
         if (status == TimeBadgeStatus.EXPIRED) {
             val tint = ContextCompat.getColor(context, R.color.trp_expired_fg)

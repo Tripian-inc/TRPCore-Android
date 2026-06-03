@@ -61,6 +61,16 @@ class FlexibleActivityVH(
             binding.orderTimeContainer
                 .setBackgroundResource(R.drawable.trp_bg_order_time_container_expired)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
+            // Match the timed cells' badge text style — XML keeps tvFlexibleTitle
+            // semibold for the normal "Flexible entry" title, but inside the
+            // expired pill the whole spannable should render in the same medium
+            // weight that `tvTime` uses on Reserved/Step activity cells so the
+            // badge looks consistent across all activity types.
+            binding.tvFlexibleTitle.typeface =
+                androidx.core.content.res.ResourcesCompat.getFont(
+                    binding.tvFlexibleTitle.context,
+                    R.font.medium
+                )
             binding.tvFlexibleTitle.text = TimeOverlapTextBuilder.build(
                 binding.tvFlexibleTitle.context,
                 timeText = flexibleLabel,
@@ -73,6 +83,14 @@ class FlexibleActivityVH(
             binding.orderTimeContainer
                 .setBackgroundResource(R.drawable.trp_bg_order_time_container_flexible)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
+            // Restore the XML default (semibold) so a recycled VH that just
+            // rendered the expired state doesn't keep its medium typeface for
+            // the normal "Flexible entry" title.
+            binding.tvFlexibleTitle.typeface =
+                androidx.core.content.res.ResourcesCompat.getFont(
+                    binding.tvFlexibleTitle.context,
+                    R.font.semibold
+                )
             binding.tvFlexibleTitle.text =
                 getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE).ifBlank { "Flexible entry" }
             binding.tvFlexibleSubtitle.text =
