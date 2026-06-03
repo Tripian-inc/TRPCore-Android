@@ -6,9 +6,6 @@ import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
@@ -21,6 +18,7 @@ import com.tripian.trpcore.util.widget.BottomToast
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.ToolbarProperties
 import com.tripian.trpcore.util.dialog.DGLockScreen
+import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.setViewListener
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
@@ -75,11 +73,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         setContentView(binding.root)
 
         // Apply window insets to handle status bar
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updatePadding(top = insets.top)
-            WindowInsetsCompat.CONSUMED
-        }
+        binding.root.consumeSystemBarPadding(top = true)
 
         viewModel = ViewModelProviders.of(this, viewModelFactory)
             .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)

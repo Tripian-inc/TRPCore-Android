@@ -23,6 +23,7 @@
         android:layout_height="32dp"
         android:background="@drawable/trp_bg_order_time_container_flexible"
         android:gravity="center_vertical"
+        android:paddingEnd="10dp"
         android:orientation="horizontal">
 
         <!-- Order Badge with U+2212 minus character -->
@@ -59,7 +60,6 @@
             android:layout_width="wrap_content"
             android:layout_height="32dp"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="10dp"
             android:fontFamily="@font/medium"
             android:gravity="center_vertical"
             android:includeFontPadding="false"

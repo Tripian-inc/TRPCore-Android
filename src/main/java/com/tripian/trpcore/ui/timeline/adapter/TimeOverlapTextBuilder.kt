@@ -1,6 +1,9 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.ImageSpan
@@ -8,6 +11,8 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import com.tripian.trpcore.R
+import com.tripian.trpcore.ui.timeline.adapter.TimeBadgeStatus.EXPIRED
+import com.tripian.trpcore.ui.timeline.adapter.TimeBadgeStatus.OVERLAP
 
 /**
  * Two visual states the badge can take:
@@ -19,6 +24,39 @@ import com.tripian.trpcore.R
  * background, order chip) carries the rest of the state's color cue.
  */
 enum class TimeBadgeStatus { OVERLAP, EXPIRED }
+
+/**
+ * `ImageSpan` variant that aligns the drawable's vertical center to the text
+ * line's vertical center (using ascent/descent average) instead of the
+ * baseline. The stock `ImageSpan.ALIGN_BASELINE` sits a symmetric icon — like
+ * the warning triangle — visibly below the middle of the text; the stock
+ * `ALIGN_CENTER` only exists from API 29+. This subclass works on every
+ * supported API and renders the same on all of them.
+ */
+private class CenteredImageSpan(d: Drawable) : ImageSpan(d, ALIGN_BASELINE) {
+    override fun draw(
+        canvas: Canvas,
+        text: CharSequence?,
+        start: Int,
+        end: Int,
+        x: Float,
+        top: Int,
+        y: Int,
+        bottom: Int,
+        paint: Paint
+    ) {
+        val b = drawable
+        val fm = paint.fontMetricsInt
+        // y is the baseline. Text vertical centre = y + (ascent + descent) / 2.
+        // Translate so the drawable's vertical centre lands on that point.
+        val textCenter = y + (fm.ascent + fm.descent) / 2
+        val transY = textCenter - b.bounds.height() / 2
+        canvas.save()
+        canvas.translate(x, transY.toFloat())
+        b.draw(canvas)
+        canvas.restore()
+    }
+}
 
 /**
  * Builds the status label rendered inline in time-bearing timeline cells.
@@ -33,7 +71,7 @@ enum class TimeBadgeStatus { OVERLAP, EXPIRED }
  */
 object TimeOverlapTextBuilder {
 
-    private const val MIDDLE_DOT = "·"
+    private const val MIDDLE_DOT = " · "
     private const val ICON_SIZE_DP = 14f
     private const val ICON_PADDING_DP = 2f
 
@@ -66,7 +104,7 @@ object TimeOverlapTextBuilder {
         val iconStart = builder.length
         builder.append(" ")
         builder.setSpan(
-            ImageSpan(icon, ImageSpan.ALIGN_BASELINE),
+            CenteredImageSpan(icon),
             iconStart,
             iconStart + 1,
             Spannable.SPAN_EXCLUSIVE_EXCLUSIVE

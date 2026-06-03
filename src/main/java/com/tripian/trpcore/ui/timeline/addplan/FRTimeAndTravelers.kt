@@ -170,39 +170,22 @@ class FRTimeAndTravelers : Fragment() {
     }
 
     /**
-     * Show Compose TimePicker Dialog for end time selection
+     * Show Compose TimePicker Dialog for end time selection.
+     * End time can be picked first — when start is set, enforce end > start
+     * via the picker's minTime; when start is null, allow any time.
      */
     private fun showEndTimePicker() {
         val startTime = sharedVM.startTime.value
-
-        // Validate start time is selected first
-        if (startTime == null) {
-            showAlert(LanguageConst.ADD_PLAN_SELECT_START_TIME_FIRST)
-            return
-        }
-
         val currentTime = sharedVM.endTime.value
 
         showComposeTimePicker(
-            initialTime = currentTime ?: startTime,  // If no end time, default to start time
-            minTime = startTime,  // Minimum selectable time is start time
+            initialTime = currentTime ?: startTime,
+            minTime = startTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 sharedVM.setEndTime(time24h)
             }
         )
-    }
-
-
-    /**
-     * Show alert for missing start time
-     */
-    private fun showAlert(languageKey: String) {
-        val message = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey)
-        android.app.AlertDialog.Builder(requireContext())
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
     }
 
     private fun setupTravelers() {

@@ -142,16 +142,14 @@
         android:id="@+id/btnMainView"
         android:layout_width="wrap_content"
         android:layout_height="32dp"
-        android:layout_marginTop="24dp"
-        android:minWidth="0dp"
-        android:minHeight="0dp"
-        android:paddingVertical="0dp"
+        android:layout_marginTop="20dp"
         android:paddingHorizontal="16dp"
         android:insetTop="0dp"
         android:insetBottom="0dp"
         android:textAllCaps="false"
         android:textColor="@color/trp_text_primary"
         android:textSize="16sp"
+        android:letterSpacing="0"
         android:fontFamily="@font/medium"
         android:visibility="gone"
         app:backgroundTint="@color/trp_white"
@@ -169,6 +167,7 @@
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/dayFilterView">
 
@@ -189,7 +188,6 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:visibility="gone"
-        tools:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 

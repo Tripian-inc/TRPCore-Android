@@ -1310,6 +1310,27 @@ class ACTimelineVM @Inject constructor(
         updateDisplayItems()
     }
 
+    /**
+     * Flips the expanded/collapsed state of the Recommendations cell whose
+     * underlying plan has the given [planId]. Writing back into
+     * `_displayItems` (rather than just patching the adapter's currentList)
+     * is what lets [updateDisplayItems]' preservation pass keep the user's
+     * choice across full refreshes — e.g. when a new activity is added to
+     * the plan, the post-refresh rebuild reads the collapsed state from
+     * here instead of resetting to the default expanded value.
+     */
+    fun toggleRecommendationExpanded(planId: String) {
+        val current = _displayItems.value ?: return
+        val updated = current.map { item ->
+            if (item is TimelineDisplayItem.Recommendations && item.plan.id == planId) {
+                item.copy(isExpanded = !item.isExpanded)
+            } else {
+                item
+            }
+        }
+        _displayItems.value = updated
+    }
+
     // =====================
     // SMART RECOMMENDATIONS
     // =====================
@@ -1509,17 +1530,45 @@ class ACTimelineVM @Inject constructor(
         deleteStepUseCase.on(
             params = DeleteStepUseCase.Params(stepId),
             success = {
-                // Hand the loader off to refreshTimeline — it keeps the Lottie visible
-                // while the timeline is re-fetched and hides it on completion. Hiding
-                // here would close the loader the instant delete returns, before the
-                // timeline refresh finishes.
-                refreshTimeline()
+                // Cache-only update: drop the step from the plan it belongs to
+                // and re-render. Falling back to a full refresh is unnecessary
+                // since the only field the server changed is the step list of
+                // a single plan, which we already track locally.
+                val mutated = applyLocalStepDelete(stepId)
+                hideLottieLoading()
+                if (mutated) {
+                    republishCurrentTimeline()
+                } else {
+                    // Step wasn't found in the cached timeline — defensive
+                    // fall-through so the UI doesn't end up stale if the cache
+                    // and the server briefly disagreed.
+                    refreshTimeline()
+                }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 hideLottieLoading()
             }
         )
+    }
+
+    /**
+     * Removes the step with [stepId] from the in-memory timeline cache.
+     * Returns `true` if the cached structure actually changed — callers use
+     * this to decide between a cheap republish and a full refetch.
+     */
+    private fun applyLocalStepDelete(stepId: Int): Boolean {
+        val tl = _timeline.value ?: return false
+        var removedSomewhere = false
+        tl.plans?.forEach { plan ->
+            val current = plan.steps ?: return@forEach
+            val mutable = current as? MutableList<com.tripian.one.api.timeline.model.TimelineStep>
+                ?: current.toMutableList().also { plan.steps = it }
+            if (mutable.removeAll { it.id == stepId }) {
+                removedSomewhere = true
+            }
+        }
+        return removedSomewhere
     }
 
     /**
@@ -1548,14 +1597,39 @@ class ACTimelineVM @Inject constructor(
                 endTime = endTime
             ),
             success = {
-                // Step updated successfully, refresh timeline
-                refreshTimeline()
+                // Cache-only update: only the HH:mm portion of the matching
+                // step's start/end datetimes changes on the server, so mirror
+                // that mutation locally and re-render — no need to re-fetch
+                // the whole timeline.
+                val mutated = applyLocalStepTimeUpdate(stepId, startTime, endTime)
+                hideLottieLoading()
+                if (mutated) {
+                    republishCurrentTimeline()
+                } else {
+                    refreshTimeline()
+                }
             },
             error = { errorModel ->
                 hideLottieLoading()
                 _error.value = errorModel.errorDesc
             }
         )
+    }
+
+    private fun applyLocalStepTimeUpdate(
+        stepId: Int,
+        newStartTime: String?,
+        newEndTime: String?
+    ): Boolean {
+        val tl = _timeline.value ?: return false
+        tl.plans?.forEach { plan ->
+            plan.steps?.firstOrNull { it.id == stepId }?.let { step ->
+                newStartTime?.let { step.startDateTimes = replaceHourMinute(step.startDateTimes, it) }
+                newEndTime?.let { step.endDateTimes = replaceHourMinute(step.endDateTimes, it) }
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -1616,13 +1690,53 @@ class ACTimelineVM @Inject constructor(
                 newEndTime = endTime
             ),
             success = {
-                refreshTimeline()
+                // Cache-only update: rewrite HH:mm on the segment's own
+                // start/end dates plus the parallel additionalData fields.
+                // The use case sends a full TimelineSegmentSettings payload
+                // but does not touch the in-memory TimelineSegment, so we
+                // mirror those mutations here before re-rendering.
+                val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime)
+                hideLottieLoading()
+                if (mutated) {
+                    republishCurrentTimeline()
+                } else {
+                    refreshTimeline()
+                }
             },
             error = { errorModel ->
                 hideLottieLoading()
                 _error.value = errorModel.errorDesc
             }
         )
+    }
+
+    private fun applyLocalSegmentTimeUpdate(
+        segmentIndex: Int,
+        newStartTime: String,
+        newEndTime: String
+    ): Boolean {
+        val tl = _timeline.value ?: return false
+        val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return false
+        segment.startDate = replaceHourMinute(segment.startDate, newStartTime)
+        segment.endDate = replaceHourMinute(segment.endDate, newEndTime)
+        segment.additionalData?.let { add ->
+            add.startDatetime = replaceHourMinute(add.startDatetime, newStartTime)
+            add.endDatetime = replaceHourMinute(add.endDatetime, newEndTime)
+        }
+        return true
+    }
+
+    /**
+     * Replaces the HH:mm portion of a `yyyy-MM-dd HH:mm[:ss]` datetime string
+     * with [newHourMinute]. Returns the input unchanged when the date prefix
+     * is missing or malformed — callers fall back to a full refresh in that
+     * case rather than writing a bad value.
+     */
+    private fun replaceHourMinute(original: String?, newHourMinute: String): String? {
+        if (original.isNullOrBlank()) return original
+        val datePart = original.take(10)
+        if (datePart.length < 10 || datePart[4] != '-' || datePart[7] != '-') return original
+        return "$datePart $newHourMinute"
     }
 
     fun clearChangeTimePickerStep() {

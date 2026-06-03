@@ -12,10 +12,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
+import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProviders
 import androidx.viewbinding.ViewBinding
@@ -49,16 +47,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     open fun setListeners() {
 
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(
-                left = insets.left,
-                top = 0,
-                right = insets.right,
-                bottom = insets.bottom
-            )
-            WindowInsetsCompat.CONSUMED
-        }
+        binding.root.consumeSystemBarPadding(horizontal = true, bottom = true)
     }
 
     open fun setReceivers() {}

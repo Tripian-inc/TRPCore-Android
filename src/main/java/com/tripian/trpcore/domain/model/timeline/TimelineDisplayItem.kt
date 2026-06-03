@@ -70,7 +70,17 @@ sealed class TimelineDisplayItem : Serializable {
          * underlying [TimelineSegment] instance is mutated in-place and would
          * otherwise compare equal across rebuilds.
          */
-        val isAvailabilityExpired: Boolean = false
+        val isAvailabilityExpired: Boolean = false,
+        /**
+         * Snapshot of the segment's `startDate`/`endDate` (and additionalData
+         * fallbacks) captured at construction. `TimelineSegment` is mutated
+         * in-place by [ACTimelineVM.applyLocalSegmentTimeUpdate], and without
+         * these captured strings the outer DiffUtil sees the same segment
+         * reference and skips the rebind — so an updated time would not
+         * surface in the UI.
+         */
+        val startDateTimeSnapshot: String? = null,
+        val endDateTimeSnapshot: String? = null
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -137,7 +147,17 @@ sealed class TimelineDisplayItem : Serializable {
         val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
         val conflictingStepIds: Set<Int> = emptySet(),  // Step IDs with visual conflicts (ALL overlapping)
         val timeOverlapStepIds: Set<Int> = emptySet(),  // Step IDs that show "Time Overlap" text
-        val expiredStepIds: Set<Int> = emptySet()
+        val expiredStepIds: Set<Int> = emptySet(),
+        /**
+         * Captured `<id>:<startDateTimes>:<endDateTimes>` of each step at
+         * construction. The `steps` list reference is reused across rebuilds
+         * (Gson-backed ArrayList that the VM mutates in-place for
+         * delete/time-update operations), so without this snapshot the data
+         * class equality would always return true and the outer DiffUtil
+         * would skip the rebind. Includes step count implicitly via the
+         * joined length, so deletes also flip the value.
+         */
+        val stepFingerprint: String = ""
     ) : TimelineDisplayItem() {
         override val planId: String? get() = plan.id
         override val startTime: Date?

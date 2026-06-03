@@ -189,9 +189,9 @@ class MapItemMapper @Inject constructor() {
     }
 
     /**
-     * Builds the horizontal bottom-list items. Auto-selects the first item per city
-     * that actually has a corresponding map marker (membership tested via [markerIds]),
-     * so the list highlight always tracks a real focused marker.
+     * Builds the horizontal bottom-list items. Auto-selects the very first item
+     * in the list — only one item can be selected across the whole bottom list,
+     * regardless of city.
      */
     fun buildMapBottomItems(
         items: List<TimelineDisplayItem>,
@@ -306,17 +306,10 @@ class MapItemMapper @Inject constructor() {
             }
         }
 
-        // Select the first marker-bearing item per city. Items without a marker
-        // (flexible isNoLocation, recommendations with invalid coord, no-location
-        // booked/manual…) are skipped so the highlight stays in sync with mapSteps.
-        val selectedCities = mutableSetOf<Int>()
-        return bottomItems.map { item ->
-            val hasMarker = item.id in markerIds
-            if (hasMarker && selectedCities.add(item.cityIndex)) {
-                item.copy(isSelected = true)
-            } else {
-                item
-            }
+        // Only one item can be selected across the entire list. Initial selection
+        // is always the very first item, regardless of city or marker presence.
+        return bottomItems.mapIndexed { index, item ->
+            if (index == 0) item.copy(isSelected = true) else item
         }
     }
 

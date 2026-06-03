@@ -11,10 +11,8 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updatePadding
 import androidx.viewbinding.ViewBinding
+import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -113,16 +111,7 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
      * Setup edge-to-edge insets for proper navigation bar handling.
      */
     private fun setupWindowInsets() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updatePadding(
-                left = insets.left,
-                top = 0,
-                right = insets.right,
-                bottom = insets.bottom
-            )
-            WindowInsetsCompat.CONSUMED
-        }
+        binding.root.consumeSystemBarPadding(horizontal = true, bottom = true)
     }
 
     override fun onStart() {

@@ -19,7 +19,7 @@ class WaitForGenerationUseCase @Inject constructor(
 
     data class Params(
         val tripHash: String,
-        val maxRetries: Int = 30,
+        val maxRetries: Int = 15,
         val intervalMs: Long = 2000,
         val initialDelayMs: Long = 1000  // Initial delay before polling starts
     )
@@ -30,30 +30,36 @@ class WaitForGenerationUseCase @Inject constructor(
                 // Add initial delay to allow server to process the new segment
                 Observable.timer(p.initialDelayMs, TimeUnit.MILLISECONDS)
                     .flatMap {
-                        Observable.interval(0, p.intervalMs, TimeUnit.MILLISECONDS)
-                            .take(p.maxRetries.toLong())
-                            .flatMap {
-                                repository.fetchTimeline(p.tripHash)
-                                    .onErrorResumeNext { throwable: Throwable ->
-                                        // For 4xx client errors, stop polling and propagate error
-                                        if (throwable is HttpException && throwable.code() in 400..499) {
-                                            Observable.error(throwable)
-                                        } else {
-                                            // For other errors (network, 5xx), continue polling
-                                            Observable.empty()
-                                        }
+                        // Sequential polling: each request waits for the previous one to
+                        // complete, then waits intervalMs before retrying. Up to maxRetries
+                        // total attempts, stopping early once the timeline is generated.
+                        repository.fetchTimeline(p.tripHash)
+                            .onErrorResumeNext { throwable: Throwable ->
+                                // For 4xx client errors, stop polling and propagate error
+                                if (throwable is HttpException && throwable.code() in 400..499) {
+                                    Observable.error(throwable)
+                                } else {
+                                    // For other errors (network, 5xx), continue polling
+                                    Observable.empty()
+                                }
+                            }
+                            .repeatWhen { completions ->
+                                completions
+                                    .take((p.maxRetries - 1).toLong())
+                                    .concatMap {
+                                        Observable.timer(p.intervalMs, TimeUnit.MILLISECONDS)
                                     }
                             }
                             .filter { timeline -> timeline.isTimelineGenerated() }
                             .take(1)
+                            .switchIfEmpty(repository.fetchTimeline(p.tripHash))
                     }
-                    .timeout(p.initialDelayMs + (p.maxRetries * p.intervalMs), TimeUnit.MILLISECONDS)
                     .onErrorResumeNext { throwable: Throwable ->
                         // For 4xx errors, propagate the error (don't fetch again)
                         if (throwable is HttpException && throwable.code() in 400..499) {
                             Observable.error(throwable)
                         } else {
-                            // On timeout or other errors, fetch the latest timeline
+                            // On other errors, fetch the latest timeline as fallback
                             repository.fetchTimeline(p.tripHash)
                         }
                     }

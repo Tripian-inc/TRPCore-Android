@@ -89,7 +89,11 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             isReserved = false,
                             segmentIndex = index,
                             city = getCityForSegment(segment, timeline, cities),
-                            planId = planId
+                            planId = planId,
+                            startDateTimeSnapshot = segment.startDate
+                                ?: segment.additionalData?.startDatetime,
+                            endDateTimeSnapshot = segment.endDate
+                                ?: segment.additionalData?.endDatetime
                         )
                     )
                 }
@@ -116,7 +120,11 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 city = getCityForSegment(segment, timeline, cities),
                                 planId = planId,
                                 isAvailabilityExpired =
-                                    segment.additionalData?.isAvailabilityExpired == true
+                                    segment.additionalData?.isAvailabilityExpired == true,
+                                startDateTimeSnapshot = segment.startDate
+                                    ?: segment.additionalData?.startDatetime,
+                                endDateTimeSnapshot = segment.endDate
+                                    ?: segment.additionalData?.endDatetime
                             )
                         )
                     }
@@ -144,6 +152,14 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             .filter { it.isAvailabilityExpired }
                             .map { it.id }
                             .toSet()
+                        // Capture step id + times as a single string so the data
+                        // class equality reacts to local-mutation paths
+                        // (delete-step, update-step-time) — the underlying steps
+                        // list is reused across rebuilds and mutated in place, so
+                        // without this fingerprint DiffUtil would skip the rebind.
+                        val stepFingerprint = steps.joinToString("|") {
+                            "${it.id}:${it.startDateTimes}:${it.endDateTimes}"
+                        }
                         items.add(
                             TimelineDisplayItem.Recommendations(
                                 plan = plan,
@@ -152,7 +168,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 segmentIndex = index,
                                 cachedCity = getCityForSegment(segment, timeline, cities),
                                 recommendationIndex = recommendationIndex,
-                                expiredStepIds = expiredStepIds
+                                expiredStepIds = expiredStepIds,
+                                stepFingerprint = stepFingerprint
                             )
                         )
                     }

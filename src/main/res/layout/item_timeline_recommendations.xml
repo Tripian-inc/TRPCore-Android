@@ -64,6 +64,7 @@
                 android:layout_height="@dimen/_30sdp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Delete"
+                android:padding="1dp"
                 android:src="@drawable/trp_ic_delete_recommendation"
                 android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"

@@ -10,6 +10,7 @@ import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
@@ -210,6 +211,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             // Add separator decoration (skip last item)
             addItemDecoration(ActivitySeparatorDecoration(this@ACActivityListing))
         }
+        // Stack the device navigation bar inset onto the XML's base bottom
+        // padding so the last card clears gesture / 3-button bars.
+        binding.rvActivities.applyBottomSystemBarInsetPadding()
 
         // Category filter with icon and multi-selection support
         rebuildCategoryAdapter()

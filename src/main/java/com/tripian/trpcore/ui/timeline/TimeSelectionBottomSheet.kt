@@ -87,6 +87,12 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
                 else R.color.trp_fgWeak
             )
         )
+
+        // Confirm is only enabled when both times are picked AND end > start
+        binding.btnConfirm.isEnabled =
+            startTime != null &&
+            endTime != null &&
+            MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime)
     }
 
     private fun setupListeners() {
@@ -127,29 +133,17 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     }
 
     private fun showEndTimePicker() {
-        // Validate start time is selected first
-        if (startTime == null) {
-            showAlert(LanguageConst.ADD_PLAN_SELECT_START_TIME_FIRST)
-            return
-        }
-
+        // End time can be picked first — when start is set, enforce end > start
+        // via the picker's minTime; when start is null, allow any time.
         showComposeTimePicker(
-            initialTime = endTime ?: startTime,  // If no end time, default to start time
-            minTime = startTime,  // Minimum selectable time is start time
+            initialTime = endTime ?: startTime,
+            minTime = startTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 endTime = time24h
                 updateTimeDisplays()
             }
         )
-    }
-
-    private fun showAlert(languageKey: String) {
-        val message = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey)
-        android.app.AlertDialog.Builder(requireContext())
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
     }
 
     fun setOnTimeSelectedListener(listener: (startTime: String?, endTime: String?) -> Unit) {

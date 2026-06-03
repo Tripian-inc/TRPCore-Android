@@ -48,11 +48,14 @@ class FlexibleActivityVH(
     ) {
         // Order-time row content. When the activity is no longer available,
         // the "Flexible entry / Check the timetable" track is replaced with
-        // the same red icon + "Not available" badge used on the timed
-        // activity cells, and the container swaps from the dashed flexible
-        // background to the solid red-bordered expired one so all activity
-        // cells share the same expired pill treatment.
+        // a single composite line that keeps the "Flexible entry" prefix in
+        // place of the timed cells' "HH:mm - HH:mm", followed by the same
+        // middle-dot + red icon + "Not available" suffix the timed cells
+        // use. The container also swaps to the solid red-bordered expired
+        // pill so every activity cell shares the same expired treatment.
         if (item.isAvailabilityExpired) {
+            val flexibleLabel = getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE)
+                .ifBlank { "Flexible entry" }
             val notAvailableLabel = getLanguage(LanguageConst.TIMELINE_LABEL_NOT_AVAILABLE)
                 .ifBlank { "Not available" }
             binding.orderTimeContainer
@@ -60,7 +63,7 @@ class FlexibleActivityVH(
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
             binding.tvFlexibleTitle.text = TimeOverlapTextBuilder.build(
                 binding.tvFlexibleTitle.context,
-                timeText = null,
+                timeText = flexibleLabel,
                 statusLabel = notAvailableLabel,
                 status = TimeBadgeStatus.EXPIRED
             )

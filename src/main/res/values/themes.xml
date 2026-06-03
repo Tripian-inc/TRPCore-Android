@@ -194,6 +194,6 @@
         <item name="iconPadding">@dimen/_4sdp</item>
         <item name="iconSize">@dimen/_14sdp</item>
         <item name="strokeColor">@color/trp_lineWeak</item>
-        <item name="strokeWidth">1dp</item>
+        <item name="strokeWidth">0.5dp</item>
     </style>
 </resources>

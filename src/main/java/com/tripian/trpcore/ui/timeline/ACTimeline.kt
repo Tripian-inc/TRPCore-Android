@@ -31,12 +31,11 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toDate
-import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
+import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
 import com.tripian.trpcore.ui.timeline.adapter.TimelineAdapter
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
-import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
@@ -44,6 +43,7 @@ import com.tripian.trpcore.ui.timeline.views.NoCityView
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.extensions.dp
 import kotlinx.coroutines.launch
 
@@ -170,9 +170,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             openSavedPlans()
         }
 
-        // Swipe refresh
+        // Swipe refresh — temporarily disabled
+        binding.swipeRefresh.isEnabled = false
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refreshTimeline()
+//            viewModel.refreshTimeline()
         }
 
         // Near Me button
@@ -324,7 +325,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 // Toggle the bottom list to match the new day's content. Without the
                 // else branch, switching from an empty day to a plan-bearing day
                 // would leave the list hidden forever (hideCompletely was sticky).
-                if (mapSteps.isNullOrEmpty()) {
+                //
+                // Use mapBottomItems (not mapSteps): activities without a real
+                // coordinate produce no marker but still belong in the bottom
+                // list, so an "isNoLocation-only" day should still surface its
+                // cards instead of leaving the panel empty.
+                if (viewModel.mapBottomItems.value.isNullOrEmpty()) {
                     hideMapBottomListCompletely()
                 } else {
                     showMapBottomList()
@@ -587,6 +593,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             // items visible for ~250ms.
             itemAnimator = null
         }
+        // Stack the device navigation bar inset onto the XML's base bottom
+        // padding (120dp for FAB clearance) so the last card clears gesture
+        // pills / 3-button bars and never sits behind the nav layer.
+        binding.rvTimeline.applyBottomSystemBarInsetPadding()
     }
 
     /**
@@ -847,22 +857,22 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // Show map markers when switching to map mode
         if (isMapMode) {
             val mapSteps = viewModel.mapSteps.value
+            binding.mapView.clearMap()
             if (!mapSteps.isNullOrEmpty()) {
-                binding.mapView.clearMap()
                 binding.mapView.showMapIcons(mapSteps)
-                lifecycleScope.launch {
-                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
-                }
-                // Show bottom list when entering map mode
+            }
+            lifecycleScope.launch {
+                binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
+            }
+            // Bottom list visibility is driven by the full set of cards
+            // (including no-location items that produce no marker), not the
+            // marker count — otherwise a day with only no-location activities
+            // would land in map mode with an empty panel.
+            if (viewModel.mapBottomItems.value.isNullOrEmpty()) {
+                hideMapBottomListCompletely()
+            } else {
                 binding.rvMapBottomList.visibility = View.VISIBLE
                 showMapBottomList()
-            } else {
-                // Empty day - center on city, hide bottom list, keep FAB at normal position
-                binding.mapView.clearMap()
-                lifecycleScope.launch {
-                    binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
-                }
-                hideMapBottomListCompletely()
             }
         } else {
             binding.mapView.clearMap()
@@ -1233,16 +1243,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleExpandClick(item: TimelineDisplayItem) {
         if (item is TimelineDisplayItem.Recommendations) {
-            // Toggle expansion - find by plan.id since item reference may have changed due to route info updates
-            val currentItems = timelineAdapter.currentList.toMutableList()
-            val position = currentItems.indexOfFirst {
-                it is TimelineDisplayItem.Recommendations && it.plan.id == item.plan.id
-            }
-            if (position != -1) {
-                val currentItem = currentItems[position] as TimelineDisplayItem.Recommendations
-                currentItems[position] = currentItem.copy(isExpanded = !currentItem.isExpanded)
-                timelineAdapter.submitList(currentItems)
-            }
+            // Toggle via the VM so the expanded/collapsed state is written
+            // into the canonical `_displayItems` LiveData. Patching the
+            // adapter's currentList directly (the previous behaviour) left
+            // the VM out of sync, which meant a subsequent refresh would
+            // reset every Recommendations card back to expanded — even ones
+            // the user had just collapsed.
+            viewModel.toggleRecommendationExpanded(item.plan.id)
         }
     }
 
