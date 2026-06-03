@@ -27,7 +27,17 @@ sealed class TimelineStepItem : Serializable {
         val order: Int,
         val hasConflict: Boolean = false,
         val showTimeOverlapText: Boolean = false,
-        val isAvailabilityExpired: Boolean = false
+        val isAvailabilityExpired: Boolean = false,
+        /**
+         * Captured at construction so the inner adapter's DiffUtil reacts when
+         * the VM mutates `step.startDateTimes` / `step.endDateTimes` in place
+         * (see `ACTimelineVM.applyLocalStepTimeUpdate`). Without these
+         * snapshots the `step` reference stays the same across rebuilds, the
+         * data class equals returns true and the StepPoiVH / StepActivityVH
+         * row never re-renders the updated time.
+         */
+        val startDateTimeSnapshot: String? = null,
+        val endDateTimeSnapshot: String? = null
     ) : TimelineStepItem() {
         // Unique identifier for DiffUtil
         val id: String get() = "step_${step.id}"

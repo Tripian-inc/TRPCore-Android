@@ -24,6 +24,7 @@ import androidx.fragment.app.FragmentActivity
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
+import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.setViewListener
 import dagger.android.support.AndroidSupportInjection
@@ -43,6 +44,13 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     lateinit var viewModel: VM
 
     private var mBehavior: BottomSheetBehavior<FrameLayout>? = null
+
+    // Last presentation this sheet's VM asked us to show — used so that on a
+    // subsequent hide we only tear down what THIS sheet actually owns.
+    // Without this, the sheet's lifecycle hide (e.g. onPause during dismiss)
+    // would call LottieLoading.hide(activity) and wipe an unrelated
+    // activity-level loader that the host VM raised separately.
+    private var lastInSheetPresentation: LottieLoadingPresentation? = null
 
     open fun setListeners() {
 
@@ -168,14 +176,42 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         // whose VM calls showBottomSheetLoader/showLottieLoading gets this for free.
         // We deliberately skip executePendingTransactions() — onPause fires a hide event
         // while FragmentManager is already executing, and forcing another pass throws.
+        //
+        // INLINE_SHEET is handled here, not on the activity: the loader is
+        // attached as a child of this sheet's root so no new window opens.
+        // The activity observer skips this presentation to avoid double-firing.
         viewModel.lottieLoadingEvent.observe(viewLifecycleOwner) { event ->
             if (event == null) return@observe
             val host = activity as? FragmentActivity ?: return@observe
-            if (event.show) {
-                LottieLoading.show(host, event.presentation, event.text)
-            } else {
-                LottieLoading.hide(host)
+            // Use Material's design_bottom_sheet wrapper (a FrameLayout) as
+            // the inline host: a child added there sits on top of the sheet's
+            // content in z-order, not appended below it like LinearLayout
+            // [binding.root] would do.
+            val inlineHost = dialog?.findViewById<ViewGroup>(
+                com.google.android.material.R.id.design_bottom_sheet
+            )
+            if (!event.show) {
+                // Only tear down what THIS sheet actually raised. Hiding
+                // unconditionally would let the sheet's own lifecycle hide
+                // (onPause during dismiss) wipe out an activity-level loader
+                // that a different VM started.
+                when (lastInSheetPresentation) {
+                    LottieLoadingPresentation.INLINE_SHEET ->
+                        inlineHost?.let { LottieLoading.hideInline(it) }
+                    LottieLoadingPresentation.FULL_SCREEN,
+                    LottieLoadingPresentation.BOTTOM_SHEET ->
+                        LottieLoading.hide(host)
+                    null -> Unit
+                }
+                lastInSheetPresentation = null
+                return@observe
             }
+            lastInSheetPresentation = event.presentation
+            if (event.presentation == LottieLoadingPresentation.INLINE_SHEET) {
+                inlineHost?.let { LottieLoading.showInline(it, event.text) }
+                return@observe
+            }
+            LottieLoading.show(host, event.presentation, event.text)
         }
 
         setListeners()

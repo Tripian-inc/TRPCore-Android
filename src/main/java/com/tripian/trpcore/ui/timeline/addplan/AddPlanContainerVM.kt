@@ -536,8 +536,10 @@ class AddPlanContainerVM @Inject constructor(
     // =====================
     private fun completeSmartRecommendation() {
         if (planData.isValidForSmartMode()) {
+            // Don't auto-dismiss the sheet — the host keeps it open while the
+            // initial segment create runs, and dismisses only after success.
+            // A failure leaves the sheet on screen so the user can retry.
             _onComplete.value = planData
-            _dismissSheet.value = true
         }
     }
 
@@ -574,11 +576,13 @@ class AddPlanContainerVM @Inject constructor(
         // Update back button visibility
         _showBackButton.value = step != AddPlanStep.SELECT_DAY_AND_CITY
 
-        // Update clear selection visibility - show on all steps when in Smart Recommendations mode
+        // Update clear selection visibility — never on the first step (even
+        // after navigating back from later steps), only on the smart-mode
+        // sub-steps where it actually has something to clear.
         val isSmartMode = planData.selectedMode == AddPlanMode.SMART_RECOMMENDATIONS ||
                 planData.selectedMode == AddPlanMode.SMART
         _showClearSelection.value = when (step) {
-            AddPlanStep.SELECT_DAY_AND_CITY -> planData.selectedMode != AddPlanMode.NONE
+            AddPlanStep.SELECT_DAY_AND_CITY -> false
             AddPlanStep.TIME_AND_TRAVELERS,
             AddPlanStep.CATEGORY_SELECTION -> isSmartMode
         }

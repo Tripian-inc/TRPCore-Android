@@ -13,7 +13,6 @@ import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -24,9 +23,11 @@ import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
+import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.databinding.ActivityStartingPointSelectionBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.dialog.DGActionListener
 import java.io.Serializable
 
 /**
@@ -254,17 +255,28 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     private fun showLocationPermissionDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(getLanguageForKey(LanguageConst.ENABLE_LOCATION_PERMISSION))
-            .setMessage(getLanguageForKey(LanguageConst.ERROR_LOCATION_PERMISSION))
-            .setPositiveButton(getLanguageForKey(LanguageConst.SETTINGS)) { _, _ ->
+        val dialog = FRWarning.newInstance(
+            title = getLanguageForKey(LanguageConst.ENABLE_LOCATION_PERMISSION),
+            contentText = getLanguageForKey(LanguageConst.ERROR_LOCATION_PERMISSION),
+            positiveBtn = getLanguageForKey(LanguageConst.SETTINGS),
+            negativeBtn = getLanguageForKey(LanguageConst.ADD_PLAN_CANCEL),
+            isCloseEnable = true
+        )
+        dialog.positiveListener = object : DGActionListener {
+            override fun onClicked(o: Any?) {
+                dialog.dismiss()
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.fromParts("package", packageName, null)
                 }
                 startActivity(intent)
             }
-            .setNegativeButton(getLanguageForKey(LanguageConst.ADD_PLAN_CANCEL), null)
-            .show()
+        }
+        dialog.negativeListener = object : DGActionListener {
+            override fun onClicked(o: Any?) {
+                dialog.dismiss()
+            }
+        }
+        dialog.show(supportFragmentManager, "LocationPermissionDialog")
     }
 
     // =====================

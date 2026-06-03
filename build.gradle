@@ -183,7 +183,7 @@ dependencies {
 
     // settings.gradle composite-build substitutes this to the local TRPOne
     // checkout while the camelCase migration is in flight.
-    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.5'
+    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.7'
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
     implementation 'com.google.firebase:firebase-crashlytics-ktx'

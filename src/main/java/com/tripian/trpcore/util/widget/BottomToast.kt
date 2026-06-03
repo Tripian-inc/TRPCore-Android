@@ -21,7 +21,8 @@ class BottomToast private constructor(
     private val activity: Activity,
     private val message: String,
     private val alertType: AlertType,
-    private val duration: Long
+    private val duration: Long,
+    private val parentOverride: ViewGroup?
 ) {
 
     private var binding: ViewBottomToastBinding? = null
@@ -31,15 +32,25 @@ class BottomToast private constructor(
         private const val DEFAULT_DURATION = 3000L
         private const val ANIMATION_DURATION = 300L
 
+        /**
+         * @param parent optional attach target. Pass a dialog's decor view to
+         *               surface the toast on top of that dialog instead of the
+         *               activity's content view (which sits behind any open
+         *               dialogs).
+         */
         fun show(
             activity: Activity,
             message: String,
             alertType: AlertType = AlertType.SUCCESS,
-            duration: Long = DEFAULT_DURATION
+            duration: Long = DEFAULT_DURATION,
+            parent: ViewGroup? = null
         ) {
-            BottomToast(activity, message, alertType, duration).display()
+            BottomToast(activity, message, alertType, duration, parent).display()
         }
     }
+
+    private fun resolveParent(): ViewGroup =
+        parentOverride ?: activity.findViewById(android.R.id.content)
 
     private fun display() {
         // Remove any existing toast first
@@ -74,8 +85,10 @@ class BottomToast private constructor(
         // Set icon tint to match accent color
         binding?.ivToastIcon?.setColorFilter(accentColor)
 
-        // Add to the activity's root view
-        val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+        // Attach to the override parent when provided, otherwise the activity's
+        // root view. Using a dialog's decor view as the parent surfaces the
+        // toast on top of that dialog.
+        val rootView = resolveParent()
         val density = activity.resources.displayMetrics.density
         val horizontalMargin = (32 * density).toInt()
         val bottomMargin = (45 * density).toInt()
@@ -126,8 +139,7 @@ class BottomToast private constructor(
     private fun removeView() {
         try {
             toastView?.let { view ->
-                val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
-                rootView.removeView(view)
+                resolveParent().removeView(view)
             }
             binding = null
             toastView = null
@@ -138,7 +150,7 @@ class BottomToast private constructor(
 
     private fun removeExistingToast() {
         try {
-            val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
+            val rootView = resolveParent()
             val existingToast = rootView.findViewWithTag<View>("bottom_toast")
             existingToast?.let {
                 rootView.removeView(it)

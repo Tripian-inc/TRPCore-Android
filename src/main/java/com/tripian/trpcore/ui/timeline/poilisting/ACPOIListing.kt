@@ -18,7 +18,6 @@ import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
-import com.tripian.trpcore.util.widget.BottomToast
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -279,11 +278,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             .replace("%1\$@", result.poiName)
             .replace("%2\$@", dayLabel)
 
-        BottomToast.show(
-            activity = this,
-            message = message,
-            alertType = AlertType.SUCCESS
-        )
+        showAlert(AlertType.SUCCESS, message)
 
         // Pre-arm the result so back navigation hands control back to AddPlan with
         // the day index that should be reselected. We don't finish here — the user

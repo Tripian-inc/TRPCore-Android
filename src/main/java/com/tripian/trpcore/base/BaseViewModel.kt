@@ -263,4 +263,25 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
             LottieLoadingText.None
         )
     }
+
+    /**
+     * In-sheet loader: renders inline inside the hosting bottom sheet's own
+     * view tree (no separate window). Resolved by [BaseBottomDialogFragment]'s
+     * loader observer. Calling this from a non-bottom-sheet host is a no-op.
+     */
+    fun showInSheetLoader(languageKey: String, fallback: String) {
+        val text = miscRepository.getLanguageValueForKey(languageKey).ifBlank { fallback }
+        showLottieLoading(
+            LottieLoadingPresentation.INLINE_SHEET,
+            LottieLoadingText.Single(text)
+        )
+    }
+
+    /** In-sheet loader showing only the animation (no text). */
+    fun showInSheetLoaderNoText() {
+        showLottieLoading(
+            LottieLoadingPresentation.INLINE_SHEET,
+            LottieLoadingText.None
+        )
+    }
 }

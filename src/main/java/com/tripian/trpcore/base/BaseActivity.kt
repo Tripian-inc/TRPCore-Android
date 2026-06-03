@@ -13,6 +13,7 @@ import com.airbnb.lottie.LottieCompositionFactory
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
+import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.widget.BottomToast
 import com.tripian.trpcore.util.OnBackPressListener
@@ -90,6 +91,10 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
         viewModel.lottieLoadingEvent.observe(this) { event ->
             if (event == null) return@observe
+            // INLINE_SHEET is owned by the hosting bottom sheet — it attaches
+            // the loader into its own view tree. Skip here to avoid opening a
+            // second loader at the activity level.
+            if (event.presentation == LottieLoadingPresentation.INLINE_SHEET) return@observe
             if (event.show) {
                 // Force-hide the legacy DGLockScreen spinner so the two loaders
                 // never stack on top of each other.

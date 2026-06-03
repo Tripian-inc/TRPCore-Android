@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowInsetsCompat
@@ -21,7 +22,9 @@ import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
 import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.BottomToast
 import java.util.Date
 
 /**
@@ -297,6 +300,23 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 
     fun setOnSegmentCreatedListener(listener: (Int) -> Unit) {
         onSegmentCreatedListener = listener
+    }
+
+    /**
+     * Surfaces a create-segment error from the AddPlan flow over this sheet.
+     * Anchors [BottomToast] to the sheet's own dialog window so the toast
+     * appears on top of the sheet rather than behind it on the activity's
+     * content view.
+     */
+    fun showCreateError(message: String) {
+        if (!isAdded) return
+        val parent = dialog?.window?.decorView as? ViewGroup
+        BottomToast.show(
+            activity = requireActivity(),
+            message = message,
+            alertType = AlertType.ERROR,
+            parent = parent
+        )
     }
 
     companion object {

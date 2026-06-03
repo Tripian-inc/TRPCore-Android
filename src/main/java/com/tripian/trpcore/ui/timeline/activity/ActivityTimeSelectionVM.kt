@@ -154,9 +154,9 @@ class ActivityTimeSelectionVM @Inject constructor(
     ) {
         if (availableDays.isEmpty()) return
 
-        // Bottom-sheet Lottie loader, surfaced over the time-selection sheet via
-        // BaseBottomDialogFragment's lottie observer.
-        showBottomSheetLoader(LanguageConst.LOADING_TEXT_LOADING_TIME_SLOTS, "Loading available times")
+        // Inline Lottie loader rendered inside the time-selection sheet's own
+        // view tree — no extra window opens.
+        showInSheetLoader(LanguageConst.LOADING_TEXT_LOADING_TIME_SLOTS, "Loading available times")
         // Fresh load → collapse again so the user sees the trimmed first 7 chips.
         resetExpansionState()
         cachedSchedule = null

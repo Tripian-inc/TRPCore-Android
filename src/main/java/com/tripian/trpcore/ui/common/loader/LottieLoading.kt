@@ -1,6 +1,8 @@
 package com.tripian.trpcore.ui.common.loader
 
 import android.app.Dialog
+import android.content.Context
+import android.content.ContextWrapper
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -37,7 +39,14 @@ import com.tripian.trpcore.util.LanguageConst
  */
 enum class LottieLoadingPresentation {
     FULL_SCREEN,
-    BOTTOM_SHEET
+    BOTTOM_SHEET,
+    /**
+     * Inline overlay rendered inside an existing bottom sheet's own view tree.
+     * Resolved by [com.tripian.trpcore.base.BaseBottomDialogFragment]'s loader
+     * observer — calling this from a VM whose host isn't a bottom-sheet does
+     * nothing (BaseActivity skips this presentation).
+     */
+    INLINE_SHEET
 }
 
 sealed class LottieLoadingText {
@@ -70,6 +79,7 @@ object LottieLoading {
 
     private const val TAG_FULL_SCREEN_VIEW = "lottie_loading_full_screen_view"
     private const val TAG_BOTTOM_SHEET = "lottie_loading_bottom_sheet"
+    private const val TAG_INLINE_VIEW = "lottie_loading_inline_view"
 
     private const val ROTATION_INTERVAL_MS = 3_500L
     private const val OVERLAY_ELEVATION_DP = 32f
@@ -89,6 +99,10 @@ object LottieLoading {
         when (presentation) {
             LottieLoadingPresentation.FULL_SCREEN -> showFullScreenView(activity, text)
             LottieLoadingPresentation.BOTTOM_SHEET -> showBottomSheet(activity, text)
+            // INLINE_SHEET is rendered by the hosting bottom sheet itself,
+            // not by the activity-level loader. The sheet observes the same
+            // event and calls [showInline] on its own view tree.
+            LottieLoadingPresentation.INLINE_SHEET -> Unit
         }
     }
 
@@ -96,6 +110,49 @@ object LottieLoading {
     fun hide(activity: FragmentActivity) {
         hideFullScreenView(activity)
         hideBottomSheet(activity)
+    }
+
+    // ------------------------------------------------------------------
+    // INLINE_SHEET — view-attached overlay inside an arbitrary host
+    // ------------------------------------------------------------------
+
+    /**
+     * Attaches the loader as a child view of [host] (typically a bottom sheet's
+     * root). Idempotent — if a loader is already attached, just refreshes the
+     * text. Use [hideInline] with the same [host] to remove it.
+     *
+     * Rotation text only animates when [host]'s context resolves to a
+     * [FragmentActivity]; otherwise the first text frame is shown statically.
+     */
+    @JvmStatic
+    fun showInline(host: ViewGroup, text: LottieLoadingText) {
+        val activity = host.context.findFragmentActivity()
+        val existing = host.findViewWithTag<View>(TAG_INLINE_VIEW)
+        if (existing != null) {
+            activity?.let { applyText(it, existing, text) }
+            return
+        }
+        val overlay = LayoutInflater.from(host.context)
+            .inflate(R.layout.dialog_lottie_full_screen, host, false)
+        overlay.tag = TAG_INLINE_VIEW
+        overlay.isClickable = true
+        overlay.isFocusable = true
+        overlay.elevation = OVERLAY_ELEVATION_DP * host.resources.displayMetrics.density
+        activity?.let { applyText(it, overlay, text) }
+        host.addView(overlay)
+    }
+
+    @JvmStatic
+    fun hideInline(host: ViewGroup) {
+        host.context.findFragmentActivity()?.let { cancelRotation(it) }
+        val overlay = host.findViewWithTag<View>(TAG_INLINE_VIEW) ?: return
+        host.removeView(overlay)
+    }
+
+    private tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (this) {
+        is FragmentActivity -> this
+        is ContextWrapper -> baseContext.findFragmentActivity()
+        else -> null
     }
 
     // ------------------------------------------------------------------

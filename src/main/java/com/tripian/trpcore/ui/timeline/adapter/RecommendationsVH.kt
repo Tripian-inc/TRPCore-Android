@@ -250,7 +250,9 @@ class RecommendationsVH(
                     order = currentStartingOrder + index,
                     hasConflict = hasConflict,
                     showTimeOverlapText = showTimeOverlap,
-                    isAvailabilityExpired = step.isAvailabilityExpired
+                    isAvailabilityExpired = step.isAvailabilityExpired,
+                    startDateTimeSnapshot = step.startDateTimes,
+                    endDateTimeSnapshot = step.endDateTimes
                 )
             )
         }

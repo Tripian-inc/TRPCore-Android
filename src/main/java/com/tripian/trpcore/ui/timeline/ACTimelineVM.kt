@@ -180,6 +180,33 @@ class ACTimelineVM @Inject constructor(
     private val _scrollToNewSegmentPlanId = MutableLiveData<String?>()
     val scrollToNewSegmentPlanId: LiveData<String?> = _scrollToNewSegmentPlanId
 
+    // Smart recommendation: emits the selected day index once the initial
+    // segment create call succeeds. Host dismisses the AddPlan sheet only
+    // when this fires — failures leave the sheet open for retry.
+    private val _smartSegmentCreated = MutableLiveData<Int?>()
+    val smartSegmentCreated: LiveData<Int?> = _smartSegmentCreated
+
+    fun clearSmartSegmentCreated() {
+        _smartSegmentCreated.value = null
+    }
+
+    // Smart recommendation: emits the error message when the initial create
+    // fails. Routed to the AddPlan sheet so it surfaces above the sheet
+    // instead of behind it on the activity content layer.
+    private val _smartCreateError = MutableLiveData<String?>()
+    val smartCreateError: LiveData<String?> = _smartCreateError
+
+    fun clearSmartCreateError() {
+        _smartCreateError.value = null
+    }
+
+    // Smart recommendation: true while the initial create-segment call is in
+    // flight. Host routes this to the AddPlan sheet's VM so the loader renders
+    // inline inside the sheet's own view tree (no extra window) — see
+    // [BaseViewModel.showInSheetLoaderNoText].
+    private val _smartCreateInProgress = MutableLiveData<Boolean>()
+    val smartCreateInProgress: LiveData<Boolean> = _smartCreateInProgress
+
     // Track existing plan IDs before creating new segment
     private var existingPlanIds: Set<String> = emptySet()
 
@@ -887,8 +914,17 @@ class ACTimelineVM @Inject constructor(
         fetchTimelineUseCase.on(
             params = FetchTimelineUseCase.Params(_tripHash),
             success = { timeline ->
-                processTimeline(timeline)
-                hideLottieLoading()
+                if (!syncOperationsCompleted && itinerary != null) {
+                    // Sync ops first — keep the loader up while we figure out
+                    // whether the server state needs mutating. We only render
+                    // (and possibly re-fetch) once the pipeline is settled, so
+                    // the UI never flashes a stale snapshot just to be replaced
+                    // by a corrected one half a second later.
+                    runInitialSyncThenFinalize(timeline)
+                } else {
+                    processTimeline(timeline)
+                    hideLottieLoading()
+                }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
@@ -1026,18 +1062,19 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        // iOS Guide: Perform sync operations after initial timeline fetch
-        if (!syncOperationsCompleted && itinerary != null) {
-            syncOperationsCompleted = true
-            performSyncOperations(timeline)
-        }
+        // Sync operations no longer run here — the initial fetch path drives
+        // them upstream via [runInitialSyncThenFinalize] so the loader stays
+        // up across mutations and we re-fetch only when something actually
+        // changed. Subsequent processTimeline calls (refresh, smart-reco,
+        // post-step-add wait) come with already-authoritative data and don't
+        // need the sync pipeline.
 
         // Theme 17: every processed timeline is a fresh snapshot — the prior
         // sweep's `hasRunInitialCheck` guard must be cleared here, otherwise
         // paths that hand a new Timeline straight to processTimeline (smart
-        // recommendation generation, post-step-add wait, sync ops) would skip
-        // the sweep on the new instance and lose the @Transient expired flag,
-        // letting conflict styling shadow the red "Not available" badge.
+        // recommendation generation, post-step-add wait) would skip the sweep
+        // on the new instance and lose the @Transient expired flag, letting
+        // conflict styling shadow the red "Not available" badge.
         availabilityCheckManager.reset()
         triggerAvailabilitySweep(timeline)
     }
@@ -1388,8 +1425,11 @@ class ACTimelineVM @Inject constructor(
             ?.filter { it.isNotEmpty() }
             ?.toSet() ?: emptySet()
 
-        // Set loading immediately (not postValue) since we're on main thread
-        showLottieLoading()
+        // Flag the create-segment phase so the host can drive an inline loader
+        // inside the AddPlan sheet's own view tree (no extra window). After
+        // success we flip it off, dismiss the AddPlan sheet, and switch to the
+        // fullscreen loader for the wait-for-generation / fetch-timeline phase.
+        _smartCreateInProgress.value = true
 
         // Generate unique title ("Recommendations", "Recommendations 2", etc.)
         val title = generateSegmentTitle(validCity, selectedDate)
@@ -1445,11 +1485,20 @@ class ACTimelineVM @Inject constructor(
                 accommodation = data.startingPointAccommodation
             ),
             success = {
+                // Drop the inline loader, signal the host so the AddPlan sheet
+                // dismisses, then switch to the fullscreen loader for the
+                // wait-for-generation / fetch-timeline phase.
+                _smartCreateInProgress.value = false
+                _smartSegmentCreated.value = data.selectedDayIndex
+                showLottieLoading()
                 waitForSegmentGeneration()
             },
             error = { errorModel ->
-                hideLottieLoading()
-                _error.value = errorModel.errorDesc
+                // Drop the inline loader and surface the error on the AddPlan
+                // sheet (not behind it on the activity). The sheet stays open
+                // so the user can adjust input and retry.
+                _smartCreateInProgress.value = false
+                _smartCreateError.value = errorModel.errorDesc
             }
         )
     }
@@ -1514,14 +1563,50 @@ class ACTimelineVM @Inject constructor(
         deleteSegmentUseCase.on(
             params = DeleteSegmentUseCase.Params(_tripHash, segmentIndex),
             success = {
-                refreshTimeline()
+                // Cache-only update: drop the segment (and its parallel-indexed
+                // plan) from the in-memory timeline and re-render. The mapper
+                // re-runs from scratch so every surviving display item picks
+                // up its new segmentIndex automatically.
+                val mutated = applyLocalSegmentDelete(segmentIndex)
                 hideLottieLoading()
+                if (mutated) {
+                    republishCurrentTimeline()
+                } else {
+                    refreshTimeline()
+                }
             },
             error = { errorModel ->
                 _error.value = errorModel.errorDesc
                 hideLottieLoading()
             }
         )
+    }
+
+    /**
+     * Removes the segment at [segmentIndex] from the in-memory timeline cache.
+     * `plans` is parallel-indexed with `tripProfile.segments` on the server, so
+     * we drop the matching plan too — otherwise the next mapper pass would
+     * re-pair every later segment with the wrong plan. Returns `true` when the
+     * cache actually mutated so callers can fall back to a full refresh.
+     */
+    private fun applyLocalSegmentDelete(segmentIndex: Int): Boolean {
+        val tl = _timeline.value ?: return false
+        val segments = tl.tripProfile?.segments ?: return false
+        if (segmentIndex !in segments.indices) return false
+
+        val mutableSegments = segments as? MutableList<TimelineSegment>
+            ?: segments.toMutableList().also { tl.tripProfile?.segments = it }
+        mutableSegments.removeAt(segmentIndex)
+
+        tl.plans?.let { plans ->
+            if (segmentIndex < plans.size) {
+                val mutablePlans =
+                    plans as? MutableList<com.tripian.one.api.timeline.model.TimelinePlan>
+                        ?: plans.toMutableList().also { tl.plans = it }
+                mutablePlans.removeAt(segmentIndex)
+            }
+        }
+        return true
     }
 
     fun deleteStep(stepId: Int) {
@@ -2362,26 +2447,46 @@ class ACTimelineVM @Inject constructor(
     // ========================================
 
     /**
-     * Ana sync orchestrator
-     * STEP 1: City resolution (blocking)
-     * STEP 2: Parallel operations
-     * STEP 3: Sequential operations
-     * STEP 4: Silent refresh
+     * Tracks whether each sync op actually mutated server state. When all
+     * ops are no-ops we skip the post-sync re-fetch (and the second
+     * processTimeline + availability sweep that would come with it).
      */
-    private fun performSyncOperations(timeline: Timeline) {
+    private class SyncMutationTracker(
+        var addMissing: Boolean = false,
+        var dateRange: Boolean = false,
+        var transitions: Boolean = false,
+    ) {
+        val anyMutated: Boolean get() = addMissing || dateRange || transitions
+    }
+
+    /**
+     * Initial-fetch sync orchestrator. Runs city resolution → parallel ops →
+     * sequential ops; once the pipeline settles, [finalizeInitialFetch]
+     * decides whether the server state was actually mutated. The loader
+     * stays up across the whole pipeline so the user never sees a partial
+     * snapshot that's about to be corrected.
+     */
+    private fun runInitialSyncThenFinalize(initialTimeline: Timeline) {
+        syncOperationsCompleted = true
+
         val tripItems = itinerary?.tripItems ?: emptyList()
         val favouriteItems = itinerary?.favouriteItems ?: emptyList()
 
-        // Host can re-open the SDK with an extended/shortened date range without
-        // changing tripItems/favourites — the TimelineDate segment must still be
-        // realigned to the new range, so date sync runs independently of the
-        // activity-driven sync pipeline.
+        // Date-only path: host re-opened with a different range but didn't
+        // touch tripItems/favourites. Skip the heavy parallel/sequential
+        // pipeline and just realign TimelineDate.
         if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
-            syncDateRangeOnly(timeline)
+            updateDateRangeUseCase.on(
+                params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline),
+                success = { result -> finalizeInitialFetch(initialTimeline, result.mutated) },
+                error = { finalizeInitialFetch(initialTimeline, false) }
+            )
             return
         }
 
-        // STEP 1: City resolution (BLOCKING - diğer operasyonlar bunu bekler)
+        val tracker = SyncMutationTracker()
+
+        // STEP 1: City resolution (blocking — parallel ops depend on cityMap)
         resolveCityIdsForActivitiesUseCase.on(
             params = ResolveCityIdsForActivitiesUseCase.Params(
                 tripItems,
@@ -2390,170 +2495,123 @@ class ACTimelineVM @Inject constructor(
             ),
             success = { updatedCityMap ->
                 cityNameToIdMap.putAll(updatedCityMap)
-                performParallelSyncOperations(timeline, tripItems, updatedCityMap)
+                runParallelSyncForInitial(initialTimeline, tripItems, updatedCityMap, tracker)
             },
-            error = { _ ->
-                // Fallback: mevcut map ile devam et
-                performParallelSyncOperations(timeline, tripItems, cityNameToIdMap.toMap())
+            error = {
+                runParallelSyncForInitial(initialTimeline, tripItems, cityNameToIdMap.toMap(), tracker)
             }
         )
     }
 
     /**
-     * Date-only sync path. Runs when no tripItems/favourites are supplied so
-     * the heavy parallel/sequential pipeline is unnecessary, but the
-     * TimelineDate segment still needs to reflect the host-supplied range.
+     * STEP 2: 3 parallel ops — transition detection, AddMissing, UpdateDateRange.
+     * Each reports its own mutation verdict into [tracker]; once all three
+     * resolve, STEP 3 (sequential) takes over.
      */
-    private fun syncDateRangeOnly(timeline: Timeline) {
-        updateDateRangeUseCase.on(
-            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
-            success = { result ->
-                if (result.mutated) republishCurrentTimeline()
-                removeOrphanSegmentsAfterDateShift(timeline)
-            },
-            error = { removeOrphanSegmentsAfterDateShift(timeline) }
-        )
-    }
-
-    /**
-     * When the host shifts the trip range (e.g. 1–5 June → 3–7 June),
-     * activities anchored on days that no longer exist become orphans. We
-     * clean them up locally + on the server so the timeline matches the new
-     * day filter. Safe to call even when the range is unchanged — the use
-     * case no-ops in that case.
-     *
-     * TEMPORARILY DISABLED: out-of-range removal is currently causing
-     * downstream sync regressions. Skip the cleanup for now and leave the
-     * orphan segments on the timeline — the day filter just won't surface
-     * them, which is preferable to the broken state. Re-enable once the
-     * sync pipeline issues are fixed.
-     */
-    private fun removeOrphanSegmentsAfterDateShift(timeline: Timeline) {
-        // val it = itinerary ?: return
-        // removeOutOfRangeSegmentsUseCase.on(
-        //     params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, it, timeline),
-        //     success = { result -> if (result.mutated) republishCurrentTimeline() },
-        //     error = { /* sequential server deletes log their own errors */ }
-        // )
-    }
-
-    /**
-     * STEP 2: Parallel operations (3 concurrent)
-     * - Detect transitions
-     * - Add missing activities
-     * - Update date range
-     */
-    private fun performParallelSyncOperations(
-        timeline: Timeline,
+    private fun runParallelSyncForInitial(
+        initialTimeline: Timeline,
         tripItems: List<com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem>,
-        cityMap: Map<String, Int>
+        cityMap: Map<String, Int>,
+        tracker: SyncMutationTracker
     ) {
         var detectedTransitions: List<TransitionInfo>? = null
-        var completedOps = 0
+        var completed = 0
 
         val onParallelComplete = {
-            completedOps++
-            if (completedOps == 3) {
-                // Hepsi bitti, sequential operasyonlara geç
-                performSequentialSyncOperations(timeline, detectedTransitions, cityMap)
+            completed++
+            if (completed == 3) {
+                // Transitions detected now will mutate the server in the
+                // sequential step that follows — count them at this point so
+                // finalize sees them via [SyncMutationTracker.anyMutated].
+                tracker.transitions = !detectedTransitions.isNullOrEmpty()
+                runSequentialSyncForInitial(initialTimeline, detectedTransitions, cityMap, tracker)
             }
         }
 
-        // Parallel Op 1: Transition detection
+        // Pre-compute the AddMissing mutation predicate at VM level — the use
+        // case doesn't expose it, but we have the same inputs here.
+        val existingActivityIds = initialTimeline.tripProfile?.segments
+            ?.mapNotNull { it.additionalData?.activityId }?.toSet().orEmpty()
+        tracker.addMissing = tripItems.any { item ->
+            item.activityId != null && item.activityId !in existingActivityIds
+        }
+
+        // Parallel Op 1: Transition detection (pure logic, no API call)
         detectReservedToBookedTransitionUseCase.on(
-            params = DetectReservedToBookedTransitionUseCase.Params(timeline, tripItems),
+            params = DetectReservedToBookedTransitionUseCase.Params(initialTimeline, tripItems),
             success = { transitions ->
                 detectedTransitions = transitions
                 onParallelComplete()
             },
-            error = {
-                onParallelComplete()
-            }
+            error = { onParallelComplete() }
         )
 
-        // Parallel Op 2: Add missing activities
+        // Parallel Op 2: Add missing booked activities
         addMissingBookedActivitiesUseCase.on(
-            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, itinerary!!, timeline),
+            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, itinerary!!, initialTimeline),
             success = { onParallelComplete() },
-            error = {
-                onParallelComplete()
-            }
+            error = { onParallelComplete() }
         )
 
-        // Parallel Op 3: Update date range — iOS optimistic flow. Mutation is
-        // already applied to the in-memory segment by the use case; we refresh
-        // the UI here before signalling completion so the user sees the new day
-        // range without waiting for the rest of the sync pipeline.
+        // Parallel Op 3: Update date range
         updateDateRangeUseCase.on(
-            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, timeline),
+            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline),
             success = { result ->
-                if (result.mutated) republishCurrentTimeline()
+                tracker.dateRange = result.mutated
                 onParallelComplete()
             },
-            error = {
-                onParallelComplete()
-            }
+            error = { onParallelComplete() }
         )
     }
 
     /**
-     * STEP 3: Sequential operations
-     * - Sync transitions (delete reserved → create booked)
-     * - Remove deleted city segments
+     * STEP 3: Sequential ops — sync reserved→booked transitions if any.
+     * Either way, finalize once this resolves.
      */
-    private fun performSequentialSyncOperations(
-        timeline: Timeline,
+    private fun runSequentialSyncForInitial(
+        initialTimeline: Timeline,
         transitions: List<TransitionInfo>?,
-        cityMap: Map<String, Int>
+        cityMap: Map<String, Int>,
+        tracker: SyncMutationTracker
     ) {
-        // Sequential Op 1: Sync transitions (if any)
         if (!transitions.isNullOrEmpty()) {
             syncReservedToBookedUseCase.on(
                 params = SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap),
-                success = { performCityDeletionSync(timeline) },
-                error = {
-                    performCityDeletionSync(timeline)
-                }
+                success = { finalizeInitialFetch(initialTimeline, tracker.anyMutated) },
+                error = { finalizeInitialFetch(initialTimeline, tracker.anyMutated) }
             )
         } else {
-            performCityDeletionSync(timeline)
+            finalizeInitialFetch(initialTimeline, tracker.anyMutated)
         }
     }
 
     /**
-     * Sequential Op 2 (was): city/out-of-range deletion. The DELETEs used to
-     * run in the critical sync path right before [refreshTimelineAfterSync],
-     * but their descending-index sweep raced with the AddMissing parallel op
-     * that inserted at the tail — new bookings ended up clobbered or
-     * mis-ordered. Both cleanups are now deferred to
-     * [schedulePostSyncDeletion], which runs strictly AFTER the silent
-     * refresh has finished writing the new state, so this stage simply
-     * forwards to the refresh now.
+     * Closes the initial-fetch flow. If sync ran any mutations the in-memory
+     * `initialTimeline` snapshot is stale, so re-fetch and render the new
+     * state. If nothing changed, render the initial snapshot directly —
+     * saves one round-trip plus one redundant availability sweep.
      */
-    private fun performCityDeletionSync(timeline: Timeline) {
-        performOutOfRangeSegmentCleanup(timeline)
-    }
+    private fun finalizeInitialFetch(initialTimeline: Timeline, anyMutated: Boolean) {
+        if (!anyMutated) {
+            processTimeline(initialTimeline)
+            hideLottieLoading()
+            schedulePostSyncDeletion(initialTimeline)
+            return
+        }
 
-    private fun performOutOfRangeSegmentCleanup(timeline: Timeline) {
-        refreshTimelineAfterSync()
-    }
-
-    /**
-     * STEP 4: Silent refresh (no loading indicator)
-     */
-    private fun refreshTimelineAfterSync() {
         fetchTimelineUseCase.on(
             params = FetchTimelineUseCase.Params(_tripHash),
-            success = { timeline ->
-                // processTimeline'ı çağır ama sync tekrar çalışmayacak (syncOperationsCompleted=true)
-                processTimeline(timeline)
-                // Initial sync is fully settled — now we can safely run the
-                // delete sweeps in the background. Doing this last avoids the
-                // index race with the AddMissing/transition operations that
-                // mutate the tail of the segment list.
-                schedulePostSyncDeletion(timeline)
+            success = { freshTimeline ->
+                processTimeline(freshTimeline)
+                hideLottieLoading()
+                schedulePostSyncDeletion(freshTimeline)
             },
-            error = { _ -> }
+            error = {
+                // Re-fetch failed — fall back to the initial snapshot so the
+                // user sees something rather than a permanent loader.
+                processTimeline(initialTimeline)
+                hideLottieLoading()
+            }
         )
     }
 

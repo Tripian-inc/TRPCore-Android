@@ -177,7 +177,7 @@
             android:layout_height="match_parent"
             android:background="@color/trp_white"
             android:clipToPadding="false"
-            android:paddingBottom="120dp"
+            android:paddingBottom="180dp"
             tools:listitem="@layout/item_timeline_recommendations" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>

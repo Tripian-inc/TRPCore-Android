@@ -313,6 +313,37 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
+        // Smart recommendation: dismiss the AddPlan sheet only once the initial
+        // segment create succeeds; failures keep the sheet open for retry.
+        viewModel.smartSegmentCreated.observe(this) { selectedDayIndex ->
+            selectedDayIndex?.let { dayIndex ->
+                addPlanSheet?.dismiss()
+                viewModel.selectDay(dayIndex)
+                viewModel.clearSmartSegmentCreated()
+            }
+        }
+
+        // Surface create-segment errors on the AddPlan sheet so they appear
+        // in front of it instead of behind on the activity content layer.
+        viewModel.smartCreateError.observe(this) { error ->
+            error?.let {
+                addPlanSheet?.showCreateError(it)
+                viewModel.clearSmartCreateError()
+            }
+        }
+
+        // Drive the AddPlan sheet's inline loader from the create-segment
+        // state. Routing through the sheet's own VM lets the sheet's loader
+        // observer render the overlay inside its view tree (no extra window).
+        viewModel.smartCreateInProgress.observe(this) { inProgress ->
+            val sheetVm = addPlanSheet?.viewModel ?: return@observe
+            if (inProgress == true) {
+                sheetVm.showInSheetLoaderNoText()
+            } else {
+                sheetVm.hideLottieLoading()
+            }
+        }
+
         // Map steps for map mode
         viewModel.mapSteps.observe(this) { mapSteps ->
             if (viewModel.isMapMode.value == true) {
@@ -1461,23 +1492,30 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         )
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->
-            if (data.mode == AddPlanMode.MANUAL && data.selectedPoi == null) {
-                // Manual mode: need to select POI first
-                pendingAddPlanData = data
-                val city = data.selectedCity
-                if (city != null) {
-                    val intent = ACPOISelection.launch(this, city)
-                    poiSelectionLauncher.launch(intent)
+            when {
+                data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
+                    // Manual mode: need to select POI first
+                    pendingAddPlanData = data
+                    val city = data.selectedCity
+                    if (city != null) {
+                        val intent = ACPOISelection.launch(this, city)
+                        poiSelectionLauncher.launch(intent)
+                    }
                 }
-            } else {
-                // Smart mode or already has POI - dismiss sheet and process after animation
-                addPlanSheet?.dismiss()
-                // Post to next main loop to allow dismiss animation to complete
-                binding.root.postDelayed({
+                data.mode == AddPlanMode.SMART || data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
+                    // Smart mode: keep the sheet open while the initial segment
+                    // create runs. The VM emits [smartSegmentCreated] only on
+                    // success; on failure the sheet stays so the user can retry.
                     viewModel.onAddPlanComplete(data)
-                    // Auto-select the day for which the segment was created
-                    viewModel.selectDay(data.selectedDayIndex)
-                }, 300) // Wait for dismiss animation
+                }
+                else -> {
+                    // Manual mode with POI already selected — existing flow.
+                    addPlanSheet?.dismiss()
+                    binding.root.postDelayed({
+                        viewModel.onAddPlanComplete(data)
+                        viewModel.selectDay(data.selectedDayIndex)
+                    }, 300)
+                }
             }
         }
 

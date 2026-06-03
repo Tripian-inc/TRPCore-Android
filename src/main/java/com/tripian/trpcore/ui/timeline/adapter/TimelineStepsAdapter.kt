@@ -101,7 +101,12 @@ class TimelineStepsAdapter(
      */
     fun submitStepList(steps: List<TimelineStep>) {
         val items = steps.mapIndexed { index, step ->
-            TimelineStepItem.Step(step, startingOrder + index)
+            TimelineStepItem.Step(
+                step = step,
+                order = startingOrder + index,
+                startDateTimeSnapshot = step.startDateTimes,
+                endDateTimeSnapshot = step.endDateTimes
+            )
         }
         submitList(items)
     }
