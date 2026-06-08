@@ -12,7 +12,10 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProviders
@@ -83,13 +86,15 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         val bottomSheetDialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         isCancelable = true
 
-        // Why: targetSdk 35 forces dialog windows into edge-to-edge by default, but Material
-        // 1.9's BottomSheetDialog doesn't auto-pad the sheet for system bars in that mode
-        // (tall sheets like AddPlan end up with the Continue button behind the nav bar).
-        // Opt this dialog window back into the legacy "fits system windows" mode so Android
-        // applies status/nav bar insets to the decor view itself — sheets sit above the nav
-        // bar automatically without any per-screen padding logic.
-        bottomSheetDialog.window?.let { WindowCompat.setDecorFitsSystemWindows(it, true) }
+        // Edge-to-edge: keep the dialog window unconstrained so the sheet's
+        // background extends all the way to the screen bottom. The previous
+        // setDecorFitsSystemWindows(true) opt-out worked on most devices but
+        // left a visible gap between the sheet bottom and the nav bar on
+        // some Samsung One UI / gesture-nav configurations because the
+        // decor offset didn't match the actual nav-bar height. With the
+        // decor unconstrained, the sheet fills to screen bottom and we
+        // pad the content manually below.
+        bottomSheetDialog.window?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
 
         bottomSheetDialog.setOnShowListener { dialog: DialogInterface ->
             val dg = dialog as BottomSheetDialog
@@ -105,6 +110,23 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
                     setupFullHeight(it)
                 }
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED)
+
+                // Forward the system bar insets to the sheet content's bottom
+                // padding. Attach on design_bottom_sheet (above our root) —
+                // Material 1.9's BottomSheetBehavior can swallow insets before
+                // they reach binding.root, in which case the consumeSystemBarPadding
+                // listener installed in setListeners() never fires and the
+                // Continue button ends up behind the nav bar.
+                ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
+                    val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    _binding?.root?.updatePadding(
+                        left = sysBars.left,
+                        right = sysBars.right,
+                        bottom = sysBars.bottom
+                    )
+                    insets
+                }
+                ViewCompat.requestApplyInsets(it)
             }
         }
         return bottomSheetDialog

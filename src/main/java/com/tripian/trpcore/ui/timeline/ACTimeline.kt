@@ -13,9 +13,9 @@ import android.view.animation.DecelerateInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
@@ -44,6 +44,7 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
+import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.dp
 import kotlinx.coroutines.launch
 
@@ -814,16 +815,26 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.swipeRefresh.visibility = if (isMapMode) View.GONE else View.VISIBLE
         binding.mapContainer.visibility = if (isMapMode) View.VISIBLE else View.GONE
 
-        // Hide/show status bar for fullscreen map
-        val windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+        // Map mode keeps the status bar visible but transparent so the map fills
+        // behind it. We previously went immersive
+        // (WindowInsetsController.hide + BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE),
+        // but any swipe-from-top / return from a sub-activity made the system
+        // re-render the bar as a translucent dark transient overlay — which
+        // read as a pitch-black status bar. Override the BaseActivity root
+        // padding listener so the map can extend behind the bar; the
+        // headerContainer offsets itself by statusBarHeight below.
         if (isMapMode) {
-            windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-            windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, _ ->
+                v.updatePadding(top = 0)
+                WindowInsetsCompat.CONSUMED
+            }
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
         } else {
-            windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
-
+            binding.root.consumeSystemBarPadding(top = true)
+            window.statusBarColor = android.graphics.Color.WHITE
             hideMapBottomListCompletely()
         }
+        ViewCompat.requestApplyInsets(binding.root)
 
         // Hide savedPlans in map mode
         if (isMapMode) {
