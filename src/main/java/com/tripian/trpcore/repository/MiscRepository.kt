@@ -1,7 +1,6 @@
 package com.tripian.trpcore.repository
 
 import android.app.Application
-import com.tripian.gyg.base.Tripian
 import com.tripian.one.api.misc.model.ConfigList
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.CurrencyUtil
@@ -216,7 +215,6 @@ class MiscRepository @Inject constructor(
         }
         setCurrentLanguageKeys()
         setDaysTexts()
-        Tripian.allText = getLanguageValueForKey("all")
         isLanguagesLoaded = true
     }
 
