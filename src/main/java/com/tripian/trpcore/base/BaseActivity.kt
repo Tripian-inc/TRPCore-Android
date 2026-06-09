@@ -7,7 +7,7 @@ import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.airbnb.lottie.LottieCompositionFactory
 import com.tripian.trpcore.R
@@ -23,7 +23,7 @@ import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.setViewListener
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
-import dagger.android.support.HasSupportFragmentInjector
+import dagger.android.HasAndroidInjector
 import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 
@@ -32,7 +32,7 @@ import javax.inject.Inject
  * Created by Semih Özköroğlu on 29.09.2019
  */
 abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatActivity(),
-    HasSupportFragmentInjector {
+    HasAndroidInjector {
 
     private var _binding: VB? = null
     protected val binding get() = _binding!!
@@ -41,7 +41,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
     lateinit var actInjector: DispatchingAndroidInjector<Activity>
 
     @Inject
-    lateinit var fragmentInjector: DispatchingAndroidInjector<Fragment>
+    lateinit var androidInjector: DispatchingAndroidInjector<Any>
 
     @Inject
     lateinit var viewModelFactory: ViewModelFactory
@@ -76,7 +76,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         // Apply window insets to handle status bar
         binding.root.consumeSystemBarPadding(top = true)
 
-        viewModel = ViewModelProviders.of(this, viewModelFactory)
+        viewModel = ViewModelProvider(this, viewModelFactory)
             .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)
 
         viewModel.fragmentManager = supportFragmentManager
@@ -129,9 +129,7 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         super.onPause()
     }
 
-    override fun supportFragmentInjector(): AndroidInjector<Fragment> {
-        return fragmentInjector
-    }
+    override fun androidInjector(): AndroidInjector<Any> = androidInjector
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

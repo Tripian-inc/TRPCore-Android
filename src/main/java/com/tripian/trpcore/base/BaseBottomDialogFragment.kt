@@ -18,7 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -75,7 +75,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         AndroidSupportInjection.inject(this)
 
         if (!::viewModel.isInitialized) {
-            viewModel = ViewModelProviders.of(this, viewModelFactory)
+            viewModel = ViewModelProvider(this, viewModelFactory)
                 .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)
         }
 

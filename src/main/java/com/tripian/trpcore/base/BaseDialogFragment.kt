@@ -12,7 +12,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
@@ -45,7 +45,7 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
         AndroidSupportInjection.inject(this)
 
         if (!::viewModel.isInitialized) {
-            viewModel = ViewModelProviders.of(this, viewModelFactory)
+            viewModel = ViewModelProvider(this, viewModelFactory)
                 .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)
         }
 
