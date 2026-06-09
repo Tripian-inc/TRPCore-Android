@@ -33,6 +33,11 @@
 
     <style name="TrpAppTheme" parent="TrpBaseAppTheme" />
 
+    <!-- Civitatis slim: `AppTheme` previously resolved transitively from a
+         now-removed library. Alias to TrpAppTheme so consumer Manifests that
+         reference @style/AppTheme keep working. -->
+    <style name="AppTheme" parent="TrpAppTheme" />
+
     <style name="TrpAppTheme.Transparent">
         <item name="android:background">@android:color/transparent</item>
         <item name="android:windowBackground">@android:color/transparent</item>
