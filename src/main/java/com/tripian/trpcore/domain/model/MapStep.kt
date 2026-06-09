@@ -20,7 +20,6 @@ class MapStep : BaseModel() {
     var order: Int = -1
     var position: Int = -1
     var coordinate: Coordinate? = null
-    var leg: MapLeg? = null
     var group: String = ""
     var image: String? = ""
     var category: String? = ""
