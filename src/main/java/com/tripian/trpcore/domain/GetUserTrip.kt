@@ -1,7 +1,6 @@
 package com.tripian.trpcore.domain
 
 import com.tripian.trpcore.base.BaseUseCase
-import com.tripian.trpcore.di.modules.mytrip.MyTripScope
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.extensions.afterToday
 import com.tripian.trpcore.util.extensions.today
@@ -11,7 +10,6 @@ import javax.inject.Inject
 /**
  * Created by semihozkoroglu on 13.08.2020.
  */
-@MyTripScope
 class GetUserTrip @Inject constructor(val repository: TripRepository) : BaseUseCase<TripsResponse, GetUserTrip.Params>() {
 
     class Params(val isUpComing: Boolean, val useCache: Boolean = false)

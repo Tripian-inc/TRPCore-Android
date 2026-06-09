@@ -30,6 +30,4 @@ interface ViewListener {
     fun finishActivity()
 
     fun showSnackBarMessage(message: String)
-
-    fun openLogin()
 }

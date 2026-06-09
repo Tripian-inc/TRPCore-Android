@@ -9,7 +9,6 @@ import com.tripian.trpcore.base.BaseDialogFragment
 import com.tripian.trpcore.base.BaseFragment
 import com.tripian.trpcore.base.BaseUseCase
 import com.tripian.trpcore.base.BaseViewModel
-import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.UseCaseListener
 import com.tripian.trpcore.util.ViewListener
@@ -51,7 +50,7 @@ fun BaseViewModel.setUseCasesListener() {
             }
 
             override fun refreshTokenError() {
-                viewListener?.openLogin()
+                // Legacy openLogin path removed; SDK consumer handles re-auth via init flow.
             }
         }
     }
@@ -105,11 +104,6 @@ fun BaseActivity<*, *>.setViewListener() {
             baseActivity.showAlert(type, message)
         }
 
-        override fun openLogin() {
-            startActivity(ACSplash::class)
-
-            finishActivity()
-        }
     }
 }
 
@@ -168,11 +162,6 @@ fun BaseFragment<*,*>.setViewListener() {
             (activity as BaseActivity<*, *>).showAlert(type, message)
         }
 
-        override fun openLogin() {
-            startActivity(ACSplash::class)
-
-            finishActivity()
-        }
     }
 }
 
@@ -222,11 +211,6 @@ fun BaseDialogFragment<*, *>.setViewListener() {
             (activity as BaseActivity<*, *>).showAlert(type, message)
         }
 
-        override fun openLogin() {
-            startActivity(ACSplash::class)
-
-            finishActivity()
-        }
     }
 }
 
@@ -276,10 +260,5 @@ fun BaseBottomDialogFragment<*, *>.setViewListener() {
             (activity as BaseActivity<*, *>).showAlert(type, message)
         }
 
-        override fun openLogin() {
-            startActivity(ACSplash::class)
-
-            finishActivity()
-        }
     }
 }

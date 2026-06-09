@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
-import com.tripian.gyg.base.Tripian
 import com.tripian.one.TRPRest
 import com.tripian.trpcore.BuildConfig
 import com.tripian.trpcore.di.DaggerAppComponent
@@ -22,11 +21,9 @@ import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.repository.authorization.AwsConfig
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
-import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
 import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
-import com.tripian.trpprovider.base.ProviderCore
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -408,12 +405,6 @@ class TRPCore {
             }
         }
 
-        ProviderCore().init(app, "")
-
-        Tripian.setGetLanguage {
-            miscRepository.getLanguageValueForKey(it)
-        }
-
         RxJavaPlugins.setErrorHandler {
 //            FirebaseCrashlytics.getInstance().recordException(it)
 
@@ -451,73 +442,6 @@ class TRPCore {
         fetchLanguages()
 
         return this
-    }
-
-    /**
-     * Starts Tripian using the user's email and personal information.
-     *
-     * @param context The application context.
-     * @param email The user's email address.
-     * @param appLanguage The language code for translation (default "en").
-     */
-    fun startTripianWithEmail(
-        context: Context,
-        email: String,
-        appLanguage: String = "en",
-        appCurrency: String = "EUR"
-    ) {
-        startTripianCore(
-            context = context,
-            email = email,
-            uniqueId = null,
-            appLanguage = appLanguage,
-            appCurrency = appCurrency
-        )
-    }
-
-    /**
-     * Starts Tripian using a specific Unique ID.
-     *
-     * @param context The application context.
-     * @param uniqueId The unique user identifier.
-     * @param appLanguage The language code for translation (default "en").
-     */
-    fun startTripianWithUniqueId(
-        context: Context,
-        uniqueId: String,
-        appLanguage: String = "en",
-        appCurrency: String = "EUR"
-    ) {
-        startTripianCore(
-            context = context,
-            email = null,
-            uniqueId = uniqueId,
-            appLanguage = appLanguage,
-            appCurrency = appCurrency
-        )
-    }
-
-    // Private core implementation to avoid code duplication
-    private fun startTripianCore(
-        context: Context,
-        email: String? = null,
-        uniqueId: String? = null,
-        appLanguage: String,
-        appCurrency: String
-    ) {
-        applyLanguageAndPrefetchCities(appLanguage)
-
-        val intent = Intent(context, ACSplash::class.java)
-        intent.putExtra("email", email)
-        intent.putExtra("uniqueId", uniqueId)
-        intent.putExtra("appLanguage", appLanguage)
-        intent.putExtra(EXTRA_APP_CURRENCY, appCurrency)
-        // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
-        // When called from Activity context, SDK runs in same task for proper back navigation
-        if (context !is Activity) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
     }
 
     /**
