@@ -22,8 +22,6 @@ import com.tripian.trpcore.util.event.SingleLiveEvent
 import com.tripian.trpcore.util.extensions.navigateToFragment
 import com.tripian.trpcore.util.extensions.setUseCasesListener
 import com.tripian.trpcore.util.fragment.FragmentFactory
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
 import javax.inject.Inject
 import kotlin.reflect.KClass
 import kotlin.Array as Array1
@@ -33,9 +31,6 @@ import kotlin.Array as Array1
  * Created by Semih Özköroğlu on 29.09.2019
  */
 abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnBackPressListener {
-
-    @Inject
-    lateinit var eventBus: EventBus
 
     @Inject
     lateinit var strings: Strings
@@ -58,10 +53,6 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     @CallSuper
     open fun onViewCreated(savedInstanceState: Bundle?) {
-        if (!eventBus.isRegistered(this)) {
-            eventBus.register(this)
-        }
-
         setUseCasesListener()
 
         viewListener?.hideLoading()
@@ -73,9 +64,6 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     @CallSuper
     open fun onDestroy() {
-        if (eventBus.isRegistered(this)) {
-            eventBus.unregister(this)
-        }
     }
 
     @CallSuper
@@ -164,11 +152,6 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
         }
 
         navigateToFragment(fragment)
-    }
-
-    @Subscribe
-    fun onDummyBusEvent(dummy: Unit) {
-        // NOTE: Do not delete this, this method is required when registered to EventBus
     }
 
     fun showFragment(factory: FragmentFactory) {
