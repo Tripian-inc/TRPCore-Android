@@ -10,7 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
@@ -53,7 +53,7 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
         AndroidSupportInjection.inject(this)
 
         if (!::viewModel.isInitialized) {
-            viewModel = ViewModelProviders.of(this, viewModelFactory)
+            viewModel = ViewModelProvider(this, viewModelFactory)
                 .get((javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[1] as Class<VM>)
         }
 
