@@ -153,9 +153,6 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.11.0'
 //    kapt 'com.github.bumptech.glide:compiler:4.11.0'
 
-    // Eventbus
-    implementation 'org.greenrobot:eventbus:3.1.1'
-
     // Lottie - Loading animations
     implementation 'com.airbnb.android:lottie:6.6.0'
 
@@ -168,22 +165,17 @@ dependencies {
     // Sdp
     implementation 'com.intuit.sdp:sdp-android:1.0.6'
 
-    // Foundation - Note: TRPFoundationKit-Android is not included in this repository
-    // If needed, add as Maven dependency:
-
-    // Provider - Automatically include all other modules via JitPack
-    // IMPORTANT: These modules must be built on JitPack first before TRPCore can be built
-    // Build order: Build TRPAuth, TRPOne, TRPGyg, TRPProvider on JitPack first, then build TRPCore
-    // These are resolved as Maven dependencies from their respective JitPack repositories
-    implementation 'com.github.Tripian-inc:TRPProviderKit-Android:1.0.0'
-//    implementation 'com.github.Tripian-inc:TRPOne-Android:1.0.0'
-    implementation 'com.github.Tripian-inc:TRPAuth-Android:1.0.0'
-    implementation 'com.github.Tripian-inc:TRPGyg-Android:1.0.0'
-    implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
-
+    // TRPOne — primary REST client.
     // settings.gradle composite-build substitutes this to the local TRPOne
     // checkout while the camelCase migration is in flight.
     implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.7'
+
+    // TRPFoundation — base utilities (extensions, helpers).
+    implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
+
+    // Civitatis slim build: TRPProviderKit, TRPAuth, and TRPGyg were retired
+    // along with the legacy Trip-Mode UI in this branch. Do not add them
+    // back here without re-introducing their consumer code first.
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
     implementation 'com.google.firebase:firebase-crashlytics-ktx'
