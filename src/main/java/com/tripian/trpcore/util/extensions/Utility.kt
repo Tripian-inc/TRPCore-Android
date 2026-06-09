@@ -34,7 +34,6 @@ import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
-import com.google.common.base.Splitter
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.R
@@ -486,7 +485,7 @@ fun convertToLatLng(value: String?): LatLng? {
         return null
     }
 
-    val split = Splitter.on(',').splitToList(value)
+    val split = value.split(',')
     return if (split.size != 2) {
         null
     } else try {
