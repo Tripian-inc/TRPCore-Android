@@ -24,6 +24,15 @@
 
     <color name="trp_pink_soft">#f0cfde</color>
     <color name="trp_pink700">#C2033B</color>
+    <!-- Civitatis slim: these short color names previously resolved
+         transitively from now-removed libraries. Alias them to the local
+         tokens so any surviving drawable/layout reference keeps working. -->
+    <color name="pink">@color/trp_primary</color>
+    <color name="tripianRed">@color/trp_primary</color>
+    <color name="red_A200">@color/trp_primary</color>
+    <color name="white">@color/trp_white</color>
+    <color name="black">#000000</color>
+    <color name="transparent">@color/trp_transparent</color>
     <color name="trp_blue">#50a4d7</color>
     <color name="trp_blue_soft">#e0f4fd</color>
     <color name="trp_ultra_light_grey_x">#fbfbfb</color>
