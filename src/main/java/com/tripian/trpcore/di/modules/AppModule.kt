@@ -7,7 +7,6 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.Strings
 import dagger.Module
 import dagger.Provides
-import org.greenrobot.eventbus.EventBus
 import javax.inject.Singleton
 
 /**
@@ -32,12 +31,6 @@ class AppModule {
     @Singleton
     fun preferences(app: Application): Preferences {
         return Preferences(app.applicationContext)
-    }
-
-    @Provides
-    @Singleton
-    fun providesEventBus(): EventBus {
-        return EventBus.getDefault()
     }
 
 }
