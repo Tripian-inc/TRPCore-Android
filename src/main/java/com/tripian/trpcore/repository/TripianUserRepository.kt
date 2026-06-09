@@ -13,7 +13,6 @@ import com.tripian.one.api.users.model.UpdateUserRequest
 import com.tripian.one.api.users.model.User
 import com.tripian.one.api.users.model.UserResponse
 import com.tripian.trpcore.util.Preferences
-import com.tripian.trpcore.repository.authorization.AwsAuthorization
 import com.tripian.trpcore.util.Strings
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
@@ -27,8 +26,7 @@ class TripianUserRepository @Inject constructor(
     val service: Service,
     private val pref: Preferences,
     val gson: Gson,
-    val strings: Strings,
-    val awsAuthorization: AwsAuthorization
+    val strings: Strings
 ) {
 
     var user: User? = null
@@ -146,14 +144,12 @@ class TripianUserRepository @Inject constructor(
         pref.clearAllData()
         service.logout()
         user = null
-        awsAuthorization.doLogout()
     }
 
     fun deleteUser() {
         pref.clearAllData()
 //        service.deleteUser()
         user = null
-        awsAuthorization.doLogout()
     }
 
     fun deleteAccount(): Observable<EmptyResponse> {
