@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Civitatis slim: `R.id.container` was previously declared via a fragment
+         container layout in the legacy ACSplash/ACMyTrip/ACTripMode tree.
+         Those layouts are gone; the extensions in util/extensions/Activities.kt
+         and util/extensions/ViewModels.kt still reference R.id.container as a
+         default findViewById/navigateToFragment target. Declare it as an ID
+         resource here so compilation stays green; the runtime lookup is
+         null-safe in the existing call sites. -->
+    <item name="container" type="id" />
+</resources>
