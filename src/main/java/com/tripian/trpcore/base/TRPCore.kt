@@ -18,7 +18,6 @@ import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
-import com.tripian.trpcore.repository.authorization.AwsConfig
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
 import com.tripian.trpcore.ui.timeline.ACTimeline
@@ -43,7 +42,6 @@ class TRPCore {
         lateinit var core: TRPCore
         lateinit var placesApiKey: String
         lateinit var mapBoxApiKey: String
-        lateinit var awsConfig: AwsConfig
         private const val BASE_URL = "https://gyssxjfp9d.execute-api.eu-west-1.amazonaws.com"
         private lateinit var apiVersion: String
 

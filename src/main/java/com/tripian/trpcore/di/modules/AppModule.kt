@@ -4,7 +4,6 @@ import android.app.Application
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.tripian.trpcore.util.Preferences
-import com.tripian.trpcore.repository.authorization.AwsAuthorization
 import com.tripian.trpcore.util.Strings
 import dagger.Module
 import dagger.Provides
@@ -41,9 +40,4 @@ class AppModule {
         return EventBus.getDefault()
     }
 
-    @Provides
-    @Singleton
-    fun providesAwsAuthorization(app: Application, preferences: Preferences): AwsAuthorization {
-        return AwsAuthorization(app, preferences)
-    }
 }
