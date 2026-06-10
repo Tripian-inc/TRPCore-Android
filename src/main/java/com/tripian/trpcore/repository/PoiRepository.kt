@@ -220,6 +220,30 @@ class PoiRepository @Inject constructor(val service: ServiceWrapper) {
         poiCategories = response.data
         return response
     }
+
+    suspend fun searchWithFiltersAsync(
+        cityId: Int,
+        search: String? = null,
+        categoryIds: List<Int>? = null,
+        page: Int = 1,
+        limit: Int = 30,
+        sort: String? = null,
+        order: String? = null,
+        minPrice: Int? = null,
+        maxPrice: Int? = null
+    ): PoisResponse {
+        val priceParam = if (minPrice != null || maxPrice != null) {
+            "${minPrice ?: 0},${maxPrice ?: 1500}"
+        } else null
+        val response = service.getPoiAsync(
+            cityId = cityId, search = search,
+            categoryIds = categoryIds?.toTypedArray(),
+            page = page, limit = limit,
+            sort = sort, order = order, price = priceParam
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
+    }
 }
 
 fun Poi.convertToPlaceItem(): PlaceItem {

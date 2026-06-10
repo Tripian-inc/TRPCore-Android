@@ -4,14 +4,13 @@ import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.one.api.tour.model.TourProduct
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.util.extensions.resolveFlexibleWindow
 import com.tripian.trpcore.util.extensions.toAdditionalDataIso
-import io.reactivex.Single
 import javax.inject.Inject
 
 /**
@@ -29,7 +28,7 @@ import javax.inject.Inject
 class CreateReservedActivitySegmentUseCase @Inject constructor(
     private val timelineRepository: TimelineRepository,
     private val tourRepository: TourRepository
-) : BaseUseCase<ResponseModelBase, CreateReservedActivitySegmentUseCase.Params>() {
+) : SuspendUseCase<ResponseModelBase, CreateReservedActivitySegmentUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -49,18 +48,11 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         const val SEGMENT_TYPE_RESERVED_ACTIVITY = "reserved_activity"
     }
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            addObservable {
-                resolveTour(p.tour)
-                    .flatMap { resolvedTour ->
-                        val segment = buildSegment(p, resolvedTour)
-                        timelineRepository.editSegment(p.tripHash, segment)
-                            .toSingleDefault(ResponseModelBase().apply { status = 200 })
-                    }
-                    .toObservable()
-            }
-        }
+    override suspend fun execute(params: Params): ResponseModelBase {
+        val resolvedTour = resolveTour(params.tour)
+        val segment = buildSegment(params, resolvedTour)
+        timelineRepository.editSegmentAsync(params.tripHash, segment)
+        return ResponseModelBase().apply { status = 200 }
     }
 
     /**
@@ -70,20 +62,19 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
      * city). Lookup failures fall back to the original tour — the add still
      * proceeds, the resulting segment is just flagged `isNoLocation`.
      */
-    private fun resolveTour(tour: TourProduct): Single<TourProduct> {
-        if (hasUsableCoordinate(tour)) {
-            return Single.just(tour)
-        }
+    private suspend fun resolveTour(tour: TourProduct): TourProduct {
+        if (hasUsableCoordinate(tour)) return tour
         val productId = tour.productId
-        if (productId.isEmpty()) {
-            return Single.just(tour)
+        if (productId.isEmpty()) return tour
+        return try {
+            val response = tourRepository.lookupTourProductAsync(
+                providerId = tour.providerId,
+                productId = productId
+            )
+            response.data?.product ?: tour
+        } catch (_: Throwable) {
+            tour
         }
-        return tourRepository.lookupTourProduct(
-            providerId = tour.providerId,
-            productId = productId
-        )
-            .map { response -> response.data?.product ?: tour }
-            .onErrorReturn { tour }
     }
 
     private fun hasUsableCoordinate(tour: TourProduct): Boolean {

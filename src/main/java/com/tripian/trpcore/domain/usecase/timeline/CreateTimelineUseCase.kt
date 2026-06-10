@@ -3,7 +3,7 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSettings
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryCoordinate
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
@@ -21,19 +21,15 @@ import kotlin.math.sqrt
 class CreateTimelineUseCase @Inject constructor(
     private val repository: TimelineRepository,
     private val tripRepository: TripRepository
-) : BaseUseCase<Timeline, CreateTimelineUseCase.Params>() {
+) : SuspendUseCase<Timeline, CreateTimelineUseCase.Params>() {
 
     data class Params(
         val itinerary: ItineraryWithActivities
     )
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            val settings = createTimelineSettings(p.itinerary)
-            addObservable {
-                repository.createTimeline(settings)
-            }
-        }
+    override suspend fun execute(params: Params): Timeline {
+        val settings = createTimelineSettings(params.itinerary)
+        return repository.createTimelineAsync(settings)
     }
 
     /**

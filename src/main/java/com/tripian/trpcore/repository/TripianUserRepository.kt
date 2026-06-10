@@ -173,6 +173,28 @@ class TripianUserRepository @Inject constructor(
         return service.socialLogin()
     }
 
+    // ------------------------------------------------------------------
+    // Suspend equivalent — added during the RxJava → Coroutines push.
+    // Routes through TRPRest's callback API so we don't depend on the
+    // legacy Observable plumbing.
+    // ------------------------------------------------------------------
+
+    suspend fun lightLoginAsync(
+        uniqueId: String,
+        firstName: String?,
+        lastName: String?
+    ): LoginResponse = com.tripian.trpcore.base.awaitCallback { ok, fail ->
+        com.tripian.trpcore.base.TRPCore.core.trpRest.lightLogin(
+            request = LightLoginRequest().apply {
+                this.uniqueId = uniqueId
+                this.firstName = firstName
+                this.lastName = lastName
+            },
+            success = ok,
+            error = fail
+        )
+    }
+
 //    fun getPushToken(): Observable<TokenModel> {
 //        return PublishSubject.create {
 //            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->

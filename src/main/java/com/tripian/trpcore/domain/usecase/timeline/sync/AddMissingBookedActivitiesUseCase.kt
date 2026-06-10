@@ -1,11 +1,10 @@
 package com.tripian.trpcore.domain.usecase.timeline.sync
 
 import com.tripian.one.api.timeline.model.Timeline
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
-import io.reactivex.Completable
 import javax.inject.Inject
 
 /**
@@ -15,7 +14,7 @@ import javax.inject.Inject
  */
 class AddMissingBookedActivitiesUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<ResponseModelBase, AddMissingBookedActivitiesUseCase.Params>() {
+) : SuspendUseCase<ResponseModelBase, AddMissingBookedActivitiesUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -23,35 +22,28 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
         val timeline: Timeline
     )
 
-    override fun on(params: Params?) {
-        params?.let {
-            addObservable {
-                val existingActivityIds = it.timeline.tripProfile?.segments
-                    ?.mapNotNull { segment -> segment.additionalData?.activityId }
-                    ?.toSet()
-                    ?: emptySet()
+    override suspend fun execute(params: Params): ResponseModelBase {
+        val existingActivityIds = params.timeline.tripProfile?.segments
+            ?.mapNotNull { segment -> segment.additionalData?.activityId }
+            ?.toSet()
+            ?: emptySet()
 
-                val missingItems = it.itinerary.tripItems
-                    ?.filter { item -> item.activityId != null && item.activityId !in existingActivityIds }
-                    ?: emptyList()
+        val missingItems = params.itinerary.tripItems
+            ?.filter { item -> item.activityId != null && item.activityId !in existingActivityIds }
+            ?: emptyList()
 
-                if (missingItems.isEmpty()) {
-                    return@addObservable io.reactivex.Observable.just(ResponseModelBase())
-                }
+        if (missingItems.isEmpty()) {
+            return ResponseModelBase()
+        }
 
-                val createOperations = missingItems.map { tripItem ->
-                    val segment = it.itinerary.createBookedActivitySegment(tripItem)
-                    repository.editSegment(it.tripHash, segment)
-                        .onErrorResumeNext { error: Throwable ->
-                            android.util.Log.e("SYNC", "Add booked failed: ${error.message}")
-                            Completable.complete()
-                        }
-                }
-
-                Completable.concat(createOperations)
-                    .toSingleDefault(ResponseModelBase())
-                    .toObservable()
+        for (tripItem in missingItems) {
+            val segment = params.itinerary.createBookedActivitySegment(tripItem)
+            try {
+                repository.editSegmentAsync(params.tripHash, segment)
+            } catch (error: Throwable) {
+                android.util.Log.e("SYNC", "Add booked failed: ${error.message}")
             }
         }
+        return ResponseModelBase()
     }
 }

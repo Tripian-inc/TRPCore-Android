@@ -1,5 +1,6 @@
 package com.tripian.trpcore.domain
 
+import android.app.Application
 import android.graphics.Typeface
 import android.text.style.StyleSpan
 import com.google.android.gms.maps.model.LatLngBounds
@@ -11,76 +12,58 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.tripian.one.api.cities.model.City
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore.Companion.placesApiKey
 import com.tripian.trpcore.domain.model.PlaceAutocomplete
 import com.tripian.trpcore.util.extensions.convertToLatLngBounds
-import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
-
-/**
- * Created by semihozkoroglu on 13.08.2020.
- */
-class SearchAddress @Inject constructor() : BaseUseCase<List<PlaceAutocomplete>, SearchAddress.Params>() {
+class SearchAddress @Inject constructor(
+    private val app: Application
+) : SuspendUseCase<List<PlaceAutocomplete>, SearchAddress.Params>() {
 
     private var placesClient: PlacesClient? = null
 
     class Params(val city: City, val search: String)
 
-    override fun on(params: Params?) {
+    override suspend fun execute(params: Params): List<PlaceAutocomplete> {
         val apiKey = placesApiKey
+        if (apiKey.isEmpty() || apiKey == "DEFAULT_API_KEY") return emptyList()
 
-        // Log an error if apiKey is not set.
-        if (apiKey.isEmpty() || apiKey == "DEFAULT_API_KEY") {
-            return
-        }
         if (!Places.isInitialized()) {
-            Places.initialize(
-                /* applicationContext = */ app.applicationContext,
-                /* apiKey = */ apiKey
-            )
+            Places.initialize(app.applicationContext, apiKey)
         }
-
         if (placesClient == null) {
             placesClient = Places.createClient(app.applicationContext)
         }
 
-        addObservable {
-            PublishSubject.create {
-                val token = AutocompleteSessionToken.newInstance()
+        val token = AutocompleteSessionToken.newInstance()
+        val request = FindAutocompletePredictionsRequest.builder()
+            .setLocationRestriction(getLocationRestriction(params.city))
+            .setSessionToken(token)
+            .setQuery(params.search)
+            .build()
 
-                val request = FindAutocompletePredictionsRequest.builder()
-                    .setLocationRestriction(getLocationRestriction(params!!.city))
-//                    .setCountries(listOf(params.city.country?.code))
-                    .setSessionToken(token)
-                    .setQuery(params.search)
-                    .build()
-
-                val prediction = placesClient!!.findAutocompletePredictions(request)
-
-                placesClient!!.findAutocompletePredictions(request).addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
+        return suspendCancellableCoroutine { cont ->
+            placesClient!!.findAutocompletePredictions(request)
+                .addOnSuccessListener { response: FindAutocompletePredictionsResponse ->
                     val items = ArrayList<PlaceAutocomplete>()
-
-                    if (prediction.isSuccessful && prediction.result != null) {
-                        val normal = StyleSpan(Typeface.NORMAL)
-
-                        for (p in prediction.result.autocompletePredictions) {
-                            items.add(PlaceAutocomplete().apply {
-                                placeId = p.placeId
-                                area = p.getPrimaryText(normal).toString()
-                                address = p.getSecondaryText(normal).toString()
-                            })
-                        }
-
-                        it.onNext(items)
-                    } else {
-                        it.onNext(items)
+                    val normal = StyleSpan(Typeface.NORMAL)
+                    for (p in response.autocompletePredictions) {
+                        items.add(PlaceAutocomplete().apply {
+                            placeId = p.placeId
+                            area = p.getPrimaryText(normal).toString()
+                            address = p.getSecondaryText(normal).toString()
+                        })
                     }
-                }.addOnFailureListener { ex ->
-                    it.onError(ex)
+                    if (cont.isActive) cont.resume(items)
                 }
-            }
+                .addOnFailureListener { ex ->
+                    if (cont.isActive) cont.resumeWithException(ex)
+                }
         }
     }
 

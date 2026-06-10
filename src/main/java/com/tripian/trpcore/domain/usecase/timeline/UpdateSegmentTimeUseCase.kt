@@ -3,7 +3,7 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
@@ -19,7 +19,7 @@ import javax.inject.Inject
  */
 class UpdateSegmentTimeUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<ResponseModelBase, UpdateSegmentTimeUseCase.Params>() {
+) : SuspendUseCase<ResponseModelBase, UpdateSegmentTimeUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -29,71 +29,66 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         val newEndTime: String     // "HH:mm"
     )
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            val baseDate = datePart(p.original.startDate)
-                ?: datePart(p.original.additionalData?.startDatetime)
-                ?: return  // Can't rebuild times without an anchor date
+    override suspend fun execute(params: Params): ResponseModelBase {
+        val baseDate = datePart(params.original.startDate)
+            ?: datePart(params.original.additionalData?.startDatetime)
+            ?: return ResponseModelBase().apply { status = 200 }
 
-            val newStartDate = "$baseDate ${p.newStartTime}"
-            val newEndDate = "$baseDate ${p.newEndTime}"
+        val newStartDate = "$baseDate ${params.newStartTime}"
+        val newEndDate = "$baseDate ${params.newEndTime}"
 
-            val updatedAdditionalData = p.original.additionalData?.let { src ->
-                TimelineSegmentAdditionalData().apply {
-                    activityId = src.activityId
-                    bookingId = src.bookingId
-                    title = src.title
-                    imageUrl = src.imageUrl
-                    description = src.description
-                    startDatetime = newStartDate
-                    endDatetime = newEndDate
-                    coordinate = src.coordinate
-                    cancellation = src.cancellation
-                    price = src.price
-                    currency = src.currency
-                    duration = src.duration
-                    rating = src.rating
-                    reviewCount = src.reviewCount
-                    isNoLocation = src.isNoLocation
-                }
-            }
-
-            val segment = TimelineSegmentSettings().apply {
-                segmentIndex = p.segmentIndex
-                cityId = p.original.cityId
-                title = p.original.title
-                description = p.original.description
-                startDate = newStartDate
-                endDate = newEndDate
-                adults = p.original.adults
-                children = p.original.children
-                pets = p.original.pets
-                coordinate = p.original.coordinate
-                destinationCoordinate = p.original.destinationCoordinate
-                answerIds = p.original.answerIds ?: emptyList()
-                doNotRecommend = p.original.doNotRecommend
-                excludePoiIds = p.original.excludePoiIds
-                includePoiIds = p.original.includePoiIds
-                considerWeather = p.original.considerWeather
-                distinctPlan = p.original.distinctPlan
-                available = p.original.available
-                accommodation = p.original.accommodation
-                destinationAccommodation = p.original.destinationAccommodation
-                smartRecommendation = p.original.smartRecommendation
-                activityFreeText = p.original.activityFreeText
-                activityIds = p.original.activityIds
-                excludedActivityIds = p.original.excludedActivityIds
-                segmentType = p.original.segmentType
-                additionalData = updatedAdditionalData
-                currency = TRPCore.core.getCurrentCurrency()
-            }
-
-            addObservable {
-                repository.editSegment(p.tripHash, segment)
-                    .toSingleDefault(ResponseModelBase().apply { status = 200 })
-                    .toObservable()
+        val updatedAdditionalData = params.original.additionalData?.let { src ->
+            TimelineSegmentAdditionalData().apply {
+                activityId = src.activityId
+                bookingId = src.bookingId
+                title = src.title
+                imageUrl = src.imageUrl
+                description = src.description
+                startDatetime = newStartDate
+                endDatetime = newEndDate
+                coordinate = src.coordinate
+                cancellation = src.cancellation
+                price = src.price
+                currency = src.currency
+                duration = src.duration
+                rating = src.rating
+                reviewCount = src.reviewCount
+                isNoLocation = src.isNoLocation
             }
         }
+
+        val segment = TimelineSegmentSettings().apply {
+            segmentIndex = params.segmentIndex
+            cityId = params.original.cityId
+            title = params.original.title
+            description = params.original.description
+            startDate = newStartDate
+            endDate = newEndDate
+            adults = params.original.adults
+            children = params.original.children
+            pets = params.original.pets
+            coordinate = params.original.coordinate
+            destinationCoordinate = params.original.destinationCoordinate
+            answerIds = params.original.answerIds ?: emptyList()
+            doNotRecommend = params.original.doNotRecommend
+            excludePoiIds = params.original.excludePoiIds
+            includePoiIds = params.original.includePoiIds
+            considerWeather = params.original.considerWeather
+            distinctPlan = params.original.distinctPlan
+            available = params.original.available
+            accommodation = params.original.accommodation
+            destinationAccommodation = params.original.destinationAccommodation
+            smartRecommendation = params.original.smartRecommendation
+            activityFreeText = params.original.activityFreeText
+            activityIds = params.original.activityIds
+            excludedActivityIds = params.original.excludedActivityIds
+            segmentType = params.original.segmentType
+            additionalData = updatedAdditionalData
+            currency = TRPCore.core.getCurrentCurrency()
+        }
+
+        repository.editSegmentAsync(params.tripHash, segment)
+        return ResponseModelBase().apply { status = 200 }
     }
 
     /** "yyyy-MM-dd HH:mm" or "yyyy-MM-dd" → "yyyy-MM-dd"; null on parse miss. */
