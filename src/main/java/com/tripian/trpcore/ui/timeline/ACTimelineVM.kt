@@ -344,38 +344,35 @@ class ACTimelineVM @Inject constructor(
      * request regardless of subject state.
      */
     private fun attemptLanguageFetch(allowRetry: Boolean) {
-        val source = if (allowRetry) {
-            miscRepository.waitForLanguagesLoaded()
-        } else {
-            miscRepository.refetchLanguages()
-        }
-        source
-            .timeout(LANGUAGE_RETRY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { loaded ->
-                    if (loaded && miscRepository.isLanguagesLoaded) {
-                        // Translations ready. Now block on the parallel light-login
-                        // so the timeline fetch never runs without an auth header.
-                        waitForLoginThenProceed {
-                            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
-                            proceedAfterLanguagesLoaded()
-                        }
-                    } else if (allowRetry) {
-                        attemptLanguageFetch(allowRetry = false)
-                    } else {
-                        failLanguageLoad("Translation fetch returned no data")
-                    }
-                },
-                { error ->
+        viewModelScope.launch {
+            try {
+                val loaded = kotlinx.coroutines.withTimeout(
+                    LANGUAGE_RETRY_TIMEOUT_SECONDS * 1000
+                ) {
                     if (allowRetry) {
-                        attemptLanguageFetch(allowRetry = false)
+                        miscRepository.waitForLanguagesLoadedAsync()
                     } else {
-                        failLanguageLoad(error?.message ?: "Translation fetch failed")
+                        miscRepository.refetchLanguagesAsync()
                     }
                 }
-            )
+                if (loaded && miscRepository.isLanguagesLoaded) {
+                    waitForLoginThenProceed {
+                        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+                        proceedAfterLanguagesLoaded()
+                    }
+                } else if (allowRetry) {
+                    attemptLanguageFetch(allowRetry = false)
+                } else {
+                    failLanguageLoad("Translation fetch returned no data")
+                }
+            } catch (error: Throwable) {
+                if (allowRetry) {
+                    attemptLanguageFetch(allowRetry = false)
+                } else {
+                    failLanguageLoad(error.message ?: "Translation fetch failed")
+                }
+            }
+        }
     }
 
     /**

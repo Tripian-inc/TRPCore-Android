@@ -2,16 +2,16 @@ package com.tripian.trpcore.domain.manager
 
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
-import com.tripian.one.api.timeline.model.TimelineSegment
-import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.one.api.tour.model.TourScheduleAvailabilityItem
-import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -22,22 +22,21 @@ import javax.inject.Singleton
 /**
  * Theme 17 — post-load availability sweep.
  *
- * After a timeline is fetched, this manager iterates every non-past day, batches
- * the activity IDs for that day, calls `POST /tour-api/schedule-bulk`,
- * then marks expired any reserved activity / activity step whose booked time no
- * longer appears in the response.
+ * After a timeline is fetched, this manager iterates every non-past day,
+ * batches the activity IDs for that day, calls
+ * `POST /tour-api/schedule-bulk`, then marks expired any reserved activity
+ * / activity step whose booked time no longer appears in the response.
  *
  * Properties:
- *  - **One-shot per timeline**: [runInitialAvailabilityCheck] is a no-op if a sweep
- *    has already completed; call [reset] before reusing on a fresh timeline.
- *  - **Cancellation token**: [currentGeneration] increments on each `reset()` /
- *    `cancel()`. In-flight emissions check the generation and abort silently if
- *    a newer sweep has been started.
- *  - **Selected-day-first**: the user's currently-viewed day is requested before
- *    other days (when [selectedDate] is non-null and not in the past).
+ *  - **One-shot per timeline**: [runInitialAvailabilityCheck] is a no-op if
+ *    a sweep has already completed; call [reset] before reusing.
+ *  - **Cancellation**: [reset] / [cancel] cancel the running coroutine job;
+ *    a fresh call starts a new one.
+ *  - **Selected-day-first**: the user's currently-viewed day is requested
+ *    before other days.
  *  - **Past-days skipped**: dates strictly before today are not queried.
- *  - **Sequential per-day**: one batched request per day, processed serially via
- *    `concatMap` (avoids slamming the backend).
+ *  - **Sequential per-day**: one batched request per day, processed serially
+ *    (avoids slamming the backend).
  */
 @Singleton
 class AvailabilityCheckManager @Inject constructor(
@@ -46,22 +45,16 @@ class AvailabilityCheckManager @Inject constructor(
 
     interface ItemUpdateListener {
         /**
-         * Invoked on the main thread when a single (segmentIndex, stepId) target
-         * resolves to an expiration verdict. [stepId] is non-null only for
-         * itinerary steps inside a Recommendations plan.
+         * Invoked on the main thread when a single (segmentIndex, stepId)
+         * target resolves to an expiration verdict. [stepId] is non-null
+         * only for itinerary steps inside a Recommendations plan.
          */
         fun onItemUpdated(segmentIndex: Int, stepId: Int?, isExpired: Boolean)
     }
 
-    private val disposables = CompositeDisposable()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var currentJob: Job? = null
     private var hasRunInitialCheck: Boolean = false
-
-    /**
-     * Generation token. Each call to [reset] or [cancel] increments this; any
-     * in-flight subscription captures the value at start time and bails if a
-     * newer sweep has begun.
-     */
-    private var currentGeneration: Int = 0
 
     fun runInitialAvailabilityCheck(
         timeline: Timeline,
@@ -74,8 +67,6 @@ class AvailabilityCheckManager @Inject constructor(
     ) {
         if (hasRunInitialCheck) return
         hasRunInitialCheck = true
-        currentGeneration += 1
-        val gen = currentGeneration
 
         val days = collectNonPastDaysWithSelectedFirst(timeline, selectedDate)
         if (days.isEmpty()) {
@@ -83,52 +74,42 @@ class AvailabilityCheckManager @Inject constructor(
             return
         }
 
-        val sub = Observable.fromIterable(days)
-            .concatMap { dayInfo ->
-                if (gen != currentGeneration) {
-                    return@concatMap Observable.empty<Pair<DayInfo, List<TourScheduleAvailabilityItem>>>()
-                }
-                val targets = collectTargetsForDay(timeline, dayInfo, providerId)
-                if (targets.isEmpty()) return@concatMap Observable.empty()
-
-                tourRepository.getTourScheduleAvailability(
-                    items = targets.map { it.activityId },
-                    date = dayInfo.dateString,
-                    currency = currency,
-                    lang = lang
-                ).toObservable()
-                    .map { response ->
-                        val items = response.data?.schedules.orEmpty()
-                        dayInfo to items
-                    }
-            }
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .doFinally {
-                if (gen == currentGeneration) onCompleted()
-            }
-            .subscribe(
-                { (dayInfo, response) ->
-                    if (gen != currentGeneration) return@subscribe
+        currentJob = scope.launch {
+            try {
+                for (dayInfo in days) {
                     val targets = collectTargetsForDay(timeline, dayInfo, providerId)
-                    processResults(targets, response, listener)
-                },
-                { /* swallow — sweep is best-effort, surface nothing on the UI */ }
-            )
-
-        disposables.add(sub)
+                    if (targets.isEmpty()) continue
+                    val response = try {
+                        tourRepository.getTourScheduleAvailabilityAsync(
+                            items = targets.map { it.activityId },
+                            date = dayInfo.dateString,
+                            currency = currency,
+                            lang = lang
+                        )
+                    } catch (_: Throwable) {
+                        // Best-effort sweep — skip the day, continue to the next.
+                        continue
+                    }
+                    val items = response.data?.schedules.orEmpty()
+                    withContext(Dispatchers.Main) {
+                        processResults(targets, items, listener)
+                    }
+                }
+            } finally {
+                withContext(Dispatchers.Main) { onCompleted() }
+            }
+        }
     }
 
     /** Cancel any in-flight sweep without resetting the one-shot guard. */
     fun cancel() {
-        currentGeneration += 1
-        disposables.clear()
+        currentJob?.cancel()
+        currentJob = null
     }
 
     /**
-     * Reset for a fresh timeline. Clears in-flight subscriptions AND clears the
-     * one-shot guard so the next [runInitialAvailabilityCheck] call actually
-     * executes.
+     * Reset for a fresh timeline. Cancels in-flight work and clears the
+     * one-shot guard so the next [runInitialAvailabilityCheck] runs.
      */
     fun reset() {
         cancel()
@@ -219,17 +200,13 @@ class AvailabilityCheckManager @Inject constructor(
         targets.forEach { target ->
             val item = byId[target.activityId]
             val expired = when {
-                // Missing from response → expired
                 item == null -> true
-                // Server returned null/empty schedule → sold out / not available
                 item.schedule == null -> true
                 else -> {
                     val slots = item.schedule!!.allSlots
                     if (target.expectedTime == null) {
-                        // Flexible target — expects at least one slot (any time)
                         slots.isEmpty()
                     } else {
-                        // Timed target — accept a flex slot OR a slot at the expected time
                         val hasFlex = slots.any { it.time == null }
                         val hasExact = slots.any { it.time == target.expectedTime }
                         !(hasFlex || hasExact)
@@ -258,9 +235,9 @@ class AvailabilityCheckManager @Inject constructor(
         if (raw.startsWith("C_")) raw else "C_${raw}_${providerId}"
 
     /**
-     * Extracts the "HH:mm" portion of a datetime string. The timeline payload mixes
-     * "yyyy-MM-dd HH:mm" (segments) and "yyyy-MM-dd HH:mm:ss" (steps); slot.time on
-     * the bulk response is always "HH:mm", so we trim to length 5 to match.
+     * Extracts the "HH:mm" portion of a datetime string. The timeline payload
+     * mixes "yyyy-MM-dd HH:mm" (segments) and "yyyy-MM-dd HH:mm:ss" (steps);
+     * slot.time on the bulk response is always "HH:mm", so trim to length 5.
      */
     private fun extractHourMinute(dateTime: String?): String? {
         val timePart = dateTime?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() } ?: return null

@@ -1,18 +1,19 @@
 package com.tripian.trpcore.domain.manager
 
-import io.reactivex.Observable
-import io.reactivex.subjects.BehaviorSubject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Theme 10 — global observable for the "timeline is being refreshed" state.
+ * Theme 10 — global state holder for the "timeline is being refreshed" status.
  *
  * The single timeline view-model owns the actual refresh operation, but other
- * screens that can be open simultaneously (Saved Plans, the AddPlan
- * Time Selection bottom sheet) need to react to it: they show a small loader
- * while a refresh is in flight and surface a confirmation when it completes.
+ * screens that can be open simultaneously (Saved Plans, the AddPlan Time
+ * Selection bottom sheet) need to react to it: they show a small loader while
+ * a refresh is in flight and surface a confirmation when it completes.
  *
  * State transitions are driven by ACTimelineVM via [setRefreshing] / [setCompleted]
- * / [setFailed] / [setIdle]. Subscribers receive the most recent value on subscribe.
+ * / [setFailed] / [setIdle]. Subscribers receive the most recent value on collect.
  */
 sealed class TimelineRefreshStatus {
     object Idle : TimelineRefreshStatus()
@@ -23,17 +24,16 @@ sealed class TimelineRefreshStatus {
 
 object TimelineRefreshState {
 
-    private val subject: BehaviorSubject<TimelineRefreshStatus> =
-        BehaviorSubject.createDefault(TimelineRefreshStatus.Idle)
+    private val _status = MutableStateFlow<TimelineRefreshStatus>(TimelineRefreshStatus.Idle)
 
-    /** Observable feed of the current status. Replays the latest value on subscribe. */
-    val status: Observable<TimelineRefreshStatus> = subject.hide()
+    /** Hot state feed; collectors get the latest value on subscribe. */
+    val status: StateFlow<TimelineRefreshStatus> = _status.asStateFlow()
 
     /** Current value (synchronous). */
-    fun current(): TimelineRefreshStatus = subject.value ?: TimelineRefreshStatus.Idle
+    fun current(): TimelineRefreshStatus = _status.value
 
-    fun setRefreshing() = subject.onNext(TimelineRefreshStatus.Refreshing)
-    fun setCompleted() = subject.onNext(TimelineRefreshStatus.Completed)
-    fun setFailed(error: Throwable) = subject.onNext(TimelineRefreshStatus.Failed(error))
-    fun setIdle() = subject.onNext(TimelineRefreshStatus.Idle)
+    fun setRefreshing() { _status.value = TimelineRefreshStatus.Refreshing }
+    fun setCompleted() { _status.value = TimelineRefreshStatus.Completed }
+    fun setFailed(error: Throwable) { _status.value = TimelineRefreshStatus.Failed(error) }
+    fun setIdle() { _status.value = TimelineRefreshStatus.Idle }
 }

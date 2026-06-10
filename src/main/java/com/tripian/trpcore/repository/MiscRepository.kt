@@ -2,7 +2,9 @@ package com.tripian.trpcore.repository
 
 import android.app.Application
 import com.tripian.one.api.misc.model.ConfigList
+import com.tripian.one.api.misc.model.ConfigListResponse
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.base.awaitCallback
 import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.LanguageConst
@@ -15,9 +17,14 @@ import com.tripian.trpcore.util.extensions.sundayText
 import com.tripian.trpcore.util.extensions.thursdayText
 import com.tripian.trpcore.util.extensions.tuesdayText
 import com.tripian.trpcore.util.extensions.wednesdayText
-import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.BehaviorSubject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import okhttp3.ResponseBody
 import org.json.JSONObject
 import javax.inject.Inject
 
@@ -32,135 +39,88 @@ class MiscRepository @Inject constructor(
 
     private var configList: ConfigList? = null
 
-    // Flag to track if languages have been loaded
     @Volatile
     var isLanguagesLoaded: Boolean = false
         private set
 
-    // Subject to emit when languages are loaded - multiple subscribers can wait on this
-    private val languagesLoadedSubject = BehaviorSubject.create<Boolean>()
-
-    // Flag to track if a fetch is in progress
-    @Volatile
-    private var isFetchInProgress: Boolean = false
+    // Single Deferred<Boolean> coalesces concurrent fetches: the first caller
+    // kicks off the network request, every subsequent caller awaits the same
+    // result instead of issuing a parallel request. Replaces the prior
+    // BehaviorSubject + in-progress-flag dance.
+    private val fetchMutex = Mutex()
+    private var inflight: Deferred<Boolean>? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Fetches language values from API.
-     * If called multiple times while a fetch is in progress, returns the same Observable.
-     * This prevents multiple API calls and allows callers to wait for the ongoing fetch.
+     * Concurrent callers share the same in-flight request.
      */
-    fun getLanguageValues(): Observable<Boolean> {
-        // If already loaded, return immediately
-        if (isLanguagesLoaded) {
-            return Observable.just(true)
-        }
+    suspend fun getLanguageValuesAsync(): Boolean {
+        if (isLanguagesLoaded) return true
+        if (loadFreshCachedLanguages()) return true
+        if (app.isConnectedNet().not()) return tryLoadCachedLanguages()
+        return runOrJoinFetch()
+    }
 
-        // Fresh-enough cache from a prior session — skip the network call. The
-        // backend bundle changes rarely, so a 1-hour TTL keeps cold-starts fast
-        // without serving badly stale strings.
-        if (loadFreshCachedLanguages()) {
-            return Observable.just(true)
-        }
+    /**
+     * If already loaded, returns immediately. Otherwise piggybacks on (or
+     * starts) the shared fetch.
+     */
+    suspend fun waitForLanguagesLoadedAsync(): Boolean {
+        if (isLanguagesLoaded) return true
+        return getLanguageValuesAsync()
+    }
 
-        // If offline, try to use cached data (any age — better than nothing).
-        if (app.isConnectedNet().not()) {
-            return Observable.just(tryLoadCachedLanguages())
-        }
+    /**
+     * Forces a fresh /languages fetch, bypassing any cached in-flight result
+     * (but still respecting the fresh-cache TTL — the retry exists for stuck
+     * states, not to defeat the cache).
+     */
+    suspend fun refetchLanguagesAsync(): Boolean {
+        if (isLanguagesLoaded) return true
+        if (loadFreshCachedLanguages()) return true
+        if (app.isConnectedNet().not()) return tryLoadCachedLanguages()
+        fetchMutex.withLock { inflight = null }
+        return runOrJoinFetch()
+    }
 
-        // If fetch already in progress, return subject that will emit when done
-        if (isFetchInProgress) {
-            return languagesLoadedSubject.take(1)
+    private suspend fun runOrJoinFetch(): Boolean {
+        val deferred = fetchMutex.withLock {
+            inflight ?: scope.async { performFetch() }.also { inflight = it }
         }
-
-        // Start new fetch - runs on IO thread to avoid blocking main thread (ANR prevention)
-        isFetchInProgress = true
-        return service.getLanguageValues()
-            .subscribeOn(Schedulers.io())
-            .map {
-                setLanguages(it.string())
-                // Stamp the network success so subsequent cold starts within
-                // LANGUAGE_CACHE_TTL_MS skip the request entirely.
-                if (isLanguagesLoaded) {
-                    preferences.setLong(
-                        Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
-                        System.currentTimeMillis()
-                    )
-                }
-                isLanguagesLoaded
+        return try {
+            deferred.await()
+        } finally {
+            fetchMutex.withLock {
+                if (inflight === deferred) inflight = null
             }
+        }
+    }
+
+    private suspend fun performFetch(): Boolean {
+        return try {
+            val body: ResponseBody = awaitCallback { ok, fail ->
+                TRPCore.core.trpRest.getLanguageValues(success = ok, error = fail)
+            }
+            setLanguages(body.string())
+            if (isLanguagesLoaded) {
+                preferences.setLong(
+                    Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
+                    System.currentTimeMillis()
+                )
+            }
+            isLanguagesLoaded
+        } catch (_: Throwable) {
             // Network/server failure should not lock the user out if they have
             // previously loaded translations — fall back to the cached blob.
-            .onErrorReturn { tryLoadCachedLanguages() }
-            .doOnNext { success ->
-                languagesLoadedSubject.onNext(success)
-            }
-            .doFinally {
-                isFetchInProgress = false
-            }
-    }
-
-    /**
-     * Returns an Observable that emits when languages are loaded.
-     * If already loaded, emits immediately.
-     * If fetch is in progress, waits for it to complete.
-     * If no fetch is in progress, starts one.
-     */
-    fun waitForLanguagesLoaded(): Observable<Boolean> {
-        if (isLanguagesLoaded) {
-            return Observable.just(true)
+            tryLoadCachedLanguages()
         }
-        return getLanguageValues()
-    }
-
-    /**
-     * Forces a fresh /languages fetch, bypassing the shared in-progress subject.
-     * Callers that ended up with a stale `false` from a previous failed fetch
-     * (or that timed out waiting on a still-in-flight init fetch) use this to
-     * guarantee a definitive answer.
-     */
-    fun refetchLanguages(): Observable<Boolean> {
-        if (isLanguagesLoaded) {
-            return Observable.just(true)
-        }
-        // Even the "forced" path respects the fresh-cache TTL — the retry exists
-        // for stuck/stale subject states, not to defeat the cache.
-        if (loadFreshCachedLanguages()) {
-            return Observable.just(true)
-        }
-        if (app.isConnectedNet().not()) {
-            return Observable.just(tryLoadCachedLanguages())
-        }
-        isFetchInProgress = true
-        return service.getLanguageValues()
-            .subscribeOn(Schedulers.io())
-            .map {
-                setLanguages(it.string())
-                // Stamp the network success so subsequent cold starts within
-                // LANGUAGE_CACHE_TTL_MS skip the request entirely.
-                if (isLanguagesLoaded) {
-                    preferences.setLong(
-                        Preferences.Keys.APP_LANGUAGE_TRANSLATIONS_FETCHED_AT,
-                        System.currentTimeMillis()
-                    )
-                }
-                isLanguagesLoaded
-            }
-            // Same fallback as the shared path: a network/server miss must not
-            // close the SDK if cached translations from a prior session exist.
-            .onErrorReturn { tryLoadCachedLanguages() }
-            .doOnNext { success ->
-                languagesLoadedSubject.onNext(success)
-            }
-            .doFinally {
-                isFetchInProgress = false
-            }
     }
 
     /**
      * Loads the JSON blob persisted by the most recent successful `/languages`
      * response from preferences. Returns `true` only if [setLanguages] completes
-     * without throwing AND flips [isLanguagesLoaded]. Callers use this as a
-     * last-resort fallback when the live fetch fails.
+     * without throwing AND flips [isLanguagesLoaded].
      */
     private fun tryLoadCachedLanguages(): Boolean {
         val cached = preferences.getString(Preferences.Keys.APP_LANGUAGE_TRANSLATIONS, "")
@@ -176,8 +136,6 @@ class MiscRepository @Inject constructor(
     /**
      * Loads cached translations only when the persisted blob is younger than
      * [LANGUAGE_CACHE_TTL_MS]. Returns `true` on a successful in-window hit.
-     * On a miss (no cache / stale / parse failure) the caller falls through to
-     * the network path so a fresh bundle is fetched.
      */
     private fun loadFreshCachedLanguages(): Boolean {
         val fetchedAt = preferences.getLong(
@@ -190,17 +148,13 @@ class MiscRepository @Inject constructor(
         return tryLoadCachedLanguages()
     }
 
-    fun getConfigList(): Observable<ConfigList> {
-        return if (configList == null) {
-            service.getConfigList().map {
-                configList = it.data
-
-                it.data
-            }
-        } else {
-            Observable.just(configList)
+    suspend fun getConfigListAsync(): ConfigList? {
+        configList?.let { return it }
+        val response: ConfigListResponse = awaitCallback { ok, fail ->
+            TRPCore.core.trpRest.getConfigList(success = ok, error = fail)
         }
-//        return service.getLanguageValues()
+        configList = response.data
+        return response.data
     }
 
     private fun setLanguages(jsonText: String) {
@@ -220,10 +174,7 @@ class MiscRepository @Inject constructor(
 
     private fun setCurrentLanguageKeys() {
         val currentLang = preferences.getString(Preferences.Keys.APP_LANGUAGE)
-
-        // Resolve language code - handle null, empty, and regional locales like "es-MX" → "es"
         val resolvedLang = resolveLanguageCode(currentLang)
-
         TRPCore.core.appConfig.appLanguage = resolvedLang
         currentLanguageValues = languageValues.getJSONObject(resolvedLang).getJSONObject("keys")
     }
@@ -234,23 +185,12 @@ class MiscRepository @Inject constructor(
      * and falls back to "en" if not found.
      */
     private fun resolveLanguageCode(langCode: String?): String {
-        // Handle null or empty
-        if (langCode.isNullOrEmpty()) {
-            return "en"
-        }
-
-        // If the exact code exists, use it
-        if (languageValues.has(langCode)) {
-            return langCode
-        }
-
-        // Try base language code (e.g., "es-MX" → "es")
+        if (langCode.isNullOrEmpty()) return "en"
+        if (languageValues.has(langCode)) return langCode
         val baseLang = langCode.split("-", "_").firstOrNull()?.lowercase()
         if (!baseLang.isNullOrEmpty() && languageValues.has(baseLang)) {
             return baseLang
         }
-
-        // Fallback to English
         return "en"
     }
 
@@ -281,18 +221,10 @@ class MiscRepository @Inject constructor(
         TRPCore.core.appConfig.appCurrency = resolvedCurrency
     }
 
-    /**
-     * Gets the current currency code.
-     * @return Current currency code (default: EUR)
-     */
     fun getCurrentCurrency(): String {
         return TRPCore.core.appConfig.appCurrency
     }
 
-    /**
-     * Gets the saved currency code from preferences.
-     * @return Saved currency code or empty string if not set
-     */
     fun getSavedCurrency(): String {
         return preferences.getString(Preferences.Keys.APP_CURRENCY, "") ?: ""
     }
@@ -308,23 +240,12 @@ class MiscRepository @Inject constructor(
 
     /**
      * Gets a value from a JSONObject using dot notation for nested keys.
-     * e.g., "timeline.emptyState.addPlansButton" will navigate:
-     * timeline -> emptyState -> addPlansButton
-     *
      * Falls back to direct key lookup if nested navigation fails.
      */
     private fun getNestedValue(json: JSONObject, key: String): String {
-        // First try direct key lookup (for flat structure)
-        if (json.has(key)) {
-            return json.getString(key)
-        }
-
-        // Try nested key navigation (for dot notation)
+        if (json.has(key)) return json.getString(key)
         val parts = key.split(".")
-        if (parts.size == 1) {
-            return json.getString(key)
-        }
-
+        if (parts.size == 1) return json.getString(key)
         var current: Any = json
         for (i in 0 until parts.size - 1) {
             current = (current as JSONObject).getJSONObject(parts[i])
@@ -337,8 +258,7 @@ class MiscRepository @Inject constructor(
         if (texts.isEmpty()) return getLanguageValueForKey(key)
         return try {
             val translatedText = getNestedValue(currentLanguageValues, key).replace("%s", "%S")
-
-            return String.format(translatedText, *texts.toTypedArray())
+            String.format(translatedText, *texts.toTypedArray())
         } catch (_: Exception) {
             key
         }
