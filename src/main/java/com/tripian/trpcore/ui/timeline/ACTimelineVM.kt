@@ -57,8 +57,10 @@ import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
+import androidx.lifecycle.viewModelScope
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -462,38 +464,33 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Step 3: Resolve remaining cities via API (blocking before timeline creation)
-        tripRepository.resolveCitiesByCoordinates(unresolvedCoordinates)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { result ->
-                    handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
-                },
-                { error ->
-                    // API failed
-                    if (resolvedCities.isNotEmpty()) {
-                        // Use cached cities and continue
-                        _cities.value = resolvedCities.distinctBy { it.id }
-                        // Update itinerary.destinationItems with cached cityIds
-                        updateItineraryWithResolvedCities(resolvedCities)
-                        proceedWithTimelineOperations()
-                    } else if (_tripHash.isNotEmpty()) {
-                        // EXISTING TRIP: API failed but we have tripHash - continue anyway
-                        // Timeline will be fetched, city data comes from API response
-                        val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
-                            .replace("%s", unresolvedCityNames.joinToString(", "))
-                        showAlert(AlertType.WARNING, warningMsg)
-                        proceedWithTimelineOperations()
-                    } else {
-                        // NEW TRIP: No cities at all - fatal error, close SDK
-                        hideLoading()
-                        val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
-                            .replace("%s", unresolvedCityNames.joinToString(", "))
-                        TRPCore.notifyError(errorMsg)
-                        TRPCore.closeSDK()
-                    }
+        viewModelScope.launch {
+            runCatching {
+                tripRepository.resolveCitiesByCoordinatesAsync(unresolvedCoordinates)
+            }.onSuccess { result ->
+                handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
+            }.onFailure {
+                if (resolvedCities.isNotEmpty()) {
+                    // Use cached cities and continue
+                    _cities.value = resolvedCities.distinctBy { it.id }
+                    updateItineraryWithResolvedCities(resolvedCities)
+                    proceedWithTimelineOperations()
+                } else if (_tripHash.isNotEmpty()) {
+                    // EXISTING TRIP: API failed but we have tripHash - continue anyway
+                    val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                        .replace("%s", unresolvedCityNames.joinToString(", "))
+                    showAlert(AlertType.WARNING, warningMsg)
+                    proceedWithTimelineOperations()
+                } else {
+                    // NEW TRIP: No cities at all - fatal error, close SDK
+                    hideLoading()
+                    val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                        .replace("%s", unresolvedCityNames.joinToString(", "))
+                    TRPCore.notifyError(errorMsg)
+                    TRPCore.closeSDK()
                 }
-            )
+            }
+        }
     }
 
     /**

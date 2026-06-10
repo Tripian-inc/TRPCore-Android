@@ -6,6 +6,7 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.repository.Service
+import com.tripian.trpcore.repository.ServiceWrapper
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TourRepository
@@ -33,7 +34,7 @@ class RepositoryModule {
 
     @Provides
     @Singleton
-    fun providesTripRepository(service: Service, preferences: Preferences): TripRepository {
+    fun providesTripRepository(service: ServiceWrapper, preferences: Preferences): TripRepository {
         return TripRepository(service, preferences)
     }
 

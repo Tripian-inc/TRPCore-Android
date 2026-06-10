@@ -12,6 +12,7 @@ import com.tripian.one.api.trip.model.TripResponse
 import com.tripian.one.api.trip.model.TripsResponse
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.base.awaitCallback
 import com.tripian.trpcore.util.Preferences
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
@@ -21,7 +22,7 @@ import javax.inject.Inject
  * Created by semihozkoroglu on 13.08.2020.
  */
 class TripRepository @Inject constructor(
-    val service: Service,
+    val service: ServiceWrapper,
     val preferences: Preferences
 ) {
 
@@ -298,6 +299,82 @@ class TripRepository @Inject constructor(
 
     fun clearItems() {
         items.clear()
+    }
+
+    // ------------------------------------------------------------------
+    // Suspend equivalents of the Observable endpoints above. Added during
+    // the RxJava → Coroutines migration; legacy Observable versions are
+    // retained while older call sites are ported and removed in the final
+    // cleanup step.
+    // ------------------------------------------------------------------
+
+    /**
+     * Suspend equivalent of [prefetchCities]. Returns true if cache is
+     * populated (either freshly from the API or, on failure, from the
+     * existing in-memory snapshot). Safe to call repeatedly to refresh
+     * translations.
+     */
+    suspend fun prefetchCitiesAsync(): Boolean {
+        if (items.isEmpty()) {
+            val cachedCities = loadCitiesFromCache()
+            if (cachedCities.isNotEmpty()) {
+                items.clear()
+                items.addAll(cachedCities)
+            }
+        }
+
+        return try {
+            val response = service.getCitiesAsync(null, 1000, null)
+            response.data?.let { list ->
+                val sortedCities = list.sortedBy { it.name }
+                items.clear()
+                items.addAll(sortedCities)
+                saveCitiesToCache()
+            }
+            true
+        } catch (_: Throwable) {
+            items.isNotEmpty()
+        }
+    }
+
+    /**
+     * Suspend equivalent of [resolveCitiesByCoordinates]. Throws on
+     * network error so the caller can decide on a fallback (the legacy
+     * Observable version surfaced this through onError too).
+     */
+    suspend fun resolveCitiesByCoordinatesAsync(
+        coordinates: List<Coordinate>
+    ): CityResolveResult = awaitCallback { ok, fail ->
+        TRPCore.core.trpRest.resolveCitiesByCoordinates(
+            coordinates = coordinates,
+            success = { response ->
+                val resolvedCities = mutableListOf<City>()
+                val unresolvedCityNames = mutableListOf<String>()
+
+                response.data?.forEach { resolveData ->
+                    if (resolveData.cityId == null || resolveData.cityId == 0) {
+                        resolveData.cityName?.let { unresolvedCityNames.add(it) }
+                    } else {
+                        getCachedCityById(resolveData.cityId!!)?.let {
+                            resolvedCities.add(it)
+                        }
+                    }
+                }
+
+                val result = when {
+                    resolvedCities.isEmpty() ->
+                        CityResolveResult.AllFailed(unresolvedCityNames)
+                    unresolvedCityNames.isNotEmpty() ->
+                        CityResolveResult.PartialSuccess(resolvedCities, unresolvedCityNames)
+                    else ->
+                        CityResolveResult.Success(resolvedCities)
+                }
+                ok(result)
+            },
+            error = { error ->
+                fail(error ?: Exception("City resolve failed"))
+            }
+        )
     }
 
     fun getContinentImage(slug: String): Int {

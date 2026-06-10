@@ -47,6 +47,7 @@ import com.tripian.one.api.users.model.LoginResponse
 import com.tripian.one.api.users.model.RegisterRequest
 import com.tripian.one.api.users.model.UpdateUserRequest
 import com.tripian.one.api.users.model.UserResponse
+import com.tripian.trpcore.base.awaitCallback
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject
 import okhttp3.ResponseBody
@@ -882,5 +883,29 @@ class ServiceWrapper @Inject constructor(val app: Application, val tone: TRPRest
                 }
             )
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Suspend (coroutine) endpoints — incrementally added as repositories
+    // migrate away from the RxJava-based methods above. Each call routes
+    // through the awaitCallback bridge so any TRPRest-level error
+    // surfaces as a Throwable and gets translated to ErrorModel inside
+    // SuspendUseCase.invoke / ApiErrorMapper.
+    // ------------------------------------------------------------------
+
+    suspend fun getCitiesAsync(
+        search: String?,
+        limit: Int,
+        page: Int?
+    ): GetCitiesResponse = awaitCallback { ok, fail ->
+        tone.cities(
+            autoPagination = true,
+            search = search,
+            countryCode = null,
+            page = page,
+            limit = limit,
+            success = ok,
+            error = fail
+        )
     }
 }

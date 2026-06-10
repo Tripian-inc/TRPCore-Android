@@ -18,8 +18,10 @@ import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.LanguageConst
+import androidx.lifecycle.viewModelScope
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
@@ -224,19 +226,14 @@ class AddPlanContainerVM @Inject constructor(
             updateContinueButtonState()
         } else {
             // Fetch from API if not cached
-            tripRepository.prefetchCities()
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    val cities = tripRepository.getCachedCities()
-                    _cities.value = cities
-                    planData.cities = cities
-                    _isLoadingCities.value = false
-                    updateContinueButtonState()
-                }, {
-                    _isLoadingCities.value = false
-                    updateContinueButtonState()
-                })
+            viewModelScope.launch {
+                runCatching { tripRepository.prefetchCitiesAsync() }
+                val cities = tripRepository.getCachedCities()
+                _cities.value = cities
+                planData.cities = cities
+                _isLoadingCities.value = false
+                updateContinueButtonState()
+            }
         }
     }
 
