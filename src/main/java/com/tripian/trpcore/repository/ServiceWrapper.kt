@@ -949,7 +949,7 @@ class ServiceWrapper @Inject constructor(val app: Application, val tone: TRPRest
     }
 
     suspend fun getPoiInfoAsync(poiId: String): PoiResponse = awaitCallback { ok, fail ->
-        tone.getPoiInfo(poiId = poiId, success = ok, error = fail)
+        tone.getPoiDetail(poiId, success = ok, error = fail)
     }
 
     suspend fun getPoiCategoriesAsync(): PoiCategoriesResponse = awaitCallback { ok, fail ->
