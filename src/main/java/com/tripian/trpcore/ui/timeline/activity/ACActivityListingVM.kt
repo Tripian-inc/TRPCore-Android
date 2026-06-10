@@ -20,6 +20,9 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TourCategoryIconMapper
 import com.tripian.trpcore.util.extensions.appLanguage
+import androidx.lifecycle.viewModelScope
+import com.tripian.trpcore.repository.base.ErrorModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -245,47 +248,49 @@ class ACActivityListingVM @Inject constructor(
 
         _isLoading.value = true
 
-        searchToursUseCase.on(
-            params = SearchToursUseCase.Params(
-                cityId = cityId,
-                lat = cityLat,
-                lng = cityLng,
-                keywords = null,
-                tagIds = null,
-                providerId = 15, // Always use providerId 15 for tour-api
-                date = selectedDateString,
-                to = selectedDateString,
-                currency = getCurrency(),
-                // Filters/sort handled locally — request everything available.
-                minPrice = 1,
-                maxPrice = null,
-                minDuration = null,
-                maxDuration = null,
-                adults = planData?.travelers ?: 1,
-                sortingBy = null,
-                sortingType = null,
-                offset = 0,
-                limit = fetchLimit
-            ),
-            success = { response ->
+        viewModelScope.launch {
+            runCatching {
+                searchToursUseCase(
+                    SearchToursUseCase.Params(
+                        cityId = cityId,
+                        lat = cityLat,
+                        lng = cityLng,
+                        keywords = null,
+                        tagIds = null,
+                        providerId = 15, // Always use providerId 15 for tour-api
+                        date = selectedDateString,
+                        to = selectedDateString,
+                        currency = getCurrency(),
+                        // Filters/sort handled locally — request everything available.
+                        minPrice = 1,
+                        maxPrice = null,
+                        minDuration = null,
+                        maxDuration = null,
+                        adults = planData?.travelers ?: 1,
+                        sortingBy = null,
+                        sortingType = null,
+                        offset = 0,
+                        limit = fetchLimit
+                    )
+                )
+            }.onSuccess { response ->
                 _isLoading.value = false
                 val products = response.data?.products ?: emptyList()
                 allActivities.clear()
                 allActivities.addAll(products)
                 updateFacetsFromResponse(response.data?.facets)
                 applyAllFilters()
-            },
-            error = { error ->
+            }.onFailure { error ->
                 _isLoading.value = false
-                showAlert(
-                    AlertType.ERROR,
-                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                )
+                val message = (error as? ErrorModel)?.errorDesc
+                    ?: error.message
+                    ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                showAlert(AlertType.ERROR, message)
                 allActivities.clear()
                 _activities.value = emptyList()
                 _activityCount.value = 0
             }
-        )
+        }
     }
 
     // =====================

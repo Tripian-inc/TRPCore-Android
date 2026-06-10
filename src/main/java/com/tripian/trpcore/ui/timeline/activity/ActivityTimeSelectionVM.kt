@@ -8,6 +8,8 @@ import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.usecase.timeline.GetTourScheduleUseCase
 import com.tripian.trpcore.util.LanguageConst
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -169,22 +171,24 @@ class ActivityTimeSelectionVM @Inject constructor(
         // `to == from` is fine — backend still returns the per-day bucket shape.
         val toParam = if (toString == fromString) null else toString
 
-        getTourScheduleUseCase.on(
-            params = GetTourScheduleUseCase.Params(
-                productId = formattedId,
-                date = fromString,
-                to = toParam,
-                currency = TRPCore.core.appConfig.appCurrency
-            ),
-            success = { response ->
+        viewModelScope.launch {
+            runCatching {
+                getTourScheduleUseCase(
+                    GetTourScheduleUseCase.Params(
+                        productId = formattedId,
+                        date = fromString,
+                        to = toParam,
+                        currency = TRPCore.core.appConfig.appCurrency
+                    )
+                )
+            }.onSuccess { response ->
                 hideLottieLoading()
                 cachedSchedule = response.data
                 val available = computeAvailableDateStrings(response.data)
                 _availableDateStrings.value = available
                 _isUnavailableForTrip.value = available.isEmpty()
                 publishSlotsFor(selectedDate)
-            },
-            error = {
+            }.onFailure {
                 hideLottieLoading()
                 cachedSchedule = null
                 _availableDateStrings.value = emptySet()
@@ -196,7 +200,7 @@ class ActivityTimeSelectionVM @Inject constructor(
                     flexiblePrice = null
                 )
             }
-        )
+        }
     }
 
     /**
