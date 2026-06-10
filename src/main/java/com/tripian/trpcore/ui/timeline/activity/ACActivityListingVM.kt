@@ -20,6 +20,9 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TourCategoryIconMapper
 import com.tripian.trpcore.util.extensions.appLanguage
+import androidx.lifecycle.viewModelScope
+import com.tripian.trpcore.repository.base.ErrorModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -245,47 +248,49 @@ class ACActivityListingVM @Inject constructor(
 
         _isLoading.value = true
 
-        searchToursUseCase.on(
-            params = SearchToursUseCase.Params(
-                cityId = cityId,
-                lat = cityLat,
-                lng = cityLng,
-                keywords = null,
-                tagIds = null,
-                providerId = 15, // Always use providerId 15 for tour-api
-                date = selectedDateString,
-                to = selectedDateString,
-                currency = getCurrency(),
-                // Filters/sort handled locally — request everything available.
-                minPrice = 1,
-                maxPrice = null,
-                minDuration = null,
-                maxDuration = null,
-                adults = planData?.travelers ?: 1,
-                sortingBy = null,
-                sortingType = null,
-                offset = 0,
-                limit = fetchLimit
-            ),
-            success = { response ->
+        viewModelScope.launch {
+            runCatching {
+                searchToursUseCase(
+                    SearchToursUseCase.Params(
+                        cityId = cityId,
+                        lat = cityLat,
+                        lng = cityLng,
+                        keywords = null,
+                        tagIds = null,
+                        providerId = 15, // Always use providerId 15 for tour-api
+                        date = selectedDateString,
+                        to = selectedDateString,
+                        currency = getCurrency(),
+                        // Filters/sort handled locally — request everything available.
+                        minPrice = 1,
+                        maxPrice = null,
+                        minDuration = null,
+                        maxDuration = null,
+                        adults = planData?.travelers ?: 1,
+                        sortingBy = null,
+                        sortingType = null,
+                        offset = 0,
+                        limit = fetchLimit
+                    )
+                )
+            }.onSuccess { response ->
                 _isLoading.value = false
                 val products = response.data?.products ?: emptyList()
                 allActivities.clear()
                 allActivities.addAll(products)
                 updateFacetsFromResponse(response.data?.facets)
                 applyAllFilters()
-            },
-            error = { error ->
+            }.onFailure { error ->
                 _isLoading.value = false
-                showAlert(
-                    AlertType.ERROR,
-                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                )
+                val message = (error as? ErrorModel)?.errorDesc
+                    ?: error.message
+                    ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                showAlert(AlertType.ERROR, message)
                 allActivities.clear()
                 _activities.value = emptyList()
                 _activityCount.value = 0
             }
-        )
+        }
     }
 
     // =====================
@@ -432,52 +437,57 @@ class ACActivityListingVM @Inject constructor(
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
-        createReservedActivitySegmentUseCase.on(
-            params = CreateReservedActivitySegmentUseCase.Params(
-                tripHash = tripHash,
-                tour = tour,
-                selectedDate = dateString,
-                selectedTimeSlot = timeSlot,
-                adults = planData?.travelers ?: 1,
-                cityId = cityId,
-                slotPrice = slotPrice,
-                isFlexible = isFlexible
-            ),
-            success = { _ ->
-                // Notify host app that activity was added (matches pre-refactor behavior)
-                tour.productId?.let { TRPCore.notifyActivityAdded(it) }
-                refreshTimelineAfterSegment(tour, selectedDate)
-            },
-            error = { error ->
-                hideLottieLoading()
-                showAlert(
-                    AlertType.ERROR,
-                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+        viewModelScope.launch {
+            runCatching {
+                createReservedActivitySegmentUseCase(
+                    CreateReservedActivitySegmentUseCase.Params(
+                        tripHash = tripHash,
+                        tour = tour,
+                        selectedDate = dateString,
+                        selectedTimeSlot = timeSlot,
+                        adults = planData?.travelers ?: 1,
+                        cityId = cityId,
+                        slotPrice = slotPrice,
+                        isFlexible = isFlexible
+                    )
                 )
             }
-        )
+                .onSuccess {
+                    tour.productId?.let { TRPCore.notifyActivityAdded(it) }
+                    refreshTimelineAfterSegment(tour, selectedDate)
+                }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLottieLoading()
+                    showAlert(
+                        AlertType.ERROR,
+                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                    )
+                }
+        }
     }
 
     /** Second leg of the add-activity flow: re-fetch the timeline so we have the latest
      *  state before signaling success to the UI. */
     private fun refreshTimelineAfterSegment(tour: TourProduct, selectedDate: Date) {
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(tripHash = tripHash),
-            success = { _ ->
-                hideLottieLoading()
-                _addedToItinerarySuccess.value = AddedToItineraryResult(
-                    activityName = tour.title.orEmpty(),
-                    selectedDate = selectedDate
-                )
-            },
-            error = { error ->
-                hideLottieLoading()
-                showAlert(
-                    AlertType.ERROR,
-                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                )
-            }
-        )
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
+                .onSuccess {
+                    hideLottieLoading()
+                    _addedToItinerarySuccess.value = AddedToItineraryResult(
+                        activityName = tour.title.orEmpty(),
+                        selectedDate = selectedDate
+                    )
+                }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLottieLoading()
+                    showAlert(
+                        AlertType.ERROR,
+                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                    )
+                }
+        }
     }
 
     // =====================

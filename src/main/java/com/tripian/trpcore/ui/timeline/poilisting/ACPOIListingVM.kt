@@ -14,8 +14,11 @@ import com.tripian.trpcore.domain.usecase.timeline.CreateManualPoiSegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
+import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -139,30 +142,24 @@ class ACPOIListingVM @Inject constructor(
     private val EAT_AND_DRINK_CATEGORY_IDS = listOf(3, 4, 24)
 
     private fun fetchCategories() {
-        getPoiCategoriesUseCase.on(
-            params = Unit,
-            success = { categoryModel ->
-                val allGroups = categoryModel?.groups ?: emptyList()
-
-                // Filter groups based on listing type
-                val filteredGroups = allGroups.filter { group ->
-                    val groupCategoryIds = group.categories?.map { it.id } ?: emptyList()
-                    val hasEatAndDrinkCategory = groupCategoryIds.any { id ->
-                        EAT_AND_DRINK_CATEGORY_IDS.contains(id)
+        viewModelScope.launch {
+            runCatching { getPoiCategoriesUseCase(Unit) }
+                .onSuccess { categoryModel ->
+                    val allGroups = categoryModel?.groups ?: emptyList()
+                    val filteredGroups = allGroups.filter { group ->
+                        val groupCategoryIds = group.categories?.map { it.id } ?: emptyList()
+                        val hasEatAndDrinkCategory = groupCategoryIds.any { id ->
+                            EAT_AND_DRINK_CATEGORY_IDS.contains(id)
+                        }
+                        when (listingType) {
+                            POIListingType.EAT_AND_DRINK -> hasEatAndDrinkCategory
+                            POIListingType.PLACES_OF_INTEREST -> !hasEatAndDrinkCategory
+                        }
                     }
-
-                    when (listingType) {
-                        POIListingType.EAT_AND_DRINK -> hasEatAndDrinkCategory
-                        POIListingType.PLACES_OF_INTEREST -> !hasEatAndDrinkCategory
-                    }
+                    _categoryGroups.value = filteredGroups
                 }
-
-                _categoryGroups.value = filteredGroups
-            },
-            error = { _ ->
-                _categoryGroups.value = emptyList()
-            }
-        )
+                .onFailure { _categoryGroups.value = emptyList() }
+        }
     }
 
     // =====================
@@ -242,47 +239,46 @@ class ACPOIListingVM @Inject constructor(
         val sortingBy = if (sort == SortOption.POPULARITY) null else sort.sortingBy
         val sortingType = if (sort == SortOption.POPULARITY) null else sort.sortingType
 
-        searchPOIsUseCase.on(
-            params = SearchPOIsUseCase.Params(
-                cityId = cityId,
-                search = currentSearchQuery.ifBlank { null },
-                categoryIds = categoryIds,
-                page = pageToFetch,
-                limit = pageLimit,
-                sortingBy = sortingBy,
-                sortingType = sortingType
-            ),
-            success = { response ->
-                hideLottieLoading()
-                isLoadingMore = false
-
-                val newPois = response.data ?: emptyList()
-                totalCount = response.pagination?.total ?: newPois.size
-
-                if (!isPagination) {
-                    allPois.clear()
-                    // Scroll to top when page 1 is loaded
-                    _scrollToTop.value = true
-                }
-                allPois.addAll(newPois)
-
-                // Update current page after successful fetch
-                currentPage = pageToFetch
-
-                _pois.value = allPois.toList()
-                _poiCount.value = totalCount
-                _hasMorePages.value = allPois.size < totalCount
-            },
-            error = { error ->
-                hideLottieLoading()
-                isLoadingMore = false
-                showAlert(AlertType.ERROR, error.errorDesc)
-                if (!isPagination) {
-                    _pois.value = emptyList()
-                    _poiCount.value = 0
-                }
+        viewModelScope.launch {
+            runCatching {
+                searchPOIsUseCase(
+                    SearchPOIsUseCase.Params(
+                        cityId = cityId,
+                        search = currentSearchQuery.ifBlank { null },
+                        categoryIds = categoryIds,
+                        page = pageToFetch,
+                        limit = pageLimit,
+                        sortingBy = sortingBy,
+                        sortingType = sortingType
+                    )
+                )
             }
-        )
+                .onSuccess { response ->
+                    hideLottieLoading()
+                    isLoadingMore = false
+                    val newPois = response.data ?: emptyList()
+                    totalCount = response.pagination?.total ?: newPois.size
+                    if (!isPagination) {
+                        allPois.clear()
+                        _scrollToTop.value = true
+                    }
+                    allPois.addAll(newPois)
+                    currentPage = pageToFetch
+                    _pois.value = allPois.toList()
+                    _poiCount.value = totalCount
+                    _hasMorePages.value = allPois.size < totalCount
+                }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLottieLoading()
+                    isLoadingMore = false
+                    showAlert(AlertType.ERROR, msg)
+                    if (!isPagination) {
+                        _pois.value = emptyList()
+                        _poiCount.value = 0
+                    }
+                }
+        }
     }
 
     fun loadMorePOIs() {
@@ -351,45 +347,49 @@ class ACPOIListingVM @Inject constructor(
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
-        createManualPoiSegmentUseCase.on(
-            params = CreateManualPoiSegmentUseCase.Params(
-                tripHash = tripHash,
-                poi = poi,
-                selectedDate = dateString,
-                startTime = startTime,
-                endTime = endTime,
-                cityId = cityId
-            ),
-            success = { _ ->
-                refreshTimelineAfterSegment(poi, selectedDate)
-            },
-            error = { error ->
-                hideLottieLoading()
-                showAlert(AlertType.ERROR, error.errorDesc)
+        viewModelScope.launch {
+            runCatching {
+                createManualPoiSegmentUseCase(
+                    CreateManualPoiSegmentUseCase.Params(
+                        tripHash = tripHash,
+                        poi = poi,
+                        selectedDate = dateString,
+                        startTime = startTime,
+                        endTime = endTime,
+                        cityId = cityId
+                    )
+                )
             }
-        )
+                .onSuccess { refreshTimelineAfterSegment(poi, selectedDate) }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLottieLoading()
+                    showAlert(AlertType.ERROR, msg)
+                }
+        }
     }
 
     /** Second leg of the add-POI flow: re-fetch the timeline so we have the latest
      *  state before signaling success to the UI. */
     private fun refreshTimelineAfterSegment(poi: Poi, selectedDate: Date) {
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(tripHash = tripHash),
-            success = { _ ->
-                hideLottieLoading()
-                _addedToItinerarySuccess.value = AddedToItineraryResult(
-                    poiName = poi.name.orEmpty(),
-                    selectedDate = selectedDate
-                )
-            },
-            error = { error ->
-                hideLottieLoading()
-                showAlert(
-                    AlertType.ERROR,
-                    error.errorDesc ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                )
-            }
-        )
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
+                .onSuccess {
+                    hideLottieLoading()
+                    _addedToItinerarySuccess.value = AddedToItineraryResult(
+                        poiName = poi.name.orEmpty(),
+                        selectedDate = selectedDate
+                    )
+                }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLottieLoading()
+                    showAlert(
+                        AlertType.ERROR,
+                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
+                    )
+                }
+        }
     }
 
     // =====================

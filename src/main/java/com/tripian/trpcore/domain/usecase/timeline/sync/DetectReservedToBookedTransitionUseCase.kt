@@ -2,7 +2,7 @@ package com.tripian.trpcore.domain.usecase.timeline.sync
 
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
 import javax.inject.Inject
@@ -16,22 +16,15 @@ import javax.inject.Inject
  * Pure logic, API call yok - sadece detection
  */
 class DetectReservedToBookedTransitionUseCase @Inject constructor() :
-    BaseUseCase<List<TransitionInfo>, DetectReservedToBookedTransitionUseCase.Params>() {
+    SuspendUseCase<List<TransitionInfo>, DetectReservedToBookedTransitionUseCase.Params>() {
 
     data class Params(
         val timeline: Timeline,
         val tripItems: List<SegmentActivityItem>
     )
 
-    override fun on(params: Params?) {
-        params?.let {
-            addObservable {
-                io.reactivex.Observable.just(
-                    detectTransitions(it.timeline, it.tripItems)
-                )
-            }
-        }
-    }
+    override suspend fun execute(params: Params): List<TransitionInfo> =
+        detectTransitions(params.timeline, params.tripItems)
 
     /**
      * Timeline'daki reserved_activity segmentlerini tripItems ile karşılaştır

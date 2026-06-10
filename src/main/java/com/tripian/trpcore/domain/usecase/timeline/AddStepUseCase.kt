@@ -2,17 +2,13 @@ package com.tripian.trpcore.domain.usecase.timeline
 
 import com.tripian.one.api.timeline.model.CustomPoi
 import com.tripian.one.api.timeline.model.TimelineStep
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.repository.TimelineRepository
 import javax.inject.Inject
 
-/**
- * AddStepUseCase
- * Adds a new step to a timeline plan
- */
 class AddStepUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<TimelineStep, AddStepUseCase.Params>() {
+) : SuspendUseCase<TimelineStep, AddStepUseCase.Params>() {
 
     sealed class Params {
         abstract val planId: Int
@@ -20,9 +16,6 @@ class AddStepUseCase @Inject constructor(
         abstract val endTime: String?
         abstract val order: Int?
 
-        /**
-         * Add step with POI ID
-         */
         data class WithPoi(
             override val planId: Int,
             val poiId: String,
@@ -31,9 +24,6 @@ class AddStepUseCase @Inject constructor(
             override val order: Int? = null
         ) : Params()
 
-        /**
-         * Add step with Custom POI
-         */
         data class WithCustomPoi(
             override val planId: Int,
             val customPoi: CustomPoi,
@@ -43,26 +33,14 @@ class AddStepUseCase @Inject constructor(
         ) : Params()
     }
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            addObservable {
-                when (p) {
-                    is Params.WithPoi -> repository.addStep(
-                        planId = p.planId,
-                        poiId = p.poiId,
-                        startTime = p.startTime,
-                        endTime = p.endTime,
-                        order = p.order
-                    )
-                    is Params.WithCustomPoi -> repository.addStepWithCustomPoi(
-                        planId = p.planId,
-                        customPoi = p.customPoi,
-                        startTime = p.startTime,
-                        endTime = p.endTime,
-                        order = p.order
-                    )
-                }
-            }
-        }
+    override suspend fun execute(params: Params): TimelineStep = when (params) {
+        is Params.WithPoi -> repository.addStepAsync(
+            planId = params.planId, poiId = params.poiId,
+            startTime = params.startTime, endTime = params.endTime, order = params.order
+        )
+        is Params.WithCustomPoi -> repository.addStepWithCustomPoiAsync(
+            planId = params.planId, customPoi = params.customPoi,
+            startTime = params.startTime, endTime = params.endTime, order = params.order
+        )
     }
 }

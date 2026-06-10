@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.PoiRepository
-import com.tripian.trpcore.repository.Service
+import com.tripian.trpcore.repository.ServiceWrapper
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TourRepository
@@ -23,23 +23,22 @@ class RepositoryModule {
     @Singleton
     fun providesTripianUserRepository(
         app: Application,
-        service: Service,
         pref: Preferences,
         gson: Gson,
         strings: Strings
     ): TripianUserRepository {
-        return TripianUserRepository(app, service, pref, gson, strings)
+        return TripianUserRepository(app, pref, gson, strings)
     }
 
     @Provides
     @Singleton
-    fun providesTripRepository(service: Service, preferences: Preferences): TripRepository {
+    fun providesTripRepository(service: ServiceWrapper, preferences: Preferences): TripRepository {
         return TripRepository(service, preferences)
     }
 
     @Provides
     @Singleton
-    fun providesPoiRepository(service: Service): PoiRepository {
+    fun providesPoiRepository(service: ServiceWrapper): PoiRepository {
         return PoiRepository(service)
     }
 
@@ -47,10 +46,9 @@ class RepositoryModule {
     @Singleton
     fun providesMiscRepository(
         app: Application,
-        service: Service,
         pref: Preferences
     ): MiscRepository {
-        return MiscRepository(app = app, service = service, preferences = pref)
+        return MiscRepository(app = app, preferences = pref)
     }
 
     @Provides

@@ -9,7 +9,6 @@ import com.tripian.one.api.users.model.Device
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.BuildConfig
 import com.tripian.trpcore.base.AppConfig
-import com.tripian.trpcore.repository.Service
 import com.tripian.trpcore.repository.ServiceWrapper
 import com.tripian.trpcore.util.extensions.getDeviceId
 import dagger.Module
@@ -72,7 +71,7 @@ class NetworkModule {
 
     @Provides
     @Singleton
-    internal fun provideTripianService(app: Application, tone: TRPRest): Service {
+    internal fun provideServiceWrapper(app: Application, tone: TRPRest): ServiceWrapper {
         return ServiceWrapper(app, tone)
     }
 

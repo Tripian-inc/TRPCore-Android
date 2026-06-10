@@ -9,9 +9,8 @@ import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -44,7 +43,6 @@ class ACPOISelectionVM @Inject constructor(
 
     private var city: City? = null
     private var currentSearchQuery: String = ""
-    private val disposables = CompositeDisposable()
 
     // =====================
     // INITIALIZATION
@@ -107,30 +105,24 @@ class ACPOISelectionVM @Inject constructor(
 
         val categoryIds = _selectedCategory.value?.let { listOf(it.toIntOrNull() ?: -1) }
 
-        val observable = if (currentSearchQuery.isNotBlank()) {
-            poiRepository.search(cityId, currentSearchQuery, categoryIds)
-        } else {
-            poiRepository.getPoiWithCategories(cityId, categoryIds ?: listOf(-1), 1, 50)
+        viewModelScope.launch {
+            runCatching {
+                if (currentSearchQuery.isNotBlank()) {
+                    poiRepository.searchAsync(cityId, currentSearchQuery, categoryIds)
+                } else {
+                    poiRepository.getPoiWithCategoriesAsync(cityId, categoryIds ?: listOf(-1), 1, 50)
+                }
+            }.onSuccess { response ->
+                _isLoading.value = false
+                hideLottieLoading()
+                _pois.value = response.data ?: emptyList()
+            }.onFailure { error ->
+                _isLoading.value = false
+                hideLottieLoading()
+                showAlert(AlertType.ERROR, error.message ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
+                _pois.value = emptyList()
+            }
         }
-
-        disposables.add(
-            observable
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                    { response ->
-                        _isLoading.value = false
-                        hideLottieLoading()
-                        _pois.value = response.data ?: emptyList()
-                    },
-                    { error ->
-                        _isLoading.value = false
-                        hideLottieLoading()
-                        showAlert(AlertType.ERROR, error.message ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
-                        _pois.value = emptyList()
-                    }
-                )
-        )
     }
 
     // =====================
@@ -138,7 +130,6 @@ class ACPOISelectionVM @Inject constructor(
     // =====================
 
     override fun onDestroy() {
-        disposables.clear()
         super.onDestroy()
     }
 }

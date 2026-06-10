@@ -2,11 +2,12 @@ package com.tripian.trpcore.domain.usecase.timeline.sync
 
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
-import io.reactivex.Observable
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -23,7 +24,7 @@ import javax.inject.Inject
  */
 class UpdateDateRangeUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<UpdateDateRangeUseCase.Result, UpdateDateRangeUseCase.Params>() {
+) : SuspendUseCase<UpdateDateRangeUseCase.Result, UpdateDateRangeUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -34,15 +35,7 @@ class UpdateDateRangeUseCase @Inject constructor(
     /** True iff the TimelineDate segment was mutated — caller must refresh UI. */
     data class Result(val mutated: Boolean)
 
-    override fun on(params: Params?) {
-        params?.let {
-            addObservable {
-                Observable.fromCallable { runSync(it) }
-            }
-        }
-    }
-
-    private fun runSync(params: Params): Result {
+    override suspend fun execute(params: Params): Result {
         val target = params.itinerary.buildTimelineDateSegment()
             ?: return Result(mutated = false)
 
@@ -74,17 +67,16 @@ class UpdateDateRangeUseCase @Inject constructor(
         return Result(mutated = true)
     }
 
+    @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun fireAndForgetEdit(tripHash: String, segment: TimelineSegmentSettings) {
-        repository.editSegment(tripHash, segment)
-            .subscribeOn(Schedulers.io())
-            .subscribe(
-                {},
-                { error ->
-                    android.util.Log.e(
-                        "SYNC",
-                        "TimelineDate edit failed: ${error.message}"
-                    )
-                }
-            )
+        // Mirrors the legacy Schedulers.io() subscribe — survives the caller
+        // coroutine because the TimelineDate sync must outlive its trigger.
+        GlobalScope.launch(Dispatchers.IO) {
+            try {
+                repository.editSegmentAsync(tripHash, segment)
+            } catch (error: Throwable) {
+                android.util.Log.e("SYNC", "TimelineDate edit failed: ${error.message}")
+            }
+        }
     }
 }

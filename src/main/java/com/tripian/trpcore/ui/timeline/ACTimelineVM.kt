@@ -46,6 +46,7 @@ import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivit
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncReservedToBookedUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.UpdateDateRangeUseCase
 import com.tripian.trpcore.repository.CityResolveResult
+import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
 import com.tripian.trpcore.util.AlertType
@@ -57,8 +58,8 @@ import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -341,38 +342,35 @@ class ACTimelineVM @Inject constructor(
      * request regardless of subject state.
      */
     private fun attemptLanguageFetch(allowRetry: Boolean) {
-        val source = if (allowRetry) {
-            miscRepository.waitForLanguagesLoaded()
-        } else {
-            miscRepository.refetchLanguages()
-        }
-        source
-            .timeout(LANGUAGE_RETRY_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { loaded ->
-                    if (loaded && miscRepository.isLanguagesLoaded) {
-                        // Translations ready. Now block on the parallel light-login
-                        // so the timeline fetch never runs without an auth header.
-                        waitForLoginThenProceed {
-                            showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
-                            proceedAfterLanguagesLoaded()
-                        }
-                    } else if (allowRetry) {
-                        attemptLanguageFetch(allowRetry = false)
-                    } else {
-                        failLanguageLoad("Translation fetch returned no data")
-                    }
-                },
-                { error ->
+        viewModelScope.launch {
+            try {
+                val loaded = kotlinx.coroutines.withTimeout(
+                    LANGUAGE_RETRY_TIMEOUT_SECONDS * 1000
+                ) {
                     if (allowRetry) {
-                        attemptLanguageFetch(allowRetry = false)
+                        miscRepository.waitForLanguagesLoadedAsync()
                     } else {
-                        failLanguageLoad(error?.message ?: "Translation fetch failed")
+                        miscRepository.refetchLanguagesAsync()
                     }
                 }
-            )
+                if (loaded && miscRepository.isLanguagesLoaded) {
+                    waitForLoginThenProceed {
+                        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+                        proceedAfterLanguagesLoaded()
+                    }
+                } else if (allowRetry) {
+                    attemptLanguageFetch(allowRetry = false)
+                } else {
+                    failLanguageLoad("Translation fetch returned no data")
+                }
+            } catch (error: Throwable) {
+                if (allowRetry) {
+                    attemptLanguageFetch(allowRetry = false)
+                } else {
+                    failLanguageLoad(error.message ?: "Translation fetch failed")
+                }
+            }
+        }
     }
 
     /**
@@ -462,38 +460,33 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Step 3: Resolve remaining cities via API (blocking before timeline creation)
-        tripRepository.resolveCitiesByCoordinates(unresolvedCoordinates)
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { result ->
-                    handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
-                },
-                { error ->
-                    // API failed
-                    if (resolvedCities.isNotEmpty()) {
-                        // Use cached cities and continue
-                        _cities.value = resolvedCities.distinctBy { it.id }
-                        // Update itinerary.destinationItems with cached cityIds
-                        updateItineraryWithResolvedCities(resolvedCities)
-                        proceedWithTimelineOperations()
-                    } else if (_tripHash.isNotEmpty()) {
-                        // EXISTING TRIP: API failed but we have tripHash - continue anyway
-                        // Timeline will be fetched, city data comes from API response
-                        val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
-                            .replace("%s", unresolvedCityNames.joinToString(", "))
-                        showAlert(AlertType.WARNING, warningMsg)
-                        proceedWithTimelineOperations()
-                    } else {
-                        // NEW TRIP: No cities at all - fatal error, close SDK
-                        hideLoading()
-                        val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
-                            .replace("%s", unresolvedCityNames.joinToString(", "))
-                        TRPCore.notifyError(errorMsg)
-                        TRPCore.closeSDK()
-                    }
+        viewModelScope.launch {
+            runCatching {
+                tripRepository.resolveCitiesByCoordinatesAsync(unresolvedCoordinates)
+            }.onSuccess { result ->
+                handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
+            }.onFailure {
+                if (resolvedCities.isNotEmpty()) {
+                    // Use cached cities and continue
+                    _cities.value = resolvedCities.distinctBy { it.id }
+                    updateItineraryWithResolvedCities(resolvedCities)
+                    proceedWithTimelineOperations()
+                } else if (_tripHash.isNotEmpty()) {
+                    // EXISTING TRIP: API failed but we have tripHash - continue anyway
+                    val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                        .replace("%s", unresolvedCityNames.joinToString(", "))
+                    showAlert(AlertType.WARNING, warningMsg)
+                    proceedWithTimelineOperations()
+                } else {
+                    // NEW TRIP: No cities at all - fatal error, close SDK
+                    hideLoading()
+                    val errorMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
+                        .replace("%s", unresolvedCityNames.joinToString(", "))
+                    TRPCore.notifyError(errorMsg)
+                    TRPCore.closeSDK()
                 }
-            )
+            }
+        }
     }
 
     /**
@@ -600,20 +593,19 @@ class ACTimelineVM @Inject constructor(
         isLoginInProgress = true
         _error.value = null
 
-        doLightLogin.on(
-            params = DoLightLogin.Params(
-                uniqueId = uniqueId
-            ),
-            success = { response ->
-                isLoggedIn = true
-                isLoginInProgress = false
-            },
-            error = { errorModel ->
-                isLoginInProgress = false
-                _error.value = errorModel.errorDesc ?: "Login failed"
-                TRPCore.notifyError(errorModel.errorDesc ?: "Login failed")
-            }
-        )
+        viewModelScope.launch {
+            runCatching { doLightLogin(DoLightLogin.Params(uniqueId = uniqueId)) }
+                .onSuccess {
+                    isLoggedIn = true
+                    isLoginInProgress = false
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    isLoginInProgress = false
+                    _error.value = errorModel.errorDesc ?: "Login failed"
+                    TRPCore.notifyError(errorModel.errorDesc ?: "Login failed")
+                }
+        }
     }
 
     /**
@@ -700,24 +692,20 @@ class ACTimelineVM @Inject constructor(
         showLoading()
 
         // Call cities/resolve API
-        resolveCitiesUseCase.on(
-            params = ResolveCitiesUseCase.Params(coordinates),
-            success = { resolvedCities ->
-                // Update destinations with resolved cityIds
-                val updatedDestinations = updateDestinationsWithCityIds(destinations, resolvedCities)
-
-                // Update itinerary with resolved cityIds
-                itinerary = itinerary!!.copy(destinationItems = updatedDestinations)
-
-                // Now validate and proceed
-                validateAndCreateTimeline(updatedDestinations)
-            },
-            error = { errorModel ->
-                hideLoading()
-                _error.value = errorModel.errorDesc ?: "City resolve failed"
-                TRPCore.notifyError(errorModel.errorDesc ?: "City resolve failed")
-            }
-        )
+        viewModelScope.launch {
+            runCatching { resolveCitiesUseCase(ResolveCitiesUseCase.Params(coordinates)) }
+                .onSuccess { resolvedCities ->
+                    val updatedDestinations = updateDestinationsWithCityIds(destinations, resolvedCities)
+                    itinerary = itinerary!!.copy(destinationItems = updatedDestinations)
+                    validateAndCreateTimeline(updatedDestinations)
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    hideLoading()
+                    _error.value = errorModel.errorDesc ?: "City resolve failed"
+                    TRPCore.notifyError(errorModel.errorDesc ?: "City resolve failed")
+                }
+        }
     }
 
     /**
@@ -785,24 +773,25 @@ class ACTimelineVM @Inject constructor(
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
-        createTimelineUseCase.on(
-            params = CreateTimelineUseCase.Params(modifiedItinerary),
-            success = { timeline ->
-                _tripHash = timeline.tripHash ?: ""
-                if (_tripHash.isNotEmpty()) {
-                    TRPCore.notifyTimelineCreated(_tripHash)
-                    waitForTimelineGeneration()
-                } else {
-                    processTimeline(timeline)
+        viewModelScope.launch {
+            runCatching { createTimelineUseCase(CreateTimelineUseCase.Params(modifiedItinerary)) }
+                .onSuccess { timeline ->
+                    _tripHash = timeline.tripHash ?: ""
+                    if (_tripHash.isNotEmpty()) {
+                        TRPCore.notifyTimelineCreated(_tripHash)
+                        waitForTimelineGeneration()
+                    } else {
+                        processTimeline(timeline)
+                        hideLottieLoading()
+                    }
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _error.value = errorModel.errorDesc
+                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
                     hideLottieLoading()
                 }
-            },
-            error = { errorModel ->
-                _error.value = errorModel.errorDesc
-                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                hideLottieLoading()
-            }
-        )
+        }
     }
 
     /**
@@ -854,47 +843,44 @@ class ACTimelineVM @Inject constructor(
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
-        createTimelineUseCase.on(
-            params = CreateTimelineUseCase.Params(itineraryData),
-            success = { timeline ->
-                // Timeline created, store hash
-                _tripHash = timeline.tripHash ?: ""
-
-                if (_tripHash.isNotEmpty()) {
-                    // Notify host app that timeline was created
-                    TRPCore.notifyTimelineCreated(_tripHash)
-
-                    // Wait for generation to complete
-                    waitForTimelineGeneration()
-                } else {
-                    processTimeline(timeline)
+        viewModelScope.launch {
+            runCatching { createTimelineUseCase(CreateTimelineUseCase.Params(itineraryData)) }
+                .onSuccess { timeline ->
+                    _tripHash = timeline.tripHash ?: ""
+                    if (_tripHash.isNotEmpty()) {
+                        TRPCore.notifyTimelineCreated(_tripHash)
+                        waitForTimelineGeneration()
+                    } else {
+                        processTimeline(timeline)
+                        hideLottieLoading()
+                    }
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _error.value = errorModel.errorDesc
+                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
                     hideLottieLoading()
                 }
-            },
-            error = { errorModel ->
-                _error.value = errorModel.errorDesc
-                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
-                hideLottieLoading()
-            }
-        )
+        }
     }
 
     /**
      * Waits until timeline generation is complete
      */
     private fun waitForTimelineGeneration() {
-        waitForGenerationUseCase.on(
-            params = WaitForGenerationUseCase.Params(_tripHash),
-            success = { timeline ->
-                processTimeline(timeline)
-                hideLottieLoading()
-            },
-            error = { errorModel ->
-                hideLottieLoading()
-                _error.value = errorModel.errorDesc ?: "Timeline generation failed"
-                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
-            }
-        )
+        viewModelScope.launch {
+            runCatching { waitForGenerationUseCase(WaitForGenerationUseCase.Params(_tripHash)) }
+                .onSuccess { timeline ->
+                    processTimeline(timeline)
+                    hideLottieLoading()
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    hideLottieLoading()
+                    _error.value = errorModel.errorDesc ?: "Timeline generation failed"
+                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
+                }
+        }
     }
 
     // =====================
@@ -911,27 +897,23 @@ class ACTimelineVM @Inject constructor(
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
 
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(_tripHash),
-            success = { timeline ->
-                if (!syncOperationsCompleted && itinerary != null) {
-                    // Sync ops first — keep the loader up while we figure out
-                    // whether the server state needs mutating. We only render
-                    // (and possibly re-fetch) once the pipeline is settled, so
-                    // the UI never flashes a stale snapshot just to be replaced
-                    // by a corrected one half a second later.
-                    runInitialSyncThenFinalize(timeline)
-                } else {
-                    processTimeline(timeline)
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+                .onSuccess { timeline ->
+                    if (!syncOperationsCompleted && itinerary != null) {
+                        runInitialSyncThenFinalize(timeline)
+                    } else {
+                        processTimeline(timeline)
+                        hideLottieLoading()
+                    }
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _error.value = errorModel.errorDesc
+                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
                     hideLottieLoading()
                 }
-            },
-            error = { errorModel ->
-                _error.value = errorModel.errorDesc
-                TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
-                hideLottieLoading()
-            }
-        )
+        }
     }
 
     fun refreshTimeline() {
@@ -946,23 +928,22 @@ class ACTimelineVM @Inject constructor(
         // Clear route info cache to ensure fresh calculations
         clearRouteInfoCache()
 
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(_tripHash),
-            success = { timeline ->
-                processTimeline(timeline)
-                hideLottieLoading()
-                com.tripian.trpcore.domain.manager.TimelineRefreshState.setCompleted()
-                // Idle quickly so subscribers can distinguish a fresh completion
-                // event from the "static" idle state on next subscribe.
-                com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
-            },
-            error = { error ->
-                hideLottieLoading()
-                com.tripian.trpcore.domain.manager.TimelineRefreshState
-                    .setFailed(Throwable(error?.errorDesc ?: "Timeline refresh failed"))
-                com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
-            }
-        )
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+                .onSuccess { timeline ->
+                    processTimeline(timeline)
+                    hideLottieLoading()
+                    com.tripian.trpcore.domain.manager.TimelineRefreshState.setCompleted()
+                    com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    hideLottieLoading()
+                    com.tripian.trpcore.domain.manager.TimelineRefreshState
+                        .setFailed(Throwable(errorModel.errorDesc ?: "Timeline refresh failed"))
+                    com.tripian.trpcore.domain.manager.TimelineRefreshState.setIdle()
+                }
+        }
     }
 
     // =====================
@@ -1469,68 +1450,61 @@ class ACTimelineVM @Inject constructor(
             ?.map { formatActivityId(it, validCity.id) }
             ?: emptyList()
 
-        createSegmentUseCase.on(
-            params = CreateSegmentUseCase.Params(
-                tripHash = _tripHash,
-                title = title,
-                cityId = validCity.id,
-                startDate = startDateTimeStr,
-                endDate = endDateTimeStr,
-                adults = data.travelers,
-                children = 0,
-                activityFreeText = data.smartCategoriesAsString,
-                activityIds = combinedActivityIds,  // Formatted favorites + saved
-                excludedActivityIds = bookedAndReservedIds,  // Formatted booked + reserved
-                smartRecommendation = true,
-                accommodation = data.startingPointAccommodation
-            ),
-            success = {
-                // Drop the inline loader, signal the host so the AddPlan sheet
-                // dismisses, then switch to the fullscreen loader for the
-                // wait-for-generation / fetch-timeline phase.
-                _smartCreateInProgress.value = false
-                _smartSegmentCreated.value = data.selectedDayIndex
-                showLottieLoading()
-                waitForSegmentGeneration()
-            },
-            error = { errorModel ->
-                // Drop the inline loader and surface the error on the AddPlan
-                // sheet (not behind it on the activity). The sheet stays open
-                // so the user can adjust input and retry.
-                _smartCreateInProgress.value = false
-                _smartCreateError.value = errorModel.errorDesc
+        viewModelScope.launch {
+            runCatching {
+                createSegmentUseCase(
+                    CreateSegmentUseCase.Params(
+                        tripHash = _tripHash,
+                        title = title,
+                        cityId = validCity.id,
+                        startDate = startDateTimeStr,
+                        endDate = endDateTimeStr,
+                        adults = data.travelers,
+                        children = 0,
+                        activityFreeText = data.smartCategoriesAsString,
+                        activityIds = combinedActivityIds,
+                        excludedActivityIds = bookedAndReservedIds,
+                        smartRecommendation = true,
+                        accommodation = data.startingPointAccommodation
+                    )
+                )
             }
-        )
+                .onSuccess {
+                    _smartCreateInProgress.value = false
+                    _smartSegmentCreated.value = data.selectedDayIndex
+                    showLottieLoading()
+                    waitForSegmentGeneration()
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _smartCreateInProgress.value = false
+                    _smartCreateError.value = errorModel.errorDesc
+                }
+        }
     }
 
     private fun waitForSegmentGeneration() {
-        waitForGenerationUseCase.on(
-            params = WaitForGenerationUseCase.Params(_tripHash),
-            success = { timeline ->
-                // Find newly added plan ID (not in existingPlanIds)
-                val newPlanId = try {
-                    timeline.plans?.find { plan ->
-                        plan.id.isNotEmpty() && plan.id !in existingPlanIds
-                    }?.id
-                } catch (e: Exception) {
-                    null
+        viewModelScope.launch {
+            runCatching { waitForGenerationUseCase(WaitForGenerationUseCase.Params(_tripHash)) }
+                .onSuccess { timeline ->
+                    val newPlanId = try {
+                        timeline.plans?.find { plan ->
+                            plan.id.isNotEmpty() && plan.id !in existingPlanIds
+                        }?.id
+                    } catch (e: Exception) {
+                        null
+                    }
+                    processTimeline(timeline)
+                    if (!newPlanId.isNullOrEmpty()) {
+                        _scrollToNewSegmentPlanId.value = newPlanId
+                    }
+                    hideLottieLoading()
                 }
-
-                processTimeline(timeline)
-
-                // Trigger scroll to new segment after list is updated
-                if (!newPlanId.isNullOrEmpty()) {
-                    _scrollToNewSegmentPlanId.value = newPlanId
+                .onFailure {
+                    hideLottieLoading()
+                    refreshTimeline()
                 }
-
-                hideLottieLoading()
-            },
-            error = {
-                hideLottieLoading()
-                // Still refresh to show partial results
-                refreshTimeline()
-            }
-        )
+        }
     }
 
     private fun generateSegmentTitle(city: City, date: Date): String {
@@ -1560,26 +1534,23 @@ class ACTimelineVM @Inject constructor(
     fun deleteSegment(segmentIndex: Int) {
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
 
-        deleteSegmentUseCase.on(
-            params = DeleteSegmentUseCase.Params(_tripHash, segmentIndex),
-            success = {
-                // Cache-only update: drop the segment (and its parallel-indexed
-                // plan) from the in-memory timeline and re-render. The mapper
-                // re-runs from scratch so every surviving display item picks
-                // up its new segmentIndex automatically.
-                val mutated = applyLocalSegmentDelete(segmentIndex)
-                hideLottieLoading()
-                if (mutated) {
-                    republishCurrentTimeline()
-                } else {
-                    refreshTimeline()
+        viewModelScope.launch {
+            runCatching { deleteSegmentUseCase(DeleteSegmentUseCase.Params(_tripHash, segmentIndex)) }
+                .onSuccess {
+                    val mutated = applyLocalSegmentDelete(segmentIndex)
+                    hideLottieLoading()
+                    if (mutated) {
+                        republishCurrentTimeline()
+                    } else {
+                        refreshTimeline()
+                    }
                 }
-            },
-            error = { errorModel ->
-                _error.value = errorModel.errorDesc
-                hideLottieLoading()
-            }
-        )
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _error.value = errorModel.errorDesc
+                    hideLottieLoading()
+                }
+        }
     }
 
     /**
@@ -1612,29 +1583,23 @@ class ACTimelineVM @Inject constructor(
     fun deleteStep(stepId: Int) {
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
 
-        deleteStepUseCase.on(
-            params = DeleteStepUseCase.Params(stepId),
-            success = {
-                // Cache-only update: drop the step from the plan it belongs to
-                // and re-render. Falling back to a full refresh is unnecessary
-                // since the only field the server changed is the step list of
-                // a single plan, which we already track locally.
-                val mutated = applyLocalStepDelete(stepId)
-                hideLottieLoading()
-                if (mutated) {
-                    republishCurrentTimeline()
-                } else {
-                    // Step wasn't found in the cached timeline — defensive
-                    // fall-through so the UI doesn't end up stale if the cache
-                    // and the server briefly disagreed.
-                    refreshTimeline()
+        viewModelScope.launch {
+            runCatching { deleteStepUseCase(DeleteStepUseCase.Params(stepId)) }
+                .onSuccess {
+                    val mutated = applyLocalStepDelete(stepId)
+                    hideLottieLoading()
+                    if (mutated) {
+                        republishCurrentTimeline()
+                    } else {
+                        refreshTimeline()
+                    }
                 }
-            },
-            error = { errorModel ->
-                _error.value = errorModel.errorDesc
-                hideLottieLoading()
-            }
-        )
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    _error.value = errorModel.errorDesc
+                    hideLottieLoading()
+                }
+        }
     }
 
     /**
@@ -1675,30 +1640,31 @@ class ACTimelineVM @Inject constructor(
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
 
         // API expects time only in HH:mm format (not full datetime)
-        updateStepTimeUseCase.on(
-            params = UpdateStepTimeUseCase.Params(
-                stepId = stepId,
-                startTime = startTime,
-                endTime = endTime
-            ),
-            success = {
-                // Cache-only update: only the HH:mm portion of the matching
-                // step's start/end datetimes changes on the server, so mirror
-                // that mutation locally and re-render — no need to re-fetch
-                // the whole timeline.
-                val mutated = applyLocalStepTimeUpdate(stepId, startTime, endTime)
-                hideLottieLoading()
-                if (mutated) {
-                    republishCurrentTimeline()
-                } else {
-                    refreshTimeline()
-                }
-            },
-            error = { errorModel ->
-                hideLottieLoading()
-                _error.value = errorModel.errorDesc
+        viewModelScope.launch {
+            runCatching {
+                updateStepTimeUseCase(
+                    UpdateStepTimeUseCase.Params(
+                        stepId = stepId,
+                        startTime = startTime,
+                        endTime = endTime
+                    )
+                )
             }
-        )
+                .onSuccess {
+                    val mutated = applyLocalStepTimeUpdate(stepId, startTime, endTime)
+                    hideLottieLoading()
+                    if (mutated) {
+                        republishCurrentTimeline()
+                    } else {
+                        refreshTimeline()
+                    }
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    hideLottieLoading()
+                    _error.value = errorModel.errorDesc
+                }
+        }
     }
 
     private fun applyLocalStepTimeUpdate(
@@ -1766,33 +1732,33 @@ class ACTimelineVM @Inject constructor(
 
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
 
-        updateSegmentTimeUseCase.on(
-            params = UpdateSegmentTimeUseCase.Params(
-                tripHash = _tripHash,
-                segmentIndex = segmentIndex,
-                original = segment,
-                newStartTime = startTime,
-                newEndTime = endTime
-            ),
-            success = {
-                // Cache-only update: rewrite HH:mm on the segment's own
-                // start/end dates plus the parallel additionalData fields.
-                // The use case sends a full TimelineSegmentSettings payload
-                // but does not touch the in-memory TimelineSegment, so we
-                // mirror those mutations here before re-rendering.
-                val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime)
-                hideLottieLoading()
-                if (mutated) {
-                    republishCurrentTimeline()
-                } else {
-                    refreshTimeline()
-                }
-            },
-            error = { errorModel ->
-                hideLottieLoading()
-                _error.value = errorModel.errorDesc
+        viewModelScope.launch {
+            runCatching {
+                updateSegmentTimeUseCase(
+                    UpdateSegmentTimeUseCase.Params(
+                        tripHash = _tripHash,
+                        segmentIndex = segmentIndex,
+                        original = segment,
+                        newStartTime = startTime,
+                        newEndTime = endTime
+                    )
+                )
             }
-        )
+                .onSuccess {
+                    val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime)
+                    hideLottieLoading()
+                    if (mutated) {
+                        republishCurrentTimeline()
+                    } else {
+                        refreshTimeline()
+                    }
+                }
+                .onFailure { t ->
+                    val errorModel = t.toErrorModel()
+                    hideLottieLoading()
+                    _error.value = errorModel.errorDesc
+                }
+        }
     }
 
     private fun applyLocalSegmentTimeUpdate(
@@ -2329,22 +2295,23 @@ class ACTimelineVM @Inject constructor(
         // Skip if no steps to calculate routes between
         if (recommendations.steps.isEmpty()) return
 
-        getTimelineStepRoutesUseCase.on(
-            params = GetTimelineStepRoutesUseCase.Params(
-                startingPointCoordinate = recommendations.startingPointCoordinate,
-                steps = recommendations.steps
-            ),
-            success = { routeInfoList ->
-                // Cache the results
-                _routeInfoCache[segmentIndex] = routeInfoList
-
-                // Update display items with route info
-                updateRecommendationsWithRouteInfo(segmentIndex)
-            },
-            error = {
-                // Silently fail - steps will still be displayed without route info
+        viewModelScope.launch {
+            runCatching {
+                getTimelineStepRoutesUseCase(
+                    GetTimelineStepRoutesUseCase.Params(
+                        startingPointCoordinate = recommendations.startingPointCoordinate,
+                        steps = recommendations.steps
+                    )
+                )
             }
-        )
+                .onSuccess { routeInfoList ->
+                    _routeInfoCache[segmentIndex] = routeInfoList
+                    updateRecommendationsWithRouteInfo(segmentIndex)
+                }
+                .onFailure {
+                    // Silently fail - steps will still be displayed without route info
+                }
+        }
     }
 
     /**
@@ -2476,31 +2443,39 @@ class ACTimelineVM @Inject constructor(
         // touch tripItems/favourites. Skip the heavy parallel/sequential
         // pipeline and just realign TimelineDate.
         if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
-            updateDateRangeUseCase.on(
-                params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline),
-                success = { result -> finalizeInitialFetch(initialTimeline, result.mutated) },
-                error = { finalizeInitialFetch(initialTimeline, false) }
-            )
+            viewModelScope.launch {
+                runCatching {
+                    updateDateRangeUseCase(
+                        UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline)
+                    )
+                }
+                    .onSuccess { result -> finalizeInitialFetch(initialTimeline, result.mutated) }
+                    .onFailure { finalizeInitialFetch(initialTimeline, false) }
+            }
             return
         }
 
         val tracker = SyncMutationTracker()
 
         // STEP 1: City resolution (blocking — parallel ops depend on cityMap)
-        resolveCityIdsForActivitiesUseCase.on(
-            params = ResolveCityIdsForActivitiesUseCase.Params(
-                tripItems,
-                favouriteItems,
-                cityNameToIdMap.toMap()
-            ),
-            success = { updatedCityMap ->
-                cityNameToIdMap.putAll(updatedCityMap)
-                runParallelSyncForInitial(initialTimeline, tripItems, updatedCityMap, tracker)
-            },
-            error = {
-                runParallelSyncForInitial(initialTimeline, tripItems, cityNameToIdMap.toMap(), tracker)
+        viewModelScope.launch {
+            runCatching {
+                resolveCityIdsForActivitiesUseCase(
+                    ResolveCityIdsForActivitiesUseCase.Params(
+                        tripItems,
+                        favouriteItems,
+                        cityNameToIdMap.toMap()
+                    )
+                )
             }
-        )
+                .onSuccess { updatedCityMap ->
+                    cityNameToIdMap.putAll(updatedCityMap)
+                    runParallelSyncForInitial(initialTimeline, tripItems, updatedCityMap, tracker)
+                }
+                .onFailure {
+                    runParallelSyncForInitial(initialTimeline, tripItems, cityNameToIdMap.toMap(), tracker)
+                }
+        }
     }
 
     /**
@@ -2537,31 +2512,43 @@ class ACTimelineVM @Inject constructor(
         }
 
         // Parallel Op 1: Transition detection (pure logic, no API call)
-        detectReservedToBookedTransitionUseCase.on(
-            params = DetectReservedToBookedTransitionUseCase.Params(initialTimeline, tripItems),
-            success = { transitions ->
-                detectedTransitions = transitions
-                onParallelComplete()
-            },
-            error = { onParallelComplete() }
-        )
+        viewModelScope.launch {
+            runCatching {
+                detectReservedToBookedTransitionUseCase(
+                    DetectReservedToBookedTransitionUseCase.Params(initialTimeline, tripItems)
+                )
+            }
+                .onSuccess { transitions ->
+                    detectedTransitions = transitions
+                    onParallelComplete()
+                }
+                .onFailure { onParallelComplete() }
+        }
 
         // Parallel Op 2: Add missing booked activities
-        addMissingBookedActivitiesUseCase.on(
-            params = AddMissingBookedActivitiesUseCase.Params(_tripHash, itinerary!!, initialTimeline),
-            success = { onParallelComplete() },
-            error = { onParallelComplete() }
-        )
+        viewModelScope.launch {
+            runCatching {
+                addMissingBookedActivitiesUseCase(
+                    AddMissingBookedActivitiesUseCase.Params(_tripHash, itinerary!!, initialTimeline)
+                )
+            }
+                .onSuccess { onParallelComplete() }
+                .onFailure { onParallelComplete() }
+        }
 
         // Parallel Op 3: Update date range
-        updateDateRangeUseCase.on(
-            params = UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline),
-            success = { result ->
-                tracker.dateRange = result.mutated
-                onParallelComplete()
-            },
-            error = { onParallelComplete() }
-        )
+        viewModelScope.launch {
+            runCatching {
+                updateDateRangeUseCase(
+                    UpdateDateRangeUseCase.Params(_tripHash, itinerary!!, initialTimeline)
+                )
+            }
+                .onSuccess { result ->
+                    tracker.dateRange = result.mutated
+                    onParallelComplete()
+                }
+                .onFailure { onParallelComplete() }
+        }
     }
 
     /**
@@ -2575,11 +2562,15 @@ class ACTimelineVM @Inject constructor(
         tracker: SyncMutationTracker
     ) {
         if (!transitions.isNullOrEmpty()) {
-            syncReservedToBookedUseCase.on(
-                params = SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap),
-                success = { finalizeInitialFetch(initialTimeline, tracker.anyMutated) },
-                error = { finalizeInitialFetch(initialTimeline, tracker.anyMutated) }
-            )
+            viewModelScope.launch {
+                runCatching {
+                    syncReservedToBookedUseCase(
+                        SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap)
+                    )
+                }
+                    .onSuccess { finalizeInitialFetch(initialTimeline, tracker.anyMutated) }
+                    .onFailure { finalizeInitialFetch(initialTimeline, tracker.anyMutated) }
+            }
         } else {
             finalizeInitialFetch(initialTimeline, tracker.anyMutated)
         }
@@ -2599,20 +2590,18 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(_tripHash),
-            success = { freshTimeline ->
-                processTimeline(freshTimeline)
-                hideLottieLoading()
-                schedulePostSyncDeletion(freshTimeline)
-            },
-            error = {
-                // Re-fetch failed — fall back to the initial snapshot so the
-                // user sees something rather than a permanent loader.
-                processTimeline(initialTimeline)
-                hideLottieLoading()
-            }
-        )
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+                .onSuccess { freshTimeline ->
+                    processTimeline(freshTimeline)
+                    hideLottieLoading()
+                    schedulePostSyncDeletion(freshTimeline)
+                }
+                .onFailure {
+                    processTimeline(initialTimeline)
+                    hideLottieLoading()
+                }
+        }
     }
 
     /**
@@ -2631,43 +2620,49 @@ class ACTimelineVM @Inject constructor(
         pendingDeletionSegmentIndices = indices
         updateDisplayItems()
 
-        removeSegmentsForDeletedCitiesUseCase.on(
-            params = RemoveSegmentsForDeletedCitiesUseCase.Params(
-                _tripHash,
-                timeline,
-                itineraryData.destinationItems
-            ),
-            success = { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) },
-            error = { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
-        )
+        viewModelScope.launch {
+            runCatching {
+                removeSegmentsForDeletedCitiesUseCase(
+                    RemoveSegmentsForDeletedCitiesUseCase.Params(
+                        _tripHash,
+                        timeline,
+                        itineraryData.destinationItems
+                    )
+                )
+            }
+                .onSuccess { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
+                .onFailure { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
+        }
     }
 
     private fun runOutOfRangeDeletionThenSilentRefresh(
         timeline: Timeline,
         itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
     ) {
-        removeOutOfRangeSegmentsUseCase.on(
-            params = RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, itineraryData, timeline),
-            success = { silentRefreshAfterBackgroundDeletion() },
-            error = { silentRefreshAfterBackgroundDeletion() }
-        )
+        viewModelScope.launch {
+            runCatching {
+                removeOutOfRangeSegmentsUseCase(
+                    RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, itineraryData, timeline)
+                )
+            }
+                .onSuccess { silentRefreshAfterBackgroundDeletion() }
+                .onFailure { silentRefreshAfterBackgroundDeletion() }
+        }
     }
 
     private fun silentRefreshAfterBackgroundDeletion() {
-        fetchTimelineUseCase.on(
-            params = FetchTimelineUseCase.Params(_tripHash),
-            success = { fresh ->
-                // Server is now in sync; the hidden indices were tied to the
-                // PRE-delete timeline so we drop them before re-rendering.
-                pendingDeletionSegmentIndices = emptySet()
-                processTimeline(fresh)
-            },
-            error = {
-                // Refresh failed but local state already hid the items. Keep
-                // the hidden set so the UI doesn't snap them back; next
-                // successful refresh will reconcile.
-            }
-        )
+        viewModelScope.launch {
+            runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+                .onSuccess { fresh ->
+                    pendingDeletionSegmentIndices = emptySet()
+                    processTimeline(fresh)
+                }
+                .onFailure {
+                    // Refresh failed but local state already hid the items. Keep
+                    // the hidden set so the UI doesn't snap them back; next
+                    // successful refresh will reconcile.
+                }
+        }
     }
 
     /**
@@ -2731,4 +2726,10 @@ class ACTimelineVM @Inject constructor(
         // user is not left staring at the loader forever.
         private const val LANGUAGE_RETRY_TIMEOUT_SECONDS = 30L
     }
+
+    // Coroutine-migration helper: surfaces SuspendUseCase failures as the
+    // ErrorModel shape the legacy onError callbacks expected, so call-site
+    // bodies don't need to be rewritten while the migration is in flight.
+    private fun Throwable.toErrorModel(): ErrorModel = (this as? ErrorModel)
+        ?: ErrorModel().apply { errorDesc = this@toErrorModel.message ?: "" }
 }

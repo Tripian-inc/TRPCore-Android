@@ -1,12 +1,12 @@
 package com.tripian.trpcore.domain.usecase.timeline
 
 import com.tripian.one.api.tour.model.TourScheduleAvailabilityResponse
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.repository.TourRepository
 import javax.inject.Inject
 
 /**
- * Batch availability lookup across multiple activities on a single date.
+ * Batch availability lookup across multiple activities on a single target date.
  *
  * Backed by `POST /tour-api/schedule-bulk`.
  *
@@ -17,7 +17,7 @@ import javax.inject.Inject
  */
 class GetTourScheduleAvailabilityUseCase @Inject constructor(
     private val repository: TourRepository
-) : BaseUseCase<TourScheduleAvailabilityResponse,
+) : SuspendUseCase<TourScheduleAvailabilityResponse,
         GetTourScheduleAvailabilityUseCase.Params>() {
 
     data class Params(
@@ -27,16 +27,11 @@ class GetTourScheduleAvailabilityUseCase @Inject constructor(
         val lang: String? = null
     )
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            addObservable {
-                repository.getTourScheduleAvailability(
-                    items = p.items,
-                    date = p.date,
-                    currency = p.currency,
-                    lang = p.lang
-                ).toObservable()
-            }
-        }
-    }
+    override suspend fun execute(params: Params): TourScheduleAvailabilityResponse =
+        repository.getTourScheduleAvailabilityAsync(
+            items = params.items,
+            date = params.date,
+            currency = params.currency,
+            lang = params.lang
+        )
 }

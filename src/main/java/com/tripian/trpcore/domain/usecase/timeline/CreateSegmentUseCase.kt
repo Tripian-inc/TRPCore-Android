@@ -3,64 +3,48 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.one.api.trip.model.Accommodation
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
 
-/**
- * CreateSegmentUseCase
- * Creates new segment for Smart Recommendations
- */
 class CreateSegmentUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<ResponseModelBase, CreateSegmentUseCase.Params>() {
+) : SuspendUseCase<ResponseModelBase, CreateSegmentUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
         val title: String,
         val cityId: Int,
-        val startDate: String,  // Format: "yyyy-MM-dd HH:mm"
-        val endDate: String,    // Format: "yyyy-MM-dd HH:mm"
+        val startDate: String,
+        val endDate: String,
         val adults: Int = 1,
         val children: Int = 0,
-        val activityFreeText: String = "",  // Categories as comma-separated string (e.g., "guided tours, free tours,tickets")
-        val activityIds: List<String> = emptyList(),  // Favorite tour IDs (formatted)
-        val excludedActivityIds: List<String> = emptyList(),  // Booked + Reserved activity IDs (formatted)
+        val activityFreeText: String = "",
+        val activityIds: List<String> = emptyList(),
+        val excludedActivityIds: List<String> = emptyList(),
         val smartRecommendation: Boolean = true,
-        val accommodation: Accommodation? = null  // Starting point accommodation (Google Place)
+        val accommodation: Accommodation? = null
     )
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            // Don't send coordinate when cityId is present
-            val segment = TimelineSegmentSettings.create(
-                title = p.title,
-                cityId = p.cityId,
-                startDate = p.startDate,
-                endDate = p.endDate,
-                coordinate = null,  // Don't send coordinate when using cityId
-                adults = p.adults,
-                children = p.children,
-                answerIds = emptyList(),  // Empty list instead of null
-                accommodation = p.accommodation,  // Starting point (Google Place)
-                currency = TRPCore.core.getCurrentCurrency()
-            ).apply {
-                smartRecommendation = p.smartRecommendation
-                activityFreeText = p.activityFreeText
-                activityIds = p.activityIds
-                excludedActivityIds = p.excludedActivityIds  // Exclude booked + reserved
-                segmentType = SegmentType.ITINERARY
-                distinctPlan = true
-                available = true
-            }
-
-            addObservable {
-                repository.editSegment(p.tripHash, segment)
-                    .toSingleDefault(ResponseModelBase().apply { status = 200 })
-                    .toObservable()
-            }
+    override suspend fun execute(params: Params): ResponseModelBase {
+        val segment = TimelineSegmentSettings.create(
+            title = params.title, cityId = params.cityId,
+            startDate = params.startDate, endDate = params.endDate,
+            coordinate = null, adults = params.adults, children = params.children,
+            answerIds = emptyList(), accommodation = params.accommodation,
+            currency = TRPCore.core.getCurrentCurrency()
+        ).apply {
+            smartRecommendation = params.smartRecommendation
+            activityFreeText = params.activityFreeText
+            activityIds = params.activityIds
+            excludedActivityIds = params.excludedActivityIds
+            segmentType = SegmentType.ITINERARY
+            distinctPlan = true
+            available = true
         }
+        repository.editSegmentAsync(params.tripHash, segment)
+        return ResponseModelBase().apply { status = 200 }
     }
 }

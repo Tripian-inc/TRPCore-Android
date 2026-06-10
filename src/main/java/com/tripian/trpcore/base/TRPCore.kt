@@ -25,9 +25,10 @@ import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.plugins.RxJavaPlugins
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.lang.ref.WeakReference
@@ -403,12 +404,6 @@ class TRPCore {
             }
         }
 
-        RxJavaPlugins.setErrorHandler {
-//            FirebaseCrashlytics.getInstance().recordException(it)
-
-            Log.e("AppError", it.stackTraceToString())
-        }
-
         DaggerAppComponent.builder()
             .configurations(object : AppConfig() {
                 override fun tripianServiceUrl(): String {
@@ -530,23 +525,22 @@ class TRPCore {
         return actInjector
     }
 
+    private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     /**
-     * Fetches language values from server.
-     * Called automatically during SDK initialization.
-     * Runs on IO thread to avoid blocking main thread (ANR prevention).
+     * Fetches language values from server. Called automatically during SDK
+     * initialization on an IO dispatcher so the main thread stays free
+     * (ANR prevention).
      */
     private fun fetchLanguages() {
-        miscRepository.getLanguageValues()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { success ->
-                    Log.d("TRPCore", "Languages fetched successfully: $success")
-                },
-                { error ->
-                    Log.e("TRPCore", "Failed to fetch languages: ${error.message}")
-                }
-            )
+        initScope.launch {
+            try {
+                val success = miscRepository.getLanguageValuesAsync()
+                Log.d("TRPCore", "Languages fetched successfully: $success")
+            } catch (error: Throwable) {
+                Log.e("TRPCore", "Failed to fetch languages: ${error.message}")
+            }
+        }
     }
 
 
@@ -562,17 +556,17 @@ class TRPCore {
             appConfig.appLanguage = appLanguage
             trpRest.setLanguage(appLanguage)
         }
-        tripRepository.prefetchCities()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                {
-                    Log.d("TRPCore", "Cities pre-fetched successfully: ${tripRepository.getCachedCities().size} cities cached")
-                },
-                { error ->
-                    Log.e("TRPCore", "Failed to pre-fetch cities: ${error.message}")
-                }
-            )
+        initScope.launch {
+            try {
+                tripRepository.prefetchCitiesAsync()
+                Log.d(
+                    "TRPCore",
+                    "Cities pre-fetched successfully: ${tripRepository.getCachedCities().size} cities cached"
+                )
+            } catch (error: Throwable) {
+                Log.e("TRPCore", "Failed to pre-fetch cities: ${error.message}")
+            }
+        }
     }
 
     /**
@@ -716,12 +710,15 @@ class TRPCore {
      * - Callback is delivered on the main thread.
      */
     fun fetchCities(onComplete: (List<com.tripian.one.api.cities.model.City>) -> Unit) {
-        tripRepository.prefetchCities()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { onComplete(tripRepository.getCachedCities()) },
-                { onComplete(tripRepository.getCachedCities()) }
-            )
+        initScope.launch {
+            try {
+                tripRepository.prefetchCitiesAsync()
+            } catch (_: Throwable) {
+                // Fall through to cache below.
+            }
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                onComplete(tripRepository.getCachedCities())
+            }
+        }
     }
 }

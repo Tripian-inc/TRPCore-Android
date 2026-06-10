@@ -7,10 +7,13 @@ import com.tripian.one.api.pois.model.PoiCategory
 import com.tripian.one.api.pois.model.PoiCategoryGroup
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.GetPoiCategories
+import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.extensions.goBack
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class FRPoiCategoriesVM @Inject constructor(
@@ -52,15 +55,19 @@ class FRPoiCategoriesVM @Inject constructor(
 
     private fun getPoiCategories() {
         showLoading()
-        getPoiCategories.on(success = {
-            hideLoading()
-            poiCategories = it.groups
-            onPoiCategoriesListener.postValue(poiCategories ?: listOf())
-        },
-            error = {
-                hideLoading()
-                showAlert(AlertType.ERROR, it.errorDesc)
-            })
+        viewModelScope.launch {
+            runCatching { getPoiCategories(Unit) }
+                .onSuccess { result ->
+                    hideLoading()
+                    poiCategories = result?.groups
+                    onPoiCategoriesListener.postValue(poiCategories ?: listOf())
+                }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    hideLoading()
+                    showAlert(AlertType.ERROR, msg)
+                }
+        }
     }
 
     fun onClickedBack() {

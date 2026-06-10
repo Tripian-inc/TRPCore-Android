@@ -2,12 +2,9 @@ package com.tripian.trpcore.domain.usecase.timeline.sync
 
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegment
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
-import com.tripian.trpcore.repository.base.ResponseModelBase
-import io.reactivex.Completable
-import io.reactivex.Observable
 import javax.inject.Inject
 
 /**
@@ -30,7 +27,7 @@ import javax.inject.Inject
  */
 class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<RemoveOutOfRangeSegmentsUseCase.Result, RemoveOutOfRangeSegmentsUseCase.Params>() {
+) : SuspendUseCase<RemoveOutOfRangeSegmentsUseCase.Result, RemoveOutOfRangeSegmentsUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -43,30 +40,22 @@ class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
         val mutated: Boolean get() = removedCount > 0
     }
 
-    override fun on(params: Params?) {
-        params?.let {
-            addObservable {
-                val result = applyLocally(it) ?: return@addObservable Observable.just(Result(0))
-                if (result.indicesDescending.isEmpty()) {
-                    return@addObservable Observable.just(Result(0))
-                }
-                // Server-side cleanup, sequential & descending. Errors are
-                // logged but don't break the chain.
-                val deletions = result.indicesDescending.map { idx ->
-                    repository.deleteSegment(it.tripHash, idx)
-                        .onErrorResumeNext { error: Throwable ->
-                            android.util.Log.e(
-                                "SYNC",
-                                "Out-of-range segment delete (index $idx) failed: ${error.message}"
-                            )
-                            Completable.complete()
-                        }
-                }
-                Completable.concat(deletions)
-                    .toSingleDefault(Result(result.indicesDescending.size))
-                    .toObservable()
+    override suspend fun execute(params: Params): Result {
+        val result = applyLocally(params) ?: return Result(0)
+        if (result.indicesDescending.isEmpty()) return Result(0)
+        // Server-side cleanup, sequential & descending. Errors are logged but
+        // don't break the chain.
+        for (idx in result.indicesDescending) {
+            try {
+                repository.deleteSegmentAsync(params.tripHash, idx)
+            } catch (error: Throwable) {
+                android.util.Log.e(
+                    "SYNC",
+                    "Out-of-range segment delete (index $idx) failed: ${error.message}"
+                )
             }
         }
+        return Result(result.indicesDescending.size)
     }
 
     private data class LocalPass(val indicesDescending: List<Int>)

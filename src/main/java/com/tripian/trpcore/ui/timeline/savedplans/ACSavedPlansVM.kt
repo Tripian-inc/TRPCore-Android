@@ -6,7 +6,10 @@ import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
+import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
@@ -155,42 +158,44 @@ class ACSavedPlansVM @Inject constructor(
         // Get resolved cityId from mapping (our system's ID)
         val resolvedCityId = getResolvedCityId(favorite.cityName)
 
-        createReservedActivityFromFavoriteUseCase.on(
-            params = CreateReservedActivityFromFavoriteUseCase.Params(
-                tripHash = tripHash,
-                favorite = favorite,
-                selectedDate = selectedDate,
-                startTime = resolvedStartTime,
-                endTime = resolvedEndTime,
-                resolvedCityId = resolvedCityId,
-                isFlexible = isFlexible
-            ),
-            success = {
-                // Wait for generation to complete
-                waitForSegmentGeneration()
-            },
-            error = { errorModel ->
-                _isCreatingSegment.value = false
-                showAlert(AlertType.ERROR, errorModel.errorDesc ?: "Failed to add activity")
+        viewModelScope.launch {
+            runCatching {
+                createReservedActivityFromFavoriteUseCase(
+                    CreateReservedActivityFromFavoriteUseCase.Params(
+                        tripHash = tripHash,
+                        favorite = favorite,
+                        selectedDate = selectedDate,
+                        startTime = resolvedStartTime,
+                        endTime = resolvedEndTime,
+                        resolvedCityId = resolvedCityId,
+                        isFlexible = isFlexible
+                    )
+                )
             }
-        )
+                .onSuccess { waitForSegmentGeneration() }
+                .onFailure { t ->
+                    val msg = (t as? ErrorModel)?.errorDesc ?: t.message
+                    _isCreatingSegment.value = false
+                    showAlert(AlertType.ERROR, msg ?: "Failed to add activity")
+                }
+        }
     }
 
     /**
      * Wait for segment generation to complete
      */
     private fun waitForSegmentGeneration() {
-        waitForGenerationUseCase.on(
-            params = WaitForGenerationUseCase.Params(tripHash),
-            success = {
-                _isCreatingSegment.value = false
-                _segmentCreated.value = true
-            },
-            error = {
-                _isCreatingSegment.value = false
-                _segmentCreated.value = true // Still return success to refresh timeline
-            }
-        )
+        viewModelScope.launch {
+            runCatching { waitForGenerationUseCase(WaitForGenerationUseCase.Params(tripHash)) }
+                .onSuccess {
+                    _isCreatingSegment.value = false
+                    _segmentCreated.value = true
+                }
+                .onFailure {
+                    _isCreatingSegment.value = false
+                    _segmentCreated.value = true
+                }
+        }
     }
 
     /**

@@ -1,15 +1,14 @@
 package com.tripian.trpcore.domain
 
 import com.tripian.one.api.users.model.LoginResponse
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.util.Preferences
-import com.tripian.trpcore.base.BaseUseCase
 import com.tripian.trpcore.util.extensions.getDeviceId
 import javax.inject.Inject
 
-/**
- * Created by semihozkoroglu on 13.08.2020.
- */
-class DoLightLogin @Inject constructor(val pref: Preferences) : BaseUseCase<LoginResponse, DoLightLogin.Params>() {
+class DoLightLogin @Inject constructor(
+    val pref: Preferences
+) : SuspendUseCase<LoginResponse, DoLightLogin.Params>() {
 
     class Params(
         val firstName: String? = null,
@@ -17,22 +16,16 @@ class DoLightLogin @Inject constructor(val pref: Preferences) : BaseUseCase<Logi
         val uniqueId: String? = null,
     )
 
-    override fun on(params: Params?) {
-        var uniqueId = params?.uniqueId
-        if (uniqueId.isNullOrEmpty()) {
-            val deviceId = getDeviceId(pref)
-            uniqueId = "$deviceId@tripianguest.com"
+    override suspend fun execute(params: Params): LoginResponse {
+        val resolvedUniqueId = if (params.uniqueId.isNullOrEmpty()) {
+            "${getDeviceId(pref)}@tripianguest.com"
+        } else {
+            params.uniqueId
         }
-        addObservable {
-            tripianUserRepository.lightLogin(
-                firstName = params?.firstName,
-                lastName = params?.lastName,
-                uniqueId = uniqueId,
-            )
-        }
-    }
-
-    override fun isRequiredRefreshToken(): Boolean {
-        return false
+        return tripianUserRepository.lightLoginAsync(
+            uniqueId = resolvedUniqueId,
+            firstName = params.firstName,
+            lastName = params.lastName
+        )
     }
 }

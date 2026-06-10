@@ -1,6 +1,5 @@
 package com.tripian.trpcore.repository
 
-import com.mapbox.maps.CoordinateBounds
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.pois.model.PoiCategoriesResponse
 import com.tripian.one.api.pois.model.PoiCategoryModel
@@ -8,115 +7,68 @@ import com.tripian.one.api.pois.model.PoiResponse
 import com.tripian.one.api.pois.model.PoisResponse
 import com.tripian.trpcore.domain.model.PlaceItem
 import com.tripian.trpcore.util.extensions.enableRating
-import io.reactivex.Observable
 import javax.inject.Inject
 
-/**
- * Created by semihozkoroglu on 19.09.2020.
- */
-class PoiRepository @Inject constructor(val service: Service) {
+class PoiRepository @Inject constructor(val service: ServiceWrapper) {
 
     private var poiIds = HashMap<String, Poi>()
     private var poiCategories: PoiCategoryModel? = null
 
-    fun getPoiAlternatives(ids: List<String>): Observable<PoisResponse> {
-        val requestedPoiIds = ArrayList<String>()
+    fun findPoi(poiId: String?): Poi? = poiIds[poiId]
 
-        ids.forEach { id ->
-            if (!poiIds.containsKey(id)) {
-                requestedPoiIds.add(id)
-            }
-        }
-
-        return if (requestedPoiIds.isNotEmpty()) {
-            service.getPoi(poiIds = requestedPoiIds.toTypedArray()).map {
-                it.data?.forEach { poi ->
-                    poiIds[poi.id] = poi
-                }
-            }.map {
-                PoisResponse().apply {
-                    data = poiIds.filter { ids.contains(it.key) }.values.toList()
-                }
-            }
-        } else {
-            Observable.just(PoisResponse().apply {
-                data = poiIds.filter { ids.contains(it.key) }.values.toList()
-            })
-        }
+    fun clearItems() {
+        poiIds.clear()
     }
 
-    fun getPoiWithCategories(cityId: Int, categoryIds: List<Int>, page: Int, limit: Int?): Observable<PoisResponse> {
-        return service.getPoi(cityId = cityId, categoryIds = categoryIds.toTypedArray(), page = page, limit = limit).map {
-            it.data?.forEach { poi ->
-                poiIds[poi.id] = poi
-            }
-            it
+    suspend fun searchAsync(
+        cityId: Int,
+        search: String,
+        categoryIds: List<Int>? = null
+    ): PoisResponse {
+        val response = service.getPoiAsync(
+            cityId = cityId,
+            search = search,
+            categoryIds = categoryIds?.toTypedArray()
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
+    }
+
+    suspend fun getPoiWithCategoriesAsync(
+        cityId: Int,
+        categoryIds: List<Int>,
+        page: Int,
+        limit: Int?
+    ): PoisResponse {
+        val response = service.getPoiAsync(
+            cityId = cityId,
+            categoryIds = categoryIds.toTypedArray(),
+            page = page,
+            limit = limit
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
+    }
+
+    suspend fun getPoiInfoAsync(poiId: String): PoiResponse {
+        poiIds[poiId]?.let { cached ->
+            return PoiResponse().apply { data = cached }
         }
+        val response = service.getPoiInfoAsync(poiId)
+        response.data?.let { poiIds[it.id] = it }
+        return response
     }
 
-    fun getPoiWithBounds(bounds: CoordinateBounds, categoryIds: List<Int>?): Observable<PoisResponse> {
-        val boundary = "${minOf(bounds.north(), bounds.south())}," +
-                "${maxOf(bounds.north(), bounds.south())}," +
-                "${minOf(bounds.west(),bounds.east())}," +
-                "${maxOf(bounds.west(),bounds.east())}"
-        return service.getPoi(boundary = boundary, categoryIds = categoryIds?.toTypedArray()).map {
-            it.data?.forEach { poi ->
-                poiIds[poi.id] = poi
-            }
-            it
+    suspend fun getPoiCategoriesAsync(): PoiCategoriesResponse {
+        poiCategories?.let { cached ->
+            return PoiCategoriesResponse().apply { data = cached }
         }
+        val response = service.getPoiCategoriesAsync()
+        poiCategories = response.data
+        return response
     }
 
-    fun getPoiInfo(poiId: String): Observable<PoiResponse> {
-        return if (poiIds.containsKey(poiId)) {
-            Observable.just(PoiResponse().apply {
-                data = poiIds[poiId]
-            })
-        } else {
-            service.getPoiInfo(poiId = poiId).map {
-                it.data?.let { poiIds[it.id] = it }
-
-                it
-            }
-        }
-    }
-
-    fun getPoiWithTaste(cityId: Int, mustTryIds: Int): Observable<PoisResponse> {
-        return service.getPoi(cityId = cityId, mustTryIds = mustTryIds).map {
-            it.data?.forEach { poi ->
-                poiIds[poi.id] = poi
-            }
-            it
-        }
-    }
-
-    fun findPoi(poiId: String?): Poi? {
-        return poiIds[poiId]
-    }
-
-    fun search(cityId: Int, search: String, categoryIds: List<Int>? = null): Observable<PoisResponse> {
-        return service.getPoi(cityId = cityId, search = search, categoryIds = categoryIds?.toTypedArray()).map {
-            it.data?.forEach { poi ->
-                poiIds[poi.id] = poi
-            }
-            it
-        }
-    }
-
-    /**
-     * Search POIs with filter and sort options
-     *
-     * @param cityId City ID for POI search
-     * @param search Optional search query
-     * @param categoryIds Optional list of category IDs to filter by
-     * @param page Page number for pagination (1-indexed)
-     * @param limit Number of items per page
-     * @param sort Sorting field (score, rating, price, duration)
-     * @param order Sort order (asc, desc)
-     * @param minPrice Minimum price filter
-     * @param maxPrice Maximum price filter
-     */
-    fun searchWithFilters(
+    suspend fun searchWithFiltersAsync(
         cityId: Int,
         search: String? = null,
         categoryIds: List<Int>? = null,
@@ -126,45 +78,18 @@ class PoiRepository @Inject constructor(val service: Service) {
         order: String? = null,
         minPrice: Int? = null,
         maxPrice: Int? = null
-    ): Observable<PoisResponse> {
-        // Format price parameter as "min,max" if any price filter is set
+    ): PoisResponse {
         val priceParam = if (minPrice != null || maxPrice != null) {
             "${minPrice ?: 0},${maxPrice ?: 1500}"
-        } else {
-            null
-        }
-
-        return service.getPoi(
-            cityId = cityId,
-            search = search,
+        } else null
+        val response = service.getPoiAsync(
+            cityId = cityId, search = search,
             categoryIds = categoryIds?.toTypedArray(),
-            page = page,
-            limit = limit,
-            sort = sort,
-            order = order,
-            price = priceParam
-        ).map {
-            it.data?.forEach { poi ->
-                poiIds[poi.id] = poi
-            }
-            it
-        }
-    }
-
-    fun getPoiCategories(): Observable<PoiCategoriesResponse> {
-        return if (poiCategories != null) {
-            Observable.just(PoiCategoriesResponse().apply {
-                data = poiCategories
-            })
-        } else service.getPoiCategories().map {
-            poiCategories = it.data
-
-            it
-        }
-    }
-
-    fun clearItems() {
-        poiIds.clear()
+            page = page, limit = limit,
+            sort = sort, order = order, price = priceParam
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
     }
 }
 

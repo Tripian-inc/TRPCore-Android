@@ -15,8 +15,9 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.SavedItem
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
-import io.reactivex.disposables.CompositeDisposable
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -59,7 +60,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     private var favouriteItems: List<SegmentFavoriteItem> = emptyList()
     private var userLocation: Coordinate? = null
 
-    private val disposables = CompositeDisposable()
     private var searchJob: Job? = null
     private val searchDebounceMs = 650L
 
@@ -223,54 +223,55 @@ class ACStartingPointSelectionVM @Inject constructor(
 
         _isLoading.value = true
 
-        searchAddressUseCase.on(
-            params = SearchAddress.Params(currentCity, searchText),
-            success = { results ->
-                _isLoading.value = false
-                _searchResults.value = results
-            },
-            error = { errorModel ->
-                _isLoading.value = false
-                _searchResults.value = emptyList()
-            }
-        )
+        viewModelScope.launch {
+            runCatching { searchAddressUseCase(SearchAddress.Params(currentCity, searchText)) }
+                .onSuccess { results ->
+                    _isLoading.value = false
+                    _searchResults.value = results
+                }
+                .onFailure {
+                    _isLoading.value = false
+                    _searchResults.value = emptyList()
+                }
+        }
     }
 
     fun fetchPlaceDetails(place: PlaceAutocomplete) {
         _isLoading.value = true
 
-        fetchPlaceUseCase.on(
-            params = FetchPlace.Params(place),
-            success = { googlePlace ->
-                _isLoading.value = false
-                googlePlace?.let {
-                    val coordinate = Coordinate().apply {
-                        it.location?.let { latLng ->
-                            lat = latLng.latitude
-                            lng = latLng.longitude
-                        } ?: run {
-                            lat = 0.0
-                            lng = 0.0
+        viewModelScope.launch {
+            runCatching { fetchPlaceUseCase(FetchPlace.Params(place)) }
+                .onSuccess { googlePlace ->
+                    _isLoading.value = false
+                    googlePlace?.let {
+                        val coordinate = Coordinate().apply {
+                            it.location?.let { latLng ->
+                                lat = latLng.latitude
+                                lng = latLng.longitude
+                            } ?: run {
+                                lat = 0.0
+                                lng = 0.0
+                            }
                         }
+                        val accommodation = Accommodation().apply {
+                            refID = it.id
+                            name = it.displayName
+                            address = it.formattedAddress
+                            this.coordinate = coordinate
+                        }
+                        _selectedPlace.value = SelectedLocation(
+                            coordinate = coordinate,
+                            name = place.area?.toString() ?: it.displayName ?: "",
+                            accommodation = accommodation
+                        )
                     }
-                    val accommodation = Accommodation().apply {
-                        refID = it.id
-                        name = it.displayName
-                        address = it.formattedAddress
-                        this.coordinate = coordinate
-                    }
-                    _selectedPlace.value = SelectedLocation(
-                        coordinate = coordinate,
-                        name = place.area?.toString() ?: it.displayName ?: "",
-                        accommodation = accommodation
-                    )
                 }
-            },
-            error = { errorModel ->
-                _isLoading.value = false
-                showAlert(AlertType.ERROR, errorModel.errorDesc)
-            }
-        )
+                .onFailure { t ->
+                    _isLoading.value = false
+                    val msg = (t as? com.tripian.trpcore.repository.base.ErrorModel)?.errorDesc ?: t.message
+                    showAlert(AlertType.ERROR, msg)
+                }
+        }
     }
 
     fun clearSearchResults() {
@@ -331,7 +332,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     // =====================
 
     override fun onDestroy() {
-        disposables.clear()
         searchJob?.cancel()
         super.onDestroy()
     }

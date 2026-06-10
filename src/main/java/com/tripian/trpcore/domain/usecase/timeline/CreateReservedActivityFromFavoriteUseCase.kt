@@ -3,7 +3,7 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
-import com.tripian.trpcore.base.BaseUseCase
+import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
@@ -20,7 +20,7 @@ import javax.inject.Inject
  */
 class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
     private val repository: TimelineRepository
-) : BaseUseCase<ResponseModelBase, CreateReservedActivityFromFavoriteUseCase.Params>() {
+) : SuspendUseCase<ResponseModelBase, CreateReservedActivityFromFavoriteUseCase.Params>() {
 
     data class Params(
         val tripHash: String,
@@ -41,9 +41,9 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         const val DEFAULT_DURATION_MINUTES = 120 // 2 hours
     }
 
-    override fun on(params: Params?) {
-        params?.let { p ->
-            val dateStr = p.selectedDate.toApiDateString()
+    override suspend fun execute(params: Params): ResponseModelBase {
+        val p = params
+        val dateStr = p.selectedDate.toApiDateString()
 
             // Flexible favorite: bottom-sheet placeholder'ı yerine helper'a
             // güveniyoruz; bugün için window 23:59–23:59'a çekilir (backend
@@ -119,12 +119,8 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                 currency = TRPCore.core.getCurrentCurrency()
             }
 
-            addObservable {
-                repository.editSegment(p.tripHash, segment)
-                    .toSingleDefault(ResponseModelBase().apply { status = 200 })
-                    .toObservable()
-            }
-        }
+        repository.editSegmentAsync(p.tripHash, segment)
+        return ResponseModelBase().apply { status = 200 }
     }
 
     /**
