@@ -40,7 +40,7 @@ class RepositoryModule {
 
     @Provides
     @Singleton
-    fun providesPoiRepository(service: Service): PoiRepository {
+    fun providesPoiRepository(service: ServiceWrapper): PoiRepository {
         return PoiRepository(service)
     }
 

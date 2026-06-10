@@ -14,7 +14,7 @@ import javax.inject.Inject
 /**
  * Created by semihozkoroglu on 19.09.2020.
  */
-class PoiRepository @Inject constructor(val service: Service) {
+class PoiRepository @Inject constructor(val service: ServiceWrapper) {
 
     private var poiIds = HashMap<String, Poi>()
     private var poiCategories: PoiCategoryModel? = null
@@ -165,6 +165,60 @@ class PoiRepository @Inject constructor(val service: Service) {
 
     fun clearItems() {
         poiIds.clear()
+    }
+
+    // ------------------------------------------------------------------
+    // Suspend equivalents — added during the RxJava → Coroutines push.
+    // Legacy Observable methods above remain while their callers are
+    // ported (final cleanup removes them along with the RxJava deps).
+    // ------------------------------------------------------------------
+
+    suspend fun searchAsync(
+        cityId: Int,
+        search: String,
+        categoryIds: List<Int>? = null
+    ): PoisResponse {
+        val response = service.getPoiAsync(
+            cityId = cityId,
+            search = search,
+            categoryIds = categoryIds?.toTypedArray()
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
+    }
+
+    suspend fun getPoiWithCategoriesAsync(
+        cityId: Int,
+        categoryIds: List<Int>,
+        page: Int,
+        limit: Int?
+    ): PoisResponse {
+        val response = service.getPoiAsync(
+            cityId = cityId,
+            categoryIds = categoryIds.toTypedArray(),
+            page = page,
+            limit = limit
+        )
+        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        return response
+    }
+
+    suspend fun getPoiInfoAsync(poiId: String): PoiResponse {
+        poiIds[poiId]?.let { cached ->
+            return PoiResponse().apply { data = cached }
+        }
+        val response = service.getPoiInfoAsync(poiId)
+        response.data?.let { poiIds[it.id] = it }
+        return response
+    }
+
+    suspend fun getPoiCategoriesAsync(): PoiCategoriesResponse {
+        poiCategories?.let { cached ->
+            return PoiCategoriesResponse().apply { data = cached }
+        }
+        val response = service.getPoiCategoriesAsync()
+        poiCategories = response.data
+        return response
     }
 }
 
