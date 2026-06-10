@@ -2,9 +2,12 @@ package com.tripian.trpcore.domain.manager
 
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * POICategoryManager
@@ -23,7 +26,9 @@ object POICategoryManager {
     private var placesOfInterestCategoryIds: List<Int> = emptyList()
     private var isCategoriesFetched: Boolean = false
     private var isFetching: Boolean = false
-    private var fetchDisposable: Disposable? = null
+    private var fetchJob: Job? = null
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Category IDs that identify "Eat & Drink" groups
@@ -33,80 +38,60 @@ object POICategoryManager {
     private val EAT_AND_DRINK_CATEGORY_IDS = listOf(3, 4, 24)
 
     /**
-     * Prefetch categories if not already fetched
-     * Uses lazy loading - only called when POI listing is first accessed
-     *
-     * @param repository PoiRepository instance for API call
-     * @param onComplete Callback when prefetch completes (success or failure)
+     * Prefetch categories if not already fetched. Uses lazy loading — only
+     * runs the first time a POI listing is opened. The completion callback
+     * is delivered on the main thread.
      */
     fun prefetchIfNeeded(
         repository: PoiRepository,
         onComplete: () -> Unit = {}
     ) {
-        // Already fetched, call completion immediately
         if (isCategoriesFetched) {
             onComplete()
             return
         }
-
-        // Currently fetching, don't start another request
-        if (isFetching) {
-            return
-        }
-
+        if (isFetching) return
         isFetching = true
 
-        fetchDisposable = repository.getPoiCategories()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({ response ->
+        fetchJob = scope.launch {
+            try {
+                val response = repository.getPoiCategoriesAsync()
                 val categoryModel = response.data
                 val groups = categoryModel?.groups ?: emptyList()
                 val categories = categoryModel?.categories ?: emptyList()
 
-                // Collect all category IDs
                 allCategoryIds = categories.map { it.id }
 
-                // Separate categories by group
-                // Check if ANY category in a group has ID 3, 4, or 24
-                // If so, include ALL categories from that group in Eat & Drink
                 if (groups.isNotEmpty()) {
                     val eatDrinkCategories = mutableListOf<Int>()
                     val poiCategories = mutableListOf<Int>()
-
                     groups.forEach { group ->
                         val groupCategoryIds = group.categories?.map { it.id } ?: emptyList()
-
-                        // Check if ANY category in this group has ID 3, 4, or 24
                         val isEatAndDrinkGroup = groupCategoryIds.any { categoryId ->
                             EAT_AND_DRINK_CATEGORY_IDS.contains(categoryId)
                         }
-
                         if (isEatAndDrinkGroup) {
                             eatDrinkCategories.addAll(groupCategoryIds)
                         } else {
                             poiCategories.addAll(groupCategoryIds)
                         }
                     }
-
                     eatAndDrinkCategoryIds = eatDrinkCategories
                     placesOfInterestCategoryIds = poiCategories
                 } else {
-                    // Fallback: No groups available, return empty lists
                     eatAndDrinkCategoryIds = emptyList()
                     placesOfInterestCategoryIds = emptyList()
                 }
 
                 isCategoriesFetched = true
-                isFetching = false
-                onComplete()
-            }, { _ ->
-                // On error, return empty lists
+            } catch (_: Throwable) {
                 eatAndDrinkCategoryIds = emptyList()
                 placesOfInterestCategoryIds = emptyList()
+            } finally {
                 isFetching = false
-                onComplete()
-            })
+                withContext(Dispatchers.Main) { onComplete() }
+            }
+        }
     }
 
     /**
@@ -126,18 +111,11 @@ object POICategoryManager {
         }
     }
 
-    /**
-     * Check if categories have been fetched
-     */
     fun isReady(): Boolean = isCategoriesFetched
 
-    /**
-     * Clear cached categories
-     * Used for testing or when user logs out
-     */
     fun clear() {
-        fetchDisposable?.dispose()
-        fetchDisposable = null
+        fetchJob?.cancel()
+        fetchJob = null
         allCategoryIds = emptyList()
         eatAndDrinkCategoryIds = emptyList()
         placesOfInterestCategoryIds = emptyList()
@@ -145,8 +123,5 @@ object POICategoryManager {
         isFetching = false
     }
 
-    /**
-     * Get all category IDs
-     */
     fun getAllCategoryIds(): List<Int> = allCategoryIds
 }

@@ -30,7 +30,6 @@ import javax.inject.Inject
 
 class MiscRepository @Inject constructor(
     var app: Application,
-    val service: Service,
     val preferences: Preferences
 ) {
     private lateinit var languageValues: JSONObject

@@ -7,54 +7,10 @@ import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.BaseBottomDialogFragment
 import com.tripian.trpcore.base.BaseDialogFragment
 import com.tripian.trpcore.base.BaseFragment
-import com.tripian.trpcore.base.BaseUseCase
-import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.UseCaseListener
 import com.tripian.trpcore.util.ViewListener
-import com.tripian.trpcore.util.dialog.DGContent
 import com.tripian.trpcore.util.fragment.FragmentFactory
-import javax.inject.Inject
 import kotlin.reflect.KClass
-
-/**
- * Created by semihozkoroglu on 2019-12-06.
- */
-fun BaseViewModel.setUseCasesListener() {
-    val viewModel = this
-
-    this::class.java.fields.forEach {
-        if (it != null && it.isAnnotationPresent(Inject::class.java)) {
-            val obj = it.get(this)
-            if (obj is BaseUseCase<*, *>) {
-                useCases.add(obj)
-            }
-        }
-    }
-
-    for (useCase in useCases) {
-        useCase.useCaseListener = object : UseCaseListener {
-            override fun showSnackBarMessage(message: String) {
-                viewListener?.showSnackBarMessage(message)
-            }
-
-            override fun showDialog(dgContent: DGContent) {
-                viewModel.showDialog(
-                    title = dgContent.title,
-                    contentText = dgContent.content,
-                    positiveBtn = dgContent.positiveBtn,
-                    negativeBtn = dgContent.negativeBtn,
-                    positive = dgContent.positiveListener,
-                    negative = dgContent.negativeListener
-                )
-            }
-
-            override fun refreshTokenError() {
-                // Legacy openLogin path removed; SDK consumer handles re-auth via init flow.
-            }
-        }
-    }
-}
 
 fun BaseActivity<*, *>.setViewListener() {
     val baseActivity = this

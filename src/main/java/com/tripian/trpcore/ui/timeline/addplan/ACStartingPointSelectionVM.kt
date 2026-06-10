@@ -16,7 +16,6 @@ import com.tripian.trpcore.domain.model.timeline.SavedItem
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
-import io.reactivex.disposables.CompositeDisposable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -61,7 +60,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     private var favouriteItems: List<SegmentFavoriteItem> = emptyList()
     private var userLocation: Coordinate? = null
 
-    private val disposables = CompositeDisposable()
     private var searchJob: Job? = null
     private val searchDebounceMs = 650L
 
@@ -334,7 +332,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     // =====================
 
     override fun onDestroy() {
-        disposables.clear()
         searchJob?.cancel()
         super.onDestroy()
     }

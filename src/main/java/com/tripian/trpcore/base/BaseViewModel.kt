@@ -20,7 +20,6 @@ import com.tripian.trpcore.util.ViewListener
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.event.SingleLiveEvent
 import com.tripian.trpcore.util.extensions.navigateToFragment
-import com.tripian.trpcore.util.extensions.setUseCasesListener
 import com.tripian.trpcore.util.fragment.FragmentFactory
 import javax.inject.Inject
 import kotlin.reflect.KClass
@@ -28,9 +27,12 @@ import kotlin.Array as Array1
 
 
 /**
- * Created by Semih Özköroğlu on 29.09.2019
+ * Base ViewModel — lifecycle hooks + shared UI helpers (loaders, dialogs,
+ * localized strings). Subclasses launch their work on [viewModelScope] and
+ * call [SuspendUseCase] instances directly; no per-VM disposable tracking
+ * is needed.
  */
-abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnBackPressListener {
+abstract class BaseViewModel : ViewModel(), OnBackPressListener {
 
     @Inject
     lateinit var strings: Strings
@@ -40,11 +42,6 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     var arguments: Bundle? = null
 
-    /**
-     * Holds the list of use cases to dispose requests in use cases
-     */
-    var useCases = arrayListOf(*cases)
-
     var fragmentManager: FragmentManager? = null
     var viewListener: ViewListener? = null
 
@@ -53,8 +50,6 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
 
     @CallSuper
     open fun onViewCreated(savedInstanceState: Bundle?) {
-        setUseCasesListener()
-
         viewListener?.hideLoading()
     }
 
@@ -78,22 +73,7 @@ abstract class BaseViewModel(vararg cases: BaseUseCase<*, *>) : ViewModel(), OnB
     open fun onSaveInstanceState(outState: Bundle?) {
     }
 
-    /**
-     * Called when the ViewModel lifecycle ends.
-     * Clears RxJava Disposables.
-     */
-    override fun onCleared() {
-        super.onCleared()
-
-        for (useCase in useCases) {
-            useCase.clear()
-        }
-    }
-
     open fun onDestroyView() {
-        for (useCase in useCases) {
-            useCase.clear()
-        }
     }
 
     open fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

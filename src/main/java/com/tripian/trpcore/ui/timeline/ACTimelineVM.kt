@@ -59,8 +59,6 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
 import androidx.lifecycle.viewModelScope
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date

@@ -8,13 +8,9 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
- * Coroutine replacement for [BaseUseCase]. Concrete UseCases implement
- * [execute] with their business logic and the ViewModel call site uses
+ * Coroutine UseCase base. Concrete UseCases implement [execute] with their
+ * business logic and the ViewModel call site uses
  * `runCatching { useCase(params) }` to consume the result.
- *
- * Lives alongside the legacy [BaseUseCase] during the RxJava → Coroutines
- * migration. Once all UseCases are ported the legacy base and its RxJava
- * dependencies (rxjava, rxandroid, adapter-rxjava2) are removed.
  *
  * Threading: [invoke] dispatches to [Dispatchers.IO] so concrete UseCases
  * never have to think about it. ViewModels stay on the main dispatcher via

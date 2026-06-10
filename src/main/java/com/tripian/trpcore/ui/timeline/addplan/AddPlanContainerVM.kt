@@ -19,8 +19,6 @@ import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject

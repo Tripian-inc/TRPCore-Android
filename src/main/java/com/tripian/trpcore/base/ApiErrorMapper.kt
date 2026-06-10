@@ -12,13 +12,12 @@ import java.net.SocketTimeoutException
 import javax.net.ssl.SSLHandshakeException
 
 /**
- * Translates any Throwable thrown from the repository / service layer into the
- * domain [ErrorModel] expected by ViewModels. Mirrors the error funnel that
- * used to live inside the RxJava-based BaseUseCase.getResponseListener();
- * extracted so both the legacy and the suspend use-case bases can share it.
+ * Translates any Throwable thrown from the repository / service layer into
+ * the domain [ErrorModel] expected by ViewModels — single funnel shared by
+ * every [SuspendUseCase].
  *
- * Side-effect: a refresh-token failure logs the user out (legacy behaviour).
- * The host is then expected to re-call init/start through the SDK entry points.
+ * Side-effect: a refresh-token failure logs the user out. The host is
+ * expected to re-call init/start through the SDK entry points.
  */
 internal object ApiErrorMapper {
 
