@@ -178,11 +178,20 @@ class FRTimeAndTravelers : Fragment() {
         val startTime = sharedVM.startTime.value
         val currentTime = sharedVM.endTime.value
 
+        // A stored "23:59" end is the midnight sentinel — seed the clock with
+        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM.
+        val initialTime = if (currentTime == MaterialTimePickerHelper.END_OF_DAY_24H) {
+            "00:00"
+        } else {
+            currentTime ?: startTime
+        }
+
         showComposeTimePicker(
-            initialTime = currentTime ?: startTime,
+            initialTime = initialTime,
             minTime = startTime,
+            treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
-                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
+                val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
                 sharedVM.setEndTime(time24h)
             }
         )
@@ -279,7 +288,7 @@ class FRTimeAndTravelers : Fragment() {
         // End time
         sharedVM.endTime.observe(viewLifecycleOwner) { time ->
             val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
-            binding.tvEndTime.text = time?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
+            binding.tvEndTime.text = time?.let { MaterialTimePickerHelper.formatEndTimeTo12h(it) } ?: selectText
             binding.tvEndTime.setTextColor(
                 requireContext().getColor(
                     if (time != null) R.color.trp_text_primary

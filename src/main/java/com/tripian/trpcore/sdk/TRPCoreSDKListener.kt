@@ -117,4 +117,14 @@ interface TRPCoreSDKListener {
      * @param activityId ID of the added activity (productId)
      */
     fun onActivityAdded(activityId: String) {}
+
+    /**
+     * Called when the user removes an activity from their saved plans (favorites)
+     * via the Saved Plans flow. Host app should remove it from its own favorites
+     * store so the two stay in sync.
+     *
+     * @param activityId Base activity ID with the "C_" prefix and provider/city
+     *                   suffixes stripped (e.g. "15423").
+     */
+    fun onActivityRemovedFromSavedPlans(activityId: String) {}
 }

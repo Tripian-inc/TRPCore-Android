@@ -9,6 +9,7 @@ import com.tripian.trpcore.databinding.AcSavedPlansBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.dialog.DGActionListener
 import java.util.Date
 
 /**
@@ -90,6 +91,18 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
                 finish()
             }
         }
+
+        // Observe favorite removed - dismiss the sheet and refresh the timeline.
+        // Close the screen entirely once the saved plans list is empty.
+        viewModel.favoriteRemoved.observe(this) { listEmpty ->
+            listEmpty?.let {
+                viewModel.resetFavoriteRemoved()
+                timeSelectionBottomSheet?.dismiss()
+                // Timeline refreshes its saved-plans badge on RESULT_OK.
+                setResult(RESULT_OK)
+                if (it) finish()
+            }
+        }
     }
 
     private fun setupRecyclerView() {
@@ -133,15 +146,41 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             favoriteTitle = favorite.title,
             favoriteDuration = favorite.duration,
             availableDays = viewModel.getAvailableDays(),
-            initialSelectedDay = viewModel.getSelectedDate()
+            initialSelectedDay = viewModel.getSelectedDate(),
+            // SavedPlans flow: "Select" primary + outlined "Remove".
+            showSelectAndRemove = true
         )
 
-        timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible ->
-            // Create reserved activity segment with selected date and time
-            viewModel.createReservedActivitySegment(selectedDate, startTime, endTime, isFlexible)
+        timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible, slotPrice ->
+            // Create reserved activity segment with selected date, time and slot price
+            viewModel.createReservedActivitySegment(selectedDate, startTime, endTime, isFlexible, slotPrice)
+        }
+
+        timeSelectionBottomSheet?.setOnRemoveListener {
+            showRemoveConfirmation(favorite)
         }
 
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
+    }
+
+    /**
+     * Shows the confirmation alert before removing a favorite from saved plans.
+     * On confirm the removal is performed by the ViewModel.
+     */
+    private fun showRemoveConfirmation(favorite: SegmentFavoriteItem) {
+        viewModel.showDialog(
+            title = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
+            contentText = viewModel.getLanguageForKey(LanguageConst.SAVED_PLANS_REMOVE_CONFIRM)
+                .ifBlank { "Are you sure you want to remove this activity from your saved plans?" },
+            positiveBtn = viewModel.getLanguageForKey(LanguageConst.REMOVE_BUTTON),
+            negativeBtn = viewModel.getLanguageForKey(LanguageConst.CANCEL),
+            positive = object : DGActionListener {
+                override fun onClicked(o: Any?) {
+                    viewModel.removeFavorite(favorite)
+                }
+            },
+            isCloseEnable = false
+        )
     }
 
     companion object {

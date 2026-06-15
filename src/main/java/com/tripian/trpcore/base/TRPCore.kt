@@ -197,6 +197,13 @@ class TRPCore {
         }
 
         /**
+         * Triggers the "removed from saved plans" callback with the base activityId.
+         */
+        internal fun notifyActivityRemovedFromSavedPlans(activityId: String) {
+            listener?.onActivityRemovedFromSavedPlans(activityId)
+        }
+
+        /**
          * Returns the device ID (fallback for uniqueId)
          */
         private fun getDeviceId(context: Context): String {

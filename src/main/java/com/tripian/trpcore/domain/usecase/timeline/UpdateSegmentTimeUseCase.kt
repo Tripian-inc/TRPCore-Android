@@ -26,7 +26,10 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         val segmentIndex: Int,
         val original: TimelineSegment,
         val newStartTime: String,  // "HH:mm"
-        val newEndTime: String     // "HH:mm"
+        val newEndTime: String,    // "HH:mm"
+        // Price of the newly selected time slot. When non-null it overrides the
+        // segment price; null keeps the existing price (slot had no price).
+        val newPrice: Double? = null
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
@@ -48,7 +51,8 @@ class UpdateSegmentTimeUseCase @Inject constructor(
                 endDatetime = newEndDate
                 coordinate = src.coordinate
                 cancellation = src.cancellation
-                price = src.price
+                // Slot price wins when present; otherwise keep the original.
+                price = params.newPrice ?: src.price
                 currency = src.currency
                 duration = src.duration
                 rating = src.rating

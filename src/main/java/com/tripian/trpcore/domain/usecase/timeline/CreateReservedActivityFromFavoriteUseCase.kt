@@ -32,7 +32,10 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         val resolvedCityId: Int? = null,  // Our system's cityId (resolved from cityName mapping)
         // Flexible (any-time) favorite. true ise window resolveFlexibleWindow ile
         // hesaplanır ve duration = -1.0 yazılır (tour flexible path ile parite).
-        val isFlexible: Boolean = false
+        val isFlexible: Boolean = false,
+        // Price of the selected time slot. When non-null it overrides the
+        // favorite's stored price; null falls back to the favorite price.
+        val slotPrice: Double? = null
     )
 
     companion object {
@@ -90,9 +93,17 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                 this.endDatetime = endDatetime.toAdditionalDataIso()
                 this.coordinate = coordinate
                 duration = effectiveDuration
-                p.favorite.price?.let { price ->
-                    this.price = price.value
-                    this.currency = price.currency ?: "EUR"
+                // Selected slot price wins; otherwise fall back to the
+                // favorite's stored price.
+                val slot = p.slotPrice
+                if (slot != null) {
+                    this.price = slot
+                    this.currency = TRPCore.core.getCurrentCurrency()
+                } else {
+                    p.favorite.price?.let { price ->
+                        this.price = price.value
+                        this.currency = price.currency ?: "EUR"
+                    }
                 }
                 cancellation = p.favorite.cancellation
                 // iOS spec section 2.2: carry rating/ratingCount on every reserved

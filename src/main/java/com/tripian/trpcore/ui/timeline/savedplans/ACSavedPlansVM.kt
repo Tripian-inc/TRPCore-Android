@@ -3,11 +3,14 @@ package com.tripian.trpcore.ui.timeline.savedplans
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.trpcore.base.BaseViewModel
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.Preferences
+import com.tripian.trpcore.util.RemovedFavoritesStore
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -22,7 +25,8 @@ import javax.inject.Inject
  */
 class ACSavedPlansVM @Inject constructor(
     private val createReservedActivityFromFavoriteUseCase: CreateReservedActivityFromFavoriteUseCase,
-    private val waitForGenerationUseCase: WaitForGenerationUseCase
+    private val waitForGenerationUseCase: WaitForGenerationUseCase,
+    private val preferences: Preferences
 ) : BaseViewModel() {
 
     // =====================
@@ -43,6 +47,12 @@ class ACSavedPlansVM @Inject constructor(
 
     private val _showTimeSelection = MutableLiveData<SegmentFavoriteItem?>()
     val showTimeSelection: LiveData<SegmentFavoriteItem?> = _showTimeSelection
+
+    // Emitted after a favorite is removed so the screen can dismiss the sheet
+    // and refresh. Carries true when the list became empty (so the screen can
+    // close), false otherwise.
+    private val _favoriteRemoved = MutableLiveData<Boolean?>()
+    val favoriteRemoved: LiveData<Boolean?> = _favoriteRemoved
 
     // =====================
     // STATE
@@ -138,7 +148,8 @@ class ACSavedPlansVM @Inject constructor(
         selectedDate: Date,
         startTime: String?,
         endTime: String?,
-        isFlexible: Boolean
+        isFlexible: Boolean,
+        slotPrice: Double? = null
     ) {
         val favorite = pendingFavorite ?: return
 
@@ -168,7 +179,8 @@ class ACSavedPlansVM @Inject constructor(
                         startTime = resolvedStartTime,
                         endTime = resolvedEndTime,
                         resolvedCityId = resolvedCityId,
-                        isFlexible = isFlexible
+                        isFlexible = isFlexible,
+                        slotPrice = slotPrice
                     )
                 )
             }
@@ -225,6 +237,33 @@ class ACSavedPlansVM @Inject constructor(
     fun resetSegmentCreated() {
         _segmentCreated.value = false
         pendingFavorite = null
+    }
+
+    /**
+     * Remove a favorite from saved plans. Persists the removal locally (per
+     * tripHash) so it stays removed across app restarts, notifies the host with
+     * the base activityId, drops it from the list and emits [favoriteRemoved].
+     */
+    fun removeFavorite(favorite: SegmentFavoriteItem) {
+        // Persist the removal so this favorite won't reappear for this timeline.
+        RemovedFavoritesStore.addRemoved(preferences, tripHash, favorite.activityId)
+
+        // Notify host with the base activityId (C_ prefix / suffixes stripped).
+        RemovedFavoritesStore.baseActivityId(favorite.activityId)?.let { baseId ->
+            TRPCore.notifyActivityRemovedFromSavedPlans(baseId)
+        }
+
+        // Drop it from the in-memory list and re-render.
+        favorites = favorites.filterNot { it.activityId == favorite.activityId }
+        pendingFavorite = null
+        processAndDisplayItems()
+
+        _favoriteRemoved.value = favorites.isEmpty()
+    }
+
+    /** Clears the one-shot [favoriteRemoved] event. */
+    fun resetFavoriteRemoved() {
+        _favoriteRemoved.value = null
     }
 
     // =====================

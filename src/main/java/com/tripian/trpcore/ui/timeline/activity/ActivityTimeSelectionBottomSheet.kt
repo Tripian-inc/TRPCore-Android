@@ -45,13 +45,21 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
     private var onTimeSelectedListener: ((TourProduct, Date, String, Double?, Boolean) -> Unit)? = null
 
+    // SavedPlans flow: primary button becomes "Select" and an outlined "Remove"
+    // button is shown (always enabled). The normal activity-listing flow keeps
+    // the single "Continue" button.
+    private var showSelectAndRemove: Boolean = false
+    private var onRemoveListener: (() -> Unit)? = null
+
     // For favorites mode (uses activityId for schedule API)
     private var isFavoriteMode: Boolean = false
     private var favoriteActivityId: String? = null
     private var favoriteCityId: Int? = null
     private var favoriteTitle: String? = null
     private var favoriteDuration: Double? = null
-    private var onFavoriteTimeSelectedListener: ((Date, String?, String?, Boolean) -> Unit)? = null
+    // Last param is the selected slot's min price (null when the slot carries no
+    // price); the caller uses it to set the new segment's price.
+    private var onFavoriteTimeSelectedListener: ((Date, String?, String?, Boolean, Double?) -> Unit)? = null
 
     // Step-edit mode shares the favorite schedule load path (activityId + cityId)
     // but routes the confirm action to a different callback that returns HH:mm
@@ -59,7 +67,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     // the time grid with the step's current slot on first render.
     private var isStepEditMode: Boolean = false
     private var pendingInitialTimeSlot: String? = null
-    private var onStepTimeSelectedListener: ((Date, String, String?) -> Unit)? = null
+    // Last param is the selected slot's min price (null when the slot carries no
+    // price); the caller uses it to update the activity's price on change-time.
+    private var onStepTimeSelectedListener: ((Date, String, String?, Double?) -> Unit)? = null
 
     /**
      * Original booked time (`HH:mm`) kept beyond [pendingInitialTimeSlot]'s
@@ -92,6 +102,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteTitle = args.getString(ARG_FAVORITE_TITLE)
             favoriteDuration = args.getDouble(ARG_FAVORITE_DURATION, 0.0).takeIf { it > 0 }
             isStepEditMode = args.getBoolean(ARG_STEP_EDIT_MODE, false)
+            showSelectAndRemove = args.getBoolean(ARG_SHOW_SELECT_AND_REMOVE, false)
             pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
             initialTimeSlot = pendingInitialTimeSlot
 
@@ -180,6 +191,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private fun setupUI() {
         // Set localized texts
         updateTexts()
+        // Remove button is only part of the SavedPlans flow
+        binding.btnRemove.visibility = if (showSelectAndRemove) View.VISIBLE else View.GONE
         // Update continue button state
         updateContinueButtonState()
     }
@@ -190,10 +203,18 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else {
             getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         }
+        binding.tvAddToDay.text = getLanguageForKey(LanguageConst.ADD_PLAN_ADD_TO_DAY)
         binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
         binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
-        binding.btnContinue.text = getLanguageForKey(LanguageConst.ADD_PLAN_CONTINUE)
+        // SavedPlans flow uses "Select" as the primary CTA; everything else
+        // keeps the "Continue" label.
+        binding.btnContinue.text = if (showSelectAndRemove) {
+            getLanguageForKey(LanguageConst.ADD_PLAN_SELECT)
+        } else {
+            getLanguageForKey(LanguageConst.ADD_PLAN_CONTINUE)
+        }
+        binding.btnRemove.text = getLanguageForKey(LanguageConst.REMOVE_BUTTON)
     }
 
     private fun setupDayFilter() {
@@ -227,6 +248,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         binding.btnContinue.setOnClickListener {
             addActivity()
         }
+
+        // Remove button - SavedPlans flow only. Confirmation + removal are
+        // handled by the host (it shows the alert and performs the removal).
+        // Independent of any time-slot selection, so always actionable.
+        binding.btnRemove.setOnClickListener {
+            onRemoveListener?.invoke()
+        }
     }
 
     private fun addActivity() {
@@ -238,7 +266,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             // string-typed callback contract is preserved; the isFlexible flag
             // is the source of truth.
             if (isFavoriteMode) {
-                onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59", true)
+                onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59", true, currentFlexiblePrice)
             } else {
                 val tour = activity ?: return
                 onTimeSelectedListener?.invoke(tour, date, "00:00", currentFlexiblePrice, true)
@@ -251,13 +279,14 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         if (isStepEditMode) {
             // Step-edit emits HH:mm start/end for the host VM to patch via
             // updateStepTime. End time is computed from the step's stored
-            // duration (same recipe as the favorite path).
+            // duration (same recipe as the favorite path). selectedPrice is the
+            // chosen slot's price so the activity price can follow the new time.
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
-            onStepTimeSelectedListener?.invoke(date, timeSlot, endTime)
+            onStepTimeSelectedListener?.invoke(date, timeSlot, endTime, selectedPrice)
         } else if (isFavoriteMode) {
             // For favorites - calculate end time from duration
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
-            onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime, false)
+            onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime, false, selectedPrice)
         } else {
             // For tours - pass selected price (minimum price for the selected time slot)
             val tour = activity ?: return
@@ -577,17 +606,27 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      *                 ("00:00"/"23:59") taşır; gerçek window'u use case
      *                 [resolveFlexibleWindow] ile yeniden hesaplar.
      */
-    fun setOnFavoriteTimeSelectedListener(listener: (Date, String?, String?, Boolean) -> Unit) {
+    fun setOnFavoriteTimeSelectedListener(listener: (Date, String?, String?, Boolean, Double?) -> Unit) {
         onFavoriteTimeSelectedListener = listener
     }
 
     /**
      * Set listener for step-edit time selection (used when changing the time
      * of an existing activity-type timeline step).
-     * @param listener Callback with (selectedDate, startTime HH:mm, endTime HH:mm or null)
+     * @param listener Callback with (selectedDate, startTime HH:mm, endTime HH:mm or null,
+     *                 selectedSlotPrice or null). The price drives the change-time
+     *                 price update (kept unchanged when null).
      */
-    fun setOnStepTimeSelectedListener(listener: (Date, String, String?) -> Unit) {
+    fun setOnStepTimeSelectedListener(listener: (Date, String, String?, Double?) -> Unit) {
         onStepTimeSelectedListener = listener
+    }
+
+    /**
+     * Set listener for the "Remove" action (SavedPlans flow only). The host is
+     * responsible for showing the confirmation alert and performing the removal.
+     */
+    fun setOnRemoveListener(listener: () -> Unit) {
+        onRemoveListener = listener
     }
 
     companion object {
@@ -602,6 +641,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         private const val ARG_FAVORITE_DURATION = "favorite_duration"
         private const val ARG_STEP_EDIT_MODE = "step_edit_mode"
         private const val ARG_INITIAL_TIME_SLOT = "initial_time_slot"
+        private const val ARG_SHOW_SELECT_AND_REMOVE = "show_select_and_remove"
 
         /**
          * Create instance for TourProduct (with API schedule loading)
@@ -629,7 +669,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteTitle: String,
             favoriteDuration: Double?,
             availableDays: List<Date>,
-            initialSelectedDay: Date? = null
+            initialSelectedDay: Date? = null,
+            // SavedPlans flow: show "Select" primary + outlined "Remove".
+            showSelectAndRemove: Boolean = false
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -640,6 +682,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                     favoriteDuration?.let { putDouble(ARG_FAVORITE_DURATION, it) }
                     putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
                     initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
+                    putBoolean(ARG_SHOW_SELECT_AND_REMOVE, showSelectAndRemove)
                 }
             }
         }

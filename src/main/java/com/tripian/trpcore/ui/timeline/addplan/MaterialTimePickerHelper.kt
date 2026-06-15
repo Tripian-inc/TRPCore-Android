@@ -11,6 +11,15 @@ import com.tripian.trpcore.R
 object MaterialTimePickerHelper {
 
     /**
+     * End-of-day sentinel used for "midnight" end-time selections. The UI lets
+     * the user pick 12:00 AM as an end time, but storing it as "00:00" would
+     * make end < start and the API would read it as the start of the day. We
+     * store "23:59" instead (end > start, API sees the end of the day) while
+     * the field still renders it as "12:00 AM" via [formatEndTimeTo12h].
+     */
+    const val END_OF_DAY_24H = "23:59"
+
+    /**
      * Create MaterialTimePicker with 12h format and custom theme
      * @param initialTime Initial time in HH:mm format (24h), nullable
      * @return MaterialTimePicker configured for 12-hour display
@@ -54,6 +63,24 @@ object MaterialTimePickerHelper {
      */
     fun formatTo24h(hour: Int, minute: Int): String {
         return String.format("%02d:%02d", hour, minute)
+    }
+
+    /**
+     * Format hour/minute to the 24h storage value for an END time, mapping a
+     * midnight selection (00:00) to the [END_OF_DAY_24H] sentinel "23:59".
+     * Start times must keep using [formatTo24h].
+     */
+    fun formatEndTimeTo24h(hour: Int, minute: Int): String {
+        return if (hour == 0 && minute == 0) END_OF_DAY_24H else formatTo24h(hour, minute)
+    }
+
+    /**
+     * Display formatter for an END time. The [END_OF_DAY_24H] sentinel renders
+     * as "12:00 AM" (the midnight the user actually chose); every other value
+     * delegates to [formatTo12h].
+     */
+    fun formatEndTimeTo12h(time24: String): String {
+        return if (time24 == END_OF_DAY_24H) "12:00 AM" else formatTo12h(time24)
     }
 
     /**

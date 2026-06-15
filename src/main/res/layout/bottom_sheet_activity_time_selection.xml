@@ -44,12 +44,24 @@
 
     </RelativeLayout>
 
+    <!-- "Add to day" label above the date filter -->
+    <com.tripian.trpcore.util.widget.TextView
+        android:id="@+id/tvAddToDay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_16sdp"
+        android:fontFamily="@font/light"
+        android:textColor="@color/trp_text_primary"
+        android:textSize="12sp"
+        tools:text="Add to day" />
+
     <!-- Day Filter Section -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvDays"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_8sdp"
+        android:layout_marginTop="@dimen/_16sdp"
         android:clipToPadding="false"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/_12sdp"
@@ -62,9 +74,9 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
         android:layout_marginTop="@dimen/_24sdp"
-        android:fontFamily="@font/semibold"
+        android:fontFamily="@font/light"
         android:textColor="@color/trp_text_primary"
-        android:textSize="16sp"
+        android:textSize="12sp"
         tools:text="Select Time" />
 
     <!-- Time Slots (Horizontal wrap layout using FlexboxLayout) -->
@@ -73,7 +85,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_16sdp"
         android:layout_weight="1"
         android:nestedScrollingEnabled="true"
         app:alignItems="flex_start"
@@ -177,7 +189,7 @@
 
     </LinearLayout>
 
-    <!-- Continue Button -->
+    <!-- Continue / Select Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"
         style="@style/TrpButtonPrimary"
@@ -185,5 +197,15 @@
         android:layout_marginTop="@dimen/_24sdp"
         android:enabled="false"
         tools:text="Continue" />
+
+    <!-- Remove Button (SavedPlans flow only; always enabled) -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRemove"
+        style="@style/TrpButtonOutlined"
+        android:layout_marginHorizontal="@dimen/_24sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:visibility="gone"
+        tools:text="Remove"
+        tools:visibility="visible" />
 
 </LinearLayout>

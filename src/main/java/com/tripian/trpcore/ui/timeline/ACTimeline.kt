@@ -537,9 +537,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         duration = reservedActivity.segment.additionalData?.duration,
                         initialDateTime = reservedActivity.startDateTime,
                         seedInitialTimeSlot = true
-                    ) { startTime, endTime ->
+                    ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            reservedActivity.segment, idx, startTime, endTime
+                            reservedActivity.segment, idx, startTime, endTime, slotPrice
                         )
                     }
                 }
@@ -555,9 +555,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         // Flexible items use a 00:00/23:59 placeholder; pre-selecting
                         // it would mark a non-existent "00:00" slot as the choice.
                         seedInitialTimeSlot = false
-                    ) { startTime, endTime ->
+                    ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            flexibleActivity.segment, idx, startTime, endTime
+                            flexibleActivity.segment, idx, startTime, endTime, slotPrice
                         )
                     }
                 }
@@ -1319,7 +1319,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 duration = poi.duration?.toDouble(),
                 initialDateTime = step.startDateTimes,
                 seedInitialTimeSlot = true
-            ) { startTime, endTime ->
+            ) { startTime, endTime, _ ->
+                // Activity steps inside a Recommendations plan don't carry an
+                // editable price field, so the slot price is ignored here.
                 viewModel.updateStepTime(step.id, startTime, endTime)
             }
         } else {
@@ -1354,7 +1356,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         duration: Double?,
         initialDateTime: String?,
         seedInitialTimeSlot: Boolean,
-        onConfirm: (startTime: String, endTime: String?) -> Unit
+        onConfirm: (startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
         if (activityId.isNullOrEmpty()) return
         val availableDays = viewModel.availableDays.value ?: emptyList()
@@ -1374,8 +1376,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             initialSelectedDay = initialDay,
             initialTimeSlot = initialTimeSlot
         )
-        sheet.setOnStepTimeSelectedListener { _, startTime, endTime ->
-            onConfirm(startTime, endTime)
+        sheet.setOnStepTimeSelectedListener { _, startTime, endTime, slotPrice ->
+            onConfirm(startTime, endTime, slotPrice)
         }
         sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }

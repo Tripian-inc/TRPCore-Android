@@ -1726,7 +1726,8 @@ class ACTimelineVM @Inject constructor(
         segment: TimelineSegment,
         segmentIndex: Int,
         startTime: String?,
-        endTime: String?
+        endTime: String?,
+        newPrice: Double? = null
     ) {
         if (startTime == null || endTime == null) return
 
@@ -1740,12 +1741,13 @@ class ACTimelineVM @Inject constructor(
                         segmentIndex = segmentIndex,
                         original = segment,
                         newStartTime = startTime,
-                        newEndTime = endTime
+                        newEndTime = endTime,
+                        newPrice = newPrice
                     )
                 )
             }
                 .onSuccess {
-                    val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime)
+                    val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newPrice)
                     hideLottieLoading()
                     if (mutated) {
                         republishCurrentTimeline()
@@ -1764,7 +1766,8 @@ class ACTimelineVM @Inject constructor(
     private fun applyLocalSegmentTimeUpdate(
         segmentIndex: Int,
         newStartTime: String,
-        newEndTime: String
+        newEndTime: String,
+        newPrice: Double? = null
     ): Boolean {
         val tl = _timeline.value ?: return false
         val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return false
@@ -1773,6 +1776,9 @@ class ACTimelineVM @Inject constructor(
         segment.additionalData?.let { add ->
             add.startDatetime = replaceHourMinute(add.startDatetime, newStartTime)
             add.endDatetime = replaceHourMinute(add.endDatetime, newEndTime)
+            // Price follows the newly selected slot; keep the old value when the
+            // slot carried no price.
+            if (newPrice != null) add.price = newPrice
         }
         return true
     }
@@ -2224,12 +2230,20 @@ class ACTimelineVM @Inject constructor(
             ?.mapNotNull { it.additionalData?.activityId }
             ?.toSet() ?: emptySet()
 
+        // Locally-removed favourites (per tripHash) must not reappear, even
+        // across app restarts.
+        val removedBaseIds = com.tripian.trpcore.util.RemovedFavoritesStore
+            .removedBaseIds(preferences, _tripHash)
+
         // Return only favourites that:
         // 1. Are NOT in timeline as booked_activity or reserved_activity
         // 2. Have a valid city mapping (cityName matches a resolved destination)
+        // 3. Have NOT been locally removed from saved plans
         return favourites.filter { favourite ->
             favourite.activityId !in bookedAndReservedIds &&
-            getResolvedCityId(favourite.cityName) != null
+            getResolvedCityId(favourite.cityName) != null &&
+            com.tripian.trpcore.util.RemovedFavoritesStore
+                .baseActivityId(favourite.activityId) !in removedBaseIds
         }
     }
 

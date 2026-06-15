@@ -52,6 +52,10 @@ class ComposeTimePickerDialog(
     private val initialMinute: Int = 0,
     private val minHour: Int? = null,
     private val minMinute: Int? = null,
+    // When true, a midnight (00:00) selection is treated as the end of the day
+    // (1440 minutes) for the min-time validation, so picking 12:00 AM as an end
+    // time stays valid even when the start time is in the afternoon/evening.
+    private val treatMidnightAsEndOfDay: Boolean = false,
     private val cancelText: String,
     private val selectText: String,
     private val onTimeSelected: (hour: Int, minute: Int) -> Unit,
@@ -70,6 +74,7 @@ class ComposeTimePickerDialog(
                     initialMinute = initialMinute,
                     minHour = minHour,
                     minMinute = minMinute,
+                    treatMidnightAsEndOfDay = treatMidnightAsEndOfDay,
                     cancelText = cancelText,
                     selectText = selectText,
                     onConfirm = { hour, minute ->
@@ -93,6 +98,7 @@ fun TimePickerDialogContent(
     initialMinute: Int,
     minHour: Int?,
     minMinute: Int?,
+    treatMidnightAsEndOfDay: Boolean = false,
     cancelText: String,
     selectText: String,
     onConfirm: (Int, Int) -> Unit,
@@ -106,7 +112,13 @@ fun TimePickerDialogContent(
 
     // Validate selected time against minimum time
     val isTimeValid = if (minHour != null && minMinute != null) {
-        val selectedTotalMinutes = timePickerState.hour * 60 + timePickerState.minute
+        // Midnight (00:00) selected as an end time counts as the end of the day.
+        val selectedTotalMinutes =
+            if (treatMidnightAsEndOfDay && timePickerState.hour == 0 && timePickerState.minute == 0) {
+                24 * 60
+            } else {
+                timePickerState.hour * 60 + timePickerState.minute
+            }
         val minTotalMinutes = minHour * 60 + minMinute
         selectedTotalMinutes > minTotalMinutes  // Must be strictly greater
     } else {
@@ -241,6 +253,7 @@ fun TimePickerDialogContent(
 fun Fragment.showComposeTimePicker(
     initialTime: String? = null,
     minTime: String? = null,
+    treatMidnightAsEndOfDay: Boolean = false,
     onTimeSelected: (hour: Int, minute: Int) -> Unit
 ) {
     val (hour, minute) = if (initialTime != null) {
@@ -270,6 +283,7 @@ fun Fragment.showComposeTimePicker(
         initialMinute = minute,
         minHour = minHourValue,
         minMinute = minMinuteValue,
+        treatMidnightAsEndOfDay = treatMidnightAsEndOfDay,
         cancelText = cancelText,
         selectText = selectText,
         onTimeSelected = onTimeSelected

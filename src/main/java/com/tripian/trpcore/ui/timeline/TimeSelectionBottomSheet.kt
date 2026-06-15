@@ -78,7 +78,7 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
 
         // End time
         binding.tvEndTime.text = endTime?.let {
-            MaterialTimePickerHelper.formatTo12h(it)
+            MaterialTimePickerHelper.formatEndTimeTo12h(it)
         } ?: selectText
 
         binding.tvEndTime.setTextColor(
@@ -135,11 +135,19 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     private fun showEndTimePicker() {
         // End time can be picked first — when start is set, enforce end > start
         // via the picker's minTime; when start is null, allow any time.
+        // A stored "23:59" end is the midnight sentinel — seed the clock with
+        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM.
+        val initialTime = if (endTime == MaterialTimePickerHelper.END_OF_DAY_24H) {
+            "00:00"
+        } else {
+            endTime ?: startTime
+        }
         showComposeTimePicker(
-            initialTime = endTime ?: startTime,
+            initialTime = initialTime,
             minTime = startTime,
+            treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
-                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
+                val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
                 endTime = time24h
                 updateTimeDisplays()
             }

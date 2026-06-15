@@ -199,6 +199,7 @@ object LanguageConst {
     const val REMOVE_ACTIVITY = "timeline.removeActivity.title"
     const val REMOVE_ACTIVITY_MESSAGE = "timeline.removeActivity.message"
     const val REMOVE_BUTTON = "timeline.removeActivity.remove"
+    const val SAVED_PLANS_REMOVE_CONFIRM = "savedPlans.removeActivity.message"
     const val REMOVE_RECOMMENDATIONS = "timeline.removeRecommendations.title"
     const val REMOVE_RECOMMENDATIONS_MESSAGE = "timeline.removeRecommendations.message"
     const val NO_PLANS_YET = "timeline.emptyState.noPlansYet"
