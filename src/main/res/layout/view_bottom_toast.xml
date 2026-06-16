@@ -21,21 +21,14 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <!-- Left color accent border -->
-        <View
-            android:id="@+id/viewAccentBorder"
-            android:layout_width="6dp"
-            android:layout_height="match_parent"
-            android:background="@color/trp_success_message" />
-
         <ImageView
             android:id="@+id/ivToastIcon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="16dp"
-            android:src="@drawable/trp_ic_check_circle_green" />
+            android:src="@drawable/trp_ic_tick" />
 
         <TextView
             android:id="@+id/tvToastMessage"

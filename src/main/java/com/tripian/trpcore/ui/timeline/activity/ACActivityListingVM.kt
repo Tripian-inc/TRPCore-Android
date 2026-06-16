@@ -118,9 +118,15 @@ class ACActivityListingVM @Inject constructor(
     private var currentSearchQuery: String = ""
     private var allActivities: MutableList<TourProduct> = mutableListOf()
 
-    // Backend returns at most this many tours per call. The screen pulls the
-    // whole list once on init and then does all filtering / sorting / search
-    // locally, so this needs to be large enough to cover any plausible city.
+    // Total result count reported by the API for the last request (reflects the
+    // selected category). Shown as the result count when no local price /
+    // duration / search narrowing is active; otherwise the visible filtered
+    // size is shown instead.
+    private var apiTotal: Int = 0
+
+    // Backend returns at most this many tours per call. Each category selection
+    // re-fetches with the category keywords; price/duration/search/sort are then
+    // applied locally on top of that response.
     private val fetchLimit: Int = 10
 
     // =====================
@@ -176,7 +182,29 @@ class ACActivityListingVM @Inject constructor(
 
     fun onCategorySelectionChanged(selectedIndices: Set<Int>) {
         _selectedCategoryIndices.value = selectedIndices
-        applyAllFiltersWithSkeleton()
+        // Category filtering must be done server-side: the response only carries
+        // the tours for whatever was last requested, so there is no reliable
+        // local data to narrow by category. Re-fetch with the selected category
+        // keywords behind the inline skeleton.
+        loadActivities(useSkeleton = true)
+    }
+
+    /**
+     * Build the comma-separated category-id string sent to the tour search API
+     * from the currently selected category chips (matches iOS `categoryIds`).
+     * "All" (index 0) or an empty selection returns null so the parameter is
+     * omitted entirely and the API returns every category.
+     */
+    private fun buildCategoryIds(): String? {
+        val indices = _selectedCategoryIndices.value ?: setOf(0)
+        if (indices.contains(0) || indices.isEmpty()) return null
+
+        val items = getFacetCategoryItems()
+        return indices
+            .mapNotNull { items.getOrNull(it)?.id }
+            .filter { it.isNotBlank() }
+            .joinToString(",")
+            .ifBlank { null }
     }
 
     /**
@@ -238,14 +266,22 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Pulls the full tour list for the city in a single call. Filter / sort /
-     * search / category selection are intentionally NOT forwarded to the API —
-     * they all run locally on [allActivities] after the response arrives, so a
-     * filter change never re-hits the network.
+     * Fetches the tour list for the city. The selected category chips ARE
+     * forwarded to the API as categoryIds — category filtering can't be done
+     * locally because the response only holds tours for the last request. Price
+     * / duration / title-search / sort still run locally on [allActivities]
+     * after the response arrives.
+     *
+     * @param useSkeleton when true, the reload renders as the inline shimmer
+     *        skeleton (category re-fetch) instead of the full-screen Lottie.
      */
-    fun loadActivities() {
+    fun loadActivities(useSkeleton: Boolean = false) {
         if (cityId <= 0) return
 
+        if (useSkeleton) {
+            useSkeletonForNextLoad = true
+            suppressNextIsLoadingLoader = true
+        }
         _isLoading.value = true
 
         viewModelScope.launch {
@@ -257,18 +293,23 @@ class ACActivityListingVM @Inject constructor(
                         lng = cityLng,
                         keywords = null,
                         tagIds = null,
+                        // Category selection is applied server-side via categoryIds.
+                        categoryIds = buildCategoryIds(),
                         providerId = 15, // Always use providerId 15 for tour-api
                         date = selectedDateString,
                         to = selectedDateString,
                         currency = getCurrency(),
-                        // Filters/sort handled locally — request everything available.
+                        // minPrice=1 excludes free/0-priced tours. maxPrice/duration
+                        // and sort are applied locally, so request everything else.
                         minPrice = 1,
                         maxPrice = null,
                         minDuration = null,
                         maxDuration = null,
-                        adults = planData?.travelers ?: 1,
-                        sortingBy = null,
-                        sortingType = null,
+                        // Travelers count; never below 1.
+                        adults = (planData?.travelers ?: 1).coerceAtLeast(1),
+                        // Popularity baseline; the real sort is applied locally.
+                        sortingBy = "score",
+                        sortingType = "desc",
                         offset = 0,
                         limit = fetchLimit
                     )
@@ -278,8 +319,10 @@ class ACActivityListingVM @Inject constructor(
                 val products = response.data?.products ?: emptyList()
                 allActivities.clear()
                 allActivities.addAll(products)
+                apiTotal = response.data?.total ?: products.size
                 updateFacetsFromResponse(response.data?.facets)
                 applyAllFilters()
+                if (useSkeleton) _scrollToTop.value = true
             }.onFailure { error ->
                 _isLoading.value = false
                 val message = (error as? ErrorModel)?.errorDesc
@@ -287,6 +330,7 @@ class ACActivityListingVM @Inject constructor(
                     ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 showAlert(AlertType.ERROR, message)
                 allActivities.clear()
+                apiTotal = 0
                 _activities.value = emptyList()
                 _activityCount.value = 0
             }
@@ -321,16 +365,21 @@ class ACActivityListingVM @Inject constructor(
     }
 
     /**
-     * Apply the full local filter pipeline (category → price → duration →
-     * title search → sort) to [allActivities] and publish the result.
+     * Apply the local filter pipeline (price → duration → title search → sort)
+     * to [allActivities] and publish the result. Category is NOT filtered here —
+     * it is applied server-side via categoryIds (see [loadActivities]).
      */
     private fun applyAllFilters() {
-        val byCategory = allActivities.filter { tourMatchesSelectedCategories(it) }
-        val byPriceDuration = byCategory.filter { tourMatchesFilter(it) }
+        val byPriceDuration = allActivities.filter { tourMatchesFilter(it) }
         val bySearch = applyTitleSearch(byPriceDuration)
         val sorted = sortActivities(bySearch)
         _activities.value = sorted
-        _activityCount.value = sorted.size
+        // With no local narrowing, show the API-reported total for the selected
+        // category (it can exceed the fetched page). Once a local price /
+        // duration / search filter trims the list, switch to the visible size.
+        val hasLocalNarrowing = currentSearchQuery.isNotBlank() ||
+            (_currentFilter.value?.hasActiveFilters() == true)
+        _activityCount.value = if (hasLocalNarrowing) sorted.size else apiTotal
     }
 
     private fun applyTitleSearch(list: List<TourProduct>): List<TourProduct> {
@@ -350,45 +399,6 @@ class ACActivityListingVM @Inject constructor(
             it >= filter.minDuration && it <= filter.maxDuration
         } ?: true
         return priceOk && durationOk
-    }
-
-    /**
-     * Heuristic match between the user-selected chips and the tour's tags /
-     * title. Facet entries carry the backend label as `keywords` and a stable
-     * `key` / `id`; we look those up against the tour's tag strings (case
-     * insensitive). "All" (index 0) or an empty selection passes everything.
-     */
-    private fun tourMatchesSelectedCategories(tour: TourProduct): Boolean {
-        val selected = _selectedCategoryIndices.value ?: setOf(0)
-        if (selected.contains(0) || selected.isEmpty()) return true
-
-        val items = getFacetCategoryItems()
-        val facets = _facetCategories.value.orEmpty()
-        val tagsLower = tour.tags.orEmpty().map { it.lowercase() }
-        val titleLower = tour.title.orEmpty().lowercase()
-
-        return selected.any { idx ->
-            if (idx == 0) return@any false
-            val needles = mutableListOf<String>()
-            items.getOrNull(idx)?.let { item ->
-                item.displayLabel?.let { needles += it }
-                item.keywords?.let { needles += it }
-            }
-            // facets list is offset by 1 (index 0 is the "All" chip).
-            facets.getOrNull(idx - 1)?.let { cat ->
-                cat.label?.let { needles += it }
-                cat.key?.let { needles += it }
-                cat.id?.let { needles += it }
-            }
-            val terms = needles
-                .flatMap { it.split(",") }
-                .map { it.trim().lowercase() }
-                .filter { it.isNotBlank() }
-                .distinct()
-            terms.any { term ->
-                tagsLower.any { it.contains(term) } || titleLower.contains(term)
-            }
-        }
     }
 
     private fun sortActivities(list: List<TourProduct>): List<TourProduct> {

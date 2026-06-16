@@ -244,6 +244,7 @@ object LanguageConst {
     // Time & Location
     const val ADD_PLAN_ADD_TO_DAY = "addPlan.label.addToDay"
     const val ADD_PLAN_CITY = "addPlan.label.city"
+    const val ADD_PLAN_DESTINATION = "trips.createNewTrip.destinationTips.destination.title"
     const val ADD_PLAN_SELECT_CITY = "addPlan.title.selectCity"
     const val ADD_PLAN_START_TIME = "addPlan.label.startTime"
     const val ADD_PLAN_END_TIME = "addPlan.label.endTime"
@@ -251,6 +252,7 @@ object LanguageConst {
     const val ADD_PLAN_SELECT_STARTING_POINT = "addPlan.label.selectStartingPoint"
     const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectDateAndTime"
+    const val ADD_PLAN_SELECT_A_TIME = "addPlan.label.selectATime"
     const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
     const val ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS = "addPlan.time.activityNotAvailableForTrip"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
@@ -304,6 +306,10 @@ object LanguageConst {
     const val ADD_PLAN_SAVED_PLANS = "addPlan.title.savedPlans"
     const val ADD_PLAN_NO_SAVED_PLANS = "addPlan.emptyState.noSavedPlans"
     const val ADD_PLAN_NO_SAVED_PLANS_DESC = "addPlan.emptyState.noSavedPlansDescription"
+    // Shown when every saved plan has been added to the itinerary (list empty).
+    const val ADD_PLAN_ALL_ADDED_TITLE = "addPlan.emptyState.allAddedTitle"
+    const val ADD_PLAN_ALL_ADDED_DESCRIPTION = "addPlan.emptyState.allAddedDescription"
+    const val ADD_PLAN_VIEW_ITINERARY = "addPlan.button.viewItinerary"
 
     // Error Messages
     const val ADD_PLAN_ERROR_MISSING = "trips.myTrips.timelineitinerary.addPlan.error.missingData"

@@ -19,6 +19,7 @@ class SearchToursUseCase @Inject constructor(
         val lng: Double,             // Required - City longitude
         val keywords: String? = null,
         val tagIds: String? = null,
+        val categoryIds: String? = null,
         val providerId: Int? = null,
         val date: String? = null,    // Format: "YYYY-MM-DD"
         val to: String? = null,      // Format: "YYYY-MM-DD"
@@ -41,6 +42,7 @@ class SearchToursUseCase @Inject constructor(
             lng = params.lng,
             keywords = params.keywords,
             tagIds = params.tagIds,
+            categoryIds = params.categoryIds,
             providerId = params.providerId,
             date = params.date,
             to = params.to,

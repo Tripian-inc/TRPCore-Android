@@ -63,27 +63,30 @@ class BottomToast private constructor(
         // Set message
         binding?.tvToastMessage?.text = message
 
-        // Set accent border color based on alert type
-        val accentColor = when (alertType) {
-            AlertType.SUCCESS -> ContextCompat.getColor(activity, R.color.trp_success_message)
-            AlertType.WARNING -> ContextCompat.getColor(activity, R.color.trp_warning_message)
-            AlertType.ERROR -> ContextCompat.getColor(activity, R.color.trp_error_message)
-            AlertType.INFO -> ContextCompat.getColor(activity, R.color.trp_info_message)
-            else -> ContextCompat.getColor(activity, R.color.trp_success_message)
-        }
-        binding?.viewAccentBorder?.setBackgroundColor(accentColor)
-
         // Set icon based on alert type
         val iconRes = when (alertType) {
-            AlertType.SUCCESS -> R.drawable.trp_ic_check_circle_green
+            AlertType.SUCCESS -> R.drawable.trp_ic_tick
             AlertType.WARNING -> R.drawable.trp_ic_info
             AlertType.ERROR -> R.drawable.trp_ic_close
             AlertType.INFO -> R.drawable.trp_ic_info
-            else -> R.drawable.trp_ic_check_circle_green
+            else -> R.drawable.trp_ic_tick
         }
         binding?.ivToastIcon?.setImageResource(iconRes)
-        // Set icon tint to match accent color
-        binding?.ivToastIcon?.setColorFilter(accentColor)
+        // Tint non-success icons to match the alert type; the success tick
+        // drawable already carries its own brand color.
+        when (alertType) {
+            AlertType.SUCCESS -> binding?.ivToastIcon?.clearColorFilter()
+            AlertType.WARNING -> binding?.ivToastIcon?.setColorFilter(
+                ContextCompat.getColor(activity, R.color.trp_warning_message)
+            )
+            AlertType.ERROR -> binding?.ivToastIcon?.setColorFilter(
+                ContextCompat.getColor(activity, R.color.trp_error_message)
+            )
+            AlertType.INFO -> binding?.ivToastIcon?.setColorFilter(
+                ContextCompat.getColor(activity, R.color.trp_info_message)
+            )
+            else -> binding?.ivToastIcon?.clearColorFilter()
+        }
 
         // Attach to the override parent when provided, otherwise the activity's
         // root view. Using a dialog's decor view as the parent surfaces the

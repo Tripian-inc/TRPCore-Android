@@ -40,11 +40,18 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
     override fun onDestroy() {
         binding.skeletonList.root.stopShimmer()
+        binding.shimmerResultCount.stopShimmer()
         super.onDestroy()
     }
 
     private fun showSkeleton() {
         with(binding.skeletonList.root) {
+            visibility = View.VISIBLE
+            startShimmer()
+        }
+        // Swap the result-count text for its shimmer placeholder while reloading.
+        binding.tvResultCount.visibility = View.INVISIBLE
+        with(binding.shimmerResultCount) {
             visibility = View.VISIBLE
             startShimmer()
         }
@@ -57,6 +64,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             stopShimmer()
             visibility = View.GONE
         }
+        with(binding.shimmerResultCount) {
+            stopShimmer()
+            visibility = View.GONE
+        }
+        binding.tvResultCount.visibility = View.VISIBLE
         isSkeletonVisible = false
     }
 

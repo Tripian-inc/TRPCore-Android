@@ -115,6 +115,10 @@
     <color name="trp_grayBg">#EAEAEA</color>
     <color name="trp_grayFg">#212020</color>
     <color name="trp_neutral200">#F5F4F5</color>
+    <!-- iOS neutral-200 divider line (the existing trp_neutral200 token is a
+         different, near-white value, so this dedicated line color is used for
+         the city-section divider). -->
+    <color name="trp_section_divider_line">#EAEAEA</color>
     <color name="trp_neutral300">#CFCFCF</color>
 
     <!-- Button Colors -->

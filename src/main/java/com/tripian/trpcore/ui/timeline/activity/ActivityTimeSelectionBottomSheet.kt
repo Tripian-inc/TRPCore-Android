@@ -37,9 +37,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var selectedTimeSlot: String? = null
     private var selectedPrice: Double? = null
     private var currentSlots: List<GroupedTimeSlot> = emptyList()
-    // Mirrors ResolvedSchedule so click handlers know whether the user is
-    // committing to a timed slot or the flexible / "Any time" path.
-    private var currentMode: TimeSelectionMode = TimeSelectionMode.TIMED
     private var currentFlexiblePrice: Double? = null
     private var isFlexibleSelected: Boolean = false
 
@@ -204,7 +201,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         }
         binding.tvAddToDay.text = getLanguageForKey(LanguageConst.ADD_PLAN_ADD_TO_DAY)
-        binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_TIME)
+        binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_A_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
         binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
         // SavedPlans flow uses "Select" as the primary CTA; everything else
@@ -355,7 +352,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             flexiblePrice = null
         )
 
-        currentMode = safe.mode
         currentFlexiblePrice = safe.flexiblePrice
         currentSlots = safe.timedSlots
         // Switching days/modes resets any previous selection.
@@ -386,12 +382,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 // Continue is enabled immediately — no chip selection needed.
                 isFlexibleSelected = true
             }
-            TimeSelectionMode.TIMED, TimeSelectionMode.MIXED -> {
+            TimeSelectionMode.TIMED -> {
                 binding.tvSelectTime.visibility = View.VISIBLE
                 binding.flexibleInfoCard.visibility = View.GONE
                 binding.tvFlexibleTopOfItinerary.visibility = View.GONE
 
-                if (currentSlots.isEmpty() && safe.mode == TimeSelectionMode.TIMED) {
+                if (currentSlots.isEmpty()) {
+                    // No available timed slots for the selected day → "not available" warning.
                     binding.tvNoTimeSlots.visibility = View.VISIBLE
                     binding.flexTimeSlots.visibility = View.GONE
                 } else {
@@ -501,31 +498,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             binding.flexTimeSlots.addView(chipView)
         }
 
-        // MIXED day: append an extra "Any time" chip after the timed slots.
-        // Tapping it selects the flexible slot (no specific time).
-        if (currentMode == TimeSelectionMode.MIXED) {
-            val anyTimeView = inflater.inflate(R.layout.item_time_slot, binding.flexTimeSlots, false) as TextView
-            anyTimeView.text = TRPCore.core.miscRepository
-                .getLanguageValueForKey(LanguageConst.ADD_PLAN_FLEXIBLE_ANY_TIME)
-                .ifBlank { "Any time" }
-            anyTimeView.isSelected = isFlexibleSelected
-            anyTimeView.isActivated = isFlexibleSelected
-            anyTimeView.setOnClickListener {
-                isFlexibleSelected = true
-                selectedTimeSlot = null
-                selectedPrice = null
-                updateTimeSlotSelection()
-                updateContinueButtonState()
-            }
-            val params = com.google.android.flexbox.FlexboxLayout.LayoutParams(
-                itemWidthPx,
-                heightPx
-            )
-            params.setMargins(0, 0, marginPx, marginPx)
-            anyTimeView.layoutParams = params
-            binding.flexTimeSlots.addView(anyTimeView)
-        }
-
         // Theme 9: append "Show more times" cell when the collapsed window is active.
         if (viewModel.shouldShowMoreCell) {
             val showMoreView = inflater.inflate(
@@ -552,17 +524,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     private fun updateTimeSlotSelection() {
-        val anyTimeLabel = TRPCore.core.miscRepository
-            .getLanguageValueForKey(LanguageConst.ADD_PLAN_FLEXIBLE_ANY_TIME)
-            .ifBlank { "Any time" }
         for (i in 0 until binding.flexTimeSlots.childCount) {
             val child = binding.flexTimeSlots.getChildAt(i) as? TextView ?: continue
-            val isAnyTimeChip = currentMode == TimeSelectionMode.MIXED &&
-                child.text?.toString() == anyTimeLabel
-            val isSelected = when {
-                isAnyTimeChip -> isFlexibleSelected
-                else -> !isFlexibleSelected && child.text?.toString() == selectedTimeSlot
-            }
+            val isSelected = child.text?.toString() == selectedTimeSlot
             child.isSelected = isSelected
             child.isActivated = isSelected
         }
@@ -627,6 +591,22 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      */
     fun setOnRemoveListener(listener: () -> Unit) {
         onRemoveListener = listener
+    }
+
+    /**
+     * Shows an inline loader inside this sheet (e.g. "Adding to itinerary" for
+     * the SavedPlans add flow, "Changing time" for the change-time flow) while
+     * the host performs the operation. Rendered by [BaseBottomDialogFragment] as
+     * an overlay over the sheet's own view tree (no separate window), unlike a
+     * full-screen/bottom-sheet loader dialog.
+     */
+    fun showInSheetLoadingOverlay(languageKey: String, fallback: String) {
+        viewModel.showInSheetLoader(languageKey, fallback)
+    }
+
+    /** Hides the inline loading overlay (e.g. on failure/retry). */
+    fun hideInSheetLoadingOverlay() {
+        viewModel.hideLottieLoading()
     }
 
     companion object {

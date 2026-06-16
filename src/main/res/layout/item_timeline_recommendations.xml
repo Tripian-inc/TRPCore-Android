@@ -154,7 +154,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/trp_bgCloudy"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="16dp"
@@ -169,8 +169,7 @@
                 android:layout_marginStart="4dp"
                 android:layout_height="14dp"
                 android:contentDescription="Transport Mode"
-                android:src="@drawable/trp_ic_itinerary_walk"
-                app:tint="#8C8C8C" />
+                android:src="@drawable/trp_icon_distance" />
 
             <!-- Route Info Text -->
             <TextView

@@ -135,6 +135,31 @@
                 app:layout_scrollFlags="scroll|enterAlways"
                 tools:text="150 activities found" />
 
+            <!-- Shimmer placeholder for the result count, shown while the list
+                 reloads (filter/sort/category/search) in place of tvResultCount. -->
+            <com.facebook.shimmer.ShimmerFrameLayout
+                android:id="@+id/shimmerResultCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_12sdp"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:layout_marginBottom="@dimen/_4sdp"
+                android:visibility="gone"
+                app:layout_scrollFlags="scroll|enterAlways"
+                app:shimmer_auto_start="false"
+                app:shimmer_base_alpha="1.0"
+                app:shimmer_highlight_alpha="1.0"
+                app:shimmer_base_color="#E5E7EB"
+                app:shimmer_highlight_color="#F5F6F8"
+                app:shimmer_duration="1100">
+
+                <View
+                    android:layout_width="@dimen/_100sdp"
+                    android:layout_height="12dp"
+                    android:background="@drawable/trp_bg_skeleton_placeholder" />
+
+            </com.facebook.shimmer.ShimmerFrameLayout>
+
         </com.google.android.material.appbar.AppBarLayout>
 
         <FrameLayout

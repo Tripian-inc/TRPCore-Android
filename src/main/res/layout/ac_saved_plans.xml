@@ -56,4 +56,67 @@
         app:layout_constraintTop_toBottomOf="@id/headerContainer"
         tools:listitem="@layout/item_activity_card" />
 
+    <!-- "All set" empty state: shown only when every saved plan has been added
+         to the itinerary (list empty). Vertically centered below the header. -->
+    <LinearLayout
+        android:id="@+id/emptyStateContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/headerContainer"
+        tools:visibility="visible">
+
+        <!-- Check rosette: 56x56 circle, soft-pink fill, 28x28 primary tick -->
+        <ImageView
+            android:id="@+id/ivAllSetBadge"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="40dp"
+            android:background="@drawable/trp_bg_circle_pink"
+            android:contentDescription="@null"
+            android:padding="16dp"
+            android:src="@drawable/trp_ic_tick"
+            app:tint="@color/trp_primary" />
+
+        <!-- Title: "All set!" -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAllSetTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="32dp"
+            android:layout_marginTop="24dp"
+            android:fontFamily="@font/semibold"
+            android:gravity="center"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="18sp"
+            tools:text="All set!" />
+
+        <!-- Description -->
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvAllSetDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="45dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="@font/medium"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/trp_fgWeak"
+            android:textSize="16sp"
+            tools:text="You've added all your favourite activities to the itinerary. Now all that's left is to enjoy them." />
+
+        <!-- View itinerary button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnViewItinerary"
+            style="@style/TrpButtonPrimary"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginTop="24dp"
+            app:cornerRadius="20dp"
+            tools:text="View itinerary" />
+
+    </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

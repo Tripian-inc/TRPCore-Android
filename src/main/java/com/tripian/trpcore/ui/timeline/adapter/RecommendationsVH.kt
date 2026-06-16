@@ -21,6 +21,13 @@ class RecommendationsVH(
     private val binding: ItemTimelineRecommendationsBinding
 ) : RecyclerView.ViewHolder(binding.root) {
 
+    companion object {
+        // iOS parity: the starting-point row is hidden while the walking-distance
+        // row and route calculation continue to use the starting-point coordinate.
+        // Flip to true to bring the row back.
+        private const val SHOWS_STARTING_POINT = false
+    }
+
     private var stepsAdapter: TimelineStepsAdapter? = null
     private var currentStepClickListener: ((TimelineStep) -> Unit)? = null
     private var currentChangeTimeClickListener: ((TimelineStep) -> Unit)? = null
@@ -77,9 +84,12 @@ class RecommendationsVH(
             binding.tvGenerating.visibility = View.GONE
             binding.tvNoRecommendations.visibility = View.GONE
 
-            // Starting Point - show if expanded and has starting point name
+            // Starting Point row — gated behind SHOWS_STARTING_POINT so it can be
+            // re-enabled easily. The distance row and route coordinate list below
+            // are independent of this flag (distance/route still use the starting
+            // point coordinate).
             val startingPointName = item.startingPointName
-            if (item.isExpanded && !startingPointName.isNullOrEmpty()) {
+            if (SHOWS_STARTING_POINT && item.isExpanded && !startingPointName.isNullOrEmpty()) {
                 binding.tvStartingPointName.text = startingPointName
                 binding.startingPointContainer.visibility = View.VISIBLE
 

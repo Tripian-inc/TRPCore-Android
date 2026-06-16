@@ -23,7 +23,7 @@ class StepRouteSeparatorVH(
      */
     fun bind(routeInfo: StepRouteInfo) {
         // Set walking icon - always show walking icon as per design
-        binding.ivTransportIcon.setImageResource(R.drawable.trp_ic_itinerary_walk)
+        binding.ivTransportIcon.setImageResource(R.drawable.trp_icon_distance)
 
         val distanceFormat = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_FORMAT_DISTANCE)
             .takeIf { it.isNotEmpty() } ?: "%d min (%@ km)"

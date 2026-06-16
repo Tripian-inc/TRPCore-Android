@@ -196,12 +196,12 @@
         <item name="android:textSize">16sp</item>
         <item name="android:fontFamily">@font/medium</item>
         <item name="android:letterSpacing">0</item>
-        <item name="android:textColor">@color/trp_text_primary</item>
+        <item name="android:textColor">@color/trp_primary</item>
         <item name="backgroundTint">@android:color/transparent</item>
-        <item name="strokeColor">@color/trp_text_primary</item>
+        <item name="strokeColor">@color/trp_primary</item>
         <item name="strokeWidth">1dp</item>
         <item name="cornerRadius">24dp</item>
-        <item name="rippleColor">@color/trp_bgCloudy</item>
+        <item name="rippleColor">@color/trp_primary</item>
     </style>
 
     <!-- Filter/Sort Outlined Button Style -->

@@ -9,6 +9,7 @@ import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFav
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.RemovedFavoritesStore
 import androidx.lifecycle.viewModelScope
@@ -26,6 +27,7 @@ import javax.inject.Inject
 class ACSavedPlansVM @Inject constructor(
     private val createReservedActivityFromFavoriteUseCase: CreateReservedActivityFromFavoriteUseCase,
     private val waitForGenerationUseCase: WaitForGenerationUseCase,
+    private val timelineRepository: com.tripian.trpcore.repository.TimelineRepository,
     private val preferences: Preferences
 ) : BaseViewModel() {
 
@@ -42,8 +44,10 @@ class ACSavedPlansVM @Inject constructor(
     private val _segmentCreated = MutableLiveData(false)
     val segmentCreated: LiveData<Boolean> = _segmentCreated
 
-    private val _isCreatingSegment = MutableLiveData(false)
-    val isCreatingSegment: LiveData<Boolean> = _isCreatingSegment
+    // Emitted when segment creation fails so the screen can hide the in-sheet
+    // loader (the sheet stays open for retry; the alert is shown by the VM).
+    private val _segmentCreationFailed = MutableLiveData<Boolean?>()
+    val segmentCreationFailed: LiveData<Boolean?> = _segmentCreationFailed
 
     private val _showTimeSelection = MutableLiveData<SegmentFavoriteItem?>()
     val showTimeSelection: LiveData<SegmentFavoriteItem?> = _showTimeSelection
@@ -153,7 +157,8 @@ class ACSavedPlansVM @Inject constructor(
     ) {
         val favorite = pendingFavorite ?: return
 
-        _isCreatingSegment.value = true
+        // The "adding to itinerary" loader is shown inline inside the open time
+        // selection sheet (driven by the sheet's own VM); see ACSavedPlans.
 
         // Flexible favorite: window'u use case helper'ı belirliyor; lokal
         // calculateEndTime'ı atlıyoruz. Timed flow için bottom-sheet zaten
@@ -187,8 +192,8 @@ class ACSavedPlansVM @Inject constructor(
                 .onSuccess { waitForSegmentGeneration() }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
-                    _isCreatingSegment.value = false
-                    showAlert(AlertType.ERROR, msg ?: "Failed to add activity")
+                    _segmentCreationFailed.value = true
+                    showAlert(AlertType.ERROR, msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR))
                 }
         }
     }
@@ -198,16 +203,29 @@ class ACSavedPlansVM @Inject constructor(
      */
     private fun waitForSegmentGeneration() {
         viewModelScope.launch {
-            runCatching { waitForGenerationUseCase(WaitForGenerationUseCase.Params(tripHash)) }
-                .onSuccess {
-                    _isCreatingSegment.value = false
-                    _segmentCreated.value = true
-                }
-                .onFailure {
-                    _isCreatingSegment.value = false
-                    _segmentCreated.value = true
-                }
+            // Whether generation polling succeeds or times out, the segment was
+            // created — so drop the added favorite from the list either way and
+            // signal success. The screen stays open and shows the empty state
+            // once the list is exhausted.
+            val timeline = runCatching {
+                waitForGenerationUseCase(WaitForGenerationUseCase.Params(tripHash))
+            }.getOrNull()
+            // Cache the freshly-generated timeline so the timeline screen can
+            // apply it on return without issuing a second GET (the wait above
+            // already fetched it in the background).
+            timeline?.let { timelineRepository.cacheGeneratedTimeline(tripHash, it) }
+            dropAddedFavorite()
+            // The inline loader is torn down when the host dismisses the sheet
+            // on segmentCreated.
+            _segmentCreated.value = true
         }
+    }
+
+    /** Removes the just-added favorite from the in-memory list and re-renders. */
+    private fun dropAddedFavorite() {
+        val added = pendingFavorite ?: return
+        favorites = favorites.filterNot { it.activityId == added.activityId }
+        processAndDisplayItems()
     }
 
     /**
@@ -264,6 +282,11 @@ class ACSavedPlansVM @Inject constructor(
     /** Clears the one-shot [favoriteRemoved] event. */
     fun resetFavoriteRemoved() {
         _favoriteRemoved.value = null
+    }
+
+    /** Clears the one-shot [segmentCreationFailed] event. */
+    fun resetSegmentCreationFailed() {
+        _segmentCreationFailed.value = null
     }
 
     // =====================

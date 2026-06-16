@@ -28,19 +28,20 @@ data class GroupedTimeSlot(
 /**
  * Shape of the selected day's schedule, derived from how the backend returns
  * slots:
- *  - [TIMED]: every slot has a concrete `time`; render the grid as usual.
- *  - [FLEXIBLE_ONLY]: every slot has `time == null` (any-time ticket); hide
- *    the grid and show the flexible info card. Continue is enabled with no
- *    chip selection — the segment is created with 00:00/23:59 + duration -1.
- *  - [MIXED]: some slots are timed, some are flexible; render the grid PLUS
- *    an extra "Any time" chip that selects the flexible slot.
+ *  - [TIMED]: there are timed slots (slots with a concrete `time`); render the
+ *    grid for time selection. Also used for the empty case (no slots at all),
+ *    where the sheet shows the "not available" warning instead of a grid.
+ *  - [FLEXIBLE_ONLY]: no timed slots, only flexible ones (`time == null`, price
+ *    present); hide the grid and show the flexible info card. Continue is
+ *    enabled with no chip selection — the segment is created with 00:00/23:59 +
+ *    duration -1.
  */
-enum class TimeSelectionMode { TIMED, FLEXIBLE_ONLY, MIXED }
+enum class TimeSelectionMode { TIMED, FLEXIBLE_ONLY }
 
 /**
  * Resolved per-day schedule the bottom sheet renders from. Holds the timed
  * slots already grouped (existing behavior) plus the flexible slot price (if
- * any) so the sheet can show "Any time" or fall back to the info card.
+ * any) used by the flexible info card.
  */
 data class ResolvedSchedule(
     val mode: TimeSelectionMode,
@@ -64,8 +65,8 @@ class ActivityTimeSelectionVM @Inject constructor(
 
     /**
      * Full per-day schedule including [TimeSelectionMode] + flexible slot
-     * price. The bottom sheet observes this to decide between the time grid,
-     * the flexible info card, or the mixed "Any time" augmentation.
+     * price. The bottom sheet observes this to decide between the time grid and
+     * the flexible info card.
      */
     private val _resolvedSchedule = MutableLiveData<ResolvedSchedule?>()
     val resolvedSchedule: LiveData<ResolvedSchedule?> = _resolvedSchedule
@@ -231,10 +232,12 @@ class ActivityTimeSelectionVM @Inject constructor(
     }
 
     /**
-     * Bucket raw slots into the three [TimeSelectionMode] shapes. Timed slots
-     * are grouped by time (lowest price wins, matching legacy behavior); a
-     * single flexible price is picked as the minimum across `time == null`
-     * slots so the "Any time" chip / segment can show the cheapest available.
+     * Bucket raw slots into a [TimeSelectionMode]. Timed slots are grouped by
+     * time (lowest price wins, matching legacy behavior). If any timed slot
+     * exists we always show the time grid ([TIMED]); only when there are no
+     * timed slots at all but flexible ones ([FLEXIBLE_ONLY]) do we switch to the
+     * flexible card. An empty schedule stays [TIMED] (empty grid → the sheet
+     * shows the "not available" warning).
      */
     private fun resolveSchedule(rawSlots: List<TourScheduleSlot>): ResolvedSchedule {
         if (rawSlots.isEmpty()) {
@@ -250,8 +253,8 @@ class ActivityTimeSelectionVM @Inject constructor(
         val flexiblePrice = flexible.mapNotNull { it.price }.minOrNull()
 
         val mode = when {
-            timedGrouped.isEmpty() && flexible.isNotEmpty() -> TimeSelectionMode.FLEXIBLE_ONLY
-            timedGrouped.isNotEmpty() && flexible.isNotEmpty() -> TimeSelectionMode.MIXED
+            timedGrouped.isNotEmpty() -> TimeSelectionMode.TIMED
+            flexible.isNotEmpty() -> TimeSelectionMode.FLEXIBLE_ONLY
             else -> TimeSelectionMode.TIMED
         }
 

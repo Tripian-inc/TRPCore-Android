@@ -1,9 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<View xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- City-section divider: a 10dp #F7F7F7 band with a neutral-200 (#EAEAEA)
+     hairline at its top and bottom edges, full width. Shown between consecutive
+     city sections (not after the last one). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="1dp"
-    android:layout_marginTop="16dp"
-    android:layout_marginBottom="16dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginEnd="16dp"
-    android:background="@color/trp_lineWeak"/>
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- Top line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/trp_section_divider_line" />
+
+    <!-- 10dp gap -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:background="@color/trp_bgCloudy" />
+
+    <!-- Bottom line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/trp_section_divider_line" />
+
+</LinearLayout>

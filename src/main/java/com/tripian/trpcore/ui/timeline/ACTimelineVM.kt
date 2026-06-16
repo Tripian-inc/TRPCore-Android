@@ -82,6 +82,7 @@ class ACTimelineVM @Inject constructor(
     private val getTimelineStepRoutesUseCase: GetTimelineStepRoutesUseCase,
     private val resolveCitiesUseCase: ResolveCitiesUseCase,
     private val tripRepository: com.tripian.trpcore.repository.TripRepository,
+    private val timelineRepository: com.tripian.trpcore.repository.TimelineRepository,
     private val preferences: Preferences,
     // Timeline Sync UseCases (iOS Guide Implementation)
     private val resolveCityIdsForActivitiesUseCase: ResolveCityIdsForActivitiesUseCase,
@@ -138,6 +139,12 @@ class ACTimelineVM @Inject constructor(
 
     private val _savedPlansCount = MutableLiveData(0)
     val savedPlansCount: LiveData<Int> = _savedPlansCount
+
+    // One-shot result of an inline change-time operation (ActivityTimeSelection
+    // sheet): true = success (host dismisses the sheet), false = failure (host
+    // hides the inline loader so the sheet stays open for retry).
+    private val _changeTimeFinished = MutableLiveData<Boolean?>()
+    val changeTimeFinished: LiveData<Boolean?> = _changeTimeFinished
 
     private val _selectedCity = MutableLiveData<City?>()
 
@@ -946,6 +953,22 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
+    /**
+     * Called when returning from the SavedPlans screen. The add flow there
+     * already fetched the freshly-generated timeline in the background and
+     * cached it, so we apply that snapshot directly — no second GET. When no
+     * timeline was cached (a removal-only session changes RemovedFavoritesStore
+     * but not the server timeline) we just refresh the saved-plans badge.
+     */
+    fun onReturnFromSavedPlans() {
+        val cached = timelineRepository.consumeGeneratedTimeline(_tripHash)
+        if (cached != null) {
+            processTimeline(cached)
+        } else {
+            updateSavedPlansCount()
+        }
+    }
+
     // =====================
     // DATA PROCESSING
     // =====================
@@ -983,6 +1006,12 @@ class ACTimelineVM @Inject constructor(
         }
 
         updateDisplayItems()
+
+        // Keep the saved-plans badge in sync with in-memory mutations (e.g. when
+        // a reserved activity created from a favourite is deleted, that favourite
+        // becomes displayable again). processTimeline() handles the fetch path;
+        // local republish must refresh the count too.
+        updateSavedPlansCount()
     }
 
     private fun processTimeline(timeline: Timeline) {
@@ -1634,10 +1663,18 @@ class ACTimelineVM @Inject constructor(
      * @param startTime New start time in HH:mm format
      * @param endTime New end time in HH:mm format
      */
-    fun updateStepTime(stepId: Int, startTime: String?, endTime: String?) {
+    fun updateStepTime(
+        stepId: Int,
+        startTime: String?,
+        endTime: String?,
+        // See [updateSegmentTime]'s useInlineLoader.
+        useInlineLoader: Boolean = false
+    ) {
         if (startTime == null && endTime == null) return
 
-        showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
+        if (!useInlineLoader) {
+            showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
+        }
 
         // API expects time only in HH:mm format (not full datetime)
         viewModelScope.launch {
@@ -1652,17 +1689,19 @@ class ACTimelineVM @Inject constructor(
             }
                 .onSuccess {
                     val mutated = applyLocalStepTimeUpdate(stepId, startTime, endTime)
-                    hideLottieLoading()
+                    if (!useInlineLoader) hideLottieLoading()
                     if (mutated) {
                         republishCurrentTimeline()
                     } else {
                         refreshTimeline()
                     }
+                    if (useInlineLoader) _changeTimeFinished.value = true
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    hideLottieLoading()
+                    if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
+                    if (useInlineLoader) _changeTimeFinished.value = false
                 }
         }
     }
@@ -1727,11 +1766,17 @@ class ACTimelineVM @Inject constructor(
         segmentIndex: Int,
         startTime: String?,
         endTime: String?,
-        newPrice: Double? = null
+        newPrice: Double? = null,
+        // true when the caller (ActivityTimeSelection change-time sheet) shows an
+        // inline loader inside the open sheet and dismisses it via
+        // [changeTimeFinished]; the VM then skips its own bottom-sheet loader.
+        useInlineLoader: Boolean = false
     ) {
         if (startTime == null || endTime == null) return
 
-        showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
+        if (!useInlineLoader) {
+            showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
+        }
 
         viewModelScope.launch {
             runCatching {
@@ -1748,17 +1793,19 @@ class ACTimelineVM @Inject constructor(
             }
                 .onSuccess {
                     val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newPrice)
-                    hideLottieLoading()
+                    if (!useInlineLoader) hideLottieLoading()
                     if (mutated) {
                         republishCurrentTimeline()
                     } else {
                         refreshTimeline()
                     }
+                    if (useInlineLoader) _changeTimeFinished.value = true
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    hideLottieLoading()
+                    if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
+                    if (useInlineLoader) _changeTimeFinished.value = false
                 }
         }
     }
@@ -1798,6 +1845,11 @@ class ACTimelineVM @Inject constructor(
 
     fun clearChangeTimePickerStep() {
         _showChangeTimePickerStep.value = null
+    }
+
+    /** Clears the one-shot [changeTimeFinished] event. */
+    fun resetChangeTimeFinished() {
+        _changeTimeFinished.value = null
     }
 
     // =====================

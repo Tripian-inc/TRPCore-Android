@@ -49,8 +49,7 @@
         android:id="@+id/tvAddToDay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/_16sdp"
-        android:layout_marginTop="@dimen/_16sdp"
+        android:layout_marginHorizontal="@dimen/_16sdp"
         android:fontFamily="@font/light"
         android:textColor="@color/trp_text_primary"
         android:textSize="12sp"
@@ -73,7 +72,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_24sdp"
+        android:layout_marginTop="@dimen/_16sdp"
         android:fontFamily="@font/light"
         android:textColor="@color/trp_text_primary"
         android:textSize="12sp"
@@ -99,7 +98,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_24sdp"
-        android:layout_marginTop="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_12sdp"
         android:gravity="center"
         android:textColor="@color/trp_grey_30"
         android:visibility="gone"
@@ -193,8 +192,8 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"
         style="@style/TrpButtonPrimary"
-        android:layout_marginHorizontal="@dimen/_24sdp"
-        android:layout_marginTop="@dimen/_24sdp"
+        android:layout_marginHorizontal="@dimen/_16sdp"
+        android:layout_marginTop="@dimen/_40sdp"
         android:enabled="false"
         tools:text="Continue" />
 
@@ -202,7 +201,7 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRemove"
         style="@style/TrpButtonOutlined"
-        android:layout_marginHorizontal="@dimen/_24sdp"
+        android:layout_marginHorizontal="@dimen/_16sdp"
         android:layout_marginTop="@dimen/_12sdp"
         android:visibility="gone"
         tools:text="Remove"

@@ -2,6 +2,7 @@ package com.tripian.trpcore.ui.timeline.savedplans
 
 import android.content.Context
 import android.content.Intent
+import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.TRPCore
@@ -53,9 +54,18 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         // Set title
         binding.tvTitle.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SAVED_PLANS)
 
-        // Observe list items
+        // Empty-state ("All set") texts
+        binding.tvAllSetTitle.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_ALL_ADDED_TITLE)
+        binding.tvAllSetDescription.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_ALL_ADDED_DESCRIPTION)
+        binding.btnViewItinerary.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_VIEW_ITINERARY)
+
+        // Observe list items - show the "All set" empty state once the list is
+        // empty (every saved plan added or removed), otherwise show the list.
         viewModel.listItems.observe(this) { items ->
             adapter?.submitList(items)
+            val isEmpty = items.isEmpty()
+            binding.emptyStateContainer.visibility = if (isEmpty) View.VISIBLE else View.GONE
+            binding.rvSavedPlans.visibility = if (isEmpty) View.GONE else View.VISIBLE
         }
 
         // Observe loading state
@@ -68,39 +78,37 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             favorite?.let { showTimeSelectionBottomSheet(it) }
         }
 
-        // Observe segment creation loading state
-        viewModel.isCreatingSegment.observe(this) { isCreating ->
-            if (isCreating) {
-                // Dismiss bottom sheet first
-                timeSelectionBottomSheet?.dismiss()
-                // Show loading after bottom sheet dismiss animation completes
-                binding.root.postDelayed({
-                    showLoading()
-                }, 300)
-            } else {
-                hideLoading()
-            }
-        }
-
-        // Observe segment created
+        // Observe segment created - the bottom-sheet loader is driven by the
+        // ViewModel (showBottomSheetLoader/hideLottieLoading), so here we only
+        // dismiss the time selection sheet once creation finishes. The added
+        // favorite is dropped from the list by the ViewModel; we keep the screen
+        // open so the user can add more (or see the "All set" empty state once
+        // the list is exhausted). The result is flagged so the timeline
+        // refreshes when the user finally leaves.
         viewModel.segmentCreated.observe(this) { created ->
             if (created) {
                 viewModel.resetSegmentCreated()
-                // Return success result - timeline will refresh
+                timeSelectionBottomSheet?.dismiss()
                 setResult(RESULT_OK)
-                finish()
             }
         }
 
-        // Observe favorite removed - dismiss the sheet and refresh the timeline.
-        // Close the screen entirely once the saved plans list is empty.
-        viewModel.favoriteRemoved.observe(this) { listEmpty ->
-            listEmpty?.let {
+        // Segment creation failed - hide the inline loader so the sheet stays
+        // usable for a retry (the error alert is raised by the ViewModel).
+        viewModel.segmentCreationFailed.observe(this) { failed ->
+            failed?.let {
+                viewModel.resetSegmentCreationFailed()
+                timeSelectionBottomSheet?.hideInSheetLoadingOverlay()
+            }
+        }
+
+        // Observe favorite removed - dismiss the sheet and flag the result so the
+        // timeline refreshes on exit. The list/empty-state is driven by listItems.
+        viewModel.favoriteRemoved.observe(this) { removed ->
+            removed?.let {
                 viewModel.resetFavoriteRemoved()
                 timeSelectionBottomSheet?.dismiss()
-                // Timeline refreshes its saved-plans badge on RESULT_OK.
                 setResult(RESULT_OK)
-                if (it) finish()
             }
         }
     }
@@ -127,6 +135,20 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         binding.ivBack.setOnClickListener {
             finish()
         }
+
+        // "View itinerary" (empty-state) - return to the timeline.
+        binding.btnViewItinerary.setOnClickListener {
+            onViewItineraryTapped()
+        }
+    }
+
+    /**
+     * Handles the empty-state "View itinerary" action: flags the result so the
+     * timeline refreshes and closes this screen to return to it.
+     */
+    private fun onViewItineraryTapped() {
+        setResult(RESULT_OK)
+        finish()
     }
 
     /**
@@ -152,7 +174,11 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         )
 
         timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible, slotPrice ->
-            // Create reserved activity segment with selected date, time and slot price
+            // Show the inline loader inside the still-open sheet, then create the
+            // reserved activity segment with the selected date, time and slot price.
+            timeSelectionBottomSheet?.showInSheetLoadingOverlay(
+                LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary"
+            )
             viewModel.createReservedActivitySegment(selectedDate, startTime, endTime, isFlexible, slotPrice)
         }
 

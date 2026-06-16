@@ -95,7 +95,6 @@ class FRTimeAndTravelers : Fragment() {
         binding.tvSelectStartingPointLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_STARTING_POINT)
 
         // Time section
-        binding.tvSelectTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TIME)
         binding.tvStartTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_START_TIME)
         binding.tvEndTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_END_TIME)
 

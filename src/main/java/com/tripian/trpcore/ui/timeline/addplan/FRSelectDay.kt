@@ -64,7 +64,7 @@ class FRSelectDay : Fragment() {
         binding.tvAddToDay.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
 
         // City section
-        binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_CITY)
+        binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_DESTINATION)
 
         // Mode selection section
         binding.tvHowToAdd.text = getLanguage(LanguageConst.ADD_PLAN_HOW_TO_ADD)
@@ -227,20 +227,22 @@ class FRSelectDay : Fragment() {
         updateCardSelection(binding.cardSmartRecommendations, smartSelected)
         updateCardSelection(binding.cardAddManually, manualSelected)
 
-        // Show/hide manual categories section
-        binding.llManualCategories.visibility = if (manualSelected) View.VISIBLE else View.GONE
+        // Show categories AND travelers together: both appear as soon as Add
+        // Manually is selected (travelers no longer waits for the Activities
+        // category to be picked).
+        val manualVisibility = if (manualSelected) View.VISIBLE else View.GONE
+        binding.llManualCategories.visibility = manualVisibility
+        binding.llTravelersSection.visibility = manualVisibility
 
-        // Scroll to show categories when manual mode is selected
+        // Scroll to reveal the manual sections when manual mode is selected.
         if (manualSelected) {
             binding.root.post {
                 (binding.root as? androidx.core.widget.NestedScrollView)?.fullScroll(View.FOCUS_DOWN)
             }
         }
 
-        // Hide travelers section when not in manual mode
-        if (!manualSelected) {
-            binding.llTravelersSection.visibility = View.GONE
-        }
+        // Expand the bottom sheet to fit the manual sections.
+        sharedVM.setExpandBottomSheet(manualSelected)
     }
 
     private fun updateManualCategorySelection(category: ManualCategory?) {
@@ -262,19 +264,8 @@ class FRSelectDay : Fragment() {
         updateCardSelection(binding.cardManualPlaces, category == ManualCategory.PLACES_OF_INTEREST)
         updateCardSelection(binding.cardManualEatDrink, category == ManualCategory.EAT_AND_DRINK)
 
-        // Show travelers section only for Activities
-        val showTravelers = category == ManualCategory.ACTIVITIES
-        binding.llTravelersSection.visibility = if (showTravelers) View.VISIBLE else View.GONE
-
-        // Scroll to bottom when travelers section becomes visible
-        if (showTravelers) {
-            binding.root.post {
-                (binding.root as? androidx.core.widget.NestedScrollView)?.fullScroll(View.FOCUS_DOWN)
-            }
-        }
-
-        // Notify BottomSheet to expand/collapse based on travelers visibility
-        sharedVM.setExpandBottomSheet(showTravelers)
+        // Travelers visibility is driven by manual mode (see updateModeSelection),
+        // not by which category is picked — both sections show together.
     }
 
     private fun updateCardSelection(card: com.google.android.material.card.MaterialCardView, selected: Boolean) {

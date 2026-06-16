@@ -68,6 +68,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var fabListInitialBottomMargin = 0
     private var contentInitialBottomPadding = 0
 
+    // Change-time sheet (ActivityTimeSelection step-edit). Retained so its inline
+    // loader can be shown on confirm and the sheet dismissed on completion.
+    private var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
+
     // POI Selection launcher
     private val poiSelectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -89,8 +93,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // Activity was added from saved plans, refresh timeline
-            viewModel.refreshTimeline()
+            // The SavedPlans add flow already fetched the generated timeline in
+            // the background; apply that cached snapshot instead of a second GET.
+            viewModel.onReturnFromSavedPlans()
         }
     }
 
@@ -429,6 +434,20 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
+        // Inline change-time finished (ActivityTimeSelection sheet): dismiss the
+        // sheet on success; hide just the inline loader on failure (retry).
+        viewModel.changeTimeFinished.observe(this) { result ->
+            result?.let {
+                viewModel.resetChangeTimeFinished()
+                if (it) {
+                    changeTimeSheet?.dismiss()
+                    changeTimeSheet = null
+                } else {
+                    changeTimeSheet?.hideInSheetLoadingOverlay()
+                }
+            }
+        }
+
         // Route info updated - DiffUtil will handle partial updates via payload
         viewModel.routeInfoUpdated.observe(this) { segmentIndex ->
             segmentIndex?.let {
@@ -539,7 +558,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         seedInitialTimeSlot = true
                     ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            reservedActivity.segment, idx, startTime, endTime, slotPrice
+                            reservedActivity.segment, idx, startTime, endTime, slotPrice,
+                            useInlineLoader = true
                         )
                     }
                 }
@@ -557,7 +577,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         seedInitialTimeSlot = false
                     ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            flexibleActivity.segment, idx, startTime, endTime, slotPrice
+                            flexibleActivity.segment, idx, startTime, endTime, slotPrice,
+                            useInlineLoader = true
                         )
                     }
                 }
@@ -1322,7 +1343,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             ) { startTime, endTime, _ ->
                 // Activity steps inside a Recommendations plan don't carry an
                 // editable price field, so the slot price is ignored here.
-                viewModel.updateStepTime(step.id, startTime, endTime)
+                viewModel.updateStepTime(step.id, startTime, endTime, useInlineLoader = true)
             }
         } else {
             viewModel.showStepChangeTimePicker(step)
@@ -1377,8 +1398,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             initialTimeSlot = initialTimeSlot
         )
         sheet.setOnStepTimeSelectedListener { _, startTime, endTime, slotPrice ->
+            // Show the inline "changing time" loader inside the open sheet; the
+            // VM (useInlineLoader = true) skips its own loader and signals
+            // completion via changeTimeFinished, which dismisses the sheet.
+            changeTimeSheet?.showInSheetLoadingOverlay(
+                LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time"
+            )
             onConfirm(startTime, endTime, slotPrice)
         }
+        changeTimeSheet = sheet
         sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 
