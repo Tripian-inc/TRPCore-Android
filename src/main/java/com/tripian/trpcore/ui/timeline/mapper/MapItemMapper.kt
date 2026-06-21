@@ -79,7 +79,7 @@ class MapItemMapper @Inject constructor() {
                                             markerIcon = -1
                                             this.position = nextPosition()
                                             isOffer = false
-                                            this.cityIndex = currentCityIndex
+                                            this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                         }
                                     )
                                 }
@@ -106,7 +106,7 @@ class MapItemMapper @Inject constructor() {
                                         markerIcon = -1
                                         this.position = nextPosition()
                                         isOffer = false
-                                        this.cityIndex = currentCityIndex
+                                        this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                     }
                                 )
                             }
@@ -132,7 +132,7 @@ class MapItemMapper @Inject constructor() {
                                         markerIcon = -1
                                         isFlexible = true
                                         isOffer = false
-                                        this.cityIndex = currentCityIndex
+                                        this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                     }
                                 )
                             }
@@ -156,7 +156,7 @@ class MapItemMapper @Inject constructor() {
                                         markerIcon = -1
                                         this.position = nextPosition()
                                         isOffer = false
-                                        this.cityIndex = currentCityIndex
+                                        this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                     }
                                 )
                             }

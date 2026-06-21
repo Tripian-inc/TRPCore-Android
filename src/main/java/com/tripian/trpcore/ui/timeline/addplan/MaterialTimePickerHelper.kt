@@ -66,6 +66,24 @@ object MaterialTimePickerHelper {
     }
 
     /**
+     * Returns the later of two "HH:mm" times (nulls ignored). Used to combine a
+     * start-time floor with the city-timezone "now" floor for an end-time picker.
+     */
+    fun laterOf(a: String?, b: String?): String? {
+        fun minutes(t: String?): Int? = t?.split(":")
+            ?.takeIf { it.size == 2 }
+            ?.let { runCatching { it[0].toInt() * 60 + it[1].toInt() }.getOrNull() }
+        val am = minutes(a)
+        val bm = minutes(b)
+        return when {
+            am == null -> b
+            bm == null -> a
+            am >= bm -> a
+            else -> b
+        }
+    }
+
+    /**
      * Format hour/minute to the 24h storage value for an END time, mapping a
      * midnight selection (00:00) to the [END_OF_DAY_24H] sentinel "23:59".
      * Start times must keep using [formatTo24h].

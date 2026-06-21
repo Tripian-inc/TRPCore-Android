@@ -17,6 +17,7 @@ import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
+import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -193,6 +194,7 @@ class AddPlanContainerVM @Inject constructor(
         } else {
             isUsingAllCities = false
             _cities.value = citiesList
+            CityTimeZones.register(citiesList)
             _selectedCity.value = city ?: citiesList.firstOrNull()
             planData.cities = citiesList
             planData.selectedCity = city ?: citiesList.firstOrNull()
@@ -219,6 +221,7 @@ class AddPlanContainerVM @Inject constructor(
         val cachedCities = tripRepository.getCachedCities()
         if (cachedCities.isNotEmpty()) {
             _cities.value = cachedCities
+            CityTimeZones.register(cachedCities)
             planData.cities = cachedCities
             _isLoadingCities.value = false
             updateContinueButtonState()
@@ -228,6 +231,7 @@ class AddPlanContainerVM @Inject constructor(
                 runCatching { tripRepository.prefetchCitiesAsync() }
                 val cities = tripRepository.getCachedCities()
                 _cities.value = cities
+                CityTimeZones.register(cities)
                 planData.cities = cities
                 _isLoadingCities.value = false
                 updateContinueButtonState()
@@ -239,6 +243,19 @@ class AddPlanContainerVM @Inject constructor(
      * Check if city selection should always be shown (when using all cities fallback)
      */
     fun shouldAlwaysShowCitySelection(): Boolean = isUsingAllCities
+
+    /**
+     * Earliest selectable "HH:mm" for the currently selected day in the selected
+     * city's timezone, or null when the whole day is open (a future day). Used to
+     * floor the start/end time pickers so a past time can't be chosen.
+     */
+    fun minSelectableTimeForSelectedDay(): String? {
+        val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
+        return CityTimeZones.minSelectableTime(day, _selectedCity.value?.timezone)
+    }
+
+    /** Selected city's IANA timezone (e.g. "Europe/Madrid"), or null. */
+    fun selectedCityTimeZone(): String? = _selectedCity.value?.timezone
 
     // =====================
     // DAY SELECTION

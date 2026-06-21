@@ -555,7 +555,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         title = reservedActivity.title,
                         duration = reservedActivity.segment.additionalData?.duration,
                         initialDateTime = reservedActivity.startDateTime,
-                        seedInitialTimeSlot = true
+                        seedInitialTimeSlot = true,
+                        onRemove = {
+                            showDeleteConfirmationDialog(
+                                title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
+                                message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                                onConfirm = {
+                                    changeTimeSheet?.dismiss()
+                                    changeTimeSheet = null
+                                    viewModel.deleteSegment(idx)
+                                }
+                            )
+                        }
                     ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
                             reservedActivity.segment, idx, startTime, endTime, slotPrice,
@@ -574,7 +585,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         initialDateTime = flexibleActivity.segment.startDate,
                         // Flexible items use a 00:00/23:59 placeholder; pre-selecting
                         // it would mark a non-existent "00:00" slot as the choice.
-                        seedInitialTimeSlot = false
+                        seedInitialTimeSlot = false,
+                        onRemove = {
+                            showDeleteConfirmationDialog(
+                                title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
+                                message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                                onConfirm = {
+                                    changeTimeSheet?.dismiss()
+                                    changeTimeSheet = null
+                                    viewModel.deleteSegment(idx)
+                                }
+                            )
+                        }
                     ) { startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
                             flexibleActivity.segment, idx, startTime, endTime, slotPrice,
@@ -960,13 +982,22 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             // Show Main View button
             viewModel.onMarkerFocused()
 
-            // Zoom to city coordinate using MapView's zoomToCoordinate method
-            mapStep.coordinate?.let { coord ->
-                binding.mapView.zoomToCoordinate(
-                    lng = coord.lng,
-                    lat = coord.lat,
-                    zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
-                )
+            // Fit the camera to all of this city's steps, just like opening a
+            // single-city map. Falls back to centering on the city coordinate
+            // when the city has no located steps.
+            val cityStepPoints = viewModel.getStepCoordinatesForCity(mapStep.cityId)
+            if (cityStepPoints.isNotEmpty()) {
+                lifecycleScope.launch {
+                    binding.mapView.fitCameraToPoints(cityStepPoints)
+                }
+            } else {
+                mapStep.coordinate?.let { coord ->
+                    binding.mapView.zoomToCoordinate(
+                        lng = coord.lng,
+                        lat = coord.lat,
+                        zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
+                    )
+                }
             }
 
             // Note: Don't call showCityMarkersMode() here as it will override camera movement
@@ -1104,11 +1135,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     /**
-     * Sync btnMainView visibility with both ViewModel state and bottom panel state.
-     * The button is only visible when active AND the bottom panel is fully shown.
+     * Sync btnMainView visibility with the bottom panel state. The button is
+     * visible whenever the bottom list is expanded (not collapsed) AND the
+     * selected day spans multiple cities; single-city days never show it
+     * (regardless of marker-focus / zoom). Clicking it collapses the bottom list
+     * (hideMapBottomList), which re-runs this and hides the button.
      */
     private fun updateMainViewButtonVisibility() {
-        val shouldShow = viewModel.showMainViewButton.value == true && isBottomListVisible
+        val shouldShow = isBottomListVisible && viewModel.hasMultipleCities
         val isCurrentlyShown =
             binding.btnMainView.visibility == View.VISIBLE && binding.btnMainView.alpha > 0f
 
@@ -1339,7 +1373,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 title = poi.name.orEmpty(),
                 duration = poi.duration?.toDouble(),
                 initialDateTime = step.startDateTimes,
-                seedInitialTimeSlot = true
+                seedInitialTimeSlot = true,
+                onRemove = {
+                    showDeleteConfirmationDialog(
+                        title = getLanguageForKey(LanguageConst.REMOVE_STEP),
+                        message = getLanguageForKey(LanguageConst.REMOVE_STEP_MESSAGE),
+                        onConfirm = {
+                            changeTimeSheet?.dismiss()
+                            changeTimeSheet = null
+                            viewModel.deleteStep(step)
+                        }
+                    )
+                }
             ) { startTime, endTime, _ ->
                 // Activity steps inside a Recommendations plan don't carry an
                 // editable price field, so the slot price is ignored here.
@@ -1377,6 +1422,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         duration: Double?,
         initialDateTime: String?,
         seedInitialTimeSlot: Boolean,
+        onRemove: () -> Unit,
         onConfirm: (startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
         if (activityId.isNullOrEmpty()) return
@@ -1406,6 +1452,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             )
             onConfirm(startTime, endTime, slotPrice)
         }
+        // Change-time "Remove" — runs the same remove-from-plan flow as the
+        // timeline cell's remove button (segment delete or step delete). The
+        // confirmation appears over the still-open sheet; the host dismisses the
+        // sheet on confirm (see call sites). No double confirmation.
+        sheet.setOnRemoveListener(onRemove)
         changeTimeSheet = sheet
         sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
@@ -1432,9 +1483,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             if (dateTime.length >= 16) dateTime.substring(11, 16) else null
         }
 
+        // Floor the picker at the city's "now" for the step's day so the time
+        // can't be moved into the past (device-tz fallback when the step carries
+        // no resolvable city).
+        val stepDay = step.startDateTimes.toDate()
+        val minTime = stepDay?.let { com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, null as Int?) }
+
         val timeSelectionSheet = TimeSelectionBottomSheet.newInstance(
             startTime = startTime,
-            endTime = endTime
+            endTime = endTime,
+            minTime = minTime
         )
 
         timeSelectionSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
@@ -1461,9 +1519,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         val endTime = timePart(segment.endDate)
             ?: timePart(segment.additionalData?.endDatetime)
 
+        // Floor at the city's "now" for the segment's day (city resolved by the
+        // segment's cityId) so the activity can't be moved into the past.
+        val segmentDay = (segment.startDate ?: segment.additionalData?.startDatetime).toDate()
+        val minTime = segmentDay?.let {
+            com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, segment.cityId?.takeIf { c -> c > 0 })
+        }
+
         val sheet = TimeSelectionBottomSheet.newInstance(
             startTime = startTime,
-            endTime = endTime
+            endTime = endTime,
+            minTime = minTime
         )
 
         sheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
@@ -1561,8 +1627,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         addPlanSheet?.setOnSegmentCreatedListener { selectedDayIndex ->
-            // Segment was created from manual listing (ACActivityListing/ACPOIListing), re-fetch timeline
-            viewModel.refreshTimeline()
+            // The manual listing (ACActivityListing/ACPOIListing) already fetched
+            // the generated timeline in the background and cached it; apply that
+            // snapshot instead of a second GET (no full-screen loader on return).
+            viewModel.onReturnFromAddPlan()
             // Auto-select the day for which the segment was created
             viewModel.selectDay(selectedDayIndex)
         }

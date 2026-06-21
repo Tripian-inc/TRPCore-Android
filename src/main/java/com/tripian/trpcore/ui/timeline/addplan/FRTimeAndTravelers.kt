@@ -108,6 +108,8 @@ class FRTimeAndTravelers : Fragment() {
             sharedVM.selectDay(position)
         }.apply {
             disablePastDays = true
+            // Past-day check follows the selected city's clock.
+            timeZoneId = sharedVM.selectedCityTimeZone()
         }
         binding.rvDays.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -155,6 +157,9 @@ class FRTimeAndTravelers : Fragment() {
 
         showComposeTimePicker(
             initialTime = currentTime,
+            // Floor the picker at the city's "now" for the selected day so a past
+            // time can't be chosen (null = future day, no floor).
+            minTime = sharedVM.minSelectableTimeForSelectedDay(),
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 sharedVM.setStartTime(time24h)
@@ -186,8 +191,9 @@ class FRTimeAndTravelers : Fragment() {
         }
 
         showComposeTimePicker(
+            // End must be after the start AND not before the city's "now".
             initialTime = initialTime,
-            minTime = startTime,
+            minTime = MaterialTimePickerHelper.laterOf(startTime, sharedVM.minSelectableTimeForSelectedDay()),
             treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)

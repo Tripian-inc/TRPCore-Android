@@ -230,6 +230,12 @@ class ACTimelineVM @Inject constructor(
     private var isLoginInProgress: Boolean = false
     private var hasMultipleCitiesInSelectedDay: Boolean = false
 
+    /**
+     * Whether the selected day spans more than one city. The Main View button is
+     * only meaningful in this multi-city case (single-city days hide it).
+     */
+    val hasMultipleCities: Boolean get() = hasMultipleCitiesInSelectedDay
+
     // City name to ID mapping - maps resolved city names (lowercase) to our cityIds
     // Used to convert host app cityIds to our system's cityIds
     private val cityNameToIdMap = mutableMapOf<String, Int>()
@@ -969,6 +975,21 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
+    /**
+     * Called when returning from the AddPlan / manual listing flow after a
+     * segment was created. The listing already fetched the generated timeline in
+     * the background and cached it — apply that snapshot without a second GET (no
+     * full-screen loader). Falls back to a refresh only when no cache is present.
+     */
+    fun onReturnFromAddPlan() {
+        val cached = timelineRepository.consumeGeneratedTimeline(_tripHash)
+        if (cached != null) {
+            processTimeline(cached)
+        } else {
+            refreshTimeline()
+        }
+    }
+
     // =====================
     // DATA PROCESSING
     // =====================
@@ -1037,6 +1058,9 @@ class ACTimelineVM @Inject constructor(
         // Extract cities
         val uniqueCities = extractCities(timeline)
         _cities.value = uniqueCities
+        // Register city timezones so every time/day selection surface can enforce
+        // "no past time" against the selected city's clock (resolved by cityId).
+        com.tripian.trpcore.util.CityTimeZones.register(uniqueCities)
 
         // Calculate available days from segments
         val days = calculateAvailableDays(timeline)
@@ -1688,14 +1712,11 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess {
-                    val mutated = applyLocalStepTimeUpdate(stepId, startTime, endTime)
-                    if (!useInlineLoader) hideLottieLoading()
-                    if (mutated) {
-                        republishCurrentTimeline()
-                    } else {
-                        refreshTimeline()
+                    // Re-fetch from the server then refresh the list; keep the
+                    // loader up during the fetch (see updateSegmentTime).
+                    reloadTimelineAndFinishTimeChange(useInlineLoader) {
+                        applyLocalStepTimeUpdate(stepId, startTime, endTime)
                     }
-                    if (useInlineLoader) _changeTimeFinished.value = true
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
@@ -1792,14 +1813,13 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess {
-                    val mutated = applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newPrice)
-                    if (!useInlineLoader) hideLottieLoading()
-                    if (mutated) {
-                        republishCurrentTimeline()
-                    } else {
-                        refreshTimeline()
+                    // Time changed on the server — re-fetch the timeline so the
+                    // list shows authoritative data, then close the loader (or
+                    // dismiss the inline sheet). The loader stays up during the
+                    // fetch; the local mutation is only a fallback if the GET fails.
+                    reloadTimelineAndFinishTimeChange(useInlineLoader) {
+                        applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newPrice)
                     }
-                    if (useInlineLoader) _changeTimeFinished.value = true
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
@@ -1808,6 +1828,26 @@ class ACTimelineVM @Inject constructor(
                     if (useInlineLoader) _changeTimeFinished.value = false
                 }
         }
+    }
+
+    /**
+     * Shared tail of a change-time operation: re-fetch the timeline and publish
+     * it (so the list refreshes from server state), then close the loader. On a
+     * fetch failure, fall back to the optimistic local mutation so the row isn't
+     * left stale. Closes the inline-sheet via [changeTimeFinished] when
+     * [useInlineLoader], otherwise hides the bottom-sheet loader.
+     */
+    private suspend fun reloadTimelineAndFinishTimeChange(
+        useInlineLoader: Boolean,
+        applyLocalFallback: () -> Boolean
+    ) {
+        runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+            .onSuccess { timeline -> processTimeline(timeline) }
+            .onFailure {
+                if (applyLocalFallback()) republishCurrentTimeline()
+            }
+        if (!useInlineLoader) hideLottieLoading()
+        if (useInlineLoader) _changeTimeFinished.value = true
     }
 
     private fun applyLocalSegmentTimeUpdate(
@@ -2260,6 +2300,21 @@ class ACTimelineVM @Inject constructor(
         val city = _cities.value?.find { it.id == cityId } ?: return null
         val coord = city.coordinate ?: return null
         return if (coord.lat != 0.0 && coord.lng != 0.0) coord else null
+    }
+
+    /**
+     * Returns the map coordinates (as Mapbox Points) of every located step in the
+     * given city. Used to fit the camera to a city's steps when its marker is
+     * tapped, mirroring the single-city map's fit-to-all-markers behavior.
+     */
+    fun getStepCoordinatesForCity(cityId: Int?): List<Point> {
+        if (cityId == null) return emptyList()
+        return _mapSteps.value
+            ?.filter { !it.isCityMarker && it.cityId == cityId }
+            ?.mapNotNull { it.coordinate }
+            ?.filter { it.lat != 0.0 && it.lng != 0.0 }
+            ?.map { Point.fromLngLat(it.lng, it.lat) }
+            ?: emptyList()
     }
 
     fun getItinerary(): ItineraryWithActivities? = itinerary

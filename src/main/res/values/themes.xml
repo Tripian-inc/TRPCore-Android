@@ -8,6 +8,11 @@
         <item name="colorOnPrimary">@color/trp_white</item>
         <item name="android:textColorPrimary">@color/trp_text_primary</item>
 
+        <!-- Overscroll edge glow (API <=30) defaults to colorPrimary (pink),
+             which tinted the ActivityListing header (AppBarLayout) pink on
+             pull-down. Make it transparent so overscroll shows no colored glow. -->
+        <item name="android:colorEdgeEffect">@android:color/transparent</item>
+
         <item name="android:windowNoTitle">true</item>
 
         <item name="android:windowBackground">@color/trp_white</item>

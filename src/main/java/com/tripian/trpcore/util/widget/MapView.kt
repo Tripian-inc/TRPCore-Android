@@ -440,6 +440,47 @@ class MapView : MapView {
         }
     }
 
+    /**
+     * Fits the camera to the given points (e.g. one city's step markers) the same
+     * way [moveCameraTo] fits all markers when the single-city map opens. No-op on
+     * an empty list; a single point flies to it at zoom 13.
+     */
+    suspend fun fitCameraToPoints(points: List<Point>) {
+        if (points.isEmpty()) return
+        try {
+            if (points.size > 1) {
+                val cameraOptionsForCoordinates = map?.awaitCameraForCoordinates(
+                    coordinates = points,
+                    camera = cameraOptions {
+                        zoom(13.0)
+                    },
+                    coordinatesPadding = EdgeInsets(100.0, 100.0, 100.0, 100.0),
+                    maxZoom = 15.0,
+                    offset = null
+                )
+                cameraOptionsForCoordinates?.let {
+                    map?.easeTo(
+                        it,
+                        mapAnimationOptions {
+                            duration(500L)
+                        }
+                    )
+                }
+            } else {
+                map?.flyTo(
+                    cameraOptions {
+                        center(points[0])
+                        zoom(13.0)
+                    },
+                    mapAnimationOptions {
+                        duration(500L)
+                    }
+                )
+            }
+        } catch (_: Exception) {
+        }
+    }
+
     fun moveCameraTo(location: Location?, zoom: Double? = null) {
         location?.let {
             map?.flyTo(

@@ -188,8 +188,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private fun setupUI() {
         // Set localized texts
         updateTexts()
-        // Remove button is only part of the SavedPlans flow
-        binding.btnRemove.visibility = if (showSelectAndRemove) View.VISIBLE else View.GONE
+        // Remove button: SavedPlans flow ("Select" + Remove) AND change-time
+        // (step-edit) flow both surface it. The host wires the action.
+        binding.btnRemove.visibility =
+            if (showSelectAndRemove || isStepEditMode) View.VISIBLE else View.GONE
         // Update continue button state
         updateContinueButtonState()
     }
@@ -200,7 +202,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else {
             getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         }
-        binding.tvAddToDay.text = getLanguageForKey(LanguageConst.ADD_PLAN_ADD_TO_DAY)
+        // Change-time (step-edit) reframes the day filter as "Move day"; the
+        // add flow keeps "Add to day".
+        binding.tvAddToDay.text = if (isStepEditMode) {
+            getLanguageForKey(LanguageConst.ADD_PLAN_MOVE_DAY)
+        } else {
+            getLanguageForKey(LanguageConst.ADD_PLAN_ADD_TO_DAY)
+        }
         binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_A_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
         binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
@@ -231,6 +239,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
+        // Past-day check follows the activity's city clock (resolved by cityId).
+        dayAdapter?.timeZoneId = com.tripian.trpcore.util.CityTimeZones.timezoneFor(favoriteCityId)
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
     }
@@ -448,9 +458,18 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                     slots.none { slot -> slot.time == it }
             }
 
+        // Disable any slot that is already in the past for the selected day in the
+        // city's timezone (resolved by cityId). Future days / unknown tz → no slot
+        // is treated as past (device-tz fallback inside CityTimeZones).
+        val selectedDay = availableDays.getOrNull(selectedDayIndex)
+
         data class ChipSpec(val time: String, val price: Double?, val isDisabled: Boolean)
         val chips = mutableListOf<ChipSpec>()
-        chips += slots.map { ChipSpec(it.time, it.minPrice, isDisabled = false) }
+        chips += slots.map { slot ->
+            val isPast = selectedDay != null &&
+                com.tripian.trpcore.util.CityTimeZones.isTimeSlotInPast(selectedDay, slot.time, favoriteCityId)
+            ChipSpec(slot.time, slot.minPrice, isDisabled = isPast)
+        }
         disabledTime?.let { chips += ChipSpec(it, price = null, isDisabled = true) }
         chips.sortBy { it.time }
 
@@ -629,13 +648,17 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         fun newInstance(
             activity: TourProduct,
             availableDays: List<Date>,
-            initialSelectedDay: Date? = null
+            initialSelectedDay: Date? = null,
+            // City of the activity — used only to resolve the timezone for the
+            // past-slot check (schedule still loads from the tour itself).
+            cityId: Int? = null
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
                     putSerializable(ARG_ACTIVITY, activity)
                     putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
                     initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
+                    cityId?.let { putInt(ARG_FAVORITE_CITY_ID, it) }
                 }
             }
         }

@@ -198,6 +198,8 @@ object LanguageConst {
     const val GENERATING_ITINERARY = "generating_itinerary"
     const val REMOVE_ACTIVITY = "timeline.removeActivity.title"
     const val REMOVE_ACTIVITY_MESSAGE = "timeline.removeActivity.message"
+    const val REMOVE_STEP = "timeline.removeStep.title"
+    const val REMOVE_STEP_MESSAGE = "timeline.removeStep.message"
     const val REMOVE_BUTTON = "timeline.removeActivity.remove"
     const val SAVED_PLANS_REMOVE_CONFIRM = "savedPlans.removeActivity.message"
     const val REMOVE_RECOMMENDATIONS = "timeline.removeRecommendations.title"
@@ -243,6 +245,7 @@ object LanguageConst {
 
     // Time & Location
     const val ADD_PLAN_ADD_TO_DAY = "addPlan.label.addToDay"
+    const val ADD_PLAN_MOVE_DAY = "addPlan.label.moveDay"
     const val ADD_PLAN_CITY = "addPlan.label.city"
     const val ADD_PLAN_DESTINATION = "trips.createNewTrip.destinationTips.destination.title"
     const val ADD_PLAN_SELECT_CITY = "addPlan.title.selectCity"

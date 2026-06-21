@@ -34,7 +34,8 @@ class ACPOIListingVM @Inject constructor(
     private val createManualPoiSegmentUseCase: CreateManualPoiSegmentUseCase,
     private val fetchTimelineUseCase: FetchTimelineUseCase,
     private val getPoiCategoriesUseCase: GetPoiCategories,
-    private val poiRepository: PoiRepository
+    private val poiRepository: PoiRepository,
+    private val timelineRepository: com.tripian.trpcore.repository.TimelineRepository
 ) : BaseViewModel() {
 
     // =====================
@@ -374,7 +375,10 @@ class ACPOIListingVM @Inject constructor(
     private fun refreshTimelineAfterSegment(poi: Poi, selectedDate: Date) {
         viewModelScope.launch {
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
-                .onSuccess {
+                .onSuccess { timeline ->
+                    // Cache the freshly-fetched timeline so the timeline screen
+                    // applies it on return without a second GET.
+                    timelineRepository.cacheGeneratedTimeline(tripHash, timeline)
                     hideLottieLoading()
                     _addedToItinerarySuccess.value = AddedToItineraryResult(
                         poiName = poi.name.orEmpty(),

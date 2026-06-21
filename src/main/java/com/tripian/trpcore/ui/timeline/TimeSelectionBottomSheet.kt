@@ -22,6 +22,9 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     // State
     private var startTime: String? = null  // Format: "HH:mm"
     private var endTime: String? = null    // Format: "HH:mm"
+    // Earliest selectable "HH:mm" for the edited item's day in its city timezone
+    // (null = no floor / future day). Blocks moving an activity into the past.
+    private var minTime: String? = null
 
     // Callback
     private var onTimeSelectedListener: ((startTime: String?, endTime: String?) -> Unit)? = null
@@ -35,6 +38,7 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         arguments?.let { args ->
             startTime = args.getString(ARG_START_TIME)
             endTime = args.getString(ARG_END_TIME)
+            minTime = args.getString(ARG_MIN_TIME)
         }
 
         setupLabels()
@@ -118,6 +122,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     private fun showStartTimePicker() {
         showComposeTimePicker(
             initialTime = startTime,
+            // Don't allow a past start for the item's day in its city timezone.
+            minTime = minTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 startTime = time24h
@@ -144,7 +150,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         }
         showComposeTimePicker(
             initialTime = initialTime,
-            minTime = startTime,
+            // End must be after start AND not before the city's "now".
+            minTime = MaterialTimePickerHelper.laterOf(startTime, minTime),
             treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
@@ -163,15 +170,19 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
 
         private const val ARG_START_TIME = "start_time"
         private const val ARG_END_TIME = "end_time"
+        private const val ARG_MIN_TIME = "min_time"
 
         fun newInstance(
             startTime: String? = null,
-            endTime: String? = null
+            endTime: String? = null,
+            // Earliest selectable "HH:mm" (city-timezone "now" for the item's day).
+            minTime: String? = null
         ): TimeSelectionBottomSheet {
             return TimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
                     startTime?.let { putString(ARG_START_TIME, it) }
                     endTime?.let { putString(ARG_END_TIME, it) }
+                    minTime?.let { putString(ARG_MIN_TIME, it) }
                 }
             }
         }

@@ -83,6 +83,14 @@ class MapBottomListAdapter(
             parent,
             false
         )
+        // Card width = screen width minus 24dp on each side. With the symmetric
+        // 6dp horizontal margins, PagerSnapHelper centers the card so it ends up
+        // with exactly 24dp clear on the left and right.
+        val metrics = parent.context.resources.displayMetrics
+        val sideMarginPx = (24f * metrics.density).toInt()
+        binding.root.layoutParams = binding.root.layoutParams.apply {
+            width = metrics.widthPixels - sideMarginPx * 2
+        }
         return ViewHolder(binding)
     }
 

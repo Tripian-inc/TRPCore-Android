@@ -332,7 +332,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         timeSelectionBottomSheet = ActivityTimeSelectionBottomSheet.newInstance(
             activity = activity,
             availableDays = viewModel.getAvailableDays(),
-            initialSelectedDay = viewModel.getSelectedDate()
+            initialSelectedDay = viewModel.getSelectedDate(),
+            cityId = viewModel.getCityId()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
             viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)

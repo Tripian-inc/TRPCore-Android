@@ -194,6 +194,8 @@ class FRSelectDay : Fragment() {
         // Selected city
         sharedVM.selectedCity.observe(viewLifecycleOwner) { city ->
             binding.tvSelectedCity.text = city?.name ?: ""
+            // Past-day check follows the selected city's clock.
+            dayFilterAdapter?.timeZoneId = city?.timezone
         }
 
         // Selected mode

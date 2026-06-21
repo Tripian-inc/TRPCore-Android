@@ -5,6 +5,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineEmptyStateBinding
 import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
@@ -25,7 +26,7 @@ class TimelineAdapter(
     private val onItemClick: (TimelineDisplayItem) -> Unit,
     private val onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
     private val onExpandClick: (TimelineDisplayItem) -> Unit,
-    private val onStepClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
+    private val onStepClick: ((TimelineStep) -> Unit)? = null,
     private val onChangeTimeClick: ((TimelineDisplayItem.ManualPoi) -> Unit)? = null,
     private val onReservedActivityChangeTimeClick: ((TimelineDisplayItem.BookedActivity) -> Unit)? = null,
     private val onFlexibleActivityChangeTimeClick: ((TimelineDisplayItem.FlexibleActivity) -> Unit)? = null,
@@ -33,9 +34,9 @@ class TimelineAdapter(
     private val onFlexibleReservationClick: ((TimelineDisplayItem.FlexibleActivity) -> Unit)? = null,
     private val onAddPlanClick: (() -> Unit)? = null,
     // Step callbacks for Recommendations
-    private val onStepChangeTimeClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
-    private val onStepDeleteClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
-    private val onStepReservationClick: ((com.tripian.one.api.timeline.model.TimelineStep) -> Unit)? = null,
+    private val onStepChangeTimeClick: ((TimelineStep) -> Unit)? = null,
+    private val onStepDeleteClick: ((TimelineStep) -> Unit)? = null,
+    private val onStepReservationClick: ((TimelineStep) -> Unit)? = null,
     // Route calculation callback for Recommendations
     private val onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null,
     // Theme 12: section collapse/expand. Both must be non-null to render the chevron.

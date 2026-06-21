@@ -38,6 +38,20 @@ class DayFilterAdapter(
         }
 
     /**
+     * IANA timezone of the selected city (e.g. "Europe/Madrid"). When set, the
+     * "past day" check is evaluated against this city's clock instead of the
+     * device clock — so the earliest selectable day matches the city's today.
+     * Null falls back to the device timezone.
+     */
+    var timeZoneId: String? = null
+        set(value) {
+            if (field != value) {
+                field = value
+                notifyDataSetChanged()
+            }
+        }
+
+    /**
      * Subset of days (in "yyyy-MM-dd" form) that are available for selection.
      * Days outside this set render muted and swallow taps. `null` means "no
      * availability filter" — every day stays selectable (default behavior).
@@ -104,7 +118,9 @@ class DayFilterAdapter(
             binding.tvMonth.text = monthFormat.format(date).lowercase(locale)
 
             val context = binding.root.context
-            val isPast = date.isPastDay()
+            val isPast = timeZoneId?.let {
+                com.tripian.trpcore.util.CityTimeZones.isDayInPast(date, it)
+            } ?: date.isPastDay()
             val isPastDisabled = disablePastDays && isPast
             val isUnavailable = availableDateStrings?.let { isoDateFormatter.format(date) !in it } ?: false
             val isDisabled = isPastDisabled || isUnavailable

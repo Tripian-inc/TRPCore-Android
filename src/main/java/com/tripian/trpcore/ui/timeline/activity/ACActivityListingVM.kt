@@ -36,7 +36,8 @@ import javax.inject.Inject
 class ACActivityListingVM @Inject constructor(
     private val searchToursUseCase: SearchToursUseCase,
     private val createReservedActivitySegmentUseCase: CreateReservedActivitySegmentUseCase,
-    private val fetchTimelineUseCase: FetchTimelineUseCase
+    private val fetchTimelineUseCase: FetchTimelineUseCase,
+    private val timelineRepository: com.tripian.trpcore.repository.TimelineRepository
 ) : BaseViewModel() {
 
     // =====================
@@ -111,6 +112,10 @@ class ACActivityListingVM @Inject constructor(
     private var planData: AddPlanData? = null
     private var tripHash: String = ""
     private var cityId: Int = 0
+
+    /** City of the current listing — used to resolve its timezone for the
+     *  past-slot check in the time selection sheet. */
+    fun getCityId(): Int = cityId
     private var selectedDayIndex: Int = 0
     private var cityLat: Double = 0.0
     private var cityLng: Double = 0.0
@@ -137,6 +142,9 @@ class ACActivityListingVM @Inject constructor(
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
+        // Register the city's timezone so the time-slot grid can drop past slots
+        // for the city's clock even when this screen is opened standalone.
+        com.tripian.trpcore.util.CityTimeZones.register(listOfNotNull(planData.selectedCity))
         this.selectedDayIndex = planData.selectedDayIndex
 
         // Extract city coordinate - required for tour search
@@ -482,7 +490,11 @@ class ACActivityListingVM @Inject constructor(
     private fun refreshTimelineAfterSegment(tour: TourProduct, selectedDate: Date) {
         viewModelScope.launch {
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
-                .onSuccess {
+                .onSuccess { timeline ->
+                    // Cache the freshly-fetched timeline so the timeline screen
+                    // applies it on return without a second GET (no full-screen
+                    // loader on the way back).
+                    timelineRepository.cacheGeneratedTimeline(tripHash, timeline)
                     hideLottieLoading()
                     _addedToItinerarySuccess.value = AddedToItineraryResult(
                         activityName = tour.title.orEmpty(),

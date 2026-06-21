@@ -132,7 +132,6 @@
                 android:fontFamily="@font/regular"
                 android:textColor="@color/trp_activity_count_label"
                 android:textSize="12sp"
-                app:layout_scrollFlags="scroll|enterAlways"
                 tools:text="150 activities found" />
 
             <!-- Shimmer placeholder for the result count, shown while the list
@@ -145,7 +144,6 @@
                 android:layout_marginTop="@dimen/_12sdp"
                 android:layout_marginBottom="@dimen/_4sdp"
                 android:visibility="gone"
-                app:layout_scrollFlags="scroll|enterAlways"
                 app:shimmer_auto_start="false"
                 app:shimmer_base_alpha="1.0"
                 app:shimmer_highlight_alpha="1.0"

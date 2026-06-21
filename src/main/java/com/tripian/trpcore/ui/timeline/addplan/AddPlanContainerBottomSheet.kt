@@ -103,7 +103,7 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         val screenHeight = displayMetrics.heightPixels
         val density = displayMetrics.density
 
-        val headerHeight = (52 * density).toInt()   // 44dp + 8dp margin
+        val headerHeight = (72 * density).toInt()   // 44dp + 8dp top + 20dp bottom margin
         val footerHeight = (80 * density).toInt()   // footer
         val handleHeight = (12 * density).toInt()   // 4dp + 8dp margin
         val padding = (16 * density).toInt()        // safety buffer
@@ -120,9 +120,16 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             dismiss()
         }
 
-        // Back button
+        // Back button — visible on every step (incl. the first). On the first
+        // step there is no previous step, so it acts like the close (X) button
+        // and dismisses the whole AddPlan flow; later steps go back one step.
+        binding.ivBack.visibility = View.VISIBLE
         binding.ivBack.setOnClickListener {
-            sharedVM.goToPreviousStep()
+            if (sharedVM.currentStep.value == AddPlanStep.SELECT_DAY_AND_CITY) {
+                dismiss()
+            } else {
+                sharedVM.goToPreviousStep()
+            }
         }
 
         // Continue button
@@ -145,10 +152,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             binding.tvTitle.text = getLanguageForKey(key)
         }
 
-        // Back button visibility
-        sharedVM.showBackButton.observe(viewLifecycleOwner) { show ->
-            binding.ivBack.visibility = if (show) View.VISIBLE else View.GONE
-        }
+        // Back button stays visible on every step (first step closes the flow).
+        // We intentionally ignore showBackButton here so the first step still
+        // shows it as a close affordance.
 
         // Continue button state
         sharedVM.continueButtonEnabled.observe(viewLifecycleOwner) { enabled ->
