@@ -162,9 +162,7 @@ dependencies {
     implementation 'com.intuit.sdp:sdp-android:1.0.6'
 
     // TRPOne — primary REST client.
-    // settings.gradle composite-build substitutes this to the local TRPOne
-    // checkout while the camelCase migration is in flight.
-    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.7'
+    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.8'
 
     // TRPFoundation — base utilities (extensions, helpers).
     implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
