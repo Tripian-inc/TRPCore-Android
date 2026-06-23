@@ -49,11 +49,13 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         val cityNamesList = mutableListOf<String>()
 
         params.tripItems.forEach { item ->
-            if (item.cityName != null && item.cityName in missingCities) {
+            val coord = item.coordinate
+            // No-location activities have no coordinate to resolve a city from; skip.
+            if (coord != null && item.cityName != null && item.cityName in missingCities) {
                 coordinatesToResolve.add(
                     Coordinate().apply {
-                        lat = item.coordinate.lat
-                        lng = item.coordinate.lng
+                        lat = coord.lat
+                        lng = coord.lng
                     }
                 )
                 cityNamesList.add(item.cityName)

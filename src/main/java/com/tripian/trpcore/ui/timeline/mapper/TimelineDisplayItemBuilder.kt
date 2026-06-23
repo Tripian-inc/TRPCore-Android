@@ -133,6 +133,12 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 SegmentType.ITINERARY, SegmentType.GENERATED -> {
                     if (plan != null) {
                         val steps = plan.steps ?: emptyList()
+                        android.util.Log.d(
+                            "RECO_DEBUG",
+                            "builder segment='${segment.title}' type=${segment.segmentType} " +
+                                "planId=${plan.id} generatedStatus=${plan.generatedStatus} " +
+                                "plan.steps=${plan.steps?.size ?: "null"} stepsUsed=${steps.size}"
+                        )
                         // "TimelineDate" is a control segment, never render.
                         if (segment.title == "TimelineDate") return@forEachIndexed
                         // Smart recommendation that came back with no POIs — skip.

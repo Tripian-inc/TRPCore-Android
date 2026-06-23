@@ -4,6 +4,7 @@ import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSettings
 import com.tripian.trpcore.base.SuspendUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryCoordinate
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
@@ -36,7 +37,10 @@ class CreateTimelineUseCase @Inject constructor(
      * Create TimelineSettings from ItineraryWithActivities
      */
     private fun createTimelineSettings(itinerary: ItineraryWithActivities): TimelineSettings {
-        val cityId = resolveCityId(itinerary)
+        // City resolution is a per-host policy: the default resolves from the
+        // destination coordinate/name; a host that pre-resolves cityIds returns
+        // its trusted value and skips resolution.
+        val cityId = TRPCore.host.resolveTimelineCityId(itinerary) { resolveCityId(itinerary) }
         // Pass resolved cityId as default for empty segments
         val segments = itinerary.createSegmentsFromTripItems(defaultCityId = cityId)
 

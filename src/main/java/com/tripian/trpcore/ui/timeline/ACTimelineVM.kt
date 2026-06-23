@@ -661,6 +661,12 @@ class ACTimelineVM @Inject constructor(
                 fetchTimeline()
             }
 
+            itinerary != null && TRPCore.host.createsTimelineWithoutCityResolution(itinerary!!) -> {
+                // Host policy: destinations already carry trusted cityIds — create
+                // the timeline WITHOUT re-resolving them.
+                createTimelineFromItinerary()
+            }
+
             itinerary != null -> {
                 // New timeline - FIRST resolve cityIds from coordinates
                 resolveCitiesAndCreateTimeline()
@@ -792,6 +798,8 @@ class ACTimelineVM @Inject constructor(
                     _tripHash = timeline.tripHash ?: ""
                     if (_tripHash.isNotEmpty()) {
                         TRPCore.notifyTimelineCreated(_tripHash)
+                        // Host policy: persist the hash if the host manages it internally.
+                        TRPCore.host.onTimelineCreated(preferences, _tripHash)
                         waitForTimelineGeneration()
                     } else {
                         processTimeline(timeline)
@@ -862,6 +870,8 @@ class ACTimelineVM @Inject constructor(
                     _tripHash = timeline.tripHash ?: ""
                     if (_tripHash.isNotEmpty()) {
                         TRPCore.notifyTimelineCreated(_tripHash)
+                        // Host policy: persist the hash if the host manages it internally.
+                        TRPCore.host.onTimelineCreated(preferences, _tripHash)
                         waitForTimelineGeneration()
                     } else {
                         processTimeline(timeline)
@@ -913,11 +923,23 @@ class ACTimelineVM @Inject constructor(
         viewModelScope.launch {
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
                 .onSuccess { timeline ->
-                    if (!syncOperationsCompleted && itinerary != null) {
-                        runInitialSyncThenFinalize(timeline)
-                    } else {
-                        processTimeline(timeline)
-                        hideLottieLoading()
+                    val itineraryData = itinerary
+                    when {
+                        // Host policy: when the new reservations fall entirely
+                        // outside the stored timeline's date range → delete it and
+                        // recreate. Default hosts keep the existing timeline.
+                        itineraryData != null &&
+                            TRPCore.host.recreatesTimelineOnDateMismatch(timeline) &&
+                            !timelineDatesOverlapItinerary(timeline, itineraryData) ->
+                            recreateTimelineForNewDates(_tripHash, itineraryData)
+
+                        !syncOperationsCompleted && itinerary != null ->
+                            runInitialSyncThenFinalize(timeline)
+
+                        else -> {
+                            processTimeline(timeline)
+                            hideLottieLoading()
+                        }
                     }
                 }
                 .onFailure { t ->
@@ -926,6 +948,39 @@ class ACTimelineVM @Inject constructor(
                     TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
                     hideLottieLoading()
                 }
+        }
+    }
+
+    /**
+     * nexus: true when the stored timeline's date range overlaps the new
+     * itinerary's range (inclusive). When it doesn't, the timeline is recreated.
+     * Falls back to true (keep the timeline) when either range can't be parsed.
+     */
+    private fun timelineDatesOverlapItinerary(
+        timeline: Timeline,
+        itineraryData: ItineraryWithActivities
+    ): Boolean {
+        val days = calculateAvailableDays(timeline)
+        val existingStart = days.firstOrNull()
+        val existingEnd = days.lastOrNull()
+        val newStart = itineraryData.startDatetime.toDate()
+        val newEnd = itineraryData.endDatetime.toDate()
+        if (existingStart == null || existingEnd == null || newStart == null || newEnd == null) {
+            return true
+        }
+        // Overlap iff existingStart <= newEnd AND newStart <= existingEnd.
+        return !existingStart.after(newEnd) && !newStart.after(existingEnd)
+    }
+
+    /** nexus: delete the stored timeline and create a fresh one for the new dates. */
+    private fun recreateTimelineForNewDates(oldHash: String, itineraryData: ItineraryWithActivities) {
+        showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
+        _error.value = null
+        viewModelScope.launch {
+            runCatching { timelineRepository.deleteTimelineAsync(oldHash) }
+            TRPCore.host.clearStoredTripHash(preferences)
+            _tripHash = ""
+            createTimelineFromItinerary()
         }
     }
 
@@ -2578,24 +2633,27 @@ class ACTimelineVM @Inject constructor(
 
         val tracker = SyncMutationTracker()
 
-        // STEP 1: City resolution (blocking — parallel ops depend on cityMap)
+        // STEP 1: City resolution is a per-host policy. The default resolves
+        // cityIds from coordinates via the cities/resolve API; a host that
+        // already resolved them upstream builds the name→id map locally.
         viewModelScope.launch {
-            runCatching {
-                resolveCityIdsForActivitiesUseCase(
-                    ResolveCityIdsForActivitiesUseCase.Params(
-                        tripItems,
-                        favouriteItems,
-                        cityNameToIdMap.toMap()
+            val cityMap = TRPCore.host.resolveActivityCityMap(
+                tripItems,
+                favouriteItems,
+                cityNameToIdMap.toMap()
+            ) {
+                runCatching {
+                    resolveCityIdsForActivitiesUseCase(
+                        ResolveCityIdsForActivitiesUseCase.Params(
+                            tripItems,
+                            favouriteItems,
+                            cityNameToIdMap.toMap()
+                        )
                     )
-                )
+                }.getOrDefault(cityNameToIdMap.toMap())
             }
-                .onSuccess { updatedCityMap ->
-                    cityNameToIdMap.putAll(updatedCityMap)
-                    runParallelSyncForInitial(initialTimeline, tripItems, updatedCityMap, tracker)
-                }
-                .onFailure {
-                    runParallelSyncForInitial(initialTimeline, tripItems, cityNameToIdMap.toMap(), tracker)
-                }
+            cityNameToIdMap.putAll(cityMap)
+            runParallelSyncForInitial(initialTimeline, tripItems, cityMap, tracker)
         }
     }
 

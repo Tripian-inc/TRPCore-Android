@@ -25,6 +25,7 @@ import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ActivityTimelineBinding
+import com.tripian.trpcore.util.TripianNavigateBridge
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
@@ -107,6 +108,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
 
     override fun setListeners() {
+        // Expose this running SDK task so a host (e.g. the Capacitor
+        // TripianNavigateBridge.returnToSdk) can bring the timeline to the front.
+        TripianNavigateBridge.sdkTaskId = taskId
+        TripianNavigateBridge.sdkActivityClass = ACTimeline::class.java
+
         // Handle navigation bar insets for FAB
 
         fabAddInitialBottomMargin =

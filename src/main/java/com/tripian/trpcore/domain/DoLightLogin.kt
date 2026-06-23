@@ -18,7 +18,8 @@ class DoLightLogin @Inject constructor(
 
     override suspend fun execute(params: Params): LoginResponse {
         val resolvedUniqueId = if (params.uniqueId.isNullOrEmpty()) {
-            "${getDeviceId(pref)}@tripianguest.com"
+            // nexus: send the bare deviceId — no "@tripianguest.com" suffix.
+            getDeviceId(pref)
         } else {
             params.uniqueId
         }

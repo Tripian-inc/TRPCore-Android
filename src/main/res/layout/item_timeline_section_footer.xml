@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- City-section divider: a 10dp #F7F7F7 band with a neutral-200 (#EAEAEA)
      hairline at its top and bottom edges, full width. Shown between consecutive
-     city sections (not after the last one). -->
+     city sections (not after the last one).
+     The 24dp top/bottom margins own the spacing around the gap at the section
+     level, so the band always sits 24dp clear of the adjacent cells regardless
+     of whether the preceding cell defines its own bottom padding. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="24dp"
+    android:layout_marginBottom="24dp"
     android:orientation="vertical">
 
     <!-- Top line -->

@@ -5,6 +5,7 @@ import com.tripian.trpcore.base.FRWarningDialogVM
 import com.tripian.trpcore.di.ViewModelKey
 import com.tripian.trpcore.ui.common.ACWebPageVM
 import com.tripian.trpcore.ui.onboarding.OnboardingVM
+import com.tripian.trpcore.ui.splash.ACSplashVM
 import dagger.Binds
 import dagger.Module
 import dagger.multibindings.IntoMap
@@ -24,6 +25,11 @@ abstract class ViewModels {
     @IntoMap
     @ViewModelKey(ACWebPageVM::class)
     abstract fun bindACWebPageVM(repoViewModel: ACWebPageVM): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ACSplashVM::class)
+    abstract fun bindACSplashVM(repoViewModel: ACSplashVM): ViewModel
 
     /**
      * ONBOARDING

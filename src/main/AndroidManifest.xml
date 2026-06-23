@@ -16,9 +16,17 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
+            android:name="com.tripian.trpcore.ui.splash.ACSplash"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.tripian.trpcore.sdk"
+            android:windowSoftInputMode="adjustPan" />
+
+        <activity
             android:name="com.tripian.trpcore.ui.timeline.ACTimeline"
             android:exported="false"
             android:screenOrientation="portrait"
+            android:taskAffinity="com.tripian.trpcore.sdk"
             android:windowSoftInputMode="adjustPan" />
 
         <activity

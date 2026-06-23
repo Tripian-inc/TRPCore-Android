@@ -19,6 +19,10 @@ class Preferences @Inject constructor(var context: Context) {
         const val APP_LANGUAGE_TRANSLATIONS_FETCHED_AT = "app_language_translations_fetched_at"
         const val APP_CURRENCY = "app_currency"
         const val CACHED_CITIES = "cached_cities"
+
+        // Timeline created by the host-itinerary flow. Stored internally so the
+        // host does not need to send a tripHash; reused on the next launch.
+        const val SAVED_TRIP_HASH = "saved_trip_hash"
         // TOKEN info
         const val TOKEN_TYPE = "TokenType"
         const val ACCESS_TOKEN = "AccessToken"

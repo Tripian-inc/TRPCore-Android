@@ -96,19 +96,35 @@
                 android:textSize="15sp"
                 tools:text="Visita guiada por la Basílica de San Pedro" />
 
-            <!-- Confirmed Badge - green bg, green text, medium 12px -->
-            <TextView
-                android:id="@+id/tvBadge"
+            <!-- Badge row: Confirmed chip + optional "no exact location" chip. -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:background="@drawable/trp_bg_confirmed_badge"
-                android:fontFamily="@font/medium"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="4dp"
-                android:textColor="@color/trp_confirmed_badge_text"
-                android:textSize="12sp"
-                tools:text="Confirmed" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- Confirmed Badge - green bg, green text, medium 12px -->
+                <TextView
+                    android:id="@+id/tvBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/trp_bg_confirmed_badge"
+                    android:fontFamily="@font/medium"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="@color/trp_confirmed_badge_text"
+                    android:textSize="12sp"
+                    tools:text="Confirmed" />
+
+                <include
+                    android:id="@+id/noLocationBadge"
+                    layout="@layout/include_no_location_badge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp" />
+
+            </LinearLayout>
 
             <!-- Travelers Row - icon 16x16, Light 14px primaryText -->
             <LinearLayout

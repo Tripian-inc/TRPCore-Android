@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Splash host for SDK entry from a host app (e.g. Capacitor bridge).
+     Intentionally blank — the full-screen Lottie loader (shown by ACSplashVM
+     while light login runs) overlays this background. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white" />

@@ -156,20 +156,25 @@ data class ItineraryWithActivities(
             endDate = calculatedEndDatetime ?: this@ItineraryWithActivities.endDatetime
             segmentType = "booked_activity"
             available = true
-            // NOTE: cityId is NOT set - host app sends garbage/invalid cityIds
-            // Server will resolve cityId from coordinate instead
+            // City anchoring is a per-host policy: the default leaves cityId unset
+            // (server resolves it from the coordinate); a host that pre-resolves
+            // cityIds overrides this to anchor the segment.
+            TRPCore.host.anchorBookedActivityCityId(this, item)
             adults = item.adultCount
             children = item.childCount
             doNotGenerate = 1
             currency = TRPCore.core.getCurrentCurrency()
 
-            // Coordinate
-            item.coordinate.let { coord ->
-                coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                    lat = coord.lat
-                    lng = coord.lng
+            // Coordinate — only when present. A missing coordinate flags the
+            // segment as "no exact location" (additionalData.isNoLocation) instead
+            // of dropping a marker at a placeholder / city centre.
+            val coord = item.coordinate?.let {
+                com.tripian.one.api.pois.model.Coordinate().apply {
+                    lat = it.lat
+                    lng = it.lng
                 }
             }
+            coordinate = coord
 
             // Additional data for booked activity
             additionalData = TimelineSegmentAdditionalData().apply {
@@ -186,10 +191,8 @@ data class ItineraryWithActivities(
                     this.price = price.value
                     this.currency = price.currency
                 }
-                this.coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                    lat = item.coordinate.lat
-                    lng = item.coordinate.lng
-                }
+                this.coordinate = coord
+                this.isNoLocation = (coord == null)
             }
         }
     }

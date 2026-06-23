@@ -303,7 +303,7 @@ class ACActivityListingVM @Inject constructor(
                         tagIds = null,
                         // Category selection is applied server-side via categoryIds.
                         categoryIds = buildCategoryIds(),
-                        providerId = 15, // Always use providerId 15 for tour-api
+                        providerId = TRPCore.provider.id, // active (host-configured) provider
                         date = selectedDateString,
                         to = selectedDateString,
                         currency = getCurrency(),

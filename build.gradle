@@ -1,36 +1,10 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.2'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:$kotlin_version"
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' }
-        maven {
-            url 'https://api.mapbox.com/downloads/v2/releases/maven'
-            authentication {
-                basic(BasicAuthentication)
-            }
-            credentials {
-                username = "mapbox"
-                password = project.hasProperty('MAPBOX_DOWNLOADS_TOKEN') ? project.property('MAPBOX_DOWNLOADS_TOKEN') : System.getenv('MAPBOX_DOWNLOADS_TOKEN') ?: ""
-            }
-        }
-    }
-}
-
+// nexus branch: consumed as a SUBPROJECT of the Nexus app, which provides the
+// Android Gradle Plugin (8.13.2), Kotlin (1.9.22) and repositories (incl. the
+// Mapbox download token). The standalone buildscript{}/allprojects{} blocks were
+// removed to avoid an AGP version clash. Legacy Compose Compiler is configured
+// via composeOptions below. (This branch no longer builds standalone by design.)
 apply plugin: 'com.android.library'
 apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-parcelize'
 apply plugin: 'maven-publish'
@@ -51,13 +25,21 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        // nexus branch: aligned to 21 — the Nexus root forces Kotlin jvmTarget 21
+        // for all subprojects, so Java must match to avoid JVM-target mismatch.
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
     }
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '21'
 
-        freeCompilerArgs = ['-Xjvm-default=all']
+        // nexus branch: allow the Kotlin 1.9.22 compiler to read dependencies
+        // published with newer Kotlin metadata (e.g. Places 5.0.0 → 2.1.0).
+        freeCompilerArgs = ['-Xjvm-default=all', '-Xskip-metadata-version-check']
+    }
+    composeOptions {
+        // Legacy Compose Compiler compatible with Kotlin 1.9.22 (nexus branch).
+        kotlinCompilerExtensionVersion '1.5.8'
     }
     buildFeatures {
         buildConfig true
@@ -133,7 +115,7 @@ dependencies {
     implementation "androidx.preference:preference-ktx:1.1.1"
 
     // Compose
-    def composeBom = platform('androidx.compose:compose-bom:2024.09.03')
+    def composeBom = platform('androidx.compose:compose-bom:2024.02.00')
     implementation composeBom
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.material3:material3'
@@ -177,8 +159,10 @@ dependencies {
     implementation "com.google.firebase:firebase-messaging-ktx"
 
     // Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1'
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1"
+    // nexus branch: 1.8.1 is the last coroutines line compiled with Kotlin 1.9
+    // metadata, readable by the Kotlin 1.9.22 compiler (1.10.x emits 2.1 metadata).
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     // Swipe Refresh

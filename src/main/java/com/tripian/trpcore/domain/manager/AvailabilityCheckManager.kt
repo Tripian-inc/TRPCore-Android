@@ -3,6 +3,7 @@ package com.tripian.trpcore.domain.manager
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.tour.model.TourScheduleAvailabilityItem
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
 import kotlinx.coroutines.CoroutineScope
@@ -61,7 +62,7 @@ class AvailabilityCheckManager @Inject constructor(
         selectedDate: Date?,
         currency: String?,
         lang: String?,
-        providerId: Int = DEFAULT_PROVIDER_ID,
+        providerId: Int = TRPCore.provider.id,
         listener: ItemUpdateListener,
         onCompleted: () -> Unit
     ) {
@@ -251,8 +252,4 @@ class AvailabilityCheckManager @Inject constructor(
         val activityId: String,
         val expectedTime: String?
     )
-
-    companion object {
-        const val DEFAULT_PROVIDER_ID: Int = 15
-    }
 }

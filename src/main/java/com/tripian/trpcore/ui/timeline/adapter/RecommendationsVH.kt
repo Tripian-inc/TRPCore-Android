@@ -61,6 +61,13 @@ class RecommendationsVH(
         currentItem = item
         currentDistanceFormat = distanceFormat
 
+        android.util.Log.d(
+            "RECO_DEBUG",
+            "VH bind title='${item.title}' steps=${item.steps.size} isExpanded=${item.isExpanded} " +
+                "isGenerating=${item.isGenerating} hasNoPois=${item.hasNoPois} " +
+                "generatedStatus=${item.plan.generatedStatus}"
+        )
+
         // Title only - no city, time, places info
         binding.tvTitle.text = item.title
 
@@ -72,7 +79,11 @@ class RecommendationsVH(
             binding.tvNoRecommendations.visibility = View.GONE
             binding.startingPointContainer.visibility = View.GONE
             binding.startingPointRouteContainer.visibility = View.GONE
-        } else if (item.hasNoPois) {
+        } else if (item.hasNoPois && item.steps.isEmpty()) {
+            // Only show the empty state when there is genuinely nothing to render.
+            // A plan can report generatedStatus == -1 yet still carry steps (e.g.
+            // steps from a prior generation); in that case fall through and render
+            // them instead of the "No recommendations" placeholder.
             binding.progressGenerating.visibility = View.GONE
             binding.tvGenerating.visibility = View.GONE
             binding.rvSteps.visibility = View.GONE

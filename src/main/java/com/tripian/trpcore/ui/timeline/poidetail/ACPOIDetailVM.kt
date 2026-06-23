@@ -76,9 +76,9 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     }
 
     private fun processPoi(poi: Poi) {
-        // Activities Section - visible if has products from providerId 15 bookings
+        // Activities Section - visible if has products from the active provider's bookings
         val allProducts = poi.bookings
-            ?.filter { it.providerId == 15 }
+            ?.filter { it.providerId == TRPCore.provider.id }
             ?.flatMap { it.products ?: emptyList() }
             ?: emptyList()
         _products.value = allProducts

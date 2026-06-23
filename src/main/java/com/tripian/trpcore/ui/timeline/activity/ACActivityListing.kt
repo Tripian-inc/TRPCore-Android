@@ -210,8 +210,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
             onAddClicked = { activity -> viewModel.onActivityAddClicked(activity) },
             onItemClicked = { activity ->
-                // Notify host app that user tapped on an activity to see details
-                val activityId = activity.productId ?: activity.id ?: return@AdapterActivityListing
+                // Notify host app that user tapped on an activity to see details.
+                // Which identifier the host's detail endpoint expects is a per-host
+                // policy (see HostStrategy.activityDetailId).
+                val activityId = TRPCore.host.activityDetailId(activity)
+                if (activityId.isEmpty()) return@AdapterActivityListing
                 TRPCore.notifyActivityDetailRequested(activityId)
             }
         )

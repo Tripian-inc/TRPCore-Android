@@ -5,6 +5,7 @@ import com.tripian.trpcore.di.modules.timeline.TimelineModule
 import com.tripian.trpcore.di.modules.timeline.TimelineScope
 import com.tripian.trpcore.ui.common.ACWebPage
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
+import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
 import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
@@ -29,6 +30,9 @@ abstract class ViewPages {
 
     @ContributesAndroidInjector
     abstract fun bindACWebPage(): ACWebPage
+
+    @ContributesAndroidInjector
+    abstract fun bindACSplash(): ACSplash
 
     /**
      * ONBOARDING

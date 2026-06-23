@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
@@ -85,15 +84,7 @@ class StepPoiVH(
         binding.tvTitle.text = poi?.name ?: ""
 
         // Image - 80x80, 4dp corner radius
-        poi?.image?.url?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url)
 
         // Rating Row - DISABLED: Rating/review views disabled
         binding.llRating.visibility = View.GONE

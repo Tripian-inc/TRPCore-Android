@@ -16,7 +16,7 @@ data class SegmentActivityItem(
     val description: String? = null,        // Description
     val startDatetime: String? = null,      // "yyyy-MM-dd HH:mm"
     val endDatetime: String? = null,        // "yyyy-MM-dd HH:mm"
-    val coordinate: ItineraryCoordinate,    // Location
+    val coordinate: ItineraryCoordinate? = null, // Location; null → "no exact location"
     val cancellation: String? = null,       // Cancellation policy
     val adultCount: Int = 1,                // Number of adults
     val childCount: Int = 0,                // Number of children

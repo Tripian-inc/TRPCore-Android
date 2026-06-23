@@ -20,6 +20,7 @@ import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.sdk.TRPCoreSDKListener
+import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
 import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
@@ -53,6 +54,25 @@ class TRPCore {
         const val EXTRA_CAN_BACK = "extra_can_back"
         const val EXTRA_APP_LANGUAGE = "extra_app_language"
         const val EXTRA_APP_CURRENCY = "extra_app_currency"
+
+        /**
+         * Active tour-api content provider — the single source of truth for all
+         * tour-api operations. Defaults to [TripianProvider.CIVITATIS]; a host app
+         * overrides it (e.g. Nexus sets [TripianProvider.NEXUS]). Read the numeric
+         * id via `TRPCore.provider.id`.
+         */
+        @JvmStatic
+        var provider: TripianProvider = TripianProvider.CIVITATIS
+
+        /**
+         * Per-host integration policy (Strategy pattern). The default is the
+         * original SDK behavior (Civitatis); a host installs its own subclass
+         * (e.g. [com.tripian.trpcore.base.host.NexusHostStrategy]) to customize
+         * the SDK's extension points without adding host `if` branches anywhere.
+         */
+        @JvmStatic
+        var host: com.tripian.trpcore.base.host.HostStrategy =
+            com.tripian.trpcore.base.host.HostStrategy()
 
         // SDK Listener - For host app callbacks
         private var listener: TRPCoreSDKListener? = null
@@ -109,6 +129,44 @@ class TRPCore {
 
             // Notify host app that SDK is dismissed
             listener?.onSDKDismissed()
+        }
+
+        /**
+         * Starts the SDK from a host app with the user's reservations.
+         *
+         * The host passes the raw reservation payload; the SDK resolves the
+         * destinations, performs the light login and builds/reuses the timeline
+         * internally. The host does not need to know about the SDK's internal
+         * entry Activity.
+         *
+         * @param reservations JSON array string (each item: TripService + detailURL)
+         */
+        @JvmStatic
+        @JvmOverloads
+        fun startWithReservations(
+            context: Context,
+            reservations: String,
+            name: String? = null,
+            lastName: String? = null,
+            uniqueId: String? = null,
+            language: String = "en",
+            currency: String = "EUR"
+        ) {
+            val intent = Intent(context, ACSplash::class.java).apply {
+                // Always start the SDK in its OWN task (ACSplash/ACTimeline carry a
+                // distinct taskAffinity). This keeps the SDK alive in the background
+                // when the host comes to the front for a detail screen, so the host
+                // can bring it back exactly where the user left off (moveTaskToFront)
+                // instead of the host's singleTask launch clearing it.
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra("reservations", reservations)
+                putExtra("name", name)
+                putExtra("lastName", lastName)
+                putExtra("uniqueId", uniqueId)
+                putExtra("language", language)
+                putExtra("currency", currency)
+            }
+            context.startActivity(intent)
         }
 
         /**

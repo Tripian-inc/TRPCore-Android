@@ -60,9 +60,11 @@ class SyncReservedToBookedUseCase @Inject constructor(
                 this.startDate = tripItem.startDatetime
                 this.endDate = tripItem.endDatetime
                 this.cityId = if (cityId > 0) cityId else null
-                this.coordinate = Coordinate().apply {
-                    lat = tripItem.coordinate.lat
-                    lng = tripItem.coordinate.lng
+                this.coordinate = tripItem.coordinate?.let {
+                    Coordinate().apply {
+                        lat = it.lat
+                        lng = it.lng
+                    }
                 }
                 this.available = false
                 this.distinctPlan = true
@@ -75,6 +77,7 @@ class SyncReservedToBookedUseCase @Inject constructor(
                     this.bookingId = tripItem.bookingId
                     this.price = tripItem.price?.value
                     this.coordinate = this@apply.coordinate
+                    this.isNoLocation = (tripItem.coordinate == null)
                 }
             }
 
