@@ -234,6 +234,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     private fun rebuildCategoryAdapter() {
+        // Host policy: hide the category filter strip entirely when unsupported.
+        if (!com.tripian.trpcore.base.TRPCore.host.showsActivityCategories()) {
+            binding.rvCategories.visibility = View.GONE
+            return
+        }
         val items = viewModel.getFacetCategoryItems()
         categoryAdapter = AdapterActivityCategory(
             categories = items,

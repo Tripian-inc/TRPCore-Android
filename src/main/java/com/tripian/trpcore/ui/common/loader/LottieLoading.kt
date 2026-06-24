@@ -3,6 +3,7 @@ package com.tripian.trpcore.ui.common.loader
 import android.app.Dialog
 import android.content.Context
 import android.content.ContextWrapper
+import android.graphics.ColorFilter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -10,8 +11,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
+import com.airbnb.lottie.LottieAnimationView
+import com.airbnb.lottie.LottieProperty
+import com.airbnb.lottie.SimpleColorFilter
+import com.airbnb.lottie.model.KeyPath
+import com.airbnb.lottie.value.LottieValueCallback
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -138,6 +145,7 @@ object LottieLoading {
         overlay.isClickable = true
         overlay.isFocusable = true
         overlay.elevation = OVERLAY_ELEVATION_DP * host.resources.displayMetrics.density
+        tintLoader(overlay)
         activity?.let { applyText(it, overlay, text) }
         host.addView(overlay)
     }
@@ -153,6 +161,17 @@ object LottieLoading {
         is FragmentActivity -> this
         is ContextWrapper -> baseContext.findFragmentActivity()
         else -> null
+    }
+
+    /** Recolor the loader animation to the primary brand color. */
+    internal fun tintLoader(root: View) {
+        val lottie = root.findViewById<LottieAnimationView>(R.id.lottieView) ?: return
+        val color = ContextCompat.getColor(root.context, R.color.trp_primary)
+        lottie.addValueCallback(
+            KeyPath("**"),
+            LottieProperty.COLOR_FILTER,
+            LottieValueCallback<ColorFilter>(SimpleColorFilter(color))
+        )
     }
 
     // ------------------------------------------------------------------
@@ -173,6 +192,7 @@ object LottieLoading {
         overlay.isClickable = true
         overlay.isFocusable = true
         overlay.elevation = OVERLAY_ELEVATION_DP * activity.resources.displayMetrics.density
+        tintLoader(overlay)
         applyText(activity, overlay, text)
         content.addView(overlay)
     }
@@ -274,6 +294,7 @@ class LottieBottomSheetDialog : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        LottieLoading.tintLoader(binding.root)
         val text = arguments?.getString(ARG_TEXT).orEmpty()
         if (text.isBlank()) {
             binding.tvLoadingText.visibility = View.GONE

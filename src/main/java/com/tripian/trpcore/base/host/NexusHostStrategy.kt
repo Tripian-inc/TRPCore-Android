@@ -21,18 +21,24 @@ import com.tripian.trpcore.util.Preferences
 class NexusHostStrategy : HostStrategy() {
 
     /**
-     * Nexus /get-product keys on "{TYPE}|{id}" (e.g. "TKT|9148"), while the
-     * tour-api productId is "{id}<U+00AC>{TYPE}" (e.g. "9148<U+00AC>TKT", where
-     * U+00AC is the NOT SIGN separator). Convert by splitting on that separator
-     * and swapping the halves around a '|'. Falls back to the raw productId if it
-     * isn't in the expected two-part shape.
+     * Nexus /get-product keys on "{TYPE}|{id}" (e.g. "TKT|9148"), while tour-api
+     * ids are "{id}<U+00AC>{TYPE}" (e.g. "9148<U+00AC>TKT", U+00AC = NOT SIGN) —
+     * this is what both activity-listing products AND tapped timeline segments/
+     * steps carry (additionalData.activityId / poi.additionalData.productId).
+     * Convert by swapping the two halves around a '|'. Idempotent: ids already in
+     * the host form (no separator) or not in the "{digits}¬{TYPE}" shape pass
+     * through unchanged.
      */
-    override fun activityDetailId(product: TourProduct): String {
-        val parts = product.productId.split(PRODUCT_ID_SEPARATOR)
-        return if (parts.size == 2 && parts[0].isNotEmpty() && parts[1].isNotEmpty()) {
+    override fun activityDetailIdFromRaw(rawId: String): String {
+        if (!rawId.contains(PRODUCT_ID_SEPARATOR)) return rawId
+        val parts = rawId.split(PRODUCT_ID_SEPARATOR)
+        return if (parts.size == 2 &&
+            parts[0].isNotEmpty() && parts[0].all { it.isDigit() } &&
+            parts[1].isNotEmpty()
+        ) {
             "${parts[1]}|${parts[0]}"
         } else {
-            product.productId
+            rawId
         }
     }
 
@@ -107,4 +113,16 @@ class NexusHostStrategy : HostStrategy() {
 
     /** Reservations that move out of the stored range → delete + recreate. */
     override fun recreatesTimelineOnDateMismatch(timeline: Timeline): Boolean = true
+
+    /** No reservations → let the user pick a city + dates and create a timeline. */
+    override fun createsTimelineFromScratchOnEmpty(): Boolean = true
+
+    /** Nexus has its own onboarding; don't show the SDK's. */
+    override fun showsOnboarding(): Boolean = false
+
+    /** Hide the activity-listing category strip for now. */
+    override fun showsActivityCategories(): Boolean = false
+
+    /** Skip the schedule-bulk availability sweep for now. */
+    override fun runsAvailabilitySweep(): Boolean = false
 }

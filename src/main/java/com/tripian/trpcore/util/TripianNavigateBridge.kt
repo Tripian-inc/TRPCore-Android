@@ -36,9 +36,9 @@ object TripianNavigateBridge {
     // (useTripianActivity payload.type). Keep them in sync with the web handlers:
     //   "product"      → MainLayout → /product-detail/:productId
     //   "availability" → MainLayout → /availability?product=…&date=…
-    //   "bookingDetail" → TripsList → reservation detail (modal / detail URL by Locator)
+    //   "booking"      → MainLayout → My Trips, opened by Locator (modal / detail URL)
     const val TYPE_ACTIVITY_DETAIL = "product"
-    const val TYPE_BOOKING_DETAIL = "bookingDetail"
+    const val TYPE_BOOKING_DETAIL = "booking"
     const val TYPE_ACTIVITY_RESERVATION = "availability"
 
     /** Task id of the running SDK activity, for returnToSdk-style host actions. */

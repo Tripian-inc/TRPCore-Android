@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Range start: 36dp-tall band (4dp top/bottom inset) with fully rounded LEFT
+     end (radius = half the height = 18dp), square right for continuity. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetTop="4dp"
+    android:insetBottom="4dp">
+    <shape android:shape="rectangle">
+        <solid android:color="@color/trp_date_range_bg" />
+        <corners
+            android:topLeftRadius="18dp"
+            android:bottomLeftRadius="18dp"
+            android:topRightRadius="0dp"
+            android:bottomRightRadius="0dp" />
+    </shape>
+</inset>

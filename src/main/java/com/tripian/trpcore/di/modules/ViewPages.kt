@@ -4,6 +4,8 @@ import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.di.modules.timeline.TimelineModule
 import com.tripian.trpcore.di.modules.timeline.TimelineScope
 import com.tripian.trpcore.ui.common.ACWebPage
+import com.tripian.trpcore.ui.createtrip.ACCitySelection
+import com.tripian.trpcore.ui.createtrip.ACDateSelection
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
@@ -33,6 +35,15 @@ abstract class ViewPages {
 
     @ContributesAndroidInjector
     abstract fun bindACSplash(): ACSplash
+
+    /**
+     * CREATE TRIP (no-reservations flow)
+     */
+    @ContributesAndroidInjector
+    abstract fun bindACCitySelection(): ACCitySelection
+
+    @ContributesAndroidInjector
+    abstract fun bindACDateSelection(): ACDateSelection
 
     /**
      * ONBOARDING

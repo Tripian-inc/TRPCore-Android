@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Primary Colors -->
-    <color name="trp_primary">#EA0558</color>
+    <color name="trp_primary">#ff621d</color>
+    <!-- Light tone of trp_primary (#ff621d @ ~12% alpha) for the calendar date-range band -->
+    <color name="trp_date_range_bg">#1FFF621D</color>
     <color name="trp_secondary">#FF7171</color>
     <color name="trp_gold">#FFAA02</color>
     <color name="trp_gold_transparent">#AAFFAA02</color>
@@ -58,7 +60,7 @@
 
     <color name="trp_yellow">#ffd600</color>
 
-    <color name="trp_colorPrimary">#EA0558</color>
+    <color name="trp_colorPrimary">@color/trp_primary</color>
     <color name="trp_colorPrimaryDark">#212121</color>
     <color name="trp_colorAccent">@color/trp_black_soft</color>
 
@@ -76,7 +78,7 @@
     <color name="trp_text_dark_80">#CC242323</color>
 
     <!-- Timeline Colors - Design Specs -->
-    <color name="trp_timeline_primary">#EA0558</color>
+    <color name="trp_timeline_primary">@color/trp_primary</color>
     <color name="trp_timeline_secondary">#FF7A8F</color>
     <color name="trp_timeline_background">#F8F9FA</color>
     <color name="trp_timeline_surface">#FFFFFF</color>
@@ -91,7 +93,7 @@
     <color name="trp_timeline_card_shadow">#1A000000</color>
     <color name="trp_timeline_badge_confirmed">#10B981</color>
     <color name="trp_timeline_badge_pending">#F59E0B</color>
-    <color name="trp_timeline_fab_color">#EA0558</color>
+    <color name="trp_timeline_fab_color">@color/trp_primary</color>
     <!-- Legacy color mappings for compatibility -->
     <color name="trp_timeline_title_color">@color/trp_text_primary</color>
     <color name="trp_timeline_subtitle_color">@color/trp_timeline_text_secondary</color>
@@ -126,7 +128,7 @@
     <color name="trp_btn_continue_bg_disabled">#CCCCCC</color>
     <color name="trp_neutral500">#9E9E9E</color>
     <color name="trp_addplan_category_selected_bg">#FFEAF1</color>
-    <color name="trp_addplan_category_selected_border">#EA0558</color>
+    <color name="trp_addplan_category_selected_border">@color/trp_primary</color>
     <color name="trp_bgDisabled">#CCCCCC</color>
     <color name="trp_borderActive">#8C8C8C</color>
 

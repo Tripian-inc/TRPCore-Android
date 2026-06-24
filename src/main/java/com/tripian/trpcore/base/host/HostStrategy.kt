@@ -44,12 +44,22 @@ open class HostStrategy {
     ): Boolean = false
 
     /**
+     * Transform a raw activity identifier (from a tapped timeline segment / step,
+     * or an activity-listing product) into the id the host's detail screen expects.
+     * Default: identity. A host whose detail endpoint keys on a different format
+     * overrides this. MUST be idempotent — it is applied centrally in
+     * [com.tripian.trpcore.base.TRPCore.notifyActivityDetailRequested], and some
+     * call sites (e.g. activity listing) may pass an already-transformed id.
+     */
+    open fun activityDetailIdFromRaw(rawId: String): String = rawId
+
+    /**
      * The product identifier to hand the host when an activity is tapped for its
-     * detail. Default: the bare productId (original SDK behavior). A host whose
-     * detail endpoint keys on a different identifier overrides this.
+     * detail. Delegates to [activityDetailIdFromRaw] so listing taps and timeline
+     * segment/step taps share one transformation.
      */
     open fun activityDetailId(product: TourProduct): String =
-        product.productId.ifEmpty { product.id }
+        activityDetailIdFromRaw(product.productId.ifEmpty { product.id })
 
     /**
      * Drawable used for an activity image when there is no source URL or it fails
@@ -103,4 +113,30 @@ open class HostStrategy {
      * not overlap the new itinerary. Default: false → keep the existing timeline.
      */
     open fun recreatesTimelineOnDateMismatch(timeline: Timeline): Boolean = false
+
+    /**
+     * Whether to show the native "create trip from scratch" city/date picker when
+     * the host opens the SDK with no reservations. Default: false → the SDK keeps
+     * its original behavior (error + dismiss). A host that supports manual trip
+     * creation overrides this to true.
+     */
+    open fun createsTimelineFromScratchOnEmpty(): Boolean = false
+
+    /**
+     * Whether the SDK shows its onboarding bottom sheet on the timeline. Default:
+     * true. A host that has its own onboarding (or wants none) overrides to false.
+     */
+    open fun showsOnboarding(): Boolean = true
+
+    /**
+     * Whether the activity-listing screen shows the category filter strip.
+     * Default: true. A host can hide it (e.g. while categories are unsupported).
+     */
+    open fun showsActivityCategories(): Boolean = true
+
+    /**
+     * Whether the post-load availability sweep (`tour-api/schedule-bulk`) runs.
+     * Default: true. A host can disable it to avoid the batch availability call.
+     */
+    open fun runsAvailabilitySweep(): Boolean = true
 }

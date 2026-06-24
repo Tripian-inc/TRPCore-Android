@@ -192,7 +192,9 @@ class TRPCore {
          * Triggers activity detail request callback
          */
         internal fun notifyActivityDetailRequested(activityId: String) {
-            listener?.onRequestActivityDetail(activityId)
+            // Host policy: transform the raw activity id (tapped segment/step or
+            // listing product) into the host detail-screen id. Idempotent.
+            listener?.onRequestActivityDetail(host.activityDetailIdFromRaw(activityId))
         }
 
         /**
@@ -209,7 +211,9 @@ class TRPCore {
          * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
          */
         internal fun notifyActivityReservationRequested(activityId: String, date: String? = null) {
-            listener?.onRequestActivityReservation(activityId, date)
+            // Same host id transformation as activity detail (the reserve flow
+            // opens the host availability/detail screen by product id).
+            listener?.onRequestActivityReservation(host.activityDetailIdFromRaw(activityId), date)
         }
 
         /**

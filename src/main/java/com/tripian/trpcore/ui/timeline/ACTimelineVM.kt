@@ -1182,6 +1182,8 @@ class ACTimelineVM @Inject constructor(
     }
 
     private fun triggerAvailabilitySweep(timeline: Timeline) {
+        // Host policy: a host can disable the schedule-bulk availability sweep.
+        if (!TRPCore.host.runsAvailabilitySweep()) return
         val selectedIdx = _selectedDayIndex.value ?: 0
         val selectedDate = _availableDays.value?.getOrNull(selectedIdx)
         val currency = TRPCore.core.appConfig.appCurrency
@@ -2538,6 +2540,8 @@ class ACTimelineVM @Inject constructor(
      */
     fun shouldShowOnboarding(): Boolean {
         if (onboardingCompleted) return false
+        // Host policy: a host with its own onboarding suppresses the SDK's.
+        if (!TRPCore.host.showsOnboarding()) return false
 
         val dismissed = preferences.getBoolean(Preferences.Keys.ONBOARDING_DISMISSED_PERMANENTLY, false)
         val hasSeen = preferences.getBoolean(Preferences.Keys.ONBOARDING_HAS_SEEN, false)

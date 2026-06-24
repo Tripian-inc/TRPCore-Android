@@ -114,6 +114,13 @@ object LanguageConst {
     const val DESTINATION_PLACEHOLDER = "trips.createNewTrip.form.destination.city.placeholder"
     const val SELECT_DATES = "trips.createNewTrip.form.destination.dates"
     const val SELECT_HOURS = "trips.createNewTrip.form.destination.hours"
+
+    // Create-trip-from-scratch flow (city + date selection)
+    const val CREATE_TRIP_NEXT = "trips.myTrips.localExperiences.tourDetails.next"
+    const val CREATE_TRIP_EDIT = "trips.myTrips.localExperiences.tourDetails.edit"
+    const val POPULAR_CITIES = "cityInfo.popularCities"
+    const val EXPERIENCE_DESTINATIONS = "trips.myTrips.localExperiences.tourDetails.experience.destinations"
+    const val DESTINATION_SEARCH_NO_RESULTS = "destination.search.noResults"
     const val ARRIVAL = "arrival"
     const val DEPARTURE = "departure"
     const val ADD_COMPANION = "add_companion"

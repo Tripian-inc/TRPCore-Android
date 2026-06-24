@@ -10,5 +10,5 @@
     <!-- Red badge circle (top right) -->
     <path
         android:pathData="M14.5,3m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
-        android:fillColor="#EA0558"/>
+        android:fillColor="@color/trp_primary"/>
 </vector>

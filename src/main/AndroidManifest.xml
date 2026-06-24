@@ -30,6 +30,20 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
+            android:name="com.tripian.trpcore.ui.createtrip.ACCitySelection"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.tripian.trpcore.sdk"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name="com.tripian.trpcore.ui.createtrip.ACDateSelection"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.tripian.trpcore.sdk"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name="com.tripian.trpcore.ui.timeline.poi.ACPOISelection"
             android:exported="false"
             android:screenOrientation="portrait"

@@ -78,7 +78,15 @@ class TimelineDisplayItemBuilder @Inject constructor(
             if (index in hiddenSegmentIndices) return@forEachIndexed
 
             val segmentType = segment.segmentType
-            val plan = timeline.plans?.getOrNull(index)
+            // Match the plan by the segment's dayIds (plan.id == dayIds joined by
+            // "-"), NOT by list index: `plans` has no entry for segments without a
+            // plan (e.g. host-inserted booked activities with empty dayIds), so an
+            // index-based lookup misaligns and gives recommendation/itinerary
+            // segments the wrong (often empty) plan.
+            val plan = segment.dayIds
+                ?.takeIf { it.isNotEmpty() }
+                ?.joinToString("-")
+                ?.let { key -> timeline.plans?.firstOrNull { it.id == key } }
             val planId = plan?.id
 
             when (segmentType) {

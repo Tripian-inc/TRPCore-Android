@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Middle of a date range. Inset top/bottom by 4dp so the band is 36dp tall
+     (same as the day circle); square sides for a continuous strip. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetTop="4dp"
+    android:insetBottom="4dp">
+    <shape android:shape="rectangle">
+        <solid android:color="@color/trp_date_range_bg" />
+    </shape>
+</inset>

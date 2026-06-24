@@ -51,6 +51,13 @@ class ACSplashVM @Inject constructor(
     /** Emitted once the itinerary is built; the Activity calls startWithItinerary. */
     val onItineraryReady = SingleLiveEvent<ItineraryWithActivities>()
 
+    /**
+     * Emitted when there are no reservations and the host allows creating a trip
+     * from scratch ([com.tripian.trpcore.base.host.HostStrategy.createsTimelineFromScratchOnEmpty]);
+     * the Activity opens the native city-selection flow.
+     */
+    val onShowCreateTrip = SingleLiveEvent<Unit>()
+
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
         showFullScreenLoaderNoText()
@@ -71,6 +78,11 @@ class ACSplashVM @Inject constructor(
             }.onSuccess { itinerary ->
                 if (itinerary != null) {
                     onItineraryReady.value = itinerary
+                } else if (TRPCore.host.createsTimelineFromScratchOnEmpty()) {
+                    // No reservations → host policy: open the create-trip flow.
+                    // Light login already ran above.
+                    hideLottieLoading()
+                    onShowCreateTrip.call()
                 } else {
                     fail("No resolvable destination in reservations")
                 }
