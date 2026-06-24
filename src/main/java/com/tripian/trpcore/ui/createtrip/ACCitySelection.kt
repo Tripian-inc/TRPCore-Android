@@ -52,7 +52,7 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
         binding.rvCities.layoutManager = LinearLayoutManager(this)
         binding.rvCities.adapter = adapter
 
-        binding.ivBack.setOnClickListener { TRPCore.closeSDK() }
+        binding.ivBack.setOnClickListener { goBack() }
 
         binding.etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -95,7 +95,24 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
     }
 
     override fun backPressed() {
-        TRPCore.closeSDK()
+        goBack()
+    }
+
+    /**
+     * When this is the task root (reached straight from ACSplash with no
+     * reservations) back closes the SDK; when launched from [ACMyTrips] it sits
+     * on top, so back just returns to the My Trips list.
+     */
+    private fun goBack() {
+        if (isTaskRoot) TRPCore.closeSDK() else finish()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        // The date step reports a created timeline; finish so back from
+        // ACTimeline returns to whatever sat beneath this (My Trips / nothing),
+        // not the now-stale city picker.
+        if (requestCode == REQ_CREATE_TIMELINE && resultCode == RESULT_OK) finish()
     }
 
     private fun renderPopular(popular: List<City>) {
@@ -139,7 +156,7 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
     }
 
     private fun openDateStep(city: City) {
-        startActivity(
+        startActivityForResult(
             ACDateSelection.newIntent(
                 context = this,
                 city = city,
@@ -147,7 +164,8 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
                 currency = intent.getStringExtra("currency") ?: "EUR",
                 uniqueId = intent.getStringExtra("uniqueId"),
                 canBack = intent.getBooleanExtra("canBack", true)
-            )
+            ),
+            REQ_CREATE_TIMELINE
         )
     }
 
@@ -157,6 +175,13 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
     }
 
     companion object {
+        private const val REQ_CREATE_TIMELINE = 4101
+
+        /**
+         * No FLAG_ACTIVITY_NEW_TASK here: launched from [ACMyTrips] it must stack
+         * in the same task (back → My Trips). The splash path adds NEW_TASK at the
+         * call site so this becomes the task root (back → close SDK).
+         */
         fun newIntent(
             context: Context,
             language: String,
@@ -164,7 +189,6 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
             uniqueId: String?,
             canBack: Boolean
         ): Intent = Intent(context, ACCitySelection::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra("language", language)
             putExtra("currency", currency)
             putExtra("uniqueId", uniqueId)

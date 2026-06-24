@@ -64,31 +64,38 @@ class MapItemMapper @Inject constructor() {
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
-                        step.poi?.let { poi ->
-                            poi.coordinate?.let { coord ->
-                                if (coord.lat != 0.0 && coord.lng != 0.0) {
-                                    mapSteps.add(
-                                        MapStep().apply {
-                                            group = "step"
-                                            poiId = poi.id ?: ""
-                                            name = poi.name ?: ""
-                                            coordinate = Coordinate().apply {
-                                                lat = coord.lat
-                                                lng = coord.lng
-                                            }
-                                            markerIcon = -1
-                                            this.position = nextPosition()
-                                            isOffer = false
-                                            this.cityIndex = currentCityIndex; this.cityId = item.city?.id
-                                        }
-                                    )
+                        // Every step consumes a position so the marker number stays
+                        // in lockstep with the bottom list. A coordinate-less step
+                        // keeps its number (no marker drawn) so the NEXT located
+                        // step is numbered correctly — e.g. step 1 unlocated → the
+                        // first marker on the map shows 2.
+                        val pos = nextPosition()
+                        val poi = step.poi
+                        val coord = poi?.coordinate
+                        if (poi != null && coord != null && coord.lat != 0.0 && coord.lng != 0.0) {
+                            mapSteps.add(
+                                MapStep().apply {
+                                    group = "step"
+                                    poiId = poi.id ?: ""
+                                    name = poi.name ?: ""
+                                    coordinate = Coordinate().apply {
+                                        lat = coord.lat
+                                        lng = coord.lng
+                                    }
+                                    markerIcon = -1
+                                    this.position = pos
+                                    isOffer = false
+                                    this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                 }
-                            }
+                            )
                         }
                     }
                 }
 
                 is TimelineDisplayItem.BookedActivity -> {
+                    // Consume a position even when unlocated (it is one numbered
+                    // item in the bottom list); only draw a marker when located.
+                    val pos = nextPosition()
                     if (!item.isNoLocation) {
                         val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
                         coord?.let {
@@ -104,7 +111,7 @@ class MapItemMapper @Inject constructor() {
                                             lng = it.lng
                                         }
                                         markerIcon = -1
-                                        this.position = nextPosition()
+                                        this.position = pos
                                         isOffer = false
                                         this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                                     }
@@ -141,26 +148,27 @@ class MapItemMapper @Inject constructor() {
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
-                    item.step.poi?.let { poi ->
-                        poi.coordinate?.let { coord ->
-                            if (coord.lat != 0.0 && coord.lng != 0.0) {
-                                mapSteps.add(
-                                    MapStep().apply {
-                                        group = "manual"
-                                        poiId = poi.id ?: ""
-                                        name = poi.name ?: ""
-                                        coordinate = Coordinate().apply {
-                                            lat = coord.lat
-                                            lng = coord.lng
-                                        }
-                                        markerIcon = -1
-                                        this.position = nextPosition()
-                                        isOffer = false
-                                        this.cityIndex = currentCityIndex; this.cityId = item.city?.id
-                                    }
-                                )
+                    // Consume a position regardless of coordinate (it is numbered
+                    // in the bottom list); only draw a marker when located.
+                    val pos = nextPosition()
+                    val poi = item.step.poi
+                    val coord = poi?.coordinate
+                    if (poi != null && coord != null && coord.lat != 0.0 && coord.lng != 0.0) {
+                        mapSteps.add(
+                            MapStep().apply {
+                                group = "manual"
+                                poiId = poi.id ?: ""
+                                name = poi.name ?: ""
+                                coordinate = Coordinate().apply {
+                                    lat = coord.lat
+                                    lng = coord.lng
+                                }
+                                markerIcon = -1
+                                this.position = pos
+                                isOffer = false
+                                this.cityIndex = currentCityIndex; this.cityId = item.city?.id
                             }
-                        }
+                        )
                     }
                 }
 

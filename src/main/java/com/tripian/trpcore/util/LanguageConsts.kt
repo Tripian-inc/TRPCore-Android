@@ -483,4 +483,7 @@ object LanguageConst {
     const val ADD_PLAN_ERROR_INVALID_TIME_FORMAT = "addPlan.error.invalidTimeFormat"
     const val ADD_PLAN_ERROR_NO_DATE_SELECTED = "addPlan.error.noDateSelected"
 
+    /** "My Trips" — title of the existing-timelines list shown on empty open. */
+    const val MY_PLANS = "my_plans"
+
 }

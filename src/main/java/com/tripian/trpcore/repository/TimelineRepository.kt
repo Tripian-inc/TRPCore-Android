@@ -34,6 +34,11 @@ class TimelineRepository @Inject constructor(
     @Volatile
     private var pendingTimelineHash: String? = null
 
+    // Not-past user timelines fetched by ACSplashVM on the empty-reservations
+    // path, so ACMyTrips can paint instantly before its own refresh completes.
+    @Volatile
+    var cachedUserTimelines: List<Timeline>? = null
+
     /** Stores [timeline] so the timeline screen can consume it without a GET. */
     fun cacheGeneratedTimeline(tripHash: String, timeline: Timeline) {
         pendingTimelineHash = tripHash

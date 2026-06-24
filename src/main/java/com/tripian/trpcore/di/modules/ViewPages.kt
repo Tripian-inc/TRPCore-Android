@@ -6,6 +6,7 @@ import com.tripian.trpcore.di.modules.timeline.TimelineScope
 import com.tripian.trpcore.ui.common.ACWebPage
 import com.tripian.trpcore.ui.createtrip.ACCitySelection
 import com.tripian.trpcore.ui.createtrip.ACDateSelection
+import com.tripian.trpcore.ui.createtrip.ACMyTrips
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.splash.ACSplash
 import com.tripian.trpcore.ui.timeline.ACTimeline
@@ -44,6 +45,9 @@ abstract class ViewPages {
 
     @ContributesAndroidInjector
     abstract fun bindACDateSelection(): ACDateSelection
+
+    @ContributesAndroidInjector
+    abstract fun bindACMyTrips(): ACMyTrips
 
     /**
      * ONBOARDING

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardTrip"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="16dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/trp_white"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <!-- Cover image -->
+        <ImageView
+            android:id="@+id/ivCover"
+            android:layout_width="0dp"
+            android:layout_height="180dp"
+            android:scaleType="centerCrop"
+            android:background="@color/trp_timeline_background"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Bottom scrim for legibility -->
+        <View
+            android:id="@+id/vScrim"
+            android:layout_width="0dp"
+            android:layout_height="96dp"
+            android:background="@drawable/trp_bg_card_scrim"
+            app:layout_constraintStart_toStartOf="@id/ivCover"
+            app:layout_constraintEnd_toEndOf="@id/ivCover"
+            app:layout_constraintBottom_toBottomOf="@id/ivCover" />
+
+        <!-- "X days until your trip" pill (shown only for future trips) -->
+        <TextView
+            android:id="@+id/tvDaysUntil"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="12dp"
+            android:background="@drawable/trp_bg_days_until_pill"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="5dp"
+            android:drawableStart="@drawable/trp_ic_clock_timeline"
+            android:drawableTint="@color/trp_white"
+            android:drawablePadding="5dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/trp_white"
+            android:textSize="12sp"
+            android:fontFamily="@font/semibold"
+            android:visibility="gone"
+            tools:text="13 days until your trip"
+            tools:visibility="visible"
+            app:layout_constraintStart_toStartOf="@id/ivCover"
+            app:layout_constraintTop_toTopOf="@id/ivCover" />
+
+        <!-- Title = city name(s) -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:textColor="@color/trp_white"
+            android:textSize="18sp"
+            android:fontFamily="@font/bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Aalborg, Aarhus"
+            app:layout_constraintStart_toStartOf="@id/ivCover"
+            app:layout_constraintEnd_toEndOf="@id/ivCover"
+            app:layout_constraintBottom_toTopOf="@id/tvSubtitle" />
+
+        <!-- Subtitle = country -->
+        <TextView
+            android:id="@+id/tvSubtitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="12dp"
+            android:drawableStart="@drawable/trp_ic_location_pin"
+            android:drawableTint="@color/trp_white"
+            android:drawablePadding="5dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/trp_white"
+            android:textSize="13sp"
+            android:fontFamily="@font/regular"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="Denmark"
+            app:layout_constraintStart_toStartOf="@id/ivCover"
+            app:layout_constraintEnd_toEndOf="@id/ivCover"
+            app:layout_constraintBottom_toBottomOf="@id/ivCover" />
+
+        <!-- Date range (white footer) -->
+        <TextView
+            android:id="@+id/tvDates"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:paddingVertical="8dp"
+            android:drawableStart="@drawable/trp_ic_calendar"
+            android:drawableTint="@color/trp_text_primary"
+            android:drawablePadding="6dp"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="12sp"
+            android:fontFamily="@font/semibold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="03/19/2026 - 03/21/2026"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivCover" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

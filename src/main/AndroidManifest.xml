@@ -30,6 +30,12 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
+            android:name="com.tripian.trpcore.ui.createtrip.ACMyTrips"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:taskAffinity="com.tripian.trpcore.sdk" />
+
+        <activity
             android:name="com.tripian.trpcore.ui.createtrip.ACCitySelection"
             android:exported="false"
             android:screenOrientation="portrait"

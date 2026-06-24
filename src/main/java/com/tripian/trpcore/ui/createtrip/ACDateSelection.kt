@@ -55,7 +55,13 @@ class ACDateSelection : BaseActivity<ActivityDateSelectionBinding, ACDateSelecti
 
     override fun setReceivers() {
         observe(viewModel.onBuildItinerary) { itinerary ->
-            itinerary?.let { startTimeline(it) }
+            itinerary?.let {
+                // Signal ACCitySelection (our parent in the create chain) that a
+                // timeline was created so it finishes too — back from ACTimeline
+                // then lands on My Trips (or the host), not the create screens.
+                setResult(RESULT_OK)
+                startTimeline(it)
+            }
             finish()
         }
     }

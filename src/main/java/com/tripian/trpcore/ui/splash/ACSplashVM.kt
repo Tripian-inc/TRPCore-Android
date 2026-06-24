@@ -13,7 +13,9 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem
 import com.tripian.trpcore.domain.model.itinerary.SegmentActivityPrice
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
 import com.tripian.trpcore.domain.usecase.timeline.LookupTourProductUseCase
+import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.ui.createtrip.TripDisplay
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.repository.experience.ExperienceRepository
 import com.tripian.trpcore.util.Preferences
@@ -44,6 +46,7 @@ import javax.inject.Inject
 class ACSplashVM @Inject constructor(
     private val doLightLogin: DoLightLogin,
     private val tripRepository: TripRepository,
+    private val timelineRepository: TimelineRepository,
     private val lookupTourProductUseCase: LookupTourProductUseCase,
     private val preferences: Preferences
 ) : BaseViewModel() {
@@ -57,6 +60,12 @@ class ACSplashVM @Inject constructor(
      * the Activity opens the native city-selection flow.
      */
     val onShowCreateTrip = SingleLiveEvent<Unit>()
+
+    /**
+     * Emitted (instead of [onShowCreateTrip]) when the user already has at least
+     * one not-past timeline; the Activity opens the native "My Trips" list.
+     */
+    val onShowMyTrips = SingleLiveEvent<Unit>()
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
@@ -79,10 +88,20 @@ class ACSplashVM @Inject constructor(
                 if (itinerary != null) {
                     onItineraryReady.value = itinerary
                 } else if (TRPCore.host.createsTimelineFromScratchOnEmpty()) {
-                    // No reservations → host policy: open the create-trip flow.
-                    // Light login already ran above.
+                    // No reservations → host policy: show the user's existing
+                    // not-past timelines if any, otherwise the create-trip flow.
+                    // Light login already ran above. A fetch failure falls back
+                    // to create (never errors the SDK).
+                    val notPast = runCatching {
+                        TripDisplay.notPast(timelineRepository.getUserTimelinesAsync())
+                    }.getOrDefault(emptyList())
                     hideLottieLoading()
-                    onShowCreateTrip.call()
+                    if (notPast.isNotEmpty()) {
+                        timelineRepository.cachedUserTimelines = notPast
+                        onShowMyTrips.call()
+                    } else {
+                        onShowCreateTrip.call()
+                    }
                 } else {
                     fail("No resolvable destination in reservations")
                 }
@@ -118,12 +137,20 @@ class ACSplashVM @Inject constructor(
         val endDates = mutableListOf<String>()
 
         reservations.forEach { r ->
+            val uri = r.detailURL?.let { raw -> runCatching { Uri.parse(raw) }.getOrNull() }
+            val startDate = uri?.getQueryParameter("startDate")
+            val endDate = uri?.getQueryParameter("endDate")
+            // Trip range: every reservation contributes its window so the timeline
+            // spans the EARLIEST start … LATEST end. endDate may be missing → fall
+            // back to this reservation's own start, then its service date, so the
+            // range always extends to the latest reservation's end.
+            val serviceDate = r.date?.takeIf { it.length >= 10 }?.take(10)
+            (startDate ?: serviceDate)?.let { startDates.add(it) }
+            (endDate ?: startDate ?: serviceDate)?.let { endDates.add(it) }
+
+            // The destination/activity build below needs a parseable detailURL.
+            if (uri == null) return@forEach
             val url = r.detailURL ?: return@forEach
-            val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return@forEach
-            val startDate = uri.getQueryParameter("startDate")
-            val endDate = uri.getQueryParameter("endDate")
-            startDate?.let { startDates.add(it) }
-            endDate?.let { endDates.add(it) }
 
             // Priority 1: product-lookup with the fixed Nexus providerId (7) and the
             // detailURL's `productID`. Falls back to the destinationID→cityId path

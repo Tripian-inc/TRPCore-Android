@@ -7,6 +7,7 @@ import com.tripian.trpcore.ui.common.ACWebPageVM
 import com.tripian.trpcore.ui.onboarding.OnboardingVM
 import com.tripian.trpcore.ui.createtrip.ACCitySelectionVM
 import com.tripian.trpcore.ui.createtrip.ACDateSelectionVM
+import com.tripian.trpcore.ui.createtrip.ACMyTripsVM
 import com.tripian.trpcore.ui.splash.ACSplashVM
 import dagger.Binds
 import dagger.Module
@@ -45,6 +46,11 @@ abstract class ViewModels {
     @IntoMap
     @ViewModelKey(ACDateSelectionVM::class)
     abstract fun bindACDateSelectionVM(viewModel: ACDateSelectionVM): ViewModel
+
+    @Binds
+    @IntoMap
+    @ViewModelKey(ACMyTripsVM::class)
+    abstract fun bindACMyTripsVM(viewModel: ACMyTripsVM): ViewModel
 
     /**
      * ONBOARDING

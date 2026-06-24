@@ -926,12 +926,13 @@ class ACTimelineVM @Inject constructor(
                     val itineraryData = itinerary
                     when {
                         // Host policy: when the new reservations fall entirely
-                        // outside the stored timeline's date range → delete it and
-                        // recreate. Default hosts keep the existing timeline.
+                        // outside the stored timeline's date range → drop the stored
+                        // reference locally and create a fresh one. The old timeline
+                        // is left on the server. Default hosts keep the existing one.
                         itineraryData != null &&
                             TRPCore.host.recreatesTimelineOnDateMismatch(timeline) &&
                             !timelineDatesOverlapItinerary(timeline, itineraryData) ->
-                            recreateTimelineForNewDates(_tripHash, itineraryData)
+                            recreateTimelineForNewDates()
 
                         !syncOperationsCompleted && itinerary != null ->
                             runInitialSyncThenFinalize(timeline)
@@ -972,12 +973,16 @@ class ACTimelineVM @Inject constructor(
         return !existingStart.after(newEnd) && !newStart.after(existingEnd)
     }
 
-    /** nexus: delete the stored timeline and create a fresh one for the new dates. */
-    private fun recreateTimelineForNewDates(oldHash: String, itineraryData: ItineraryWithActivities) {
+    /**
+     * nexus: forget the stored timeline locally and create a fresh one for the
+     * new dates. The old timeline is intentionally NOT deleted on the server —
+     * we only clear the local stored hash so the next open resolves to the new
+     * trip.
+     */
+    private fun recreateTimelineForNewDates() {
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
         _error.value = null
         viewModelScope.launch {
-            runCatching { timelineRepository.deleteTimelineAsync(oldHash) }
             TRPCore.host.clearStoredTripHash(preferences)
             _tripHash = ""
             createTimelineFromItinerary()

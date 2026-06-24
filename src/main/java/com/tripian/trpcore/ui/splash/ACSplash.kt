@@ -1,10 +1,12 @@
 package com.tripian.trpcore.ui.splash
 
+import android.content.Intent
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.AcSplashBinding
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.ui.createtrip.ACCitySelection
+import com.tripian.trpcore.ui.createtrip.ACMyTrips
 import com.tripian.trpcore.util.extensions.observe
 
 /**
@@ -29,6 +31,18 @@ class ACSplash : BaseActivity<AcSplashBinding, ACSplashVM>() {
             itinerary?.let { startTimeline(it) }
             finish()
         }
+        observe(viewModel.onShowMyTrips) {
+            startActivity(
+                ACMyTrips.newIntent(
+                    context = this,
+                    language = intent.getStringExtra("language") ?: "en",
+                    currency = intent.getStringExtra("currency") ?: "EUR",
+                    uniqueId = intent.getStringExtra("uniqueId"),
+                    canBack = intent.getBooleanExtra("canBack", true)
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+            finish()
+        }
         observe(viewModel.onShowCreateTrip) {
             startActivity(
                 ACCitySelection.newIntent(
@@ -37,7 +51,7 @@ class ACSplash : BaseActivity<AcSplashBinding, ACSplashVM>() {
                     currency = intent.getStringExtra("currency") ?: "EUR",
                     uniqueId = intent.getStringExtra("uniqueId"),
                     canBack = intent.getBooleanExtra("canBack", true)
-                )
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             )
             finish()
         }
