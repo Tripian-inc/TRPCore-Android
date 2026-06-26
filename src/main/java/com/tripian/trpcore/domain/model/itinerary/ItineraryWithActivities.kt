@@ -98,7 +98,7 @@ data class ItineraryWithActivities(
 
     /**
      * Builds the TimelineDate control segment matching the iOS payload:
-     * "yyyy-MM-dd 00:00" / "yyyy-MM-dd 23:59", available=false, doNotGenerate=1,
+     * "yyyy-MM-dd 00:00" / "yyyy-MM-dd 23:59", available=false,
      * distinctPlan=true.
      *
      * Accepts host date strings in any of: "yyyy-MM-dd HH:mm", "yyyy-MM-dd",
@@ -117,7 +117,6 @@ data class ItineraryWithActivities(
             this.adults = getAdultCount()
             this.children = getChildCount()
             this.available = false
-            this.doNotGenerate = 1
             this.distinctPlan = true
             this.currency = TRPCore.core.getCurrentCurrency()
         }
@@ -162,7 +161,6 @@ data class ItineraryWithActivities(
             TRPCore.host.anchorBookedActivityCityId(this, item)
             adults = item.adultCount
             children = item.childCount
-            doNotGenerate = 1
             currency = TRPCore.core.getCurrentCurrency()
 
             // Coordinate — only when present. A missing coordinate flags the

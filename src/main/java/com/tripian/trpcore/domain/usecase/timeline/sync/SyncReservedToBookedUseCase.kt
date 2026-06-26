@@ -68,7 +68,6 @@ class SyncReservedToBookedUseCase @Inject constructor(
                 }
                 this.available = false
                 this.distinctPlan = true
-                this.doNotGenerate = 1
                 this.adults = tripItem.adultCount
                 this.children = tripItem.childCount
 

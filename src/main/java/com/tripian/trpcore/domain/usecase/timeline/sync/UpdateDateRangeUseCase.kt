@@ -19,8 +19,7 @@ import javax.inject.Inject
  *   3. API  : fire-and-forget PUT /timeline/{hash} with segmentIndex hint
  *
  * Detection uses BOTH `title == "TimelineDate"` AND `available == false` — the SDK
- * sentinel contract. No polling: TimelineDate carries `doNotGenerate=1`, so the
- * server has nothing to regenerate.
+ * sentinel contract.
  */
 class UpdateDateRangeUseCase @Inject constructor(
     private val repository: TimelineRepository
