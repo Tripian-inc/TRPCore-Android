@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.graphics.Typeface
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
@@ -127,24 +126,10 @@ class StepActivityVH(
         // placeholder our backend uses for online tours / audio guides).
         val coord = poi?.coordinate
         val isNoLocation = coord == null || (coord.lat == 0.0 && coord.lng == 0.0)
-        binding.noLocationBadge.llNoLocationBadge.visibility = if (isNoLocation) {
-            binding.noLocationBadge.tvNoLocationLabel.text =
-                getLanguage(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, isNoLocation)
 
         // Image - 80x80, 4dp corner radius
-        poi?.image?.url?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url)
 
         // Rating Row - from poi.rating and poi.ratingCount
         // Rating uses comma as decimal separator (4,2), reviewCount uses dot as thousand separator (49.565)

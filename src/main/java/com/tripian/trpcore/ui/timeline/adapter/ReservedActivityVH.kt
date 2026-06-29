@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.graphics.Typeface
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineReservedActivityBinding
@@ -109,16 +108,8 @@ class ReservedActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Image - 80x80, 4dp corner radius
-        item.imageUrl?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        // Image - 80x80, 4dp corner radius (Nexus logo fallback via shared binder).
+        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
         // Rating Row - from additionalData (hide if no data)
         val rating = item.segment.additionalData?.rating
@@ -148,15 +139,8 @@ class ReservedActivityVH(
             binding.llDuration.visibility = View.GONE
         }
 
-        // No-Location badge (Theme 6) — visible only when segment carries the flag.
-        binding.noLocationBadge.llNoLocationBadge.visibility = if (item.isNoLocation) {
-            binding.noLocationBadge.tvNoLocationLabel.text = TRPCore.core.miscRepository
-                .getLanguageValueForKey(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
-                .ifBlank { "No exact location" }
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        // No-Location badge (Theme 6).
+        TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
         // Cancellation text - default "Free cancellation"
         val cancellationText = item.cancellation ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)

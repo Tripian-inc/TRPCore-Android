@@ -2,7 +2,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineManualPoiBinding
@@ -75,15 +74,7 @@ class ManualPoiVH(
         }
 
         // Image - 80x80, 4dp corner radius
-        item.imageUrl?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        TimelineCellBinder.loadPoiImage(binding.ivImage, item.imageUrl)
 
         // Manual POIs never show rating — the user added these themselves and
         // the rating is not meaningful in that context.

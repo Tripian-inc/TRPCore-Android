@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
@@ -107,16 +106,8 @@ class FlexibleActivityVH(
         binding.tvActivityBadge.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
 
-        // Image
-        item.imageUrl?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        // Image (Nexus default logo fallback handled by the shared binder).
+        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
         // Rating row (hide if no rating)
         val rating = item.rating
@@ -136,15 +127,8 @@ class FlexibleActivityVH(
             binding.llRating.visibility = View.GONE
         }
 
-        // No-Location badge (Theme 6) — visible only when segment carries the flag.
-        binding.noLocationBadge.llNoLocationBadge.visibility = if (item.isNoLocation) {
-            binding.noLocationBadge.tvNoLocationLabel.text = TRPCore.core.miscRepository
-                .getLanguageValueForKey(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
-                .ifBlank { "No exact location" }
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
+        // No-Location badge (Theme 6).
+        TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
         // Cancellation
         val cancellationText = item.cancellation

@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.adapter
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
@@ -77,21 +76,16 @@ class BookedActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Image
-        item.imageUrl?.let { url ->
-            Glide.with(binding.ivImage)
-                .load(url)
-                .centerCrop()
-                .placeholder(R.drawable.trp_bg_place_holder_image)
-                .into(binding.ivImage)
-        } ?: run {
-            binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
-        }
+        // Image (Nexus default logo fallback handled by the shared binder).
+        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
         // Badge - Confirmed style (green bg, green text)
         binding.tvBadge.text = getLanguage(LanguageConst.CONFIRMED)
         binding.tvBadge.setBackgroundResource(R.drawable.trp_bg_confirmed_badge)
         binding.tvBadge.setTextColor(binding.root.context.getColor(R.color.trp_confirmed_badge_text))
+
+        // No-Location badge.
+        TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
         // Travelers - "X Adults, Y Children" format
         val travelers = mutableListOf<String>()
