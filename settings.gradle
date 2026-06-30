@@ -1,1 +1,37 @@
+// This settings file is used only when TRPCore builds STANDALONE (e.g. the
+// JitPack release). When TRPCore is included as a source subproject of the Nexus
+// app, the app's root settings drive plugin/repository resolution and this file
+// is ignored — so the module builds in both modes without an AGP clash.
+pluginManagement {
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    plugins {
+        id 'com.android.library' version '8.7.2'
+        id 'org.jetbrains.kotlin.android' version '1.9.22'
+        id 'org.jetbrains.kotlin.kapt' version '1.9.22'
+        id 'org.jetbrains.kotlin.plugin.parcelize' version '1.9.22'
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven {
+            url 'https://api.mapbox.com/downloads/v2/releases/maven'
+            authentication { basic(BasicAuthentication) }
+            credentials {
+                username = 'mapbox'
+                password = providers.gradleProperty('MAPBOX_DOWNLOADS_TOKEN').orNull
+                    ?: (System.getenv('MAPBOX_DOWNLOADS_TOKEN') ?: '')
+            }
+        }
+    }
+}
+
 rootProject.name = 'TRPCore'

@@ -1,16 +1,17 @@
-// nexus branch: consumed as a SUBPROJECT of the Nexus app, which provides the
-// Android Gradle Plugin (8.13.2), Kotlin (1.9.22) and repositories (incl. the
-// Mapbox download token). The standalone buildscript{}/allprojects{} blocks were
-// removed to avoid an AGP version clash. Legacy Compose Compiler is configured
-// via composeOptions below. (This branch no longer builds standalone by design.)
-apply plugin: 'com.android.library'
-apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'kotlin-kapt'
-apply plugin: 'kotlin-parcelize'
-apply plugin: 'maven-publish'
+// Plugins/repositories resolve from settings.gradle (pluginManagement +
+// dependencyResolutionManagement) so this module builds BOTH standalone (the
+// JitPack release) and as a source subproject of the Nexus app — in the latter
+// the app's root settings supply the plugins and this settings.gradle is ignored.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+    id 'org.jetbrains.kotlin.kapt'
+    id 'org.jetbrains.kotlin.plugin.parcelize'
+    id 'maven-publish'
+}
 
 group = "com.github.Tripian-inc"
-version = "1.3.0"
+version = "nexus-1.0.0"
 
 android {
     namespace 'com.tripian.trpcore'
@@ -144,7 +145,7 @@ dependencies {
     implementation 'com.intuit.sdp:sdp-android:1.0.6'
 
     // TRPOne — primary REST client.
-    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.8'
+    implementation 'com.github.Tripian-inc:TRPOne-Android:1.4.9'
 
     // TRPFoundation — base utilities (extensions, helpers).
     implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
