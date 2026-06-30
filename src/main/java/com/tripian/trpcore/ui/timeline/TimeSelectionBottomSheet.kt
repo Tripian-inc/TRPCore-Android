@@ -121,7 +121,9 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
 
     private fun showStartTimePicker() {
         showComposeTimePicker(
-            initialTime = startTime,
+            // With no start chosen, open on the earliest selectable slot (one
+            // minute after the exclusive floor).
+            initialTime = startTime ?: MaterialTimePickerHelper.addMinutes(minTime, 1),
             // Don't allow a past start for the item's day in its city timezone.
             minTime = minTime,
             onTimeSelected = { hour, minute ->

@@ -7,6 +7,7 @@ import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.base.awaitCallback
+import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.Preferences
 import javax.inject.Inject
 
@@ -51,6 +52,7 @@ class TripRepository @Inject constructor(
             if (cachedCities.isNotEmpty()) {
                 items.clear()
                 items.addAll(cachedCities)
+                CityTimeZones.register(items)
             }
         }
         return try {
@@ -61,8 +63,13 @@ class TripRepository @Inject constructor(
                 items.addAll(sortedCities)
                 saveCitiesToCache()
             }
+            // Register every city's timezone by id so time/day pickers resolve the
+            // city clock even when the selected city object (e.g. one built from the
+            // timeline) carries no timezone of its own.
+            CityTimeZones.register(items)
             true
         } catch (_: Throwable) {
+            CityTimeZones.register(items)
             items.isNotEmpty()
         }
     }

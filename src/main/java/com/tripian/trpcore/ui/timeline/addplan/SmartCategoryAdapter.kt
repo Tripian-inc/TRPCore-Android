@@ -2,7 +2,7 @@ package com.tripian.trpcore.ui.timeline.addplan
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemSmartCategoryBinding
@@ -72,18 +72,18 @@ class SmartCategoryAdapter(
             updateSelectionState(isSelected)
 
             // Adjust width for last row single item (centered, 1/3 width)
-            val contentParams = binding.llContent.layoutParams as FrameLayout.LayoutParams
-            if (isLastRowSingleItem) {
-                // When spanning 3 columns but we want same visual width as other items
-                // Set width to WRAP_CONTENT and let the FrameLayout center it
-                contentParams.width = binding.root.context.resources.displayMetrics.widthPixels / 3 -
-                    binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_category_grid_spacing) * 2
-                contentParams.gravity = android.view.Gravity.CENTER
-            } else {
-                contentParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-                contentParams.gravity = android.view.Gravity.NO_GRAVITY
-            }
-            binding.llContent.layoutParams = contentParams
+//            val contentParams = binding.llContent.layoutParams as ConstraintLayout.LayoutParams
+//            if (isLastRowSingleItem) {
+//                // When spanning 3 columns but we want same visual width as other items
+//                // Set width to WRAP_CONTENT and let the FrameLayout center it
+//                contentParams.width = binding.root.context.resources.displayMetrics.widthPixels / 3 -
+//                    binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_category_grid_spacing) * 2
+////                contentParams.gravity = android.view.Gravity.CENTER
+//            } else {
+//                contentParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+////                contentParams.gravity = android.view.Gravity.NO_GRAVITY
+//            }
+//            binding.llContent.layoutParams = contentParams
 
             // Click listener
             binding.llContent.setOnClickListener {
@@ -92,9 +92,12 @@ class SmartCategoryAdapter(
         }
 
         private fun updateSelectionState(isSelected: Boolean) {
-            // Only update selection state for border change
-            // Icon and text colors stay the same (text_primary)
             binding.llContent.isSelected = isSelected
+            val iconColor = ContextCompat.getColor(
+                binding.ivIcon.context,
+                if (isSelected) R.color.trp_text_primary else R.color.trp_fgWeak
+            )
+            binding.ivIcon.setColorFilter(iconColor)
         }
     }
 }
