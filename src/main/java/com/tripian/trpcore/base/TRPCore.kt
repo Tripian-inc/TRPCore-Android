@@ -557,11 +557,17 @@ class TRPCore {
      * requested language. Invoked from every SDK start entry point — host apps
      * can re-open the SDK in a different language and get fresh city names
      * without an init-time mismatch.
+     *
+     * The [MiscRepository.changeLanguage] call re-selects the translation keys
+     * before ACTimeline opens so its first loader text renders in the requested
+     * language instead of flashing the previously selected one on the first open
+     * after a language change.
      */
     private fun applyLanguageAndPrefetchCities(appLanguage: String) {
         if (appLanguage.isNotEmpty()) {
             appConfig.appLanguage = appLanguage
             trpRest.setLanguage(appLanguage)
+            miscRepository.changeLanguage(appLanguage)
         }
         initScope.launch {
             try {

@@ -22,8 +22,9 @@
     <RelativeLayout
         android:id="@+id/headerContainer"
         android:layout_width="match_parent"
-        android:layout_height="44dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:paddingVertical="12dp"
         android:layout_marginBottom="20dp"
         android:background="@android:color/white">
 
@@ -45,17 +46,16 @@
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="24dp"
             android:layout_centerInParent="true"
             style="@style/TrpTextHeader2"
-            android:text="Add Activity"
             tools:text="Add Activity"/>
 
         <!-- Close Button (24x24, end:16) -->
         <ImageButton
             android:id="@+id/ivClose"
-            android:layout_width="@dimen/_24sdp"
-            android:layout_height="@dimen/_24sdp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"

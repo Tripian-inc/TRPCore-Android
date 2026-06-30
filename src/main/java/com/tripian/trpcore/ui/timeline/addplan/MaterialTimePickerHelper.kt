@@ -65,6 +65,13 @@ object MaterialTimePickerHelper {
         return String.format("%02d:%02d", hour, minute)
     }
 
+    /** Adds [minutes] to a "HH:mm" time, clamped to [END_OF_DAY_24H]. */
+    fun addMinutes(time: String?, minutes: Int): String? {
+        time ?: return null
+        val total = (timeToMinutes(time) + minutes).coerceIn(0, 23 * 60 + 59)
+        return formatTo24h(total / 60, total % 60)
+    }
+
     /**
      * Returns the later of two "HH:mm" times (nulls ignored). Used to combine a
      * start-time floor with the city-timezone "now" floor for an end-time picker.

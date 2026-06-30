@@ -110,6 +110,35 @@ object CityTimeZones {
         minSelectableTime(day, timezoneFor(cityId))
 
     /**
+     * Earliest selectable "HH:mm" for the start/end time pickers. A future day
+     * starts at 09:00; today is floored at the next half-hour slot in the city's
+     * timezone (skipping to the following slot when fewer than 5 minutes remain,
+     * e.g. 14:26 -> 15:00). The value is exclusive (the picker requires
+     * selected > minTime), so it is the minute before the earliest slot.
+     */
+    fun minSelectableTimeRounded(day: Date, timeZoneId: String?): String? {
+        val nowMinutes = minSelectableMinutes(day, timeZoneId)
+        val earliest = when {
+            nowMinutes <= 0 -> 9 * 60
+            nowMinutes >= 24 * 60 -> return "23:59"
+            else -> roundUpToHalfHour(nowMinutes)
+        }
+        if (earliest >= 24 * 60) return "23:59"
+        val floor = (earliest - 1).coerceAtLeast(0)
+        return String.format("%02d:%02d", floor / 60, floor % 60)
+    }
+
+    fun minSelectableTimeRounded(day: Date, city: City?): String? =
+        minSelectableTimeRounded(day, timezoneFor(city?.id) ?: city?.timezone)
+
+    private fun roundUpToHalfHour(nowMinutes: Int): Int {
+        val remainder = nowMinutes % 30
+        var slot = if (remainder == 0) nowMinutes else nowMinutes - remainder + 30
+        if (slot - nowMinutes < 5) slot += 30
+        return slot
+    }
+
+    /**
      * True when the "HH:mm" [timeSlot] on [day] is in the past for the city's clock.
      * Blank/malformed slots are treated as not-past.
      */

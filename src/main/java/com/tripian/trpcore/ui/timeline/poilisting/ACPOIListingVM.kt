@@ -16,6 +16,7 @@ import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -401,6 +402,11 @@ class ACPOIListingVM @Inject constructor(
     // =====================
 
     fun getSelectedDate(): Date? = planData?.selectedDay
+
+    fun minSelectableTimeForSelectedDay(): String? {
+        val day = planData?.selectedDay ?: return null
+        return CityTimeZones.minSelectableTimeRounded(day, planData?.selectedCity)
+    }
 
     fun getAvailableDays(): List<Date> = planData?.availableDays ?: emptyList()
 

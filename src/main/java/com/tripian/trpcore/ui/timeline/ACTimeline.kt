@@ -556,6 +556,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         duration = reservedActivity.segment.additionalData?.duration,
                         initialDateTime = reservedActivity.startDateTime,
                         seedInitialTimeSlot = true,
+                        isNotAvailable = reservedActivity.isAvailabilityExpired,
                         onRemove = {
                             showDeleteConfirmationDialog(
                                 title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
@@ -586,6 +587,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         // Flexible items use a 00:00/23:59 placeholder; pre-selecting
                         // it would mark a non-existent "00:00" slot as the choice.
                         seedInitialTimeSlot = false,
+                        isNotAvailable = flexibleActivity.isAvailabilityExpired,
                         onRemove = {
                             showDeleteConfirmationDialog(
                                 title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
@@ -1374,6 +1376,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 duration = poi.duration?.toDouble(),
                 initialDateTime = step.startDateTimes,
                 seedInitialTimeSlot = true,
+                isNotAvailable = step.isAvailabilityExpired,
                 onRemove = {
                     showDeleteConfirmationDialog(
                         title = getLanguageForKey(LanguageConst.REMOVE_STEP),
@@ -1422,6 +1425,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         duration: Double?,
         initialDateTime: String?,
         seedInitialTimeSlot: Boolean,
+        isNotAvailable: Boolean = false,
         onRemove: () -> Unit,
         onConfirm: (startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
@@ -1441,7 +1445,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             duration = duration,
             availableDays = availableDays,
             initialSelectedDay = initialDay,
-            initialTimeSlot = initialTimeSlot
+            initialTimeSlot = initialTimeSlot,
+            isNotAvailable = isNotAvailable
         )
         sheet.setOnStepTimeSelectedListener { _, startTime, endTime, slotPrice ->
             // Show the inline "changing time" loader inside the open sheet; the
@@ -1487,7 +1492,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         // can't be moved into the past (device-tz fallback when the step carries
         // no resolvable city).
         val stepDay = step.startDateTimes.toDate()
-        val minTime = stepDay?.let { com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, null as Int?) }
+        val minTime = stepDay?.let {
+            com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, step.poi?.cityId)
+        }
 
         val timeSelectionSheet = TimeSelectionBottomSheet.newInstance(
             startTime = startTime,

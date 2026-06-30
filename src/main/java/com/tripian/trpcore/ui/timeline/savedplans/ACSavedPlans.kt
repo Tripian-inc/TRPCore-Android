@@ -9,9 +9,12 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.AcSavedPlansBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 /**
  * ACSavedPlans
@@ -24,6 +27,8 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
 
     private var adapter: AdapterSavedPlans? = null
     private var timeSelectionBottomSheet: ActivityTimeSelectionBottomSheet? = null
+    private var pendingAddedName: String? = null
+    private var pendingAddedDate: Date? = null
 
     override fun getViewBinding() = AcSavedPlansBinding.inflate(layoutInflater)
 
@@ -89,6 +94,7 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             if (created) {
                 viewModel.resetSegmentCreated()
                 timeSelectionBottomSheet?.dismiss()
+                showAddedToItinerarySuccess()
                 setResult(RESULT_OK)
             }
         }
@@ -176,6 +182,8 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible, slotPrice ->
             // Show the inline loader inside the still-open sheet, then create the
             // reserved activity segment with the selected date, time and slot price.
+            pendingAddedName = favorite.title
+            pendingAddedDate = selectedDate
             timeSelectionBottomSheet?.showInSheetLoadingOverlay(
                 LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary"
             )
@@ -187,6 +195,16 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         }
 
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
+    }
+
+    private fun showAddedToItinerarySuccess() {
+        val name = pendingAddedName ?: return
+        val date = pendingAddedDate ?: return
+        val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault()).format(date)
+        val message = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
+            .replace("%1\$@", name)
+            .replace("%2\$@", dayLabel)
+        showAlert(AlertType.SUCCESS, message)
     }
 
     /**

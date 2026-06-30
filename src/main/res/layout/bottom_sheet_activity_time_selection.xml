@@ -20,7 +20,10 @@
     <!-- Toolbar -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_56sdp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingVertical="12dp"
+        android:layout_marginBottom="20dp"
         android:paddingHorizontal="@dimen/_12sdp">
 
         <!-- Back Button -->
@@ -50,7 +53,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="14dp"
         android:fontFamily="@font/light"
         android:textColor="@color/trp_text_primary"
         android:textSize="12sp"

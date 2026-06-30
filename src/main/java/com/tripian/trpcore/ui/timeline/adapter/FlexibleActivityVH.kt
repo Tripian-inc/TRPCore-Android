@@ -131,7 +131,7 @@ class FlexibleActivityVH(
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
         // Cancellation
-        val cancellationText = item.cancellation
+        val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 

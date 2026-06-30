@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ViewBottomToastBinding
 import com.tripian.trpcore.util.AlertType
@@ -65,14 +67,14 @@ class BottomToast private constructor(
 
         // Set icon based on alert type
         val iconRes = when (alertType) {
-            AlertType.SUCCESS -> R.drawable.trp_ic_tick
+            AlertType.SUCCESS -> R.drawable.trp_ic_success
             AlertType.WARNING -> R.drawable.trp_ic_info
             AlertType.ERROR -> R.drawable.trp_ic_close
             AlertType.INFO -> R.drawable.trp_ic_info
-            else -> R.drawable.trp_ic_tick
+            else -> R.drawable.trp_ic_success
         }
         binding?.ivToastIcon?.setImageResource(iconRes)
-        // Tint non-success icons to match the alert type; the success tick
+        // Tint non-success icons to match the alert type; the success
         // drawable already carries its own brand color.
         when (alertType) {
             AlertType.SUCCESS -> binding?.ivToastIcon?.clearColorFilter()
@@ -88,13 +90,28 @@ class BottomToast private constructor(
             else -> binding?.ivToastIcon?.clearColorFilter()
         }
 
+        if (alertType == AlertType.ERROR) {
+            binding?.cardToast?.radius = 8 * activity.resources.displayMetrics.density
+            binding?.cardToast?.setCardBackgroundColor(
+                ContextCompat.getColor(activity, R.color.trp_error_bg)
+            )
+            binding?.llToastContainer?.setBackgroundResource(R.drawable.trp_bg_alert_error)
+            binding?.ivToastIcon?.visibility = View.GONE
+            binding?.ivToastClose?.visibility = View.VISIBLE
+            binding?.ivToastClose?.setOnClickListener { dismiss() }
+        }
+
         // Attach to the override parent when provided, otherwise the activity's
         // root view. Using a dialog's decor view as the parent surfaces the
         // toast on top of that dialog.
         val rootView = resolveParent()
         val density = activity.resources.displayMetrics.density
-        val horizontalMargin = (32 * density).toInt()
-        val bottomMargin = (45 * density).toInt()
+        val horizontalMargin = (16 * density).toInt()
+        // 16dp above the navigation bar (3-button or gesture) so the toast keeps a
+        // 16dp gap and never sits under the device buttons.
+        val navBarInset = ViewCompat.getRootWindowInsets(rootView)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+        val bottomMargin = (16 * density).toInt() + navBarInset
 
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -117,10 +134,13 @@ class BottomToast private constructor(
                 start()
             }
 
-            // Schedule removal
-            view.postDelayed({
-                dismiss()
-            }, duration)
+            // Error alerts persist until the user taps the close icon; all other
+            // types auto-dismiss after [duration].
+            if (alertType != AlertType.ERROR) {
+                view.postDelayed({
+                    dismiss()
+                }, duration)
+            }
         }
     }
 

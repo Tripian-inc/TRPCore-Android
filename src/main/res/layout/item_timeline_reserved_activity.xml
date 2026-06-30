@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginTop="16dp"
+    android:paddingVertical="20dp"
     android:paddingHorizontal="16dp">
 
     <!-- Order-Time Container (130x32, border) -->
@@ -282,20 +282,5 @@
         </LinearLayout>
 
     </LinearLayout>
-
-    <!-- Bottom Row: Price + Reservation Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-    </LinearLayout>
-
-    <!-- Bottom spacing -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="16dp" />
 
 </LinearLayout>

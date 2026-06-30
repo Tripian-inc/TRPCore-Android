@@ -15,8 +15,7 @@ import java.util.Date
 import javax.inject.Inject
 
 /**
- * CreateReservedActivityFromFavoriteUseCase
- * Creates a reserved_activity segment from a SegmentFavoriteItem (saved plan)
+ * Creates a reserved_activity segment from a SegmentFavoriteItem (saved plan).
  */
 class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -26,124 +25,99 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         val tripHash: String,
         val favorite: SegmentFavoriteItem,
         val selectedDate: Date,
-        val startTime: String?,  // Format: "HH:mm" (null = use default 10:00). isFlexible=true iken yok sayılır.
-        val endTime: String?,    // Format: "HH:mm" (null = calculate from duration). isFlexible=true iken yok sayılır.
+        val startTime: String?,
+        val endTime: String?,
         val adults: Int = 1,
-        val resolvedCityId: Int? = null,  // Our system's cityId (resolved from cityName mapping)
-        // Flexible (any-time) favorite. true ise window resolveFlexibleWindow ile
-        // hesaplanır ve duration = -1.0 yazılır (tour flexible path ile parite).
+        val resolvedCityId: Int? = null,
         val isFlexible: Boolean = false,
-        // Price of the selected time slot. When non-null it overrides the
-        // favorite's stored price; null falls back to the favorite price.
         val slotPrice: Double? = null
     )
 
     companion object {
         const val SEGMENT_TYPE_RESERVED_ACTIVITY = "reserved_activity"
         const val DEFAULT_START_TIME = "10:00"
-        const val DEFAULT_DURATION_MINUTES = 120 // 2 hours
+        const val DEFAULT_DURATION_MINUTES = 120
     }
 
     override suspend fun execute(params: Params): ResponseModelBase {
         val p = params
         val dateStr = p.selectedDate.toApiDateString()
 
-            // Flexible favorite: bottom-sheet placeholder'ı yerine helper'a
-            // güveniyoruz; bugün için window 23:59–23:59'a çekilir (backend
-            // 00:00 startı reddediyor). Duration -1.0 markerı tour flexible
-            // path ile parite sağlar — renderer aynı FlexibleActivity cell'i
-            // gösterir.
-            val startTimeStr: String
-            val endDatetime: String
-            val effectiveDuration: Double?
-            if (p.isFlexible) {
-                val (start, end) = resolveFlexibleWindow(dateStr)
-                startTimeStr = start
-                endDatetime = "$dateStr $end"
-                effectiveDuration = -1.0
+        val startTimeStr: String
+        val endDatetime: String
+        val effectiveDuration: Double?
+        if (p.isFlexible) {
+            // Backend rejects a 00:00 start; resolveFlexibleWindow pins the day to
+            // 23:59 and duration -1.0 marks it flexible (parity with the tour path).
+            val (start, end) = resolveFlexibleWindow(dateStr)
+            startTimeStr = start
+            endDatetime = "$dateStr $end"
+            effectiveDuration = -1.0
+        } else {
+            startTimeStr = p.startTime ?: DEFAULT_START_TIME
+            endDatetime = if (!p.endTime.isNullOrEmpty()) {
+                "$dateStr ${p.endTime}"
             } else {
-                startTimeStr = p.startTime ?: DEFAULT_START_TIME
-                endDatetime = if (!p.endTime.isNullOrEmpty()) {
-                    "$dateStr ${p.endTime}"
-                } else {
-                    calculateEndTime(dateStr, startTimeStr, p.favorite.duration)
+                calculateEndTime(dateStr, startTimeStr, p.favorite.duration)
+            }
+            effectiveDuration = p.favorite.duration
+        }
+
+        val startDatetime = "$dateStr $startTimeStr"
+
+        val coordinate = Coordinate().apply {
+            lat = p.favorite.coordinate.lat
+            lng = p.favorite.coordinate.lng
+        }
+
+        val additionalData = TimelineSegmentAdditionalData().apply {
+            activityId = p.favorite.activityId
+            title = p.favorite.title
+            imageUrl = p.favorite.photoUrl
+            description = p.favorite.description
+            // additionalData carries ISO-8601 datetimes while segment startDate/
+            // endDate stay space-separated "yyyy-MM-dd HH:mm" — don't unify them.
+            this.startDatetime = startDatetime.toAdditionalDataIso()
+            this.endDatetime = endDatetime.toAdditionalDataIso()
+            this.coordinate = coordinate
+            duration = effectiveDuration
+            val slot = p.slotPrice
+            if (slot != null) {
+                this.price = slot
+                this.currency = TRPCore.core.getCurrentCurrency()
+            } else {
+                p.favorite.price?.let { price ->
+                    this.price = price.value
+                    this.currency = price.currency ?: "EUR"
                 }
-                effectiveDuration = p.favorite.duration
             }
+            // Left null so the cell renders the localized free-cancellation text;
+            // the favorite's own label is untranslated.
+            cancellation = null
+            rating = p.favorite.rating
+            reviewCount = p.favorite.ratingCount
+        }
 
-            val startDatetime = "$dateStr $startTimeStr"
-
-            // Build coordinate from favorite
-            val coordinate = Coordinate().apply {
-                lat = p.favorite.coordinate.lat
-                lng = p.favorite.coordinate.lng
-            }
-
-            // Build additional data
-            val additionalData = TimelineSegmentAdditionalData().apply {
-                activityId = p.favorite.activityId
-                title = p.favorite.title
-                imageUrl = p.favorite.photoUrl
-                description = p.favorite.description
-                // iOS spec §1 + §3.2: additionalData carries ISO-8601 datetimes
-                // ("yyyy-MM-dd'T'HH:mm:ss") while the segment-level startDate/endDate
-                // stay in the space-separated "yyyy-MM-dd HH:mm" shape. The two
-                // formats are intentional — don't unify them.
-                this.startDatetime = startDatetime.toAdditionalDataIso()
-                this.endDatetime = endDatetime.toAdditionalDataIso()
-                this.coordinate = coordinate
-                duration = effectiveDuration
-                // Selected slot price wins; otherwise fall back to the
-                // favorite's stored price.
-                val slot = p.slotPrice
-                if (slot != null) {
-                    this.price = slot
-                    this.currency = TRPCore.core.getCurrentCurrency()
-                } else {
-                    p.favorite.price?.let { price ->
-                        this.price = price.value
-                        this.currency = price.currency ?: "EUR"
-                    }
-                }
-                cancellation = p.favorite.cancellation
-                // iOS spec section 2.2: carry rating/ratingCount on every reserved
-                // activity write — Saved Plans favorites already store these, so
-                // we propagate them straight through to keep the cell parity
-                // with tour-listing additions.
-                rating = p.favorite.rating
-                reviewCount = p.favorite.ratingCount
-            }
-
-            // Build segment settings
-            val segment = TimelineSegmentSettings().apply {
-                title = p.favorite.title
-                // Use resolved cityId (our system's ID) if available, fallback to favorite.cityId
-                cityId = p.resolvedCityId ?: p.favorite.cityId
-                startDate = startDatetime
-                endDate = endDatetime
-                adults = p.adults
-                segmentType = SEGMENT_TYPE_RESERVED_ACTIVITY
-                this.additionalData = additionalData
-                this.coordinate = coordinate
-                available = false
-                distinctPlan = true
-                currency = TRPCore.core.getCurrentCurrency()
-            }
+        val segment = TimelineSegmentSettings().apply {
+            title = p.favorite.title
+            cityId = p.resolvedCityId ?: p.favorite.cityId
+            startDate = startDatetime
+            endDate = endDatetime
+            adults = p.adults
+            segmentType = SEGMENT_TYPE_RESERVED_ACTIVITY
+            this.additionalData = additionalData
+            this.coordinate = coordinate
+            available = false
+            distinctPlan = true
+            currency = TRPCore.core.getCurrentCurrency()
+        }
 
         repository.editSegmentAsync(p.tripHash, segment)
         return ResponseModelBase().apply { status = 200 }
     }
 
-    /**
-     * Calculate end time based on start time and duration
-     * @param date Date string (yyyy-MM-dd)
-     * @param startTime Start time (HH:mm)
-     * @param duration Duration in MINUTES (Double)
-     * @return End datetime string (yyyy-MM-dd HH:mm)
-     */
     private fun calculateEndTime(date: String, startTime: String, duration: Double?): String {
         val durationMinutes = duration?.toInt() ?: DEFAULT_DURATION_MINUTES
-
         try {
             val timeParts = startTime.split(":")
             val startHour = timeParts[0].toInt()
@@ -155,7 +129,6 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
 
             return "$date ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}"
         } catch (e: Exception) {
-            // Fallback: add default duration
             return "$date 12:00"
         }
     }

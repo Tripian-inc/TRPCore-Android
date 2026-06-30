@@ -105,7 +105,8 @@ class BookedActivityVH(
         }
 
         // Cancellation info - advantage color
-        val cancellationText = item.cancellation ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
+        val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
+            ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
         binding.tvCancellation.isVisible = cancellationText.isNotEmpty()
 

@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingTop="20dp">
+        android:paddingTop="12dp">
 
         <!-- ==================== -->
         <!-- ADD TO DAY Section   -->
@@ -24,8 +24,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:fontFamily="@font/light"
-            android:textSize="12sp"
+            android:fontFamily="@font/semibold"
+            android:textSize="16sp"
             android:textColor="@color/trp_text_primary"
             tools:text="Add to Day"/>
 

@@ -63,6 +63,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     // start/end so the caller can patch the existing step's time. We also seed
     // the time grid with the step's current slot on first render.
     private var isStepEditMode: Boolean = false
+    private var isActivityNotAvailable: Boolean = false
     private var pendingInitialTimeSlot: String? = null
     // Last param is the selected slot's min price (null when the slot carries no
     // price); the caller uses it to update the activity's price on change-time.
@@ -99,6 +100,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteTitle = args.getString(ARG_FAVORITE_TITLE)
             favoriteDuration = args.getDouble(ARG_FAVORITE_DURATION, 0.0).takeIf { it > 0 }
             isStepEditMode = args.getBoolean(ARG_STEP_EDIT_MODE, false)
+            isActivityNotAvailable = args.getBoolean(ARG_NOT_AVAILABLE, false)
             showSelectAndRemove = args.getBoolean(ARG_SHOW_SELECT_AND_REMOVE, false)
             pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
             initialTimeSlot = pendingInitialTimeSlot
@@ -202,9 +204,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else {
             getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         }
-        // Change-time (step-edit) reframes the day filter as "Move day"; the
-        // add flow keeps "Add to day".
-        binding.tvAddToDay.text = if (isStepEditMode) {
+        // Change-time on an available activity reframes the day filter as "Move
+        // day". The add flow — and change-time on an activity that is no longer
+        // available (re-add) — keep "Add to day".
+        binding.tvAddToDay.text = if (isStepEditMode && !isActivityNotAvailable) {
             getLanguageForKey(LanguageConst.ADD_PLAN_MOVE_DAY)
         } else {
             getLanguageForKey(LanguageConst.ADD_PLAN_ADD_TO_DAY)
@@ -639,6 +642,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         private const val ARG_FAVORITE_TITLE = "favorite_title"
         private const val ARG_FAVORITE_DURATION = "favorite_duration"
         private const val ARG_STEP_EDIT_MODE = "step_edit_mode"
+        private const val ARG_NOT_AVAILABLE = "not_available"
         private const val ARG_INITIAL_TIME_SLOT = "initial_time_slot"
         private const val ARG_SHOW_SELECT_AND_REMOVE = "show_select_and_remove"
 
@@ -703,11 +707,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             duration: Double?,
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
-            initialTimeSlot: String? = null
+            initialTimeSlot: String? = null,
+            isNotAvailable: Boolean = false
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_STEP_EDIT_MODE, true)
+                    putBoolean(ARG_NOT_AVAILABLE, isNotAvailable)
                     activityId?.let { putString(ARG_FAVORITE_ACTIVITY_ID, it) }
                     cityId?.let { putInt(ARG_FAVORITE_CITY_ID, it) }
                     putString(ARG_FAVORITE_TITLE, title)

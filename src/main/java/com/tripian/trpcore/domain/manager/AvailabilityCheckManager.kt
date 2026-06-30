@@ -158,7 +158,7 @@ class AvailabilityCheckManager @Inject constructor(
             when (segment.segmentType) {
                 SegmentType.RESERVED_ACTIVITY -> {
                     val rawId = segment.additionalData?.activityId ?: return@forEachIndexed
-                    val activityId = normalizeActivityId(rawId, providerId)
+                    val activityId = normalizeActivityId(rawId, providerId, segment.cityId ?: 0)
                     val expectedTime = if (segment.isFlexibleActivity) null
                     else extractHourMinute(segment.startDate)
                     targets += Target(
@@ -173,10 +173,11 @@ class AvailabilityCheckManager @Inject constructor(
                     plan.steps?.forEach { step ->
                         if (step.stepType != "activity") return@forEach
                         val rawId = step.poi?.id ?: return@forEach
+                        val cityId = step.poi?.cityId ?: plan.city?.id ?: segment.cityId ?: 0
                         targets += Target(
                             segmentIndex = index,
                             stepId = step.id,
-                            activityId = normalizeActivityId(rawId, providerId),
+                            activityId = normalizeActivityId(rawId, providerId, cityId),
                             expectedTime = extractHourMinute(step.startDateTimes)
                         )
                     }
@@ -231,8 +232,20 @@ class AvailabilityCheckManager @Inject constructor(
         return cal.time
     }
 
-    private fun normalizeActivityId(raw: String, providerId: Int): String =
-        if (raw.startsWith("C_")) raw else "C_${raw}_${providerId}"
+    /**
+     * Builds the schedule-bulk product id as `C_{baseId}_{providerId}_{cityId}`,
+     * matching the rest of the SDK. The `_{cityId}` suffix is required for the
+     * bulk endpoint to resolve availability; it is dropped only when the city is
+     * unknown.
+     */
+    private fun normalizeActivityId(raw: String, providerId: Int, cityId: Int): String {
+        val baseId = if (raw.startsWith("C_")) {
+            raw.removePrefix("C_").split("_").firstOrNull() ?: raw
+        } else {
+            raw
+        }
+        return if (cityId > 0) "C_${baseId}_${providerId}_$cityId" else "C_${baseId}_$providerId"
+    }
 
     /**
      * Extracts the "HH:mm" portion of a datetime string. The timeline payload

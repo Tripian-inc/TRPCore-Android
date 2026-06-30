@@ -206,7 +206,7 @@ class MiscRepository @Inject constructor(
 
     fun changeLanguage(lang: String) {
         preferences.setString(Preferences.Keys.APP_LANGUAGE, lang)
-        setCurrentLanguageKeys()
+        if (isLanguagesLoaded) setCurrentLanguageKeys()
     }
 
     /**

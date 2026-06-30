@@ -80,24 +80,6 @@ class FRCategorySelection : Fragment() {
         binding.rvCategories.apply {
             layoutManager = gridLayoutManager
             adapter = categoryAdapter
-
-            // Add item spacing
-            addItemDecoration(object : androidx.recyclerview.widget.RecyclerView.ItemDecoration() {
-                override fun getItemOffsets(
-                    outRect: android.graphics.Rect,
-                    view: View,
-                    parent: androidx.recyclerview.widget.RecyclerView,
-                    state: androidx.recyclerview.widget.RecyclerView.State
-                ) {
-                    val spacing = resources.getDimensionPixelSize(
-                        com.tripian.trpcore.R.dimen.trp_category_grid_spacing
-                    )
-                    outRect.left = spacing / 2
-                    outRect.right = spacing / 2
-                    outRect.top = spacing / 2
-                    outRect.bottom = spacing / 2
-                }
-            })
         }
     }
 

@@ -142,11 +142,12 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         // End time can be picked first — when start is set, enforce end > start
         // via the picker's minTime; when start is null, allow any time.
         // A stored "23:59" end is the midnight sentinel — seed the clock with
-        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM.
-        val initialTime = if (endTime == MaterialTimePickerHelper.END_OF_DAY_24H) {
-            "00:00"
-        } else {
-            endTime ?: startTime
+        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM. With no end chosen
+        // yet, default to one hour after the start (the min stays at the start).
+        val initialTime = when {
+            endTime == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
+            endTime != null -> endTime
+            else -> MaterialTimePickerHelper.addMinutes(startTime, 60) ?: startTime
         }
         showComposeTimePicker(
             initialTime = initialTime,

@@ -143,7 +143,8 @@ class ReservedActivityVH(
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
         // Cancellation text - default "Free cancellation"
-        val cancellationText = item.cancellation ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
+        val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
+            ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
         // Price - "From €XX" format or "FREE" when price is 0

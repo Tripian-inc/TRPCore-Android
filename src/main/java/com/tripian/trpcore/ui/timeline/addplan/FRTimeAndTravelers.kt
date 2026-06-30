@@ -183,11 +183,12 @@ class FRTimeAndTravelers : Fragment() {
         val currentTime = sharedVM.endTime.value
 
         // A stored "23:59" end is the midnight sentinel — seed the clock with
-        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM.
-        val initialTime = if (currentTime == MaterialTimePickerHelper.END_OF_DAY_24H) {
-            "00:00"
-        } else {
-            currentTime ?: startTime
+        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM. With no end chosen
+        // yet, default to one hour after the start (the min stays at the start).
+        val initialTime = when {
+            currentTime == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
+            currentTime != null -> currentTime
+            else -> MaterialTimePickerHelper.addMinutes(startTime, 60) ?: startTime
         }
 
         showComposeTimePicker(

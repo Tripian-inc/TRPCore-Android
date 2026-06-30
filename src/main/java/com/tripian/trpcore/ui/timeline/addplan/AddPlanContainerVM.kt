@@ -245,13 +245,12 @@ class AddPlanContainerVM @Inject constructor(
     fun shouldAlwaysShowCitySelection(): Boolean = isUsingAllCities
 
     /**
-     * Earliest selectable "HH:mm" for the currently selected day in the selected
-     * city's timezone, or null when the whole day is open (a future day). Used to
-     * floor the start/end time pickers so a past time can't be chosen.
+     * Earliest selectable "HH:mm" for the selected day's start/end time pickers
+     * (see [CityTimeZones.minSelectableTimeRounded]).
      */
     fun minSelectableTimeForSelectedDay(): String? {
         val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
-        return CityTimeZones.minSelectableTime(day, _selectedCity.value?.timezone)
+        return CityTimeZones.minSelectableTimeRounded(day, _selectedCity.value)
     }
 
     /** Selected city's IANA timezone (e.g. "Europe/Madrid"), or null. */
