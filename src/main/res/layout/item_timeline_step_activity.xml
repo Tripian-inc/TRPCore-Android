@@ -37,10 +37,10 @@
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:maxLines="1"
-            android:gravity="center_vertical"
             android:layout_marginHorizontal="10dp"
             android:fontFamily="@font/medium"
+            android:gravity="center_vertical"
+            android:maxLines="1"
             android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="09:00 - 11:30" />
@@ -87,28 +87,35 @@
             android:orientation="vertical">
 
             <!-- Title Row - Title + Delete Button -->
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
+
+                <!-- Title - semibold 16px primaryText -->
+                <TextView
+                    android:id="@+id/tvTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:fontFamily="@font/semibold"
+                    android:maxLines="2"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="16sp"
+                    app:layout_constraintEnd_toStartOf="@id/llEditButtons"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="Guided tour of the Basilica" />
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <!-- Title - semibold 16px primaryText -->
-                    <TextView
-                        android:id="@+id/tvTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:fontFamily="@font/semibold"
-                        android:maxLines="2"
-                        android:textColor="@color/trp_text_primary"
-                        android:textSize="16sp"
-                        tools:text="Guided tour of the Basilica" />
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tvTitle">
 
                     <!-- Badge row: activity chip + "no exact location" chip
                          sit side-by-side. Either may be hidden individually
@@ -189,33 +196,19 @@
                     </LinearLayout>
 
                     <!-- Duration Row - icon 16x16, text -->
-                    <LinearLayout
-                        android:id="@+id/llDuration"
+                    <TextView
+                        android:id="@+id/tvDuration"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
+                        android:drawablePadding="4dp"
+                        android:fontFamily="@font/medium"
+                        android:textColor="@color/trp_text_primary"
+                        android:textSize="14sp"
                         android:visibility="gone"
-                        tools:visibility="visible">
-
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:contentDescription="Duration"
-                            android:src="@drawable/trp_ic_duration" />
-
-                        <TextView
-                            android:id="@+id/tvDuration"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:fontFamily="@font/medium"
-                            android:textColor="@color/trp_text_primary"
-                            android:textSize="14sp"
-                            tools:text="2.5 hours" />
-
-                    </LinearLayout>
+                        app:drawableStartCompat="@drawable/trp_ic_duration"
+                        tools:text="2.5 hours"
+                        tools:visibility="visible" />
 
                     <!-- Cancellation - Medium 14px, advantage color -->
                     <TextView
@@ -232,11 +225,13 @@
 
                 <!-- Action Buttons (Change Time + Delete) -->
                 <LinearLayout
+                    android:id="@+id/llEditButtons"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
                     android:gravity="top"
-                    android:orientation="horizontal">
+                    android:orientation="horizontal"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
                     <!-- Change Time Button -->
                     <ImageButton
@@ -260,7 +255,7 @@
 
                 </LinearLayout>
 
-            </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- Rating Row - rating + star + review count (hide if no data) -->
 

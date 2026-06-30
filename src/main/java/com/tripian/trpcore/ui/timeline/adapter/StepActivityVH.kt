@@ -155,9 +155,9 @@ class StepActivityVH(
         val duration = poi?.duration
         if (duration != null && duration > 0) {
             binding.tvDuration.text = FormatUtils.formatDuration(duration)
-            binding.llDuration.visibility = View.VISIBLE
+            binding.tvDuration.visibility = View.VISIBLE
         } else {
-            binding.llDuration.visibility = View.GONE
+            binding.tvDuration.visibility = View.GONE
         }
 
         // Cancellation - from poi.additionalData.cancellation or default "Free cancellation"
