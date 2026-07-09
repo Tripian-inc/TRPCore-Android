@@ -58,34 +58,15 @@ class SmartCategoryAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(category: SmartCategory, isLastRowSingleItem: Boolean) {
-            // Set icon
             binding.ivIcon.setImageResource(category.iconRes)
 
-            // Set title
             binding.tvTitle.text = getLanguageForKey(category.titleKey)
 
-            // Set selection state
             val isSelected = selectedCategories.contains(category)
             binding.llContent.isSelected = isSelected
 
-            // Update visual state
             updateSelectionState(isSelected)
 
-            // Adjust width for last row single item (centered, 1/3 width)
-//            val contentParams = binding.llContent.layoutParams as ConstraintLayout.LayoutParams
-//            if (isLastRowSingleItem) {
-//                // When spanning 3 columns but we want same visual width as other items
-//                // Set width to WRAP_CONTENT and let the FrameLayout center it
-//                contentParams.width = binding.root.context.resources.displayMetrics.widthPixels / 3 -
-//                    binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_category_grid_spacing) * 2
-////                contentParams.gravity = android.view.Gravity.CENTER
-//            } else {
-//                contentParams.width = ViewGroup.LayoutParams.MATCH_PARENT
-////                contentParams.gravity = android.view.Gravity.NO_GRAVITY
-//            }
-//            binding.llContent.layoutParams = contentParams
-
-            // Click listener
             binding.llContent.setOnClickListener {
                 onCategoryClicked(category)
             }

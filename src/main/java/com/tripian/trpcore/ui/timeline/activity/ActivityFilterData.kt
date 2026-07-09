@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.timeline.activity
 import java.io.Serializable
 
 /**
- * ActivityFilterData
  * Holds filter state for activity listing
  *
  * @property minPrice Minimum price in currency units (0 = Free)
@@ -21,7 +20,7 @@ data class ActivityFilterData(
     companion object {
         const val DEFAULT_MIN_PRICE = 0f
         const val DEFAULT_MAX_PRICE = 1500f
-        const val DEFAULT_MIN_DURATION = 0f // 0 minutes
+        const val DEFAULT_MIN_DURATION = 0f
         const val DEFAULT_MAX_DURATION = 1440f // 24 hours in minutes
 
         const val PRICE_STEP = 10f
@@ -50,11 +49,9 @@ data class ActivityFilterData(
      */
     fun activeFilterCount(): Int {
         var count = 0
-        // Price filter
         if (minPrice != DEFAULT_MIN_PRICE || maxPrice != DEFAULT_MAX_PRICE) {
             count++
         }
-        // Duration filter
         if (minDuration != DEFAULT_MIN_DURATION || maxDuration != DEFAULT_MAX_DURATION) {
             count++
         }
@@ -70,9 +67,8 @@ data class ActivityFilterData(
     fun formatPrice(price: Float, currency: String): String {
         val priceInt = price.toInt()
 
-        // "Free" for 0 price
         if (priceInt == 0) {
-            return "Free" // Will be replaced with localized string in UI
+            return "Free"
         }
 
         val symbol = when (currency.uppercase()) {
@@ -83,7 +79,6 @@ data class ActivityFilterData(
             else -> currency
         }
 
-        // EUR: symbol after, others: symbol before
         return if (currency.uppercase() == "EUR") {
             "$priceInt$symbol"
         } else {

@@ -9,7 +9,6 @@ import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineEmptyStateBinding
 import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
-import com.tripian.trpcore.databinding.ItemTimelineGeneratingBinding
 import com.tripian.trpcore.databinding.ItemTimelineManualPoiBinding
 import com.tripian.trpcore.databinding.ItemTimelineRecommendationsBinding
 import com.tripian.trpcore.databinding.ItemTimelineReservedActivityBinding
@@ -37,12 +36,9 @@ class TimelineAdapter(
     private val onStepChangeTimeClick: ((TimelineStep) -> Unit)? = null,
     private val onStepDeleteClick: ((TimelineStep) -> Unit)? = null,
     private val onStepReservationClick: ((TimelineStep) -> Unit)? = null,
-    // Route calculation callback for Recommendations
     private val onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null,
-    // Theme 12: section collapse/expand. Both must be non-null to render the chevron.
     private val onSectionToggle: ((cityId: Int) -> Unit)? = null,
     private val isSectionCollapsed: ((cityId: Int) -> Boolean)? = null,
-    // Conflict warning banner — tap and dismiss handlers.
     private val onConflictTap: (() -> Unit)? = null,
     private val onConflictDismiss: (() -> Unit)? = null
 ) : ListAdapter<TimelineDisplayItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
@@ -53,13 +49,11 @@ class TimelineAdapter(
         private const val TYPE_RECOMMENDATIONS = 2
         private const val TYPE_MANUAL_POI = 3
         private const val TYPE_EMPTY_STATE = 4
-        private const val TYPE_GENERATING = 5
         private const val TYPE_SECTION_FOOTER = 6
         private const val TYPE_RESERVED_ACTIVITY = 7
         private const val TYPE_FLEXIBLE_ACTIVITY = 8
         private const val TYPE_CONFLICT_WARNING = 9
 
-        // Payload constants for partial updates
         const val PAYLOAD_ROUTE_INFO_UPDATE = "route_info_update"
     }
 
@@ -67,14 +61,12 @@ class TimelineAdapter(
         return when (val item = getItem(position)) {
             is TimelineDisplayItem.SectionHeader -> TYPE_SECTION_HEADER
             is TimelineDisplayItem.BookedActivity -> {
-                // Differentiate between booked and reserved activities
                 if (item.isReserved) TYPE_RESERVED_ACTIVITY else TYPE_BOOKED_ACTIVITY
             }
             is TimelineDisplayItem.FlexibleActivity -> TYPE_FLEXIBLE_ACTIVITY
             is TimelineDisplayItem.Recommendations -> TYPE_RECOMMENDATIONS
             is TimelineDisplayItem.ManualPoi -> TYPE_MANUAL_POI
             is TimelineDisplayItem.EmptyState -> TYPE_EMPTY_STATE
-            is TimelineDisplayItem.GeneratingState -> TYPE_GENERATING
             is TimelineDisplayItem.SectionFooter -> TYPE_SECTION_FOOTER
             is TimelineDisplayItem.ConflictWarning -> TYPE_CONFLICT_WARNING
         }
@@ -104,9 +96,6 @@ class TimelineAdapter(
             TYPE_EMPTY_STATE -> EmptyStateVH(
                 ItemTimelineEmptyStateBinding.inflate(inflater, parent, false)
             )
-            TYPE_GENERATING -> GeneratingStateVH(
-                ItemTimelineGeneratingBinding.inflate(inflater, parent, false)
-            )
             TYPE_SECTION_FOOTER -> SectionFooterVH(
                 ItemTimelineSectionFooterBinding.inflate(inflater, parent, false)
             )
@@ -127,16 +116,13 @@ class TimelineAdapter(
         position: Int,
         payloads: MutableList<Any>
     ) {
-        // Handle partial updates via payload
         if (payloads.isNotEmpty() && payloads[0] == PAYLOAD_ROUTE_INFO_UPDATE) {
             val item = getItem(position)
             if (holder is RecommendationsVH && item is TimelineDisplayItem.Recommendations) {
-                // Pass full item to ensure fresh conflict data is used
                 holder.updateRouteInfo(item)
                 return
             }
         }
-        // Fall back to full bind
         super.onBindViewHolder(holder, position, payloads)
     }
 
@@ -186,8 +172,7 @@ class TimelineAdapter(
                 onDeleteClick
             )
             is EmptyStateVH -> holder.bind(item as TimelineDisplayItem.EmptyState, onAddPlanClick)
-            is GeneratingStateVH -> holder.bind(item as TimelineDisplayItem.GeneratingState)
-            is SectionFooterVH -> { /* No binding needed - just separator */ }
+            is SectionFooterVH -> { }
             is ConflictWarningVH -> holder.bind(
                 onTap = onConflictTap ?: {},
                 onDismiss = onConflictDismiss ?: {}
@@ -217,8 +202,6 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
                 oldItem.step.id == newItem.step.id
             oldItem is TimelineDisplayItem.EmptyState && newItem is TimelineDisplayItem.EmptyState ->
                 true
-            oldItem is TimelineDisplayItem.GeneratingState && newItem is TimelineDisplayItem.GeneratingState ->
-                true
             oldItem is TimelineDisplayItem.SectionFooter && newItem is TimelineDisplayItem.SectionFooter ->
                 oldItem.city?.id == newItem.city?.id
             oldItem is TimelineDisplayItem.ConflictWarning && newItem is TimelineDisplayItem.ConflictWarning ->
@@ -238,10 +221,8 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
         oldItem: TimelineDisplayItem,
         newItem: TimelineDisplayItem
     ): Any? {
-        // Return payload for partial updates when only route info changed
         if (oldItem is TimelineDisplayItem.Recommendations &&
             newItem is TimelineDisplayItem.Recommendations) {
-            // Same item, only routeInfoList changed
             if (oldItem.plan.id == newItem.plan.id &&
                 oldItem.routeInfoList != newItem.routeInfoList &&
                 oldItem.copy(routeInfoList = newItem.routeInfoList) == newItem) {

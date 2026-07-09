@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Shimmering skeleton list shown while activities load for the first time.
-     Six identical placeholder cards are enough to fill an average viewport. -->
+<!-- Shimmering skeleton list shown while activities load for the first time -->
 <com.facebook.shimmer.ShimmerFrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/shimmerActivitySkeleton"

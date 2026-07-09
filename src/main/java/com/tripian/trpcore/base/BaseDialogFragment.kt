@@ -31,8 +31,6 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
 
     lateinit var viewModel: VM
 
-//    lateinit var mContainer: View
-
     open fun dismissEnable(): Boolean {
         return true
     }
@@ -92,7 +90,6 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-//        mContainer = inflater.inflate(getLayoutId(), container, false)
         viewModel.fragmentManager = childFragmentManager
         _binding = bindingInflater(inflater, container, false)
 
@@ -108,7 +105,6 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
         val inputManager =
             requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
-        // check if no view has focus:
         val v = requireActivity().currentFocus ?: return
 
         inputManager.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)

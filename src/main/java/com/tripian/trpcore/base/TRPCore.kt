@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.one.TRPRest
-import com.tripian.trpcore.BuildConfig
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
@@ -29,8 +28,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -46,7 +43,6 @@ class TRPCore {
         private const val BASE_URL = "https://gyssxjfp9d.execute-api.eu-west-1.amazonaws.com"
         private lateinit var apiVersion: String
 
-        // Intent extra key'leri
         const val EXTRA_ITINERARY = "extra_itinerary"
         const val EXTRA_TRIP_HASH = "extra_trip_hash"
         const val EXTRA_UNIQUE_ID = "extra_unique_id"
@@ -54,10 +50,8 @@ class TRPCore {
         const val EXTRA_APP_LANGUAGE = "extra_app_language"
         const val EXTRA_APP_CURRENCY = "extra_app_currency"
 
-        // SDK Listener - For host app callbacks
         private var listener: TRPCoreSDKListener? = null
 
-        // Activity stack for tracking open SDK activities (WeakReference to avoid memory leaks)
         private val activityStack = mutableListOf<WeakReference<Activity>>()
 
         fun inject(activity: AppCompatActivity) {
@@ -78,7 +72,6 @@ class TRPCore {
          * Called from BaseActivity.onCreate()
          */
         internal fun registerActivity(activity: Activity) {
-            // Clean up any null references first
             activityStack.removeAll { it.get() == null }
             activityStack.add(WeakReference(activity))
         }
@@ -93,21 +86,14 @@ class TRPCore {
 
         /**
          * Closes the SDK by finishing all open SDK activities.
-         * This method can be called from the host app to dismiss the SDK.
-         *
-         * Usage:
-         * ```
-         * TRPCore.closeSDK()
-         * ```
+         * Can be called from the host app to dismiss the SDK.
          */
         fun closeSDK() {
-            // Finish all activities in reverse order (last opened first)
             activityStack.reversed().forEach { ref ->
                 ref.get()?.finish()
             }
             activityStack.clear()
 
-            // Notify host app that SDK is dismissed
             listener?.onSDKDismissed()
         }
 
@@ -214,19 +200,13 @@ class TRPCore {
         }
 
         // =====================
-        // STATIC CURRENCY WRAPPERS (Backward Compatibility)
+        // STATIC CURRENCY WRAPPERS
         // =====================
 
         /**
          * Changes the app currency after SDK initialization.
-         * Static wrapper for backward compatibility.
          *
          * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, etc.)
-         *
-         * Usage:
-         * ```kotlin
-         * TRPCore.changeCurrency("USD")
-         * ```
          */
         fun changeCurrency(currency: String) {
             core.changeCurrency(currency)
@@ -234,7 +214,6 @@ class TRPCore {
 
         /**
          * Gets the current currency code.
-         * Static wrapper for backward compatibility.
          *
          * @return Current ISO 4217 currency code
          */
@@ -244,7 +223,6 @@ class TRPCore {
 
         /**
          * Gets the saved currency code from preferences.
-         * Static wrapper for backward compatibility.
          *
          * @return Saved currency code or empty string if not set
          */
@@ -258,12 +236,6 @@ class TRPCore {
 
         /**
          * Resets the onboarding state, allowing it to be shown again.
-         * Call this if you want to show the onboarding to the user again.
-         *
-         * Usage:
-         * ```kotlin
-         * TRPCore.resetOnboarding(context)
-         * ```
          *
          * @param context Application or Activity context
          */
@@ -300,12 +272,6 @@ class TRPCore {
      *
      * @param currency ISO 4217 currency code (EUR, USD, GBP, TRY, JPY, AUD, CAD, CHF, MXN)
      *                 or locale format (es-MX, en-US, de-DE)
-     *
-     * Example usage:
-     * ```kotlin
-     * TRPCore.core.changeCurrency("USD")
-     * TRPCore.core.changeCurrency("es-MX")  // Resolves to MXN
-     * ```
      */
     fun changeCurrency(currency: String) {
         miscRepository.changeCurrency(currency)
@@ -332,12 +298,6 @@ class TRPCore {
      *
      * @param currencyCode The ISO 4217 currency code (e.g., "EUR", "USD")
      * @return The currency symbol, or the currency code itself if not found
-     *
-     * Example:
-     * ```kotlin
-     * TRPCore.core.getCurrencySymbol("EUR")  // Returns "€"
-     * TRPCore.core.getCurrencySymbol("USD")  // Returns "$"
-     * ```
      */
     fun getCurrencySymbol(currencyCode: String): String {
         return CurrencyUtil.getSymbol(currencyCode)
@@ -349,12 +309,6 @@ class TRPCore {
      * @param amount The price amount
      * @param currencyCode The currency code (uses current appCurrency if null)
      * @return Formatted price string (e.g., "€19.99")
-     *
-     * Example:
-     * ```kotlin
-     * TRPCore.core.formatPrice(19.99)        // Uses current currency
-     * TRPCore.core.formatPrice(19.99, "USD") // Returns "$19.99"
-     * ```
      */
     fun formatPrice(amount: Double, currencyCode: String? = null): String {
         return CurrencyUtil.formatPrice(amount, currencyCode)
@@ -400,7 +354,6 @@ class TRPCore {
         mapBoxApiKey = mapboxApiKey
         apiVersion = environment.getApiVersion()
 
-        // Set Mapbox access token programmatically (instead of XML resource)
         if (Looper.myLooper() == Looper.getMainLooper()) {
             MapboxOptions.accessToken = mapboxApiKey
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
@@ -433,12 +386,10 @@ class TRPCore {
             .build()
             .inject(this)
 
-        // Conditional Firebase initialization - only if not already initialized by consumer app
         if (FirebaseApp.getApps(app).isEmpty()) {
             FirebaseApp.initializeApp(app)
         }
 
-        // Fetch languages on SDK initialization
         fetchLanguages()
 
         return this
@@ -446,8 +397,6 @@ class TRPCore {
 
     /**
      * Starts the Timeline screen directly with a trip hash.
-     * This is useful for demo apps that want to show the timeline
-     * without going through the full trip creation flow.
      *
      * @param context The application context.
      * @param tripHash The timeline/trip hash to load.
@@ -457,8 +406,6 @@ class TRPCore {
         tripHash: String
     ) {
         val intent = ACTimeline.newIntent(context, tripHash)
-        // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
-        // When called from Activity context, SDK runs in same task for proper back navigation
         if (context !is Activity) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
@@ -466,14 +413,8 @@ class TRPCore {
     }
 
     /**
-     * ⭐ MAIN ENTRY POINT - Starts the SDK with an itinerary model
-     *
-     * This method is the primary entry point for the SDK.
-     * Creates a timeline from the itinerary model or fetches an existing one.
-     *
-     * Flow:
-     * 1. Does tripHash exist? → Yes → Fetch timeline
-     * 2. No tripHash? → Create timeline from itinerary
+     * Primary SDK entry point. Fetches the existing timeline when a tripHash
+     * is available, otherwise creates one from the itinerary model.
      *
      * @param context Android context
      * @param itinerary Itinerary data (destinations, activities, favorites)
@@ -494,7 +435,6 @@ class TRPCore {
         appLanguage: String = "en",
         appCurrency: String = "EUR"
     ) {
-        // Validation - either destinationItems or tripItems must have data
         require(itinerary.hasLocationData()) {
             "Either destinationItems or tripItems must contain at least one item with location data."
         }
@@ -504,14 +444,6 @@ class TRPCore {
 
         applyLanguageAndPrefetchCities(appLanguage)
 
-        // Fire-and-forget log - send itinerary parameters to backend
-        sendItineraryLog(itinerary, tripHash, uniqueId, appLanguage, appCurrency)
-
-        // Always launch ACTimeline directly. The activity owns the unified
-        // "Getting your itinerary plan" loader covering both the language
-        // retry and the initial timeline fetch — no host screen flicker, no
-        // duplicated loaders. ACTimelineVM dispatches LANGUAGE_LOAD_FAILED
-        // via the listener if translations can't be obtained.
         val intent = Intent(context, ACTimeline::class.java).apply {
             putExtra(EXTRA_ITINERARY, itinerary)
             putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
@@ -519,8 +451,6 @@ class TRPCore {
             putExtra(EXTRA_CAN_BACK, canBack)
             putExtra(EXTRA_APP_LANGUAGE, appLanguage)
             putExtra(EXTRA_APP_CURRENCY, appCurrency)
-            // Only add FLAG_ACTIVITY_NEW_TASK for non-Activity context (backward compatible)
-            // When called from Activity context, SDK runs in same task for proper back navigation
             if (context !is Activity) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
@@ -535,9 +465,8 @@ class TRPCore {
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
-     * Fetches language values from server. Called automatically during SDK
-     * initialization on an IO dispatcher so the main thread stays free
-     * (ANR prevention).
+     * Fetches language values from the server during SDK initialization
+     * on an IO dispatcher.
      */
     private fun fetchLanguages() {
         initScope.launch {
@@ -554,14 +483,7 @@ class TRPCore {
     /**
      * Applies the caller's [appLanguage] to AppConfig + TRPOne and then
      * background-refreshes the city cache so its translations match the
-     * requested language. Invoked from every SDK start entry point — host apps
-     * can re-open the SDK in a different language and get fresh city names
-     * without an init-time mismatch.
-     *
-     * The [MiscRepository.changeLanguage] call re-selects the translation keys
-     * before ACTimeline opens so its first loader text renders in the requested
-     * language instead of flashing the previously selected one on the first open
-     * after a language change.
+     * requested language.
      */
     private fun applyLanguageAndPrefetchCities(appLanguage: String) {
         if (appLanguage.isNotEmpty()) {
@@ -583,105 +505,7 @@ class TRPCore {
     }
 
     /**
-     * Sends itinerary parameters log to backend (fire-and-forget).
-     * This is called when SDK is started with startWithItinerary.
-     * The log is sent asynchronously and failures do not affect the user experience.
-     * Only sends logs in release builds to avoid unnecessary API calls during development.
-     */
-    private fun sendItineraryLog(
-        itinerary: ItineraryWithActivities,
-        tripHash: String?,
-        uniqueId: String?,
-        appLanguage: String,
-        appCurrency: String
-    ) {
-        // Only send logs in release builds
-        if (BuildConfig.DEBUG) {
-            return
-        }
-
-        try {
-            val requestParams = mapOf<String, Any?>(
-                "tripName" to (itinerary.tripName ?: ""),
-                "startDatetime" to itinerary.startDatetime,
-                "endDatetime" to itinerary.endDatetime,
-                "uniqueId" to itinerary.uniqueId,
-                "tripianHash" to (itinerary.tripianHash ?: ""),
-                "destinationItems" to itinerary.destinationItems,
-                "favouriteItems" to (itinerary.favouriteItems ?: emptyList<Any>()),
-                "tripItems" to (itinerary.tripItems ?: emptyList<Any>()),
-                "appLanguage" to appLanguage,
-                "appCurrency" to appCurrency,
-                "passedTripHash" to (tripHash ?: ""),
-                "passedUniqueId" to (uniqueId ?: "")
-            )
-
-            val logMessage = mapOf(
-                "platform" to "android",
-                "type" to "INFO",
-                "g_api_customer_id" to 0,
-                "user_id" to 0,
-                "endpoint" to "startWithItinerary",
-                "response_msg" to "SDK started with itinerary",
-                "request_params" to requestParams,
-                "api_key" to appConfig.apiKey()
-            )
-
-            val logRequest = mapOf("message" to logMessage)
-            val jsonBody = com.google.gson.Gson().toJson(logRequest)
-
-            val client = okhttp3.OkHttpClient.Builder()
-                .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                .writeTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
-                .build()
-            val mediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
-            val body = jsonBody.toRequestBody(mediaType)
-
-            val ctxForUa = com.tripian.one.network.TConfig.appContext
-            val pkg = ctxForUa.packageName
-            val pInfo = try {
-                ctxForUa.packageManager.getPackageInfo(pkg, 0)
-            } catch (_: Exception) {
-                null
-            }
-            val appVersion = pInfo?.versionName ?: "0"
-            val buildNumber = when {
-                pInfo == null -> "0"
-                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P -> pInfo.longVersionCode.toString()
-                else -> {
-                    @Suppress("DEPRECATION")
-                    pInfo.versionCode.toString()
-                }
-            }
-            val osVersion = android.os.Build.VERSION.RELEASE ?: "0"
-            val deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}".trim()
-            val userAgent = "TRPCoreKit-Android ($pkg/$appVersion; Build/$buildNumber; Android/$osVersion; $deviceModel)"
-
-            val request = okhttp3.Request.Builder()
-                .url("${appConfig.tripianServiceUrl()}/${appConfig.apiVersion()}/misc/logs")
-                .header("User-Agent", userAgent)
-                .addHeader("x-api-key", appConfig.apiKey())
-                .post(body)
-                .build()
-
-            // Fire-and-forget: Use enqueue for fully async call
-            client.newCall(request).enqueue(object : okhttp3.Callback {
-                override fun onFailure(call: okhttp3.Call, e: java.io.IOException) {
-                }
-
-                override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-                    response.close()
-                }
-            })
-        } catch (e: Exception) {
-        }
-    }
-
-    /**
      * Returns the TRPRest API client for direct API access.
-     * Useful for demo apps that need to create timelines or
-     * make other API calls without going through the full SDK flow.
      *
      * @return TRPRest instance
      */
@@ -712,22 +536,14 @@ class TRPCore {
 
     /**
      * Refreshes the supported-cities cache from the API and delivers the
-     * resulting list to the host app. Useful when the host has its own city
-     * picker UI (e.g. a demo screen) and needs the full Tripian catalog
-     * before the SDK is launched.
-     *
-     * - Hits the network; falls back to whatever is in the in-memory /
-     *   SharedPreferences cache if the request fails so the callback always
-     *   yields something to show.
-     * - Idempotent — safe to call from multiple entry points.
-     * - Callback is delivered on the main thread.
+     * resulting list to the host app on the main thread. Falls back to the
+     * cached list if the request fails.
      */
     fun fetchCities(onComplete: (List<com.tripian.one.api.cities.model.City>) -> Unit) {
         initScope.launch {
             try {
                 tripRepository.prefetchCitiesAsync()
             } catch (_: Throwable) {
-                // Fall through to cache below.
             }
             kotlinx.coroutines.withContext(Dispatchers.Main) {
                 onComplete(tripRepository.getCachedCities())

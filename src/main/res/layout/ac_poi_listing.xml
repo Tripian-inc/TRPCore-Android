@@ -85,8 +85,8 @@
                     android:layout_width="0dp"
                     android:layout_marginEnd="@dimen/_8sdp"
                     android:layout_weight="1"
-                    app:icon="@drawable/trp_ic_filter_activity"
-                    app:iconTint="@color/trp_fgWeak"
+                    app:icon="@drawable/trp_ic_filter_activity_badge"
+                    app:iconTint="@null"
                     tools:text="Filters" />
 
                 <com.google.android.material.button.MaterialButton

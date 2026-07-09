@@ -76,7 +76,6 @@ class FRWarning : BaseDialogFragment<FrWarningBinding, FRWarningDialogVM>(FrWarn
         if (dgContent != null) {
             if (!TextUtils.isEmpty(dgContent.title)) {
                 binding.tvTitle.text = dgContent.title
-//                mContainer.findViewById<TextView>(R.id.tvTitle).text = dgContent.title
             }
 
             if (!TextUtils.isEmpty(dgContent.negativeBtn)) {

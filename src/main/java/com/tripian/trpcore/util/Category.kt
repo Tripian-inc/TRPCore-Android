@@ -1,8 +1,5 @@
 package com.tripian.trpcore.util
 
-/**
- * Created by semihozkoroglu on 30.08.2020.
- */
 enum class Category(var type: String, var id: Int) {
     ATTRACTIONS("Attraction", 1),
     RESTAURANT("Restaurant", 3),

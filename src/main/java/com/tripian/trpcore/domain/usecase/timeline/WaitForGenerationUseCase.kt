@@ -11,6 +11,8 @@ import javax.inject.Inject
 /**
  * WaitForGenerationUseCase
  * Polls until generation completes after a segment is created.
+ * 4xx errors abort polling; other failures are treated as transient.
+ * When polling exhausts, returns the last successful fetch (or one final fetch).
  */
 class WaitForGenerationUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -34,20 +36,14 @@ class WaitForGenerationUseCase @Inject constructor(
                 lastFetched = timeline
                 if (timeline.isTimelineGenerated()) return timeline
             } catch (e: HttpException) {
-                // For 4xx client errors, stop polling and propagate
                 if (e.code() in 400..499) throw e
-                // For 5xx / network errors, continue polling
             } catch (_: Throwable) {
-                // Transient — keep polling
             }
             if (attempt < params.maxRetries - 1) {
                 delay(params.intervalMs)
             }
         }
 
-        // Polling exhausted: return whatever the last successful fetch returned;
-        // if every attempt threw, do one final fetch to surface the most recent
-        // state to the caller (mirrors the Observable .switchIfEmpty fallback).
         return lastFetched ?: repository.fetchTimelineAsync(params.tripHash)
     }
 

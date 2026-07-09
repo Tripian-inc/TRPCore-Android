@@ -16,9 +16,7 @@ import com.tripian.trpcore.util.fragment.TransitionType
 import java.io.Serializable
 import kotlin.reflect.KClass
 
-/**
- * Created by semihozkoroglu on 2019-12-06.
- */
+/** Uses commitAllowingStateLoss to avoid "Can not perform this action after onSaveInstanceState". */
 fun FragmentActivity.showFragment(builder: FragmentFactory?) {
     if (builder == null) {
         throw NullPointerException("Builder can't be null")
@@ -34,11 +32,6 @@ fun FragmentActivity.showFragment(builder: FragmentFactory?) {
         for (i in 0 until fm!!.backStackEntryCount) {
             val tag = fm.getBackStackEntryAt(0).name
             fm.popBackStackImmediate(tag, 0)
-
-//            val fragment = fm.findFragmentByTag(tag)
-//            fragment?.let {
-//                fm.beginTransaction().remove(it).commit()
-//            }
         }
     }
 
@@ -70,9 +63,6 @@ fun FragmentActivity.showFragment(builder: FragmentFactory?) {
             else -> ft.replace(containerId, fragment, tag)
         }
 
-        /**
-         * commit() changed to commitAllowingStateLoss() for "Can not perform this action after onSaveInstanceState"
-         */
         ft.commitAllowingStateLoss()
     }
 }

@@ -26,14 +26,12 @@ class FRTimeAndTravelers : Fragment() {
     private var _binding: FrAddPlanTimeTravelersBinding? = null
     private val binding get() = _binding!!
 
-    // Shared ViewModel from parent
     private val sharedVM: AddPlanContainerVM by lazy {
         ViewModelProvider(requireParentFragment())[AddPlanContainerVM::class.java]
     }
 
     private var dayFilterAdapter: DayFilterAdapter? = null
 
-    // Activity Result Launcher for Starting Point Selection
     private val startingPointLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -85,20 +83,13 @@ class FRTimeAndTravelers : Fragment() {
             TRPCore.core.miscRepository.getLanguageValueForKey(key)
         }
 
-        // Add to Day section
         binding.tvAddToDayLabel.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
 
-        // City section (commented out - may be needed later)
-        // binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_CITY)
-
-        // Starting Point section
         binding.tvSelectStartingPointLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_STARTING_POINT)
 
-        // Time section
         binding.tvStartTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_START_TIME)
         binding.tvEndTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_END_TIME)
 
-        // Travelers section
         binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
         binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
     }
@@ -108,7 +99,6 @@ class FRTimeAndTravelers : Fragment() {
             sharedVM.selectDay(position)
         }.apply {
             disablePastDays = true
-            // Past-day check follows the selected city's clock.
             timeZoneId = sharedVM.selectedCityTimeZone()
         }
         binding.rvDays.apply {
@@ -150,25 +140,22 @@ class FRTimeAndTravelers : Fragment() {
     }
 
     /**
-     * Show Compose TimePicker Dialog for start time selection
+     * Show Compose TimePicker Dialog for start time selection.
+     * The picker is floored at the city's "now" for the selected day so a past
+     * time can't be chosen; with no start chosen, it opens on the earliest
+     * selectable slot.
      */
     private fun showStartTimePicker() {
         val currentTime = sharedVM.startTime.value
         val minTime = sharedVM.minSelectableTimeForSelectedDay()
 
         showComposeTimePicker(
-            // With no start chosen, open on the earliest selectable slot (one
-            // minute after the exclusive floor) — today's rounded "now", or 09:00
-            // on a future day.
             initialTime = currentTime ?: MaterialTimePickerHelper.addMinutes(minTime, 1),
-            // Floor the picker at the city's "now" for the selected day so a past
-            // time can't be chosen (null = future day, no floor).
             minTime = minTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 sharedVM.setStartTime(time24h)
 
-                // Clear end time if it's now invalid (before new start time)
                 val endTime = sharedVM.endTime.value
                 if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
                     sharedVM.setEndTime(null)
@@ -181,14 +168,13 @@ class FRTimeAndTravelers : Fragment() {
      * Show Compose TimePicker Dialog for end time selection.
      * End time can be picked first — when start is set, enforce end > start
      * via the picker's minTime; when start is null, allow any time.
+     * A stored [MaterialTimePickerHelper.END_OF_DAY_24H] end (midnight sentinel)
+     * reopens the clock at 00:00.
      */
     private fun showEndTimePicker() {
         val startTime = sharedVM.startTime.value
         val currentTime = sharedVM.endTime.value
 
-        // A stored "23:59" end is the midnight sentinel — seed the clock with
-        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM. With no end chosen
-        // yet, default to one hour after the start (the min stays at the start).
         val initialTime = when {
             currentTime == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
             currentTime != null -> currentTime
@@ -196,7 +182,6 @@ class FRTimeAndTravelers : Fragment() {
         }
 
         showComposeTimePicker(
-            // End must be after the start AND not before the city's "now".
             initialTime = initialTime,
             minTime = MaterialTimePickerHelper.laterOf(startTime, sharedVM.minSelectableTimeForSelectedDay()),
             treatMidnightAsEndOfDay = true,
@@ -217,45 +202,24 @@ class FRTimeAndTravelers : Fragment() {
         }
     }
 
-    // City selection commented out - may be needed later
     private fun setupCitySelection() {
-        // binding.btnCitySelection.setOnClickListener {
-        //     val cities = sharedVM.cities.value ?: return@setOnClickListener
-        //     val selectedCity = sharedVM.selectedCity.value
-        //
-        //     CitySelectionBottomSheet.newInstance(
-        //         cities = cities,
-        //         selectedCity = selectedCity
-        //     ) { city ->
-        //         sharedVM.selectCity(city)
-        //     }.show(childFragmentManager, CitySelectionBottomSheet.TAG)
-        // }
     }
 
     private fun observeViewModel() {
-        // Available days
         sharedVM.availableDays.observe(viewLifecycleOwner) { days ->
             dayFilterAdapter?.setDays(days)
         }
 
-        // Selected day index
         sharedVM.selectedDayIndex.observe(viewLifecycleOwner) { index ->
             dayFilterAdapter?.setSelectedPosition(index)
         }
 
-        // Cities (commented out - may be needed later)
-        // sharedVM.cities.observe(viewLifecycleOwner) { cities ->
-        //     binding.llCitySelection.visibility = if (cities.size > 1) View.VISIBLE else View.GONE
-        // }
-
-        // Starting point name (custom)
         sharedVM.startingPointName.observe(viewLifecycleOwner) { name ->
             if (name != null) {
                 binding.tvStartingPoint.text = name
             }
         }
 
-        // Starting point default (language key) - show with city name
         sharedVM.startingPointNameKey.observe(viewLifecycleOwner) { key ->
             if (key != null) {
                 val cityName = sharedVM.selectedCity.value?.name
@@ -268,10 +232,7 @@ class FRTimeAndTravelers : Fragment() {
             }
         }
 
-        // Update starting point when city changes (if using default)
         sharedVM.selectedCity.observe(viewLifecycleOwner) { city ->
-            // binding.tvSelectedCity.text = city?.name ?: ""  // Commented out - may be needed later
-            // Update starting point text if using default (city center)
             val key = sharedVM.startingPointNameKey.value
             if (key != null && sharedVM.startingPointName.value == null) {
                 val cityCenterLabel = TRPCore.core.miscRepository.getLanguageValueForKey(key)
@@ -283,7 +244,6 @@ class FRTimeAndTravelers : Fragment() {
             }
         }
 
-        // Start time
         sharedVM.startTime.observe(viewLifecycleOwner) { time ->
             val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
             binding.tvStartTime.text = time?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
@@ -295,7 +255,6 @@ class FRTimeAndTravelers : Fragment() {
             )
         }
 
-        // End time
         sharedVM.endTime.observe(viewLifecycleOwner) { time ->
             val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
             binding.tvEndTime.text = time?.let { MaterialTimePickerHelper.formatEndTimeTo12h(it) } ?: selectText
@@ -307,10 +266,8 @@ class FRTimeAndTravelers : Fragment() {
             )
         }
 
-        // Travelers count
         sharedVM.travelers.observe(viewLifecycleOwner) { count ->
             binding.tvTravelerCount.text = count.toString()
-            // Disable minus button if count is 1
             binding.btnMinus.alpha = if (count <= 1) 0.5f else 1.0f
             binding.btnMinus.isEnabled = count > 1
         }

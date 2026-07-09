@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Flexible-time activity cell. Mirrors the reserved-activity cell layout, but the
-  order-time container uses a dashed border and its text track shows
-  "Flexible entry / Check the timetable" in place of a time range. The duration
-  row is omitted (a flexible activity has additionalData.duration == -1).
--->
+<!-- Flexible-time activity cell -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingTop="20dp"
+    android:paddingVertical="20dp"
     android:paddingHorizontal="16dp">
 
     <!-- Order-Time Container — same structure as the reserved-activity cell, just
@@ -238,9 +233,5 @@
         </LinearLayout>
 
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="16dp" />
 
 </LinearLayout>

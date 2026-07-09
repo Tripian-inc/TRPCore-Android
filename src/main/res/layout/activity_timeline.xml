@@ -5,6 +5,7 @@
     android:id="@+id/contentContainer"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="false"
     android:background="@color/trp_white">
 
     <!-- Header -->
@@ -137,8 +138,7 @@
         android:background="@color/trp_transparent"
         app:layout_constraintTop_toBottomOf="@id/btnSavedPlans" />
 
-    <!-- SwipeRefreshLayout with RecyclerView. Conflict warning banner now lives
-         inline inside the RecyclerView so it scrolls with the content. -->
+    <!-- SwipeRefreshLayout with RecyclerView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -313,9 +313,7 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:visibility="visible" />
 
-    <!-- Main View Button - Returns map to initial zoom when multiple cities.
-         Declared after mapContainer so it draws ON TOP of the map (sibling draw
-         order); placing it before the map left it hidden behind the map view. -->
+    <!-- Main View Button - Returns map to initial zoom when multiple cities -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnMainView"
         android:layout_width="wrap_content"

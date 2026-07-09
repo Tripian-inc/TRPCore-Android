@@ -29,8 +29,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
- *  * ACActivityListingVM
- *  * ViewModel for Activity/Tour listing screen
+ * ViewModel for Activity/Tour listing screen
  * iOS Reference: ActivityListingVC
  */
 class ACActivityListingVM @Inject constructor(
@@ -53,7 +52,6 @@ class ACActivityListingVM @Inject constructor(
     private val _activityCount = MutableLiveData<Int>()
     val activityCount: LiveData<Int> = _activityCount
 
-    // Multiple category selection support
     private val _selectedCategoryIndices = MutableLiveData(setOf(0))
     val selectedCategoryIndices: LiveData<Set<Int>> = _selectedCategoryIndices
 
@@ -62,9 +60,8 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Emitted after the reserved-activity segment was created AND the timeline was
-     * re-fetched successfully. Carries the tour title and the selected date so the
-     * Activity can format and show the success toast. Activity sets it back to null
-     * after consuming.
+     * re-fetched. Carries the tour title and selected date for the success toast;
+     * the Activity sets it back to null after consuming.
      */
     data class AddedToItineraryResult(val activityName: String, val selectedDate: Date)
 
@@ -75,30 +72,33 @@ class ACActivityListingVM @Inject constructor(
         _addedToItinerarySuccess.value = null
     }
 
-    // Filter state
+    private val _addSegmentError = MutableLiveData<String?>()
+    val addSegmentError: LiveData<String?> = _addSegmentError
+
+    fun clearAddSegmentError() {
+        _addSegmentError.value = null
+    }
+
     private val _currentFilter = MutableLiveData(ActivityFilterData.default())
     val currentFilter: LiveData<ActivityFilterData> = _currentFilter
 
-    // Sort state
     private val _currentSort = MutableLiveData(SortOption.POPULARITY)
 
-    // Scroll to top event
     private val _scrollToTop = MutableLiveData<Boolean>()
     val scrollToTop: LiveData<Boolean> = _scrollToTop
 
-    // Facet-driven category strip — populated from the FIRST non-empty search
-    // response and then frozen. Subsequent filter/sort/search calls do NOT
-    // mutate the chip strip so the user keeps the same set of categories to
-    // choose from. Multi-select; chip "All" (index 0) clears the selection.
+    /**
+     * Facet-driven category strip — populated from the first non-empty search
+     * response and then frozen so later calls never reshuffle the chips.
+     * Multi-select; chip "All" (index 0) clears the selection.
+     */
     private val _facetCategories = MutableLiveData<List<TourFacetCategory>>(emptyList())
     val facetCategories: LiveData<List<TourFacetCategory>> = _facetCategories
 
-    // True once the chip strip has been populated from the initial response.
-    // Guards the strip against being reshuffled by later responses.
+    /** Guards the chip strip against being reshuffled by later responses. */
     private var categoryStripFrozen: Boolean = false
 
-    // Bounds for the price / duration filter sliders. When null, the filter bottom
-    // sheet falls back to its own DEFAULT_* bounds.
+    /** Bounds for the price / duration filter sliders; null falls back to the sheet's defaults. */
     private val _priceRangeFacet = MutableLiveData<TourFacetPriceRange?>(null)
     val priceRangeFacet: LiveData<TourFacetPriceRange?> = _priceRangeFacet
 
@@ -119,19 +119,15 @@ class ACActivityListingVM @Inject constructor(
     private var selectedDayIndex: Int = 0
     private var cityLat: Double = 0.0
     private var cityLng: Double = 0.0
-    private var selectedDateString: String? = null  // Format: "yyyy-MM-dd"
+    /** Format: "yyyy-MM-dd" */
+    private var selectedDateString: String? = null
     private var currentSearchQuery: String = ""
     private var allActivities: MutableList<TourProduct> = mutableListOf()
 
-    // Total result count reported by the API for the last request (reflects the
-    // selected category). Shown as the result count when no local price /
-    // duration / search narrowing is active; otherwise the visible filtered
-    // size is shown instead.
+    /** Total result count reported by the API for the last request; shown when no local narrowing is active. */
     private var apiTotal: Int = 0
 
-    // Backend returns at most this many tours per call. Each category selection
-    // re-fetches with the category keywords; price/duration/search/sort are then
-    // applied locally on top of that response.
+    /** Backend returns at most this many tours per call. */
     private val fetchLimit: Int = 10
 
     // =====================
@@ -142,23 +138,18 @@ class ACActivityListingVM @Inject constructor(
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
-        // Register the city's timezone so the time-slot grid can drop past slots
-        // for the city's clock even when this screen is opened standalone.
         com.tripian.trpcore.util.CityTimeZones.register(listOfNotNull(planData.selectedCity))
         this.selectedDayIndex = planData.selectedDayIndex
 
-        // Extract city coordinate - required for tour search
         val cityCoordinate = planData.selectedCity?.coordinate
         this.cityLat = cityCoordinate?.lat ?: 0.0
         this.cityLng = cityCoordinate?.lng ?: 0.0
 
-        // Extract selected date and format as "yyyy-MM-dd"
         planData.selectedDay?.let { date ->
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
             this.selectedDateString = dateFormat.format(date)
         }
 
-        // Initial load
         loadActivities()
     }
 
@@ -177,8 +168,7 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Triggered by the keyboard's Enter / IME search action. Re-applies the
-     * full local pipeline with a short skeleton flash so the change feels
-     * deliberate.
+     * full local pipeline with a short skeleton flash.
      */
     fun submitSearch() {
         applyAllFiltersWithSkeleton()
@@ -190,18 +180,13 @@ class ACActivityListingVM @Inject constructor(
 
     fun onCategorySelectionChanged(selectedIndices: Set<Int>) {
         _selectedCategoryIndices.value = selectedIndices
-        // Category filtering must be done server-side: the response only carries
-        // the tours for whatever was last requested, so there is no reliable
-        // local data to narrow by category. Re-fetch with the selected category
-        // keywords behind the inline skeleton.
         loadActivities(useSkeleton = true)
     }
 
     /**
-     * Build the comma-separated category-id string sent to the tour search API
-     * from the currently selected category chips (matches iOS `categoryIds`).
-     * "All" (index 0) or an empty selection returns null so the parameter is
-     * omitted entirely and the API returns every category.
+     * Builds the comma-separated category-id string sent to the tour search API
+     * from the selected chips. "All" (index 0) or an empty selection returns
+     * null so the API returns every category.
      */
     private fun buildCategoryIds(): String? {
         val indices = _selectedCategoryIndices.value ?: setOf(0)
@@ -217,9 +202,7 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * When `true`, the next `_isLoading = true` transition will NOT trigger the
-     * default full-screen Lottie loader from the Activity — used in tandem with
-     * [useSkeletonForNextLoad] so the skeleton variant wins. Cleared by the
-     * Activity via [consumeLoaderSuppression].
+     * full-screen Lottie loader. Cleared by the Activity via [consumeLoaderSuppression].
      */
     private var suppressNextIsLoadingLoader: Boolean = false
 
@@ -230,9 +213,8 @@ class ACActivityListingVM @Inject constructor(
     }
 
     /**
-     * When `true`, the next `_isLoading = true` transition should render as the
-     * inline shimmer skeleton (filter / sort / category / search) rather than
-     * the full-screen Lottie. Cleared by the Activity via [consumeSkeletonRequest].
+     * When `true`, the next `_isLoading = true` transition renders as the inline
+     * shimmer skeleton. Cleared by the Activity via [consumeSkeletonRequest].
      */
     private var useSkeletonForNextLoad: Boolean = false
 
@@ -274,14 +256,12 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Fetches the tour list for the city. The selected category chips ARE
-     * forwarded to the API as categoryIds — category filtering can't be done
-     * locally because the response only holds tours for the last request. Price
-     * / duration / title-search / sort still run locally on [allActivities]
-     * after the response arrives.
+     * Fetches the tour list for the city. Category chips are forwarded to the API
+     * as categoryIds; price / duration / title search / sort run locally on
+     * [allActivities] after the response arrives. minPrice=1 excludes free tours.
      *
      * @param useSkeleton when true, the reload renders as the inline shimmer
-     *        skeleton (category re-fetch) instead of the full-screen Lottie.
+     *        skeleton instead of the full-screen Lottie.
      */
     fun loadActivities(useSkeleton: Boolean = false) {
         if (cityId <= 0) return
@@ -301,21 +281,16 @@ class ACActivityListingVM @Inject constructor(
                         lng = cityLng,
                         keywords = null,
                         tagIds = null,
-                        // Category selection is applied server-side via categoryIds.
                         categoryIds = buildCategoryIds(),
-                        providerId = 15, // Always use providerId 15 for tour-api
+                        providerId = 15,
                         date = selectedDateString,
                         to = selectedDateString,
                         currency = getCurrency(),
-                        // minPrice=1 excludes free/0-priced tours. maxPrice/duration
-                        // and sort are applied locally, so request everything else.
                         minPrice = 1,
                         maxPrice = null,
                         minDuration = null,
                         maxDuration = null,
-                        // Travelers count; never below 1.
                         adults = (planData?.travelers ?: 1).coerceAtLeast(1),
-                        // Popularity baseline; the real sort is applied locally.
                         sortingBy = "score",
                         sortingType = "desc",
                         offset = 0,
@@ -349,9 +324,7 @@ class ACActivityListingVM @Inject constructor(
     // LOCAL FILTER PIPELINE
     // =====================
 
-    // Skeleton flash for filter/sort/category/search interactions — gives the
-    // user a brief visual cue that the list is being recomputed, even though
-    // the work happens locally.
+    /** Skeleton flash for user-triggered local list recomputes. */
     private val skeletonHandler = Handler(Looper.getMainLooper())
     private val skeletonShowMs: Long = 350L
 
@@ -374,17 +347,15 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Apply the local filter pipeline (price → duration → title search → sort)
-     * to [allActivities] and publish the result. Category is NOT filtered here —
-     * it is applied server-side via categoryIds (see [loadActivities]).
+     * to [allActivities] and publish the result. Category is applied server-side
+     * via categoryIds (see [loadActivities]). Publishes the API total as the count
+     * when no local narrowing is active, otherwise the visible size.
      */
     private fun applyAllFilters() {
         val byPriceDuration = allActivities.filter { tourMatchesFilter(it) }
         val bySearch = applyTitleSearch(byPriceDuration)
         val sorted = sortActivities(bySearch)
         _activities.value = sorted
-        // With no local narrowing, show the API-reported total for the selected
-        // category (it can exceed the fetched page). Once a local price /
-        // duration / search filter trims the list, switch to the visible size.
         val hasLocalNarrowing = currentSearchQuery.isNotBlank() ||
             (_currentFilter.value?.hasActiveFilters() == true)
         _activityCount.value = if (hasLocalNarrowing) sorted.size else apiTotal
@@ -437,11 +408,11 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Confirm flow from [ActivityTimeSelectionBottomSheet]: keep the time picker open,
-     * show a bottom-sheet "adding to itinerary" loader, create the reserved-activity
-     * segment, then re-fetch the timeline so the host has the latest state cached.
-     * Only after the fetch completes do we hide the loader and emit the success event
-     * — the Activity then dismisses the sheet, shows the toast and finishes.
+     * Confirm flow from [ActivityTimeSelectionBottomSheet]: creates the
+     * reserved-activity segment, re-fetches the timeline, and only then emits the
+     * success event. The loader itself is the sheet's own inline overlay, driven by
+     * the caller (see [ACActivityListing.showTimeSelectionBottomSheet]) — this VM
+     * never shows a separate loader.
      */
     fun createReservedActivitySegment(
         tour: TourProduct,
@@ -450,8 +421,6 @@ class ACActivityListingVM @Inject constructor(
         slotPrice: Double?,
         isFlexible: Boolean = false
     ) {
-        showBottomSheetLoader(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary")
-
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
@@ -476,26 +445,18 @@ class ACActivityListingVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
-                    hideLottieLoading()
-                    showAlert(
-                        AlertType.ERROR,
-                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                    )
+                    _addSegmentError.value = msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 }
         }
     }
 
-    /** Second leg of the add-activity flow: re-fetch the timeline so we have the latest
-     *  state before signaling success to the UI. */
+    /** Second leg of the add-activity flow: re-fetches the timeline and caches it so
+     *  the timeline screen applies it on return without a second GET. */
     private fun refreshTimelineAfterSegment(tour: TourProduct, selectedDate: Date) {
         viewModelScope.launch {
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
                 .onSuccess { timeline ->
-                    // Cache the freshly-fetched timeline so the timeline screen
-                    // applies it on return without a second GET (no full-screen
-                    // loader on the way back).
                     timelineRepository.cacheGeneratedTimeline(tripHash, timeline)
-                    hideLottieLoading()
                     _addedToItinerarySuccess.value = AddedToItineraryResult(
                         activityName = tour.title.orEmpty(),
                         selectedDate = selectedDate
@@ -503,11 +464,7 @@ class ACActivityListingVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
-                    hideLottieLoading()
-                    showAlert(
-                        AlertType.ERROR,
-                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                    )
+                    _addSegmentError.value = msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 }
         }
     }
@@ -517,13 +474,9 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Pull facet metadata from the first facet entry (single-provider response —
-     * providerId 15) and publish into the filter slider LiveData fields. The
-     * chip strip is populated only from the FIRST non-empty response and then
-     * frozen (see [categoryStripFrozen]) — subsequent filter / search / sort
-     * responses refresh the price + duration ranges but never reshuffle the
-     * chip strip, so the user keeps a stable set of categories to switch
-     * between.
+     * Pulls facet metadata from the first facet entry and publishes it into the
+     * filter slider LiveData fields. The chip strip is populated only from the
+     * first non-empty response and then frozen (see [categoryStripFrozen]).
      */
     private fun updateFacetsFromResponse(facets: List<TourFacet>?) {
         val facet = facets?.firstOrNull()
@@ -580,9 +533,6 @@ class ACActivityListingVM @Inject constructor(
 
     fun getSdkLanguage(): String = appLanguage
 
-    /**
-     * Get currency for filter display
-     */
     fun getCurrency(): String = TRPCore.core.appConfig.appCurrency
 
     // =====================

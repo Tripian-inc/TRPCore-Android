@@ -65,9 +65,6 @@ import com.tripian.trpcore.domain.model.MarkerView
 import com.tripian.trpcore.util.extensions.getBitmap
 import java.util.Objects
 
-/**
- * Created by semihozkoroglu on 15.09.2020.
- */
 class MapView : MapView {
 
     private val ROUTE_SOURCE_ID = "route-source-id"
@@ -75,6 +72,8 @@ class MapView : MapView {
 
     private val RETURN_ROUTE_SOURCE_ID = "return-route-source-id"
     private val RETURN_ROUTE_LAYER_ID = "return-route-layer-id"
+
+    private val STEP_MARKER_ICON_SIZE = 0.8
 
     var map: MapboxMap? = null
     var style: Style? = null
@@ -86,7 +85,8 @@ class MapView : MapView {
     private var mapInteractionListener: (() -> Unit)? = null
 
     private var mapItems = ArrayList<MapStep>()
-    // Track selected marker per city: cityIndex -> markerId
+
+    /** Selected marker per city: cityIndex -> markerId. */
     private var selectedMarkerIds = mutableMapOf<Int, String>()
 
     private lateinit var routeLayer: LineLayer
@@ -113,7 +113,6 @@ class MapView : MapView {
     private fun init() {
         map = mapboxMap
 
-        // Hide map UI controls
         compass.visibility = false
         scalebar.enabled = false
         attribution.enabled = false
@@ -130,7 +129,6 @@ class MapView : MapView {
                 TransitionOptions.Builder().delay(0).duration(0).enablePlacementTransitions(false)
                     .build()
             )
-
 
             style.addSource(geoJsonSource(RETURN_ROUTE_SOURCE_ID) {
                 featureCollection(FeatureCollection.fromFeatures(arrayOf()))
@@ -165,11 +163,10 @@ class MapView : MapView {
     }
 
     /**
-     * Setup gesture listeners for map interactions (pan, zoom).
-     * These are used to hide the bottom item list when user interacts with the map.
+     * Sets up pan/zoom gesture listeners used to notify [mapInteractionListener]
+     * when the user interacts with the map.
      */
     private fun setupGestureListeners() {
-        // Pan/Move listener
         gestures.addOnMoveListener(object : OnMoveListener {
             override fun onMoveBegin(detector: MoveGestureDetector) {
                 mapInteractionListener?.invoke()
@@ -180,22 +177,18 @@ class MapView : MapView {
             }
 
             override fun onMoveEnd(detector: MoveGestureDetector) {
-                // No action needed
             }
         })
 
-        // Scale/Zoom listener
         gestures.addOnScaleListener(object : OnScaleListener {
             override fun onScaleBegin(detector: StandardScaleGestureDetector) {
                 mapInteractionListener?.invoke()
             }
 
             override fun onScale(detector: StandardScaleGestureDetector) {
-                // No action needed
             }
 
             override fun onScaleEnd(detector: StandardScaleGestureDetector) {
-                // No action needed
             }
         })
     }
@@ -232,7 +225,6 @@ class MapView : MapView {
                             }
                         }
                         if (!hitPoi) {
-                            // Click landed on empty map space (no POI feature underneath).
                             mapEmptyClickListener?.invoke()
                         }
                     })
@@ -298,17 +290,13 @@ class MapView : MapView {
 
                     val view = MarkerView(context)
 
-                    // Check if this is a city marker
                     if (item.isCityMarker) {
-                        // City marker: show city icon only
                         view.setCityMarker(true)
                     } else {
-                        // Step marker: normal rendering
                         if (item.markerIcon != -1) {
                             view.iconView.setImageResource(item.markerIcon)
                             view.iconView.visibility = VISIBLE
                         } else {
-                            // Hide icon view completely when no icon is set
                             view.iconView.visibility = GONE
                         }
 
@@ -328,10 +316,8 @@ class MapView : MapView {
                             view.poiOrderTv.visibility = GONE
                         }
 
-                        // Set city index for marker color (0 = first city, 1+ = secondary cities)
                         view.setCityIndex(item.cityIndex)
 
-                        // Set marker selection state
                         view.setSelected(item.isSelected)
                     }
 
@@ -339,7 +325,6 @@ class MapView : MapView {
 
                     style?.addImage(uniq, bitmap)
 
-                    // Track initially selected marker per city
                     if (item.isSelected) {
                         selectedMarkerIds[item.cityIndex] = uniq
                     }
@@ -349,26 +334,22 @@ class MapView : MapView {
                             iconImage(uniq)
                             iconIgnorePlacement(true)
                             iconAllowOverlap(true)
+                            if (!item.isCityMarker) iconSize(STEP_MARKER_ICON_SIZE)
                         }
 
                         when {
                             item.isCityMarker -> {
-                                // City markers go above route layer but below step markers
                                 style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                             }
                             TextUtils.equals(item.group, "step") -> {
-                                // Step items go above route layer (and city markers)
                                 style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                             }
                             else -> {
-                                // Non-step items: check if there's a step layer to add below
                                 val firstStepItem = mapItems.firstOrNull { it.group == "step" }
                                 val stepLayerId = firstStepItem?.let { "step" + it.poiId }
-                                // Check if the step layer exists before adding below it
                                 if (stepLayerId != null && style?.getLayer(stepLayerId) != null) {
                                     style?.addLayerBelow(stretchLayer, stepLayerId)
                                 } else {
-                                    // Step layer doesn't exist yet or no step items, add above route layer
                                     style?.addLayerAbove(stretchLayer, ROUTE_LAYER_ID)
                                 }
                             }
@@ -396,7 +377,6 @@ class MapView : MapView {
             }
 
             if (latLngList.size > 1) {
-                // Use ALL coordinates to fit all points in view
                 val cameraOptionsForCoordinates = map?.awaitCameraForCoordinates(
                     coordinates = latLngList,
                     camera = cameraOptions {
@@ -425,7 +405,6 @@ class MapView : MapView {
                     }
                 )
             } else if (fallbackCoordinate != null) {
-                // Empty day - use city coordinate as fallback
                 map?.flyTo(
                     cameraOptions {
                         center(fallbackCoordinate)
@@ -441,9 +420,8 @@ class MapView : MapView {
     }
 
     /**
-     * Fits the camera to the given points (e.g. one city's step markers) the same
-     * way [moveCameraTo] fits all markers when the single-city map opens. No-op on
-     * an empty list; a single point flies to it at zoom 13.
+     * Fits the camera to the given points. No-op on an empty list;
+     * a single point flies to it at zoom 13.
      */
     suspend fun fitCameraToPoints(points: List<Point>) {
         if (points.isEmpty()) return
@@ -537,65 +515,6 @@ class MapView : MapView {
         }
     }
 
-//    fun showTravels(routes: List<Parts>) {
-//        var currentMode: String? = ""
-//        var currentId = ""
-//        val tmpParts = arrayListOf<Parts>()
-//
-//        routes.forEach {
-//            if (it.mode != currentMode) {
-//                drawRoutes(tmpParts.clone() as List<Parts>, currentMode, currentId)
-//
-//                currentMode = it.mode
-//                currentId = "${it.id ?: System.currentTimeMillis()}"
-//                tmpParts.clear()
-//            }
-//
-//            tmpParts.add(it)
-//        }
-//
-//        if (tmpParts.size > 0) {
-//            drawRoutes(tmpParts, currentMode, currentId)
-//        }
-//    }
-
-//    private fun drawRoutes(routes: List<Parts>, mode: String?, id: String) {
-//        if (routes.isEmpty() || mode.isNullOrEmpty()) return
-//
-//        val color = when (mode) {
-//            "walk" -> "#008B9E" // blue
-//            "bus" -> "#F6D047" // yellow
-//            "metro", "rail_underground" -> "#006F54" // green
-//            else -> "#D9326E" // orange
-//        }
-//
-//        val layer = LineLayer(id, id)
-//
-//        layer.lineWidth(4.0)
-//        layer.lineTranslate(listOf(0.0, 4.0))
-//        layer.lineColor(Color.parseColor(color))
-//
-//        style?.addLayer(layer)
-//
-//        val featureData =
-//            routes.map { it.coords }.flatMap { it.map { Point.fromLngLat(it.lng!!, it.lat!!) } }
-//                .let {
-//                    FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromLngLats(it)))
-//                }
-//
-//        style?.getSourceAs<GeoJsonSource>(id)?.apply {
-//            featureCollection(featureData)
-//        } ?: run {
-//            style?.addSource(
-//                geoJsonSource(id).apply {
-//                    featureCollection(featureData)
-//                }
-//            )
-//        }
-//
-//        routesLayers.add(layer)
-//    }
-
     fun setOnMapLoadListener(task: () -> Unit) {
         mapLoadListener = task
     }
@@ -659,7 +578,6 @@ class MapView : MapView {
             "$uniq-source"
         )
 
-
         routeCurrentLocationLayer.lineWidth(3.0)
         routeCurrentLocationLayer.lineTranslate(listOf(0.0, 4.0))
         routeCurrentLocationLayer.lineDasharray(listOf(1.2, 1.2))
@@ -685,7 +603,6 @@ class MapView : MapView {
             view.iconView.setImageResource(item.markerIcon)
             view.iconView.visibility = VISIBLE
         } else {
-            // Hide icon view completely when no icon is set
             view.iconView.visibility = GONE
         }
 
@@ -809,17 +726,14 @@ class MapView : MapView {
      * @param poiId The poiId of the marker to select
      */
     fun selectMarker(poiId: String) {
-        // Find the marker item
         val newSelectedItem = mapItems.find { it.poiId == poiId } ?: return
 
-        // If same marker is clicked, do nothing
         val newUniq = newSelectedItem.group + newSelectedItem.poiId
         val cityIndex = newSelectedItem.cityIndex
         if (selectedMarkerIds[cityIndex] == newUniq) {
             return
         }
 
-        // Deselect previous marker in the same city if exists
         selectedMarkerIds[cityIndex]?.let { prevUniq ->
             val prevItem = mapItems.find { (it.group + it.poiId) == prevUniq }
             prevItem?.let {
@@ -828,7 +742,6 @@ class MapView : MapView {
             }
         }
 
-        // Select new marker
         newSelectedItem.isSelected = true
         updateMarkerImage(newSelectedItem)
         selectedMarkerIds[cityIndex] = newUniq
@@ -866,380 +779,12 @@ class MapView : MapView {
             view.poiOrderTv.visibility = GONE
         }
 
-        // Set city index for marker color (0 = first city, 1+ = secondary cities)
         view.setCityIndex(item.cityIndex)
 
-        // Set marker selection state
         view.setSelected(item.isSelected)
 
         val bitmap: Bitmap = view.getBitmap()
 
-        // Update the image in the style
         style?.addImage(uniq, bitmap)
     }
 }
-
-//package com.tripian.trpcore.util.widget
-//
-//import android.annotation.SuppressLint
-//import android.content.Context
-//import android.graphics.Bitmap
-//import android.graphics.Color
-//import android.location.Location
-//import android.text.TextUtils
-//import android.util.AttributeSet
-//import android.view.View
-//import com.google.gson.Gson
-//import com.google.gson.JsonElement
-//import com.google.gson.JsonObject
-//import com.mapbox.android.core.permissions.PermissionsManager
-//import com.mapbox.api.directions.v5.models.DirectionsRoute
-//import com.mapbox.core.constants.Constants
-//import com.mapbox.geojson.Feature
-//import com.mapbox.geojson.FeatureCollection
-//import com.mapbox.geojson.LineString
-//import com.mapbox.geojson.Point
-//import com.mapbox.mapboxsdk.camera.CameraUpdateFactory
-//import com.mapbox.mapboxsdk.geometry.LatLng
-//import com.mapbox.mapboxsdk.geometry.LatLngBounds
-//import com.mapbox.mapboxsdk.location.LocationComponent
-//import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions
-//import com.mapbox.mapboxsdk.location.LocationComponentOptions
-//import com.mapbox.mapboxsdk.location.modes.RenderMode
-//import com.mapbox.mapboxsdk.maps.MapboxMap
-//import com.mapbox.mapboxsdk.maps.Style
-//import com.mapbox.mapboxsdk.style.layers.LineLayer
-//import com.mapbox.mapboxsdk.style.layers.PropertyFactory
-//import com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage
-//import com.mapbox.mapboxsdk.style.layers.SymbolLayer
-//import com.mapbox.mapboxsdk.style.layers.TransitionOptions
-//import com.mapbox.mapboxsdk.style.sources.GeoJsonOptions
-//import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
-//import com.tripian.trpcore.domain.model.MapStep
-//import com.tripian.trpcore.util.extensions.dp2Px
-//import com.tripian.trpcore.util.extensions.getBitmap
-//import java.util.Objects
-//
-///**
-// * Created by semihozkoroglu on 15.09.2020.
-// */
-//class MapView2 : com.mapbox.mapboxsdk.maps.MapView {
-//
-//    private val ROUTE_SOURCE_ID = "route-source-id"
-//    private val ROUTE_CURRENT_LOCATION_SOURCE_ID = "route-current-location-source-id"
-//    private val ROUTE_LAYER_ID = "route-layer-id"
-//    private val ROUTE_CURRENT_LOCATION_LAYER_ID = "route-current-location-layer-id"
-//
-//    var map: MapboxMap? = null
-//    var style: Style? = null
-//    var locationComponent: LocationComponent? = null
-//    private var mapLoadListener: (() -> Unit)? = null
-//    private var mapZoomLevelListener: ((Double) -> Unit)? = null
-//    private var mapItemClickListener: ((MapStep) -> Unit)? = null
-//
-//    var mapItems = ArrayList<MapStep>()
-//
-//    private lateinit var routeLayer: LineLayer
-//
-//    constructor(context: Context) : super(context) {
-//        init()
-//    }
-//
-//    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-//        init()
-//    }
-//
-//    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-//        init()
-//    }
-//
-//    private fun init() {
-//        getMapAsync {
-//            map = it
-//            map?.uiSettings?.isCompassEnabled = false
-//            map?.uiSettings?.isRotateGesturesEnabled = false
-//
-//            map?.addOnCameraMoveListener {
-//                map?.let { mapZoomLevelListener?.invoke(it.cameraPosition.zoom) }
-//            }
-//
-//            map?.setStyle(Style.MAPBOX_STREETS) { style ->
-//                this@MapView.style = style
-//
-//                style.transition = TransitionOptions(0, 0, false)
-//
-//                style.addSource(
-//                    GeoJsonSource(
-//                        ROUTE_SOURCE_ID,
-//                        FeatureCollection.fromFeatures(arrayOf())
-//                    )
-//                )
-//                style.addSource(
-//                    GeoJsonSource(
-//                        ROUTE_CURRENT_LOCATION_SOURCE_ID,
-//                        FeatureCollection.fromFeatures(arrayOf())
-//                    )
-//                )
-//
-//                routeLayer = LineLayer(ROUTE_LAYER_ID, ROUTE_SOURCE_ID)
-//                val routeCurrentLocationLayer = LineLayer(
-//                    ROUTE_CURRENT_LOCATION_LAYER_ID,
-//                    ROUTE_CURRENT_LOCATION_SOURCE_ID
-//                )
-//
-//                routeLayer.setProperties(
-//                    PropertyFactory.lineWidth(3f),
-//                    PropertyFactory.lineTranslate(arrayOf(0f, 4f)),
-//                    PropertyFactory.lineDasharray(arrayOf(1.2f, 1.2f)),
-//                    PropertyFactory.lineColor(Color.parseColor("#3887be"))
-//                )
-//
-//                routeCurrentLocationLayer.setProperties(
-//                    PropertyFactory.lineWidth(3f),
-//                    PropertyFactory.lineTranslate(arrayOf(0f, 4f)),
-//                    PropertyFactory.lineDasharray(arrayOf(1.2f, 1.2f)),
-//                    PropertyFactory.lineColor(Color.parseColor("#FF5252"))
-//                )
-//
-//                style.addLayer(routeCurrentLocationLayer)
-//
-//                mapLoadListener?.invoke()
-//            }
-//
-//            setOnMapClickListener()
-//        }
-//    }
-//
-//    private fun setOnMapClickListener() {
-//        map?.addOnMapClickListener { point ->
-//            val pixel = map?.projection?.toScreenLocation(point)
-//
-//            if (pixel != null) {
-//                val features = map?.queryRenderedFeatures(pixel)
-//
-//                if (!features.isNullOrEmpty()) {
-//                    run loop@{
-//                        features.forEach { feature ->
-//                            if (feature.properties()?.get("poiId") != null) {
-//                                val annotation = Gson().fromJson(feature.properties(), MapStep::class.java)
-//
-//                                mapItemClickListener?.invoke(annotation)
-//
-//                                return@loop
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//
-//            true
-//        }
-//    }
-//
-//    fun showMapIcons(items: List<MapStep>) {
-//        try {
-//            style?.removeLayer(routeLayer)
-//
-//            mapItems.addAll(items)
-//
-//            if (items.isNotEmpty()) {
-//                style?.addLayer(routeLayer)
-//            }
-//
-//            items.forEach { item ->
-//                if (item.coordinate != null && item.coordinate!!.lng != -1.0 && item.coordinate!!.lat != -1.0) {
-//                    val uniq = item.group + item.poiId
-//
-//                    val properties: JsonObject = Gson().fromJson(Gson().toJson(item), JsonElement::class.java).asJsonObject
-//
-//                    if (style?.getSource(uniq) == null) {
-//                        style?.addSource(
-//                            GeoJsonSource(
-//                                uniq,
-//                                Feature.fromGeometry(Point.fromLngLat(item.coordinate!!.lng, item.coordinate!!.lat), properties),
-//                                GeoJsonOptions()
-//                            )
-//                        )
-//                    } else {
-//                        (Objects.requireNonNull(style?.getSource(uniq)) as GeoJsonSource)
-//                            .setGeoJson(Feature.fromGeometry(Point.fromLngLat(item.coordinate!!.lng, item.coordinate!!.lat), properties))
-//                    }
-//
-//                    val view = com.tripian.trpcore.domain.model.MarkerView(context)
-//
-//                    if (item.markerIcon != -1) {
-//                        view.iconView.setImageResource(item.markerIcon)
-//                    }
-//
-//                    if (item.isOffer) {
-//                        view.iconViewBackground.visibility = View.VISIBLE
-//                    } else {
-//                        view.iconViewBackground.visibility = View.GONE
-//                    }
-//
-//                    if (item.position != -1) {
-//                        view.poiOrderTv.text = item.position.toString()
-//                        view.poiOrderTv.visibility = View.VISIBLE
-//                    } else {
-//                        view.poiOrderTv.visibility = View.GONE
-//                    }
-//
-//                    val bitmap: Bitmap = view.getBitmap()
-//
-//                    style?.addImage(uniq, bitmap)
-//
-//                    if (style?.getLayer(uniq) == null) {
-//                        if (TextUtils.equals(item.group, "step")) {
-//                            style?.addLayer(
-//                                SymbolLayer(uniq, uniq)
-//                                    .withProperties(
-//                                        iconImage(uniq),
-//                                        PropertyFactory.iconIgnorePlacement(true),
-//                                        PropertyFactory.iconAllowOverlap(true)
-//                                    )
-//                            )
-//                        } else {
-//                            style?.addLayerBelow(
-//                                SymbolLayer(uniq, uniq)
-//                                    .withProperties(
-//                                        iconImage(uniq),
-//                                        PropertyFactory.iconIgnorePlacement(true),
-//                                        PropertyFactory.iconAllowOverlap(true)
-//                                    ), "step" + mapItems[0].poiId
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//        } catch (_: Exception) {
-//        }
-//    }
-//
-//    fun moveCameraTo() {
-//        try {
-//            val latLngList: MutableList<LatLng> = ArrayList()
-//            for (i in mapItems.indices) {
-//                if (mapItems[i].coordinate != null && mapItems[i].coordinate!!.lat != -1.0 && mapItems[i].coordinate!!.lng != -1.0) {
-//                    latLngList.add(LatLng(mapItems[i].coordinate!!.lat, mapItems[i].coordinate!!.lng))
-//                }
-//            }
-//
-//            if (latLngList.size > 1) {
-//                val latLngBounds = LatLngBounds.Builder()
-//                    .includes(latLngList)
-//                    .build()
-//
-//                val padding = dp2Px(32f).toInt()
-//                val paddingLarge = dp2Px(80f).toInt()
-//
-//                map?.animateCamera(CameraUpdateFactory.newLatLngBounds(latLngBounds, padding, padding, padding, paddingLarge))
-//            } else {
-//                if (latLngList.isNotEmpty()) {
-//                    map?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLngList[0], 12.0))
-//                }
-//            }
-//        } catch (_: Exception) {
-//        }
-//    }
-//
-//    fun moveCameraTo(location: Location?, zoom: Double? = null) {
-//        location?.let {
-//            map?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), zoom ?: 16.0))
-//        }
-//    }
-//
-//    fun clearMap(items: List<MapStep>?) {
-//        items?.forEach { item ->
-//            clearItem(item.group + item.poiId)
-//        }
-//    }
-//
-//    fun clearMap() {
-//        mapItems.forEach { item ->
-//            clearItem(item.group + item.poiId)
-//        }
-//
-//        mapItems.clear()
-//    }
-//
-//    private fun clearItem(uniq: String) {
-//        style?.removeLayer(uniq)
-//        style?.removeSource(uniq)
-//        style?.removeImage(uniq)
-//    }
-//
-//    fun showRoute(route: DirectionsRoute) {
-//        val source = style?.getSourceAs<GeoJsonSource>(ROUTE_SOURCE_ID)
-//
-//        source?.setGeoJson(
-//            FeatureCollection.fromFeature(
-//                Feature.fromGeometry(
-//                    LineString.fromPolyline(
-//                        route.geometry()!!,
-//                        Constants.PRECISION_6
-//                    )
-//                )
-//            )
-//        )
-//    }
-//
-//    fun setOnMapLoadListener(task: () -> Unit) {
-//        mapLoadListener = task
-//    }
-//
-//    fun setOnZoomLevelListener(task: (Double) -> Unit) {
-//        mapZoomLevelListener = task
-//    }
-//
-//    fun setOnMapClickListener(task: (MapStep) -> Unit) {
-//        mapItemClickListener = task
-//    }
-//
-//    @SuppressLint("MissingPermission")
-//    fun enableLocation() {
-//        if (PermissionsManager.areLocationPermissionsGranted(context)) {
-//            val locationComponentOptions = LocationComponentOptions.builder(context)
-//                .layerBelow(routeLayer.id)
-//                .bearingTintColor(Color.BLUE)
-//                .build();
-//
-//            val locationComponentActivationOptions = LocationComponentActivationOptions
-//                .builder(context, style!!)
-//                .locationComponentOptions(locationComponentOptions)
-//                .build();
-//
-//            locationComponent = map?.locationComponent
-//            locationComponent?.activateLocationComponent(locationComponentActivationOptions)
-//            locationComponent?.isLocationComponentEnabled = true
-//            locationComponent?.renderMode = RenderMode.GPS
-//        }
-//    }
-//
-//    @SuppressLint("MissingPermission")
-//    fun disableLocation() {
-//        locationComponent?.isLocationComponentEnabled = false
-//    }
-//
-//    fun redirectRoute(route: DirectionsRoute) {
-//        val source = style?.getSourceAs<GeoJsonSource>(ROUTE_CURRENT_LOCATION_SOURCE_ID)
-//
-//        source?.setGeoJson(
-//            FeatureCollection.fromFeature(
-//                Feature.fromGeometry(
-//                    LineString.fromPolyline(
-//                        route.geometry()!!,
-//                        Constants.PRECISION_6
-//                    )
-//                )
-//            )
-//        )
-//    }
-//
-//    fun getBounds(): LatLngBounds {
-//        return map!!.projection.visibleRegion.latLngBounds
-//    }
-//
-//    fun getDistance(): Double {
-//        return map!!.cameraPosition.target.distanceTo(map!!.projection.visibleRegion.latLngBounds.northEast) / 1000
-//    }
-//}

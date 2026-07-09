@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.one.api.pois.model.PoiCategoryGroup
-import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseSimpleBottomSheet
 import com.tripian.trpcore.databinding.BottomSheetPoiFilterBinding
 import com.tripian.trpcore.databinding.ItemCategoryFilterBinding
@@ -28,13 +27,9 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
     private var selectedCategoryIds: MutableSet<Int> = mutableSetOf()
     private var onFilterApplied: ((FilterData) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Restore initial values from arguments
         arguments?.let { args ->
             @Suppress("DEPRECATION")
             val filter = args.getSerializable(ARG_FILTER) as? FilterData ?: FilterData()
@@ -49,12 +44,10 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
     }
 
     private fun setupUI() {
-        // Set localized texts
         binding.tvTitle.text = getLanguageText(LanguageConst.ADD_PLAN_FILTERS)
         binding.btnClear.text = getLanguageText(LanguageConst.ADD_PLAN_CLEAR_SELECTION)
         binding.btnConfirm.text = getLanguageText(LanguageConst.ADD_PLAN_CONFIRM)
 
-        // Setup RecyclerView
         categoryAdapter = CategoryFilterAdapter(
             categoryGroups = categoryGroups,
             selectedCategoryIds = selectedCategoryIds,
@@ -64,7 +57,6 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
                 } else {
                     selectedCategoryIds.remove(categoryId)
                 }
-                updateButtonStates()
             }
         )
 
@@ -72,11 +64,6 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
             layoutManager = LinearLayoutManager(context)
             adapter = categoryAdapter
         }
-
-        // Reflect the restored selection on initial paint — the layout defaults
-        // btnConfirm to disabled, so without this the confirm stays greyed out
-        // even when categories were already chosen before the sheet was reopened.
-        updateButtonStates()
     }
 
     private fun setupListeners() {
@@ -85,10 +72,8 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
         }
 
         binding.btnClear.setOnClickListener {
-            // Clear all selections
             selectedCategoryIds.clear()
             categoryAdapter?.clearSelections()
-            updateButtonStates()
         }
 
         binding.btnConfirm.setOnClickListener {
@@ -96,12 +81,6 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
             onFilterApplied?.invoke(newFilter)
             dismiss()
         }
-    }
-
-    private fun updateButtonStates() {
-        // btnClear stays at its full fg color regardless of selection — only
-        // the confirm button reflects whether anything is selected.
-        binding.btnConfirm.isEnabled = selectedCategoryIds.isNotEmpty()
     }
 
     private fun getLanguageText(key: String): String {
@@ -115,7 +94,6 @@ class FilterBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiFilterBinding>(
     fun setLanguageProvider(provider: (String) -> String) {
         getLanguage = provider
     }
-
 
     companion object {
         const val TAG = "FilterBottomSheet"
@@ -145,7 +123,6 @@ class CategoryFilterAdapter(
     private val onCategoryToggled: (Int, Boolean) -> Unit
 ) : RecyclerView.Adapter<CategoryFilterAdapter.CategoryViewHolder>() {
 
-    // Flatten category groups into list of categories with group info
     private data class CategoryItem(
         val id: Int,
         val name: String,

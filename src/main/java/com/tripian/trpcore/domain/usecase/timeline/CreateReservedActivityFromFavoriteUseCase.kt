@@ -16,6 +16,13 @@ import javax.inject.Inject
 
 /**
  * Creates a reserved_activity segment from a SegmentFavoriteItem (saved plan).
+ *
+ * additionalData datetimes are ISO-8601 while segment startDate/endDate stay
+ * "yyyy-MM-dd HH:mm" — the two formats are intentional. For flexible activities
+ * [resolveFlexibleWindow] keeps the window ahead of "now" (backend rejects a
+ * 00:00 start) and duration -1.0 marks the segment flexible. `cancellation` is
+ * left null so the cell renders the localized free-cancellation text instead of
+ * the favorite's untranslated label.
  */
 class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -47,8 +54,6 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
         val endDatetime: String
         val effectiveDuration: Double?
         if (p.isFlexible) {
-            // Backend rejects a 00:00 start; resolveFlexibleWindow pins the day to
-            // 23:59 and duration -1.0 marks it flexible (parity with the tour path).
             val (start, end) = resolveFlexibleWindow(dateStr)
             startTimeStr = start
             endDatetime = "$dateStr $end"
@@ -74,9 +79,6 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
             activityId = p.favorite.activityId
             title = p.favorite.title
             imageUrl = p.favorite.photoUrl
-            description = p.favorite.description
-            // additionalData carries ISO-8601 datetimes while segment startDate/
-            // endDate stay space-separated "yyyy-MM-dd HH:mm" — don't unify them.
             this.startDatetime = startDatetime.toAdditionalDataIso()
             this.endDatetime = endDatetime.toAdditionalDataIso()
             this.coordinate = coordinate
@@ -91,8 +93,6 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
                     this.currency = price.currency ?: "EUR"
                 }
             }
-            // Left null so the cell renders the localized free-cancellation text;
-            // the favorite's own label is untranslated.
             cancellation = null
             rating = p.favorite.rating
             reviewCount = p.favorite.ratingCount

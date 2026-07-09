@@ -31,18 +31,17 @@ class ManualPoiVH(
         }
     }
 
+    /** Binds the cell. Manual POIs never show a rating row. */
     fun bind(
         item: TimelineDisplayItem.ManualPoi,
         onItemClick: (TimelineDisplayItem) -> Unit,
         onChangeTimeClick: ((TimelineDisplayItem.ManualPoi) -> Unit)? = null,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit
     ) {
-        // Order badge — Theme 14: order 0 (or negative) renders as U+2212.
         binding.tvOrder.text = if (item.order <= 0)
             com.tripian.trpcore.util.extensions.MINUS_SIGN
         else item.order.toString()
 
-        // Apply conflict styling
         if (item.hasConflict) {
             binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
@@ -51,10 +50,8 @@ class ManualPoiVH(
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
-        // Title - semibold 16px primaryText
         binding.tvTitle.text = item.title
 
-        // Time (startTime - endTime format)
         val startTime = item.startTime
         val endTime = item.endTime
         if (startTime != null && endTime != null) {
@@ -73,14 +70,10 @@ class ManualPoiVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Image - 80x80, 4dp corner radius
         TimelineCellBinder.loadPoiImage(binding.ivImage, item.imageUrl)
 
-        // Manual POIs never show rating — the user added these themselves and
-        // the rating is not meaningful in that context.
         binding.llRating.visibility = View.GONE
 
-        // Category Badge - same style as confirmed badge (green bg, green text)
         item.categoryName?.let { category ->
             binding.tvCategory.text = category
             binding.tvCategory.visibility = View.VISIBLE
@@ -88,17 +81,14 @@ class ManualPoiVH(
             binding.tvCategory.visibility = View.GONE
         }
 
-        // Click listeners
         binding.root.setOnClickListener {
             onItemClick(item)
         }
 
-        // Change Time button
         binding.btnChangeTime.setOnClickListener {
             onChangeTimeClick?.invoke(item)
         }
 
-        // Delete/Remove Step button
         binding.btnDelete.setOnClickListener {
             onDeleteClick(item, item.segmentIndex)
         }

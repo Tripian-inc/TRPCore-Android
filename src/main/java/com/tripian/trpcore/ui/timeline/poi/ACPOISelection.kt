@@ -33,13 +33,11 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         setupClickListeners()
         setupCategoryChips()
 
-        // Initialize from arguments
         intent?.let { intent ->
             val city = intent.getSerializableExtra(ARG_CITY) as? City
             city?.let { viewModel.setCity(it) }
         }
 
-        // Initial load
         viewModel.loadPois()
     }
 
@@ -100,14 +98,13 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         }
     }
 
+    /** Categories are populated via LiveData observation. */
     private fun setupCategoryChips() {
-        // Initial categories will be set via LiveData observation
     }
 
     private fun updateCategoryChips(categories: List<POICategory>) {
         binding.chipGroupCategories.removeAllViews()
 
-        // Add "All" chip first
         val allChip = createCategoryChip(
             POICategory(id = "", name = getLanguageForKey(LanguageConst.ALL), isSelected = viewModel.selectedCategory.value == null)
         )
@@ -116,7 +113,6 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         }
         binding.chipGroupCategories.addView(allChip)
 
-        // Add category chips
         categories.forEach { category ->
             val chip = createCategoryChip(category)
             chip.setOnClickListener {

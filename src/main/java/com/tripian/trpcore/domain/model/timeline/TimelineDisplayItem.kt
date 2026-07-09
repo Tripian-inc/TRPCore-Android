@@ -20,7 +20,7 @@ sealed class TimelineDisplayItem : Serializable {
     abstract val startTime: Date?
     abstract val city: City?
     abstract val segmentIndex: Int?
-    abstract val order: Int  // Order number within each city group (1-based)
+    abstract val order: Int  // Order number continuous across all cities in the day (1-based)
     abstract val planId: String?  // Plan ID for conflict detection (higher = newer)
 
     /**
@@ -64,20 +64,13 @@ sealed class TimelineDisplayItem : Serializable {
         val hasConflict: Boolean = false,
         val showTimeOverlapText: Boolean = false,
         /**
-         * Captured at construction (snapshot of the @Transient flag on the
-         * segment's additionalData). Stored on the data class so the outer
-         * DiffUtil sees a change when the availability sweep flips it — the
-         * underlying [TimelineSegment] instance is mutated in-place and would
-         * otherwise compare equal across rebuilds.
+         * Snapshot of the availability-expired flag captured at construction,
+         * so DiffUtil detects in-place mutations of the underlying segment.
          */
         val isAvailabilityExpired: Boolean = false,
         /**
-         * Snapshot of the segment's `startDate`/`endDate` (and additionalData
-         * fallbacks) captured at construction. `TimelineSegment` is mutated
-         * in-place by [ACTimelineVM.applyLocalSegmentTimeUpdate], and without
-         * these captured strings the outer DiffUtil sees the same segment
-         * reference and skips the rebind — so an updated time would not
-         * surface in the UI.
+         * Snapshot of the segment's start/end date-times captured at construction,
+         * so DiffUtil detects in-place time updates on the underlying segment.
          */
         val startDateTimeSnapshot: String? = null,
         val endDateTimeSnapshot: String? = null
@@ -118,7 +111,7 @@ sealed class TimelineDisplayItem : Serializable {
         val endDateTime: String?
             get() = segment.additionalData?.endDatetime ?: segment.endDate
 
-        /** Whether the activity has no real-world coordinate (Theme 6). */
+        /** Whether the activity has no real-world coordinate. */
         val isNoLocation: Boolean
             get() = segment.additionalData?.isNoLocation == true
     }
@@ -128,11 +121,8 @@ sealed class TimelineDisplayItem : Serializable {
      *
      * @param conflictingStepIds Set of step IDs that have visual conflicts (ALL overlapping steps)
      * @param timeOverlapStepIds Set of step IDs that should show "Time Overlap" text (only from different plans)
-     * @param expiredStepIds Set of activity-step IDs whose booked time is no longer
-     *   available. Exists so the post-load availability sweep can re-trigger DiffUtil
-     *   rebinds — `step.isAvailabilityExpired` is mutated in-place on the same
-     *   [TimelineStep] instances, so without this set the outer DiffUtil sees the
-     *   step list as unchanged and never re-renders the expired pill on activity steps.
+     * @param expiredStepIds Set of activity-step IDs whose booked time is no longer available;
+     *   kept as a snapshot so DiffUtil detects in-place mutations of the steps.
      */
     data class Recommendations(
         val plan: TimelinePlan,
@@ -141,21 +131,16 @@ sealed class TimelineDisplayItem : Serializable {
         override val segmentIndex: Int? = null,
         var isExpanded: Boolean = true,
         override val order: Int = 1,
-        val startingOrder: Int = 1,  // Starting order for steps (sequential numbering)
-        var routeInfoList: List<StepRouteInfo> = emptyList(),  // Route info between steps
-        val cachedCity: City? = null,  // City from cache with full coordinate data
-        val recommendationIndex: Int = 1,  // Index for same day/city (1 = first, 2 = second, etc.)
-        val conflictingStepIds: Set<Int> = emptySet(),  // Step IDs with visual conflicts (ALL overlapping)
-        val timeOverlapStepIds: Set<Int> = emptySet(),  // Step IDs that show "Time Overlap" text
+        val startingOrder: Int = 1,
+        var routeInfoList: List<StepRouteInfo> = emptyList(),
+        val cachedCity: City? = null,
+        val recommendationIndex: Int = 1,
+        val conflictingStepIds: Set<Int> = emptySet(),
+        val timeOverlapStepIds: Set<Int> = emptySet(),
         val expiredStepIds: Set<Int> = emptySet(),
         /**
-         * Captured `<id>:<startDateTimes>:<endDateTimes>` of each step at
-         * construction. The `steps` list reference is reused across rebuilds
-         * (Gson-backed ArrayList that the VM mutates in-place for
-         * delete/time-update operations), so without this snapshot the data
-         * class equality would always return true and the outer DiffUtil
-         * would skip the rebind. Includes step count implicitly via the
-         * joined length, so deletes also flip the value.
+         * `<id>:<startDateTimes>:<endDateTimes>` of each step captured at construction,
+         * so DiffUtil detects in-place mutations of the reused `steps` list.
          */
         val stepFingerprint: String = ""
     ) : TimelineDisplayItem() {
@@ -185,14 +170,11 @@ sealed class TimelineDisplayItem : Serializable {
          */
         val startingPointName: String?
             get() {
-                // If segment has accommodation, use accommodation name
                 val accommodation = segment?.accommodation
                 if (accommodation?.name != null) {
                     return accommodation.name
                 }
 
-                // Otherwise, use city name with "City Center" suffix
-                // Use cachedCity first (has full data), then fall back to plan.city
                 val cityName =
                     cachedCity?.name ?: plan.city?.name ?: segment?.cityId?.let { "City" }
                 return if (cityName != null) "$cityName | ${
@@ -208,14 +190,12 @@ sealed class TimelineDisplayItem : Serializable {
          */
         val startingPointCoordinate: com.tripian.one.api.pois.model.Coordinate?
             get() {
-                // First, try segment's direct coordinate (starting point from API)
                 segment?.coordinate?.let { coord ->
                     if (coord.lat != 0.0 && coord.lng != 0.0) {
                         return coord
                     }
                 }
 
-                // If segment has accommodation, use accommodation coordinate
                 val accommodation = segment?.accommodation
                 if (accommodation?.coordinate != null) {
                     val coord = accommodation.coordinate
@@ -224,14 +204,12 @@ sealed class TimelineDisplayItem : Serializable {
                     }
                 }
 
-                // Try cachedCity coordinate (from cache, has full data)
                 cachedCity?.coordinate?.let { coord ->
                     if (coord.lat != 0.0 && coord.lng != 0.0) {
                         return coord
                     }
                 }
 
-                // Finally, fall back to plan.city coordinate
                 return plan.city?.coordinate
             }
     }
@@ -252,11 +230,9 @@ sealed class TimelineDisplayItem : Serializable {
         val hasConflict: Boolean = false,
         val showTimeOverlapText: Boolean = false
     ) : TimelineDisplayItem() {
-        // Use step.startDateTimes first, fallback to segment.startDate
         override val startTime: Date?
             get() = step.startDateTimes?.toDate() ?: segment?.startDate?.toDate()
 
-        // End time from step or segment
         val endTime: Date?
             get() = step.endDateTimes?.toDate() ?: segment?.endDate?.toDate()
 
@@ -281,7 +257,7 @@ sealed class TimelineDisplayItem : Serializable {
         val stepId: Int?
             get() = step.id
 
-        /** Whether the POI has no real-world coordinate (Theme 6). */
+        /** Whether the POI has no real-world coordinate. */
         val isNoLocation: Boolean
             get() = segment?.additionalData?.isNoLocation == true
     }
@@ -289,17 +265,15 @@ sealed class TimelineDisplayItem : Serializable {
     /**
      * Flexible-Time Activity — reserved activities whose `additionalData.duration == -1`
      * and whose start/end fall in the all-day placeholder set {"00:00", "23:59"}.
-     *
-     * Rendered by FlexibleActivityVH with a dashed-border card, U+2212 order chip,
-     * and "Flexible entry / Check the timetable" labels. Pinned to the top of its
-     * city group, excluded from time-conflict detection (start/end are placeholders,
-     * not a real interval).
+     * Pinned to the top of its city group and excluded from time-conflict detection
+     * (start/end are placeholders, not a real interval).
      */
     data class FlexibleActivity(
         val segment: TimelineSegment,
         override val segmentIndex: Int? = null,
         override val city: City? = null,
-        override val order: Int = -1,  // visual order is "−"; not part of numeric chain
+        /** Visual order is "−"; not part of the numeric chain. */
+        override val order: Int = -1,
         override val planId: String? = null,
         val isAvailabilityExpired: Boolean = false,
         val isNoLocation: Boolean = false
@@ -342,19 +316,6 @@ sealed class TimelineDisplayItem : Serializable {
      */
     data class EmptyState(
         val message: String
-    ) : TimelineDisplayItem() {
-        override val startTime: Date? = null
-        override val city: City? = null
-        override val segmentIndex: Int? = null
-        override val order: Int = 0
-        override val planId: String? = null
-    }
-
-    /**
-     * Generating State - Plan being generated display
-     */
-    data class GeneratingState(
-        val message: String = "Generating your itinerary..."
     ) : TimelineDisplayItem() {
         override val startTime: Date? = null
         override val city: City? = null
@@ -432,7 +393,6 @@ fun generateDateRange(startDate: Date?, endDate: Date?): List<Date> {
 
     val dates = mutableListOf<Date>()
 
-    // Normalize start date to beginning of day (00:00:00)
     val startCalendar = Calendar.getInstance().apply {
         time = startDate
         set(Calendar.HOUR_OF_DAY, 0)
@@ -441,7 +401,6 @@ fun generateDateRange(startDate: Date?, endDate: Date?): List<Date> {
         set(Calendar.MILLISECOND, 0)
     }
 
-    // Normalize end date to beginning of day (00:00:00)
     val endCalendar = Calendar.getInstance().apply {
         time = endDate
         set(Calendar.HOUR_OF_DAY, 0)

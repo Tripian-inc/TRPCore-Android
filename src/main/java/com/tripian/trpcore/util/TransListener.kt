@@ -2,9 +2,6 @@ package com.tripian.trpcore.util
 
 import androidx.transition.Transition
 
-/**
- * Created by semihozkoroglu on 2020-01-11.
- */
 open class TransListener: Transition.TransitionListener {
     override fun onTransitionEnd(transition: Transition) {
     }

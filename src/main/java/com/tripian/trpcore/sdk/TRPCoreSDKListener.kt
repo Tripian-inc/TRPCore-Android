@@ -39,9 +39,8 @@ interface TRPCoreSDKListener {
      * Called when user taps on a booked_activity card.
      * Host app should open the booking detail screen in this callback.
      *
-     * Default implementation delegates to [onRequestActivityDetail] so existing
-     * host integrations keep working without changes. Override this when you
-     * need a dedicated booking detail flow.
+     * Default implementation delegates to [onRequestActivityDetail].
+     * Override this when you need a dedicated booking detail flow.
      *
      * @param bookingId ID of the tapped booking (sourced from segment additionalData)
      *
@@ -92,8 +91,7 @@ interface TRPCoreSDKListener {
 
     /**
      * Called when a categorized error occurs in the SDK.
-     * Default implementation delegates to [onError] for backwards compatibility,
-     * so existing implementations keep working without changes.
+     * Default implementation delegates to [onError].
      * Override this when you need to switch on [code] (e.g. show a
      * dedicated retry UI for [TRPCoreErrorCode.LANGUAGE_LOAD_FAILED]).
      *

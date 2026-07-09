@@ -10,7 +10,7 @@ import com.tripian.trpcore.ui.timeline.common.ActivityCardViewHolder
 /**
  * AdapterActivityListing
  * RecyclerView adapter for activity/tour listing
- * Uses shared ActivityCardViewHolder to avoid code duplication
+ * Uses the shared ActivityCardViewHolder
  */
 class AdapterActivityListing(
     private val getLanguage: (String) -> String,
@@ -23,13 +23,11 @@ class AdapterActivityListing(
             parent = parent,
             getLanguage = getLanguage,
             onAddClicked = { cardData ->
-                // Find the original TourProduct by id and pass it to callback
                 currentList.find { it.id == cardData.id || it.productId == cardData.id }
                     ?.let { onAddClicked(it) }
             },
             onItemClicked = onItemClicked?.let { callback ->
                 { cardData ->
-                    // Find the original TourProduct by id and pass it to callback
                     currentList.find { it.id == cardData.id || it.productId == cardData.id }
                         ?.let { callback(it) }
                 }

@@ -10,11 +10,10 @@ import javax.inject.Inject
 /**
  * RemoveSegmentsForDeletedCitiesUseCase
  *
- * Artık itinerary'de olmayan şehirlerin segmentlerini sil
- * iOS Guide Operation 5: Remove Segments for Deleted Cities
- *
- * Sequential deletion (highest index first!)
- * CRITICAL: TimelineDate segment is skipped (special type)
+ * Deletes segments belonging to cities no longer present in the itinerary.
+ * Deletes sequentially, highest index first, to avoid backend array shifts;
+ * the TimelineDate sentinel segment is skipped.
+ * iOS Reference: Guide Operation 5 (Remove Segments for Deleted Cities)
  */
 class RemoveSegmentsForDeletedCitiesUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -49,7 +48,6 @@ class RemoveSegmentsForDeletedCitiesUseCase @Inject constructor(
 
         if (segmentsToDelete.isEmpty()) return ResponseModelBase()
 
-        // CRITICAL: En yüksek index'ten başla (array shifting problemi olmasın)
         for (index in segmentsToDelete.sortedDescending()) {
             try {
                 repository.deleteSegmentAsync(params.tripHash, index)

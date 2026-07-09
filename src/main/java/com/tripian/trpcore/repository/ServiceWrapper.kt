@@ -11,8 +11,7 @@ import javax.inject.Inject
 
 /**
  * Thin suspend-only facade around [TRPRest] for the city + POI endpoints the
- * SDK calls through repositories. The legacy Observable-returning interface
- * (Service) was retired with the RxJava → Coroutines migration.
+ * SDK calls through repositories.
  */
 class ServiceWrapper @Inject constructor(
     val app: Application,

@@ -3,8 +3,7 @@ package com.tripian.trpcore.di.modules.timeline
 import javax.inject.Scope
 
 /**
- * TimelineScope
- * Dagger scope for Timeline module
+ * Dagger scope for the Timeline module.
  */
 @MustBeDocumented
 @Scope

@@ -3,9 +3,6 @@ package com.tripian.trpcore.ui.timeline.addplan
 /**
  * Data class for starting point options
  * Used for tracking the selected starting point type in AddPlanContainerVM
- *
- * Note: The StartingPointBottomSheet UI has been replaced with ACStartingPointSelection Activity.
- * This data class is kept for backward compatibility with option ID constants.
  */
 data class StartingPointOption(
     val id: Int,

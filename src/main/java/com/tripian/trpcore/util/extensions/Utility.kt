@@ -65,11 +65,9 @@ fun EditText.showKeyboard() {
         requestFocus()
         post {
             val imm = this.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-//        imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
             imm.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
         }
     } catch (e: java.lang.Exception) {
-        //Log.e("KeyBoardUtil", e.toString(), e);
     }
 }
 
@@ -78,7 +76,6 @@ fun EditText.hideKeyboard() {
         val imm = this.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(windowToken, 0)
     } catch (e: java.lang.Exception) {
-        //Log.e("KeyBoardUtil", e.toString(), e);
     }
 }
 
@@ -161,7 +158,6 @@ fun changeColor(fromColor: Int, toColor: Int, task: (Int) -> Unit) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         val anim = ValueAnimator.ofFloat(0f, 1f)
         anim.addUpdateListener { animation ->
-            // Use animation position to blend colors.
             val position = animation.animatedFraction
 
             task(blendColors(fromColor, toColor, position))
@@ -306,32 +302,6 @@ fun getUniqueId(context: Context): String {
     }
 }
 
-
-//fun convertToLatLngBounds(southWest: String?, northEast: String?): LatLngBounds? {
-//    val soundWestLatLng: LatLng? = convertToLatLng(southWest)
-//    val northEastLatLng: LatLng? = convertToLatLng(northEast)
-//    return if (soundWestLatLng == null || northEast == null) {
-//        null
-//    } else LatLngBounds(soundWestLatLng, northEastLatLng)
-//}
-
-//fun convertToLatLng(value: String?): LatLng? {
-//    if (TextUtils.isEmpty(value)) {
-//        return null
-//    }
-//
-//    val split = Splitter.on(',').splitToList(value)
-//    return if (split.size != 2) {
-//        null
-//    } else try {
-//        LatLng(split[0].toDouble(), split[1].toDouble())
-//    } catch (e: NullPointerException) {
-//        null
-//    } catch (e: NumberFormatException) {
-//        null
-//    }
-//}
-
 fun getLanguage(): String {
     return appLanguage
 }
@@ -391,11 +361,6 @@ fun View.getBitmap(): Bitmap {
 }
 
 fun Poi?.enableRating(): Boolean {
-//    return if (poiCategoryList != null && poiCategoryList.size > 0) {
-//        poiCategoryList.any { arrayOf("Restaurants", "Cafes", "Bars", "Bakeries", "Breweries", "Desserts").contains(it.name) }
-//    } else {
-//        false
-//    }
     return true
 }
 
@@ -497,15 +462,9 @@ fun convertToLatLng(value: String?): LatLng? {
     }
 }
 
+/** HMS availability check is disabled — always returns false. */
 private fun isHmsAvailable(context: Context?): Boolean {
     return false
-//    var isAvailable = false
-//    if (null != context) {
-//        val result =
-//            HuaweiApiAvailability.getInstance().isHuaweiMobileServicesAvailable(context)
-//        isAvailable = com.huawei.hms.api.ConnectionResult.SUCCESS == result
-//    }
-//    return isAvailable
 }
 
 private fun isGmsAvailable(context: Context?): Boolean {
@@ -563,20 +522,17 @@ fun BaseActivity<*,*>.openUrlExt(url: String) {
 }
 
 private fun Context.getCustomTabBrowser(): ActivityInfo? {
-    // Get default VIEW intent handler.
     val activityIntent = Intent()
         .setAction(Intent.ACTION_VIEW)
         .addCategory(Intent.CATEGORY_BROWSABLE)
         .setData(Uri.fromParts("http", "", null))
 
-    // Get all apps that can handle VIEW intents.
     val resolvedActivityList = packageManager.queryIntentActivities(activityIntent, 0)
 
     for (info in resolvedActivityList) {
         val serviceIntent = Intent()
             .setAction(CustomTabsService.ACTION_CUSTOM_TABS_CONNECTION)
             .setPackage(info.activityInfo.packageName)
-        // Check if this package also resolves the Custom Tabs service.
         if (packageManager.resolveService(serviceIntent, 0) != null) {
             return info.activityInfo
         }
@@ -614,9 +570,8 @@ fun String.capitalizeFirstChar() = this.replaceFirstChar {
     ) else it.toString()
 }
 
-
 fun Context.isConnectedNet(): Boolean {
-    var result = 0 // Returns connection type. 0: none; 1: mobile data; 2: wifi
+    var result = 0
     val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager?
     cm?.run {
         cm.getNetworkCapabilities(cm.activeNetwork)?.run {

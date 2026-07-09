@@ -2,9 +2,6 @@ package com.tripian.trpcore.domain.model
 
 import com.tripian.one.api.bookings.model.Reservation
 
-/**
- * Created by semihozkoroglu on 30.09.2020.
- */
 class PlaceItem : BaseModel() {
     var id: String = ""
     var stepId: Int = -1

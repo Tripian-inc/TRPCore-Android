@@ -38,6 +38,7 @@
             android:layout_marginTop="12dp"
             android:clipToPadding="false"
             android:paddingHorizontal="16dp"
+            tools:visibility="gone"
             android:orientation="horizontal"
             tools:listitem="@layout/item_day_filter"/>
 
@@ -183,7 +184,7 @@
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardAddManually"
             android:layout_width="match_parent"
-            android:layout_height="88dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginHorizontal="16dp"
             android:clickable="true"
@@ -206,6 +207,7 @@
                     android:id="@+id/ivManualIcon"
                     android:layout_width="52dp"
                     android:layout_height="52dp"
+                    android:layout_gravity="top"
                     android:src="@drawable/trp_ic_add_manual"
                     android:contentDescription="Add Manually"/>
 
@@ -228,7 +230,7 @@
 
                     <TextView
                         android:id="@+id/tvManualDesc"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:fontFamily="@font/medium"

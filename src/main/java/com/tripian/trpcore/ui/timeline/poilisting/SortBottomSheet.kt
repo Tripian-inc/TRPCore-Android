@@ -20,13 +20,9 @@ class SortBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiSortBinding>(
     private var currentSort: SortOption = SortOption.DEFAULT
     private var onSortSelected: ((SortOption) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Restore initial values from arguments
         arguments?.let { args ->
             val sortName = args.getString(ARG_SORT)
             currentSort = sortName?.let {
@@ -39,18 +35,15 @@ class SortBottomSheet : BaseSimpleBottomSheet<BottomSheetPoiSortBinding>(
     }
 
     private fun setupUI() {
-        // Set localized texts
         binding.tvTitle.text = getLanguageText(LanguageConst.ADD_PLAN_SORT_BY)
 
-        // Set radio button texts (only Popularity and Rating for POI listing)
         binding.rbPopularity.text = getLanguageText(SortOption.POPULARITY.languageKey)
         binding.rbRating.text = getLanguageText(SortOption.RATING.languageKey)
 
-        // Set current selection
         when (currentSort) {
             SortOption.POPULARITY -> binding.rbPopularity.isChecked = true
             SortOption.RATING -> binding.rbRating.isChecked = true
-            else -> binding.rbPopularity.isChecked = true // Default to popularity for unsupported options
+            else -> binding.rbPopularity.isChecked = true
         }
     }
 

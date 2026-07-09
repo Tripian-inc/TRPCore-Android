@@ -21,10 +21,6 @@ class ACPOISelectionVM @Inject constructor(
     private val poiRepository: PoiRepository
 ) : BaseViewModel() {
 
-    // =====================
-    // LIVEDATA
-    // =====================
-
     private val _pois = MutableLiveData<List<Poi>>()
     val pois: LiveData<List<Poi>> = _pois
 
@@ -37,16 +33,8 @@ class ACPOISelectionVM @Inject constructor(
     private val _selectedCategory = MutableLiveData<String?>()
     val selectedCategory: LiveData<String?> = _selectedCategory
 
-    // =====================
-    // STATE
-    // =====================
-
     private var city: City? = null
     private var currentSearchQuery: String = ""
-
-    // =====================
-    // INITIALIZATION
-    // =====================
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
@@ -64,10 +52,6 @@ class ACPOISelectionVM @Inject constructor(
         )
         _categories.value = categoryList
     }
-
-    // =====================
-    // PUBLIC METHODS
-    // =====================
 
     fun setCity(city: City) {
         this.city = city
@@ -124,10 +108,6 @@ class ACPOISelectionVM @Inject constructor(
             }
         }
     }
-
-    // =====================
-    // LIFECYCLE
-    // =====================
 
     override fun onDestroy() {
         super.onDestroy()

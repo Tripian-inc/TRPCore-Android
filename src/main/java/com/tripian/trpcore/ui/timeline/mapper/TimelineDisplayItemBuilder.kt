@@ -13,19 +13,10 @@ import java.util.Date
 import javax.inject.Inject
 
 /**
- * Builds the day's [TimelineDisplayItem] list from a [Timeline]:
- *
- * 1. Segment iteration — picks segments whose `startDate` falls on the requested day
- *    and turns each into the matching display-item variant (booked, reserved,
- *    flexible, recommendations, manual POI).
- * 2. Conflict detection — flags every overlapping segment/step and stamps
- *    `hasConflict` / `timeOverlap…` on the items.
- * 3. City grouping — emits section headers/footers, pins flexible activities to the
- *    top of their city, applies per-city sequential numbering (1, 2, 3…) and
- *    respects the user's collapsed sections.
- *
- * The class is stateless apart from [tripRepository] (cache lookup) — the per-call
- * inputs cover everything else, so the same instance can serve every day-switch.
+ * Builds the day's [TimelineDisplayItem] list from a [Timeline] in three phases:
+ * segment iteration (per-day segment → display-item variant), conflict detection
+ * (stamps `hasConflict` / `timeOverlap…`) and city grouping (section headers/footers,
+ * flexible activities pinned to top, per-city sequential numbering, collapsed sections).
  */
 class TimelineDisplayItemBuilder @Inject constructor(
     private val tripRepository: TripRepository
@@ -33,14 +24,12 @@ class TimelineDisplayItemBuilder @Inject constructor(
 
     /**
      * @param timeline current timeline payload
-     * @param date the day being rendered (already resolved by the VM)
-     * @param cities cities snapshot used as a fallback when the cache miss path
-     *               needs to resolve `segment.cityId`
-     * @param collapsedSectionCityIds city ids the user has collapsed in the section
-     *                                accordion — content is dropped but the header
-     *                                stays so the user can toggle back
-     * @param emptyStateMessage localized "no plans for this day" text — passed in
-     *                          so the builder doesn't depend on a language provider
+     * @param date the day being rendered
+     * @param cities cities snapshot used as a fallback when the cache can't resolve `segment.cityId`
+     * @param collapsedSectionCityIds city ids collapsed in the section accordion —
+     *                                content is dropped but the header stays
+     * @param emptyStateMessage localized "no plans for this day" text
+     * @param hiddenSegmentIndices segments queued for background deletion; excluded from render
      */
     fun build(
         timeline: Timeline,
@@ -59,6 +48,12 @@ class TimelineDisplayItemBuilder @Inject constructor(
     // Phase 1 — Segment → DisplayItem
     // ============================================================
 
+    /**
+     * Turns the day's segments into display items. "TimelineDate" control segments and
+     * empty smart recommendations are skipped. Expired step ids and step times are
+     * snapshotted into the Recommendations item so its data-class equality (and DiffUtil)
+     * reacts to in-place step mutations.
+     */
     private fun generateForDay(
         timeline: Timeline,
         date: Date,
@@ -72,9 +67,6 @@ class TimelineDisplayItemBuilder @Inject constructor(
 
         segments.forEachIndexed { index, segment ->
             if (segment.startDate?.startsWith(dateStr) != true) return@forEachIndexed
-            // Hide segments that are queued for background deletion (city
-            // removed from itinerary, day outside trip range). The actual
-            // server-side delete happens after initial timeline shows.
             if (index in hiddenSegmentIndices) return@forEachIndexed
 
             val segmentType = segment.segmentType
@@ -133,9 +125,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 SegmentType.ITINERARY, SegmentType.GENERATED -> {
                     if (plan != null) {
                         val steps = plan.steps ?: emptyList()
-                        // "TimelineDate" is a control segment, never render.
                         if (segment.title == "TimelineDate") return@forEachIndexed
-                        // Smart recommendation that came back with no POIs — skip.
                         if (plan.generatedStatus == -2 && steps.isEmpty()) return@forEachIndexed
 
                         val cityId = segment.cityId
@@ -143,20 +133,10 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             item is TimelineDisplayItem.Recommendations && item.city?.id == cityId
                         } + 1
 
-                        // Snapshot expired flags into a Set so the data class
-                        // equality (and therefore the outer DiffUtil) reacts when
-                        // the availability sweep mutates step.isAvailabilityExpired
-                        // in-place. Without this, RecommendationsVH never re-binds
-                        // after the sweep and the expired pill never reaches the UI.
                         val expiredStepIds = steps
                             .filter { it.isAvailabilityExpired }
                             .map { it.id }
                             .toSet()
-                        // Capture step id + times as a single string so the data
-                        // class equality reacts to local-mutation paths
-                        // (delete-step, update-step-time) — the underlying steps
-                        // list is reused across rebuilds and mutated in place, so
-                        // without this fingerprint DiffUtil would skip the rebind.
                         val stepFingerprint = steps.joinToString("|") {
                             "${it.id}:${it.startDateTimes}:${it.endDateTimes}"
                         }
@@ -389,14 +369,9 @@ class TimelineDisplayItemBuilder @Inject constructor(
 
     /**
      * Stamps `hasConflict` / `timeOverlap…` on each item based on time-range overlap.
-     *
-     * Rule recap:
-     * - 2-item conflicts: newer plan shows "Time Overlap", booked-activity has
-     *   special-case (older shows overlap when booked is newer).
-     * - 3+ conflicts: oldest plan keeps only the visual flag, others get overlap.
-     * - Final phase intentionally simplifies: every conflicting item shows the
-     *   overlap text — except non-reserved BookedActivity, which keeps only the
-     *   visual style.
+     * 2-item conflicts: the newer plan shows "Time Overlap" (when booked-activity is the
+     * newer one, the older shows it instead). 3+ groups: the oldest plan keeps only the
+     * visual flag. Non-reserved BookedActivity only ever gets the visual style.
      */
     private fun detectTimeConflicts(items: List<TimelineDisplayItem>): List<TimelineDisplayItem> {
         val timeRanges = collectTimeRanges(items)
@@ -509,9 +484,9 @@ class TimelineDisplayItemBuilder @Inject constructor(
 
         val result = mutableListOf<TimelineDisplayItem>()
         val totalCities = groupedByCity.size
+        var currentOrder = 1
 
         groupedByCity.entries.forEachIndexed { cityIndex, (_, rawCityItems) ->
-            // Pin flexible-time items to the top of their city group (Theme 4).
             val cityItems = rawCityItems.sortedWith(
                 compareByDescending { it is TimelineDisplayItem.FlexibleActivity }
             )
@@ -527,18 +502,21 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 )
             }
 
-            // Theme 12: collapsed sections keep their header (and trailing footer)
-            // so the toggle remains usable, but content is dropped.
             if (isCollapsed) {
+                cityItems.forEach { item ->
+                    if (item !is TimelineDisplayItem.FlexibleActivity) {
+                        currentOrder += when (item) {
+                            is TimelineDisplayItem.Recommendations -> item.steps.size.coerceAtLeast(1)
+                            else -> 1
+                        }
+                    }
+                }
                 if (totalCities > 1 && cityIndex < totalCities - 1) {
                     result.add(TimelineDisplayItem.SectionFooter(city = city))
                 }
                 return@forEachIndexed
             }
 
-            // Sequential per-city numbering. Flexible activities skip the counter
-            // — they render "−" instead.
-            var currentOrder = 1
             cityItems.forEach { item ->
                 val itemWithOrder = when (item) {
                     is TimelineDisplayItem.BookedActivity -> {

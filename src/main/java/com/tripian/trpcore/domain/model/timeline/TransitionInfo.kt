@@ -3,11 +3,10 @@ package com.tripian.trpcore.domain.model.timeline
 import com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem
 
 /**
- * Reserved → Booked transition için bilgi taşıyan model
- * iOS guide'a göre: reserved_activity segment'lerinin booked_activity'ye dönüşmesi
+ * Carries one reserved_activity → booked_activity transition detected on the timeline.
  */
 data class TransitionInfo(
-    val segmentIndex: Int,           // Timeline'daki reserved segment index'i
-    val activityId: String,           // Activity ID (matching key)
-    val tripItem: SegmentActivityItem // Booked activity verisi
+    val segmentIndex: Int,            // Index of the reserved segment on the timeline
+    val activityId: String,           // Matching key
+    val tripItem: SegmentActivityItem // Booked activity data
 )

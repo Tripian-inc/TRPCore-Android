@@ -23,7 +23,8 @@ class StepPoiVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.US)
-    // Turkish locale for formatting: comma as decimal separator, dot as thousand separator
+
+    /** Yields comma as decimal separator, dot as thousand separator. */
     private val turkishLocale = Locale("tr", "TR")
     private val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
 
@@ -38,6 +39,10 @@ class StepPoiVH(
         }
     }
 
+    /**
+     * Binds the step. The rating row is intentionally always hidden, so the
+     * category badge uses a tighter 4dp top margin.
+     */
     fun bind(
         step: TimelineStep,
         order: Int,
@@ -49,10 +54,8 @@ class StepPoiVH(
     ) {
         val poi = step.poi
 
-        // Order badge
         binding.tvOrder.text = order.toString()
 
-        // Apply conflict styling
         if (hasConflict) {
             binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
@@ -61,7 +64,6 @@ class StepPoiVH(
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
-        // Time (startTime - endTime format)
         val startTime = step.startDateTimes?.toDate()
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
@@ -80,37 +82,12 @@ class StepPoiVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Title
         binding.tvTitle.text = poi?.name ?: ""
 
-        // Image - 80x80, 4dp corner radius
         TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url)
 
-        // Rating Row - DISABLED: Rating/review views disabled
         binding.llRating.visibility = View.GONE
-        /*
-        // Rating Row - from poi.rating and poi.ratingCount
-        // Rating uses comma as decimal separator (4,2), reviewCount uses dot as thousand separator (49.565)
-        val rating = poi?.rating
-        val reviewCount = poi?.ratingCount
-        if (rating != null && rating > 0) {
-            binding.tvRating.text = String.format(turkishLocale, "%.1f", rating)
 
-            if (reviewCount != null && reviewCount > 0) {
-                val opinionsText = getLanguage(LanguageConst.ADD_PLAN_OPINIONS)
-                binding.tvReviewCount.text = "${reviewCountFormat.format(reviewCount)} $opinionsText"
-                binding.tvReviewCount.visibility = View.VISIBLE
-            } else {
-                binding.tvReviewCount.visibility = View.GONE
-            }
-
-            binding.llRating.visibility = View.VISIBLE
-        } else {
-            binding.llRating.visibility = View.GONE
-        }
-        */
-
-        // Category Badge
         poi?.category?.firstOrNull()?.name?.let { category ->
             binding.tvCategory.text = category
             binding.tvCategory.visibility = View.VISIBLE
@@ -118,15 +95,12 @@ class StepPoiVH(
             binding.tvCategory.visibility = View.GONE
         }
 
-        // Spacing fix: Adjust category badge margin when rating is hidden
         val density = binding.root.context.resources.displayMetrics.density
         (binding.tvCategory.layoutParams as? ViewGroup.MarginLayoutParams)?.let { params ->
-            // Rating is always hidden, so use smaller margin (4dp instead of 6dp)
             params.topMargin = (4 * density).toInt()
             binding.tvCategory.layoutParams = params
         }
 
-        // Click listeners
         binding.root.setOnClickListener {
             onStepClick?.invoke(step)
         }

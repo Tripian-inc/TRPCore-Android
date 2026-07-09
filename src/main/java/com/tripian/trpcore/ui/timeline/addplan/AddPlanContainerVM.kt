@@ -47,7 +47,7 @@ class AddPlanContainerVM @Inject constructor(
     private val _navigateBack = MutableLiveData<Boolean>()
     val navigateBack: LiveData<Boolean> = _navigateBack
 
-    // Flag to indicate we're navigating back (skip forward navigation in observer)
+    /** True while navigating back so the step observer skips forward navigation. */
     private var _isNavigatingBack = false
     val isNavigatingBack: Boolean get() = _isNavigatingBack
 
@@ -94,7 +94,6 @@ class AddPlanContainerVM @Inject constructor(
     private val _isLoadingCities = MutableLiveData(false)
     val isLoadingCities: LiveData<Boolean> = _isLoadingCities
 
-    // Flag to track if we're using all available cities (no timeline destination)
     private var isUsingAllCities = false
 
     private val _selectedDayIndex = MutableLiveData(0)
@@ -127,13 +126,10 @@ class AddPlanContainerVM @Inject constructor(
     private val _selectedSmartCategories = MutableLiveData<List<SmartCategory>>(emptyList())
     val selectedSmartCategories: LiveData<List<SmartCategory>> = _selectedSmartCategories
 
-    // Accommodation (from trip)
     private var accommodation: Accommodation? = null
 
-    // Booked activities (for starting point selection)
     private var bookedActivities: List<TimelineSegment> = emptyList()
 
-    // Starting point option ID (for bottom sheet selection state)
     var selectedStartingPointOptionId: Int = StartingPointOption.CITY_CENTER
         private set
 
@@ -156,10 +152,6 @@ class AddPlanContainerVM @Inject constructor(
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
 
-        // Theme 3: if the incoming selected day is in the past, jump forward to
-        // today (or the first non-past day) so the user can't start a plan on a
-        // historical date. The caller's selection is honored only when it's
-        // already a valid (non-past) day.
         if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
             val todayIndex = days.indexOfFirst { it.isTodayDate() }
             val firstFutureIndex = days.indexOfFirst { !it.isPastDay() }
@@ -173,7 +165,6 @@ class AddPlanContainerVM @Inject constructor(
         _availableDays.value = days
         _selectedDayIndex.value = dayIndex
 
-        // Initialize plan data
         planData.availableDays = days
         planData.tripHash = tripHash
 
@@ -182,10 +173,6 @@ class AddPlanContainerVM @Inject constructor(
             planData.selectedDayIndex = dayIndex
         }
 
-        // Don't set default times - user should select them
-        // _startTime and _endTime remain null, showing "Select" in UI
-
-        // If no destination cities from timeline, fetch all available cities
         if (citiesList.isEmpty()) {
             isUsingAllCities = true
             _selectedCity.value = null
@@ -199,7 +186,6 @@ class AddPlanContainerVM @Inject constructor(
             planData.cities = citiesList
             planData.selectedCity = city ?: citiesList.firstOrNull()
 
-            // Set default starting point (city center)
             val selectedCityObj = city ?: citiesList.firstOrNull()
             planData.startingPointLocation = selectedCityObj?.coordinate ?: Coordinate().apply {
                 lat = 0.0
@@ -217,7 +203,6 @@ class AddPlanContainerVM @Inject constructor(
     private fun fetchAllCities() {
         _isLoadingCities.value = true
 
-        // First try to get from cache
         val cachedCities = tripRepository.getCachedCities()
         if (cachedCities.isNotEmpty()) {
             _cities.value = cachedCities
@@ -226,7 +211,6 @@ class AddPlanContainerVM @Inject constructor(
             _isLoadingCities.value = false
             updateContinueButtonState()
         } else {
-            // Fetch from API if not cached
             viewModelScope.launch {
                 runCatching { tripRepository.prefetchCitiesAsync() }
                 val cities = tripRepository.getCachedCities()
@@ -274,7 +258,6 @@ class AddPlanContainerVM @Inject constructor(
     fun selectCity(city: City) {
         _selectedCity.value = city
         planData.selectedCity = city
-        // Update starting point if using city center
         if (selectedStartingPointOptionId == StartingPointOption.CITY_CENTER) {
             planData.startingPointLocation = city.coordinate ?: Coordinate().apply {
                 lat = 0.0
@@ -310,7 +293,7 @@ class AddPlanContainerVM @Inject constructor(
         updateContinueButtonState()
     }
 
-    // User location for "Near Me" feature
+    /** User location for the "Near Me" option. */
     private var userLocation: Coordinate? = null
 
     // =====================
@@ -339,7 +322,6 @@ class AddPlanContainerVM @Inject constructor(
         _startingPointNameKey.value = LanguageConst.ADD_PLAN_CITY_CENTER
         planData.startingPointName = null
         planData.startingPointAccommodation = null
-        // Use city center coordinate as default starting point
         planData.startingPointLocation = _selectedCity.value?.coordinate ?: Coordinate().apply {
             lat = 0.0
             lng = 0.0
@@ -366,7 +348,6 @@ class AddPlanContainerVM @Inject constructor(
         val acc = accommodation ?: return
         val coordinate = acc.coordinate ?: return
 
-        // Use accommodation name, or let UI handle the resource string
         val accommodationName = acc.name ?: getLanguageForKey(LanguageConst.ACCOMMODATION_POINT)
         _startingPointName.value = accommodationName
         _startingPointNameKey.value = null
@@ -386,11 +367,9 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     fun setEndTime(time: String?) {
-        // Validate before setting (additional defense layer - UI already validates)
         if (time != null) {
             val startTime = _startTime.value
             if (startTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, time)) {
-                // Invalid - don't set
                 return
             }
         }
@@ -448,7 +427,6 @@ class AddPlanContainerVM @Inject constructor(
                         updateUI()
                     }
                     AddPlanMode.MANUAL -> {
-                        // Open full screen activity for manual selection
                         _openManualListing.value = planData.selectedManualCategory
                     }
                     AddPlanMode.NONE -> { /* Do nothing */ }
@@ -466,7 +444,6 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     fun goToPreviousStep() {
-        // Set flag BEFORE updating currentStep to prevent forward navigation
         _isNavigatingBack = true
 
         when (_currentStep.value) {
@@ -499,7 +476,6 @@ class AddPlanContainerVM @Inject constructor(
     val resetToFirstStep: LiveData<Boolean> = _resetToFirstStep
 
     fun clearSelection() {
-        // Clear only current step's selections - stay on the same step
         when (_currentStep.value) {
             AddPlanStep.SELECT_DAY_AND_CITY -> clearSelectDayStep()
             AddPlanStep.TIME_AND_TRAVELERS -> clearTimeAndTravelersStep()
@@ -510,7 +486,6 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     private fun clearSelectDayStep() {
-        // Reset mode and manual category only - day and city remain unchanged
         _selectedMode.value = AddPlanMode.NONE
         _selectedManualCategory.value = null
         planData.selectedMode = AddPlanMode.NONE
@@ -518,22 +493,18 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     private fun clearTimeAndTravelersStep() {
-        // Reset time selections
         _startTime.value = null
         _endTime.value = null
         planData.startTime = null
         planData.endTime = null
 
-        // Reset travelers to default
         _travelers.value = 1
         planData.travelers = 1
 
-        // Reset starting point to city center
         clearStartingPoint()
     }
 
     private fun clearCategorySelectionStep() {
-        // Reset smart categories only
         _selectedSmartCategories.value = emptyList()
         planData.selectedSmartCategories.clear()
     }
@@ -545,11 +516,12 @@ class AddPlanContainerVM @Inject constructor(
     // =====================
     // COMPLETION
     // =====================
+    /**
+     * Emits [onComplete] without dismissing the sheet; the host dismisses it
+     * only after the segment create succeeds.
+     */
     private fun completeSmartRecommendation() {
         if (planData.isValidForSmartMode()) {
-            // Don't auto-dismiss the sheet — the host keeps it open while the
-            // initial segment create runs, and dismisses only after success.
-            // A failure leaves the sheet on screen so the user can retry.
             _onComplete.value = planData
         }
     }
@@ -570,7 +542,6 @@ class AddPlanContainerVM @Inject constructor(
     private fun updateUI() {
         val step = _currentStep.value ?: AddPlanStep.SELECT_DAY_AND_CITY
 
-        // Update title based on step and mode
         _titleKey.value = when (step) {
             AddPlanStep.SELECT_DAY_AND_CITY -> LanguageConst.ADD_PLAN_ADD_ACTIVITY
             AddPlanStep.TIME_AND_TRAVELERS,
@@ -584,12 +555,8 @@ class AddPlanContainerVM @Inject constructor(
             }
         }
 
-        // Update back button visibility
         _showBackButton.value = step != AddPlanStep.SELECT_DAY_AND_CITY
 
-        // Update clear selection visibility — never on the first step (even
-        // after navigating back from later steps), only on the smart-mode
-        // sub-steps where it actually has something to clear.
         val isSmartMode = planData.selectedMode == AddPlanMode.SMART_RECOMMENDATIONS ||
                 planData.selectedMode == AddPlanMode.SMART
         _showClearSelection.value = when (step) {
@@ -598,7 +565,6 @@ class AddPlanContainerVM @Inject constructor(
             AddPlanStep.CATEGORY_SELECTION -> isSmartMode
         }
 
-        // Update continue button text - always "Continue"
         _continueButtonTextKey.value = LanguageConst.ADD_PLAN_CONTINUE
 
         updateContinueButtonState()

@@ -16,15 +16,8 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ViewSearchBarBinding
 
 /**
- * Custom SearchBar component for AddPlan flow
- *
- * Specs:
- * - Height: 48dp
- * - Border: 0.5dp #CFCFCF
- * - Icon: left 18dp padding
- * - Placeholder: Light 14sp, primaryText color
- * - Text: Medium 14sp, primaryText color
- * - When text entered: search icon hides, clear (X) icon shows on right
+ * Custom SearchBar component for the AddPlan flow. When text is entered the
+ * search icon hides and a clear (X) icon shows on the right.
  */
 class SearchBarView @JvmOverloads constructor(
     context: Context,
@@ -43,7 +36,6 @@ class SearchBarView @JvmOverloads constructor(
     val editText get() = binding.etInput
 
     init {
-        // Load fonts
         lightFont = ResourcesCompat.getFont(context, R.font.light)
         mediumFont = ResourcesCompat.getFont(context, R.font.medium)
 
@@ -51,7 +43,6 @@ class SearchBarView @JvmOverloads constructor(
         setupClearButton()
         setupSearchAction()
 
-        // Initial state - placeholder font (light)
         binding.etInput.typeface = lightFont
     }
 
@@ -87,26 +78,26 @@ class SearchBarView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Toggles icons/fonts for the has-text state; the input's start margin is 18dp
+     * when the search icon is hidden and 50dp (18dp margin + 24dp icon + 8dp gap) when shown.
+     */
     private fun updateUIState(hasText: Boolean) {
         val density = resources.displayMetrics.density
 
         if (hasText) {
-            // Text entered - hide search icon, show clear icon, use medium font
             binding.ivSearch.visibility = View.GONE
             binding.ivClear.visibility = View.VISIBLE
             binding.etInput.typeface = mediumFont
 
-            // Adjust left margin when search icon is hidden (18dp)
             val params = binding.etInput.layoutParams as MarginLayoutParams
             params.marginStart = (18 * density).toInt()
             binding.etInput.layoutParams = params
         } else {
-            // No text - show search icon, hide clear icon, use light font (for placeholder)
             binding.ivSearch.visibility = View.VISIBLE
             binding.ivClear.visibility = View.GONE
             binding.etInput.typeface = lightFont
 
-            // Restore left margin for search icon (18dp icon margin + 24dp icon + 8dp gap = 50dp)
             val params = binding.etInput.layoutParams as MarginLayoutParams
             params.marginStart = (50 * density).toInt()
             binding.etInput.layoutParams = params

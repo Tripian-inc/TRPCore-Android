@@ -40,25 +40,20 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     private var onSegmentCreatedListener: ((Int) -> Unit)? = null
     private var isResetting = false
 
-    // Shared ViewModel accessible by child fragments
     private val sharedVM: AddPlanContainerVM by lazy {
         ViewModelProvider(this, viewModelFactory)[AddPlanContainerVM::class.java]
     }
 
-    // Activity result launcher for manual listing activities
     private val manualListingLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                // Extract selectedDayIndex from result for auto-selecting the day in timeline
                 val selectedDayIndex = result.data?.getIntExtra(
                     ACActivityListing.RESULT_SELECTED_DAY_INDEX,
                     sharedVM.planData.selectedDayIndex
                 ) ?: 0
-                // Segment was created successfully, notify with selectedDayIndex and dismiss
                 onSegmentCreatedListener?.invoke(selectedDayIndex)
                 dismiss()
             }
-            // If cancelled, the bottom sheet remains open for user to try again
         }
 
     override fun isFullscreen() = false
@@ -67,28 +62,25 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initial max height; final value is recomputed once system bar insets are known
-        adjustFragmentContainerMaxHeight(topInset = 0, bottomInset = 0)
-
-        // Why: base now opts the dialog window out of edge-to-edge (decor fits system windows),
-        // so the sheet sits inside (screen − statusBar − navBar). displayMetrics.heightPixels
-        // still reports the full screen, so maxHeight must subtract the system bar heights
-        // explicitly or the fragmentContainer's cap leaves no room for the footer and the
-        // Continue button gets clipped once optional sections (manual categories, travelers)
-        // expand the inner content.
-        view.post {
-            val rootInsets = view.rootWindowInsets ?: return@post
-            val sysBars = WindowInsetsCompat.toWindowInsetsCompat(rootInsets)
+        val activityInsets = requireActivity().window.decorView.rootWindowInsets
+        if (activityInsets != null) {
+            val sysBars = WindowInsetsCompat.toWindowInsetsCompat(activityInsets)
                 .getInsets(WindowInsetsCompat.Type.systemBars())
             adjustFragmentContainerMaxHeight(topInset = sysBars.top, bottomInset = sysBars.bottom)
+        } else {
+            adjustFragmentContainerMaxHeight(topInset = 0, bottomInset = 0)
+            view.post {
+                val rootInsets = view.rootWindowInsets ?: return@post
+                val sysBars = WindowInsetsCompat.toWindowInsetsCompat(rootInsets)
+                    .getInsets(WindowInsetsCompat.Type.systemBars())
+                adjustFragmentContainerMaxHeight(topInset = sysBars.top, bottomInset = sysBars.bottom)
+            }
         }
 
-        // Initialize from arguments
         arguments?.let { args ->
             sharedVM.initializeFromArgs(args)
         }
 
-        // Show first fragment
         showFragment(FRSelectDay())
     }
 
@@ -103,10 +95,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         val screenHeight = displayMetrics.heightPixels
         val density = displayMetrics.density
 
-        val headerHeight = (72 * density).toInt()   // 44dp + 8dp top + 20dp bottom margin
-        val footerHeight = (80 * density).toInt()   // footer
-        val handleHeight = (12 * density).toInt()   // 4dp + 8dp margin
-        val padding = (16 * density).toInt()        // safety buffer
+        val headerHeight = (72 * density).toInt()
+        val footerHeight = (80 * density).toInt()
+        val handleHeight = (12 * density).toInt()
+        val padding = (16 * density).toInt()
 
         val maxHeight = screenHeight - headerHeight - footerHeight - handleHeight - topInset - bottomInset - padding
         binding.fragmentContainer.maxHeight = maxHeight.coerceAtLeast((120 * density).toInt())
@@ -115,14 +107,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     override fun setListeners() {
         super.setListeners()
 
-        // Close button
         binding.ivClose.setOnClickListener {
             dismiss()
         }
 
-        // Back button — visible on every step (incl. the first). On the first
-        // step there is no previous step, so it acts like the close (X) button
-        // and dismisses the whole AddPlan flow; later steps go back one step.
         binding.ivBack.visibility = View.VISIBLE
         binding.ivBack.setOnClickListener {
             if (sharedVM.currentStep.value == AddPlanStep.SELECT_DAY_AND_CITY) {
@@ -132,54 +120,44 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             }
         }
 
-        // Continue button
         binding.btnContinue.setOnClickListener {
             sharedVM.goToNextStep()
         }
 
-        // Clear selection
         binding.tvClearSelection.setOnClickListener {
             sharedVM.clearSelection()
         }
 
-        // Set clear selection text
         binding.tvClearSelection.text = sharedVM.getLanguageForKey(LanguageConst.ADD_PLAN_CLEAR_SELECTION)
     }
 
+    /**
+     * [AddPlanContainerVM.showBackButton] is intentionally not observed: the back
+     * button stays visible on every step, acting as a close affordance on the first.
+     */
     override fun setReceivers() {
-        // Title
         sharedVM.titleKey.observe(viewLifecycleOwner) { key ->
             binding.tvTitle.text = getLanguageForKey(key)
         }
 
-        // Back button stays visible on every step (first step closes the flow).
-        // We intentionally ignore showBackButton here so the first step still
-        // shows it as a close affordance.
-
-        // Continue button state
         sharedVM.continueButtonEnabled.observe(viewLifecycleOwner) { enabled ->
             binding.btnContinue.isEnabled = enabled
         }
 
-        // Continue button text
         sharedVM.continueButtonTextKey.observe(viewLifecycleOwner) { key ->
             binding.btnContinue.text = getLanguageForKey(key)
         }
 
-        // Clear selection visibility
         sharedVM.showClearSelection.observe(viewLifecycleOwner) { show ->
             binding.tvClearSelection.visibility = if (show) View.VISIBLE else View.GONE
         }
 
-        // Step navigation
         sharedVM.currentStep.observe(viewLifecycleOwner) { step ->
-            // Skip navigation if we're resetting or navigating back
             if (!isResetting && !sharedVM.isNavigatingBack) {
                 navigateToStep(step)
             }
         }
 
-        // Navigate back (for fragment transitions)
         sharedVM.navigateBack.observe(viewLifecycleOwner) { shouldGoBack ->
             if (shouldGoBack) {
                 childFragmentManager.popBackStack()
@@ -187,11 +165,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             }
         }
 
-        // Reset to first step (clear selection)
         sharedVM.resetToFirstStep.observe(viewLifecycleOwner) { shouldReset ->
             if (shouldReset) {
                 isResetting = true
-                // Clear entire back stack and show first fragment
                 childFragmentManager.popBackStack(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
                 showFragment(FRSelectDay(), addToBackStack = false)
                 sharedVM.clearResetToFirstStep()
@@ -199,7 +175,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             }
         }
 
-        // Open manual listing
         sharedVM.openManualListing.observe(viewLifecycleOwner) { category ->
             category?.let {
                 openManualListingActivity(it)
@@ -207,21 +182,18 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             }
         }
 
-        // Dismiss sheet
         sharedVM.dismissSheet.observe(viewLifecycleOwner) { shouldDismiss ->
             if (shouldDismiss) {
                 dismiss()
             }
         }
 
-        // Completion
         sharedVM.onComplete.observe(viewLifecycleOwner) { data ->
             data?.let {
                 onAddPlanCompleteListener?.invoke(it)
             }
         }
 
-        // Expand/collapse bottom sheet based on travelers visibility
         sharedVM.expandBottomSheet.observe(viewLifecycleOwner) { expand ->
             expandBottomSheet(expand)
         }
@@ -255,11 +227,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     }
 
     /**
-     * Expand or collapse the bottom sheet based on travelers visibility
-     * Note: No-op - MaxHeightFrameLayout handles content height, footer stays fixed
+     * No-op: MaxHeightFrameLayout caps content height, footer is fixed,
+     * content scrolls internally.
      */
     private fun expandBottomSheet(expand: Boolean) {
-        // No-op: MaxHeightFrameLayout caps content height, footer is fixed, content scrolls internally
     }
 
     private fun openManualListingActivity(category: ManualCategory) {
@@ -268,7 +239,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
 
         when (category) {
             ManualCategory.ACTIVITIES -> {
-                // Open ACActivityListing for tours/activities
                 val intent = ACActivityListing.launch(
                     context = requireContext(),
                     planData = planData,
@@ -277,7 +247,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                 manualListingLauncher.launch(intent)
             }
             ManualCategory.PLACES_OF_INTEREST -> {
-                // Open ACPOIListing for places of interest
                 val intent = ACPOIListing.launch(
                     context = requireContext(),
                     planData = planData,
@@ -287,7 +256,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                 manualListingLauncher.launch(intent)
             }
             ManualCategory.EAT_AND_DRINK -> {
-                // Open ACPOIListing for eat & drink
                 val intent = ACPOIListing.launch(
                     context = requireContext(),
                     planData = planData,
@@ -297,7 +265,6 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                 manualListingLauncher.launch(intent)
             }
         }
-        // Don't dismiss - wait for activity result
     }
 
     fun setOnAddPlanCompleteListener(listener: (AddPlanData) -> Unit) {

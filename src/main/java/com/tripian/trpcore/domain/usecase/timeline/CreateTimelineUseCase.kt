@@ -37,7 +37,6 @@ class CreateTimelineUseCase @Inject constructor(
      */
     private fun createTimelineSettings(itinerary: ItineraryWithActivities): TimelineSettings {
         val cityId = resolveCityId(itinerary)
-        // Pass resolved cityId as default for empty segments
         val segments = itinerary.createSegmentsFromTripItems(defaultCityId = cityId)
 
         return TimelineSettings().apply {
@@ -50,15 +49,12 @@ class CreateTimelineUseCase @Inject constructor(
 
     /**
      * Resolves city ID from itinerary using fallback chain:
-     * NOTE: Do NOT use getFirstCityId() - itinerary cityIds are garbage from host app
      * 1. Search by cityName + countryName from cache
      * 2. Find nearest city by coordinate from cache
+     *
+     * NOTE: Do NOT use getFirstCityId() — itinerary cityIds from the host app are unreliable.
      */
     private fun resolveCityId(itinerary: ItineraryWithActivities): Int {
-        // NOTE: Do NOT use getFirstCityId() - itinerary cityIds are garbage
-        // Only resolve from coordinates or city name
-
-        // 1. Search by cityName + countryName in cached cities
         val cityName = itinerary.getFirstCityName()
         if (cityName != null) {
             val countryName = itinerary.getFirstCountryName()
@@ -67,7 +63,6 @@ class CreateTimelineUseCase @Inject constructor(
             }
         }
 
-        // 3. Search by coordinate in cached cities
         val coordinate = itinerary.getFirstCoordinate()
             ?: throw IllegalArgumentException(
                 "No location data available. Provide either cityId, cityName, or coordinates."
@@ -103,7 +98,7 @@ class CreateTimelineUseCase @Inject constructor(
      * @return Distance in kilometers
      */
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val earthRadius = 6371.0 // Earth radius in km
+        val earthRadius = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2) * sin(dLat / 2) +

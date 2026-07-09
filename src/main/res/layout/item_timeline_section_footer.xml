@@ -8,22 +8,10 @@
     android:layout_marginVertical="4dp"
     android:orientation="vertical">
 
-    <!-- Top line -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/trp_section_divider_line" />
-
     <!-- 10dp gap -->
     <View
         android:layout_width="match_parent"
         android:layout_height="10dp"
         android:background="@color/trp_bgCloudy" />
-
-    <!-- Bottom line -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/trp_section_divider_line" />
 
 </LinearLayout>

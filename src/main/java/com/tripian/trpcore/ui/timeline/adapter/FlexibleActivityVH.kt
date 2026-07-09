@@ -12,22 +12,17 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /**
- * ViewHolder for Flexible-Time Activities.
- *
- * The layout now mirrors [ReservedActivityVH] — same order-time container, vertical
- * line and content row — but the container uses a dashed border and its text track
- * shows "Flexible entry / Check the timetable" instead of a time range.
- *
- *  - No conflict / time-overlap styling — flexible items are excluded from conflict
- *    detection (the 00:00–23:59 envelope is a placeholder, not a real interval).
- *  - No duration row — flexible items carry `additionalData.duration == -1` which is
- *    a sentinel, not a real duration.
+ * ViewHolder for Flexible-Time Activities. Same layout as [ReservedActivityVH] but the
+ * order-time container uses a dashed border and shows "Flexible entry / Check the
+ * timetable" instead of a time range. Flexible items are excluded from conflict
+ * detection, show no duration row, and hide the change-time button (their
+ * 00:00–23:59 start/end are placeholders, not a real interval).
  */
 class FlexibleActivityVH(
     private val binding: ItemTimelineFlexibleActivityBinding
 ) : RecyclerView.ViewHolder(binding.root) {
 
-    /** Past-day mode (Theme 3). When true, click handlers no-op and styles mute. */
+    /** When true, click handlers no-op and styles mute. */
     var isPastDayMode: Boolean = false
 
     private val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -38,6 +33,10 @@ class FlexibleActivityVH(
         key
     }
 
+    /**
+     * Binds the cell. The flexible-title typeface is set on every bind because a
+     * recycled holder may keep the expired state's medium weight.
+     */
     fun bind(
         item: TimelineDisplayItem.FlexibleActivity,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -45,13 +44,6 @@ class FlexibleActivityVH(
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
         onReservationClick: (TimelineDisplayItem.FlexibleActivity) -> Unit
     ) {
-        // Order-time row content. When the activity is no longer available,
-        // the "Flexible entry / Check the timetable" track is replaced with
-        // a single composite line that keeps the "Flexible entry" prefix in
-        // place of the timed cells' "HH:mm - HH:mm", followed by the same
-        // middle-dot + red icon + "Not available" suffix the timed cells
-        // use. The container also swaps to the solid red-bordered expired
-        // pill so every activity cell shares the same expired treatment.
         if (item.isAvailabilityExpired) {
             val flexibleLabel = getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE)
                 .ifBlank { "Flexible entry" }
@@ -60,11 +52,6 @@ class FlexibleActivityVH(
             binding.orderTimeContainer
                 .setBackgroundResource(R.drawable.trp_bg_order_time_container_expired)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_expired)
-            // Match the timed cells' badge text style — XML keeps tvFlexibleTitle
-            // semibold for the normal "Flexible entry" title, but inside the
-            // expired pill the whole spannable should render in the same medium
-            // weight that `tvTime` uses on Reserved/Step activity cells so the
-            // badge looks consistent across all activity types.
             binding.tvFlexibleTitle.typeface =
                 androidx.core.content.res.ResourcesCompat.getFont(
                     binding.tvFlexibleTitle.context,
@@ -82,9 +69,6 @@ class FlexibleActivityVH(
             binding.orderTimeContainer
                 .setBackgroundResource(R.drawable.trp_bg_order_time_container_flexible)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
-            // Restore the XML default (semibold) so a recycled VH that just
-            // rendered the expired state doesn't keep its medium typeface for
-            // the normal "Flexible entry" title.
             binding.tvFlexibleTitle.typeface =
                 androidx.core.content.res.ResourcesCompat.getFont(
                     binding.tvFlexibleTitle.context,
@@ -98,18 +82,13 @@ class FlexibleActivityVH(
             applyOrderRowStyle(muted = isPastDayMode)
         }
 
-        // Title
         binding.tvTitle.text = item.title
 
-        // Activity badge — always shown on FlexibleActivity cells (these cells
-        // exist precisely because the segment is a flexible-time activity).
         binding.tvActivityBadge.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
 
-        // Image (Nexus default logo fallback handled by the shared binder).
         TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
-        // Rating row (hide if no rating)
         val rating = item.rating
         val reviewCount = item.reviewCount
         if (rating != null && rating > 0) {
@@ -127,30 +106,22 @@ class FlexibleActivityVH(
             binding.llRating.visibility = View.GONE
         }
 
-        // No-Location badge (Theme 6).
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
-        // Cancellation
         val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
-        // Reservation CTA — hidden in past-day mode
         binding.btnReservation.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
         binding.btnReservation.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
-        // Past-day style for non-order-row text.
         if (isPastDayMode) {
             applyPastDayStyle()
         }
 
-        // Change-time is hidden for flexible items: their start/end are 00:00–23:59
-        // placeholders, so picking a real time would conceptually convert the item
-        // into a non-flexible reserved activity.
         binding.btnChangeTime.visibility = View.GONE
 
-        // Click handlers — no-op when past-day.
         binding.root.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
             onItemClick(item)

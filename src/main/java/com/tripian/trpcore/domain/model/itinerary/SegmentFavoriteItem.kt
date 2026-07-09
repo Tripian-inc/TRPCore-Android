@@ -9,18 +9,18 @@ import kotlinx.parcelize.Parcelize
  */
 @Parcelize
 data class SegmentFavoriteItem(
-    val activityId: String? = null,         // Activity ID (e.g., "15423")
-    val title: String,                      // Activity title
-    val cityName: String,                   // City name
-    val cityId: Int? = null,                // City ID
-    val photoUrl: String? = null,           // Image URL
-    val description: String? = null,        // Description
-    val activityUrl: String? = null,        // Detail URL
-    val coordinate: ItineraryCoordinate,    // Location
+    val activityId: String? = null,         // e.g., "15423"
+    val title: String,
+    val cityName: String,
+    val cityId: Int? = null,
+    val photoUrl: String? = null,
+    val description: String? = null,
+    val activityUrl: String? = null,
+    val coordinate: ItineraryCoordinate,
     val rating: Double? = null,             // Rating (0-5)
-    val ratingCount: Int? = null,           // Review count
-    val cancellation: String? = null,       // Cancellation policy
+    val ratingCount: Int? = null,
+    val cancellation: String? = null,
     val duration: Double? = null,           // Duration (minutes)
-    val price: SegmentActivityPrice? = null,// Price information
+    val price: SegmentActivityPrice? = null,
     val locations: List<String>? = null     // Location descriptions
 ) : Parcelable

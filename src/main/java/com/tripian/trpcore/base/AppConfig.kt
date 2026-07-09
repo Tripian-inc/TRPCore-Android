@@ -13,14 +13,12 @@ abstract class AppConfig {
     var appLanguage: String = "en"
         set(value) {
             field = value
-            // Sync with TRPOne's TConfig for API requests
             TConfig.lang = value
         }
 
     var appCurrency: String = "EUR"
         set(value) {
             field = value
-            // Sync with TRPOne's TConfig for API requests
             TConfig.currency = value
         }
 

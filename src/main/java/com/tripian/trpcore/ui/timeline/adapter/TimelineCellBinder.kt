@@ -17,18 +17,13 @@ internal fun String.languageValue(): String =
     }
 
 /**
- * Shared bind helpers for timeline cells.
- *
- * The cells use different generated ViewBinding types (no common supertype), so
- * rather than a base ViewHolder, the logic that was duplicated across the
- * activity/POI ViewHolders lives here and operates on the concrete views.
+ * Shared bind helpers for timeline cells. The cells use different generated
+ * ViewBinding types (no common supertype), so the shared logic operates on the
+ * concrete views instead of a base ViewHolder.
  */
 internal object TimelineCellBinder {
 
-    /**
-     * Activity image. The no-image / load-error fallback is the SDK's generic
-     * placeholder (Civitatis behavior, identical to the previous inline logic).
-     */
+    /** Activity image; the no-image / load-error fallback is the SDK's generic placeholder. */
     fun loadActivityImage(imageView: ImageView, imageUrl: String?) {
         val fallback = R.drawable.trp_bg_place_holder_image
         if (!imageUrl.isNullOrBlank()) {

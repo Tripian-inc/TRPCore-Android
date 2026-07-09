@@ -10,5 +10,4 @@ import com.tripian.trpcore.databinding.ItemTimelineSectionFooterBinding
 class SectionFooterVH(
     binding: ItemTimelineSectionFooterBinding
 ) : RecyclerView.ViewHolder(binding.root) {
-    // No binding needed - just displays the separator line
 }

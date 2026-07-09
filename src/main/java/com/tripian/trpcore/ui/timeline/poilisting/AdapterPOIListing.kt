@@ -44,10 +44,8 @@ class AdapterPOIListing(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(poi: Poi) {
-            // Name
             binding.tvPOIName.text = poi.name ?: ""
 
-            // Image
             val imageUrl = poi.image?.url
             if (!imageUrl.isNullOrEmpty()) {
                 val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_corner_radius_3dp)
@@ -60,15 +58,12 @@ class AdapterPOIListing(
                 binding.ivPOIImage.setImageResource(R.color.trp_grey_10)
             }
 
-            // Rating
             val rating = poi.rating
             val ratingCount = poi.ratingCount
             if (rating > 0) {
                 binding.llRatingRow.visibility = View.VISIBLE
-                // Format rating with comma (e.g., "5,0")
                 binding.tvRating.text = String.format(Locale.GERMAN, "%.1f", rating)
 
-                // Rating count with dot as thousand separator (e.g., "620.214 opiniones")
                 if (ratingCount != null && ratingCount > 0) {
                     binding.tvRatingCount.visibility = View.VISIBLE
                     val formattedCount = String.format(Locale.GERMAN, "%,d", ratingCount).replace(',', '.')
@@ -81,12 +76,10 @@ class AdapterPOIListing(
                 binding.llRatingRow.visibility = View.GONE
             }
 
-            // Add button click
             binding.btnAdd.setOnClickListener {
                 onAddClicked(poi)
             }
 
-            // Item click - opens POI Detail
             binding.root.setOnClickListener {
                 onItemClicked?.invoke(poi)
             }

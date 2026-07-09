@@ -42,7 +42,6 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         setupFilterSortButtons()
         setupClickListeners()
 
-        // Initialize from intent
         intent?.let { intent ->
             @Suppress("DEPRECATION")
             val planData = intent.getSerializableExtra(EXTRA_PLAN_DATA) as? AddPlanData
@@ -53,7 +52,6 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             planData?.let {
                 viewModel.initialize(it, tripHash, listingType)
 
-                // Set title based on listing type (replace newlines with spaces)
                 val title = when (listingType) {
                     POIListingType.PLACES_OF_INTEREST -> viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
                     POIListingType.EAT_AND_DRINK -> viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK)
@@ -64,44 +62,40 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     override fun setReceivers() {
-        // Observe POIs
         viewModel.pois.observe(this) { pois ->
             poiAdapter?.submitList(pois)
             updateEmptyState(pois.isEmpty())
         }
 
-        // Observe POI count
         viewModel.poiCount.observe(this) { count ->
             val placesText =
                 viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
             binding.tvResultCount.text = "$count $placesText"
         }
 
-        // Observe time selection trigger
         viewModel.showTimeSelection.observe(this) { poi ->
             poi?.let { showTimeRangeBottomSheet(it) }
         }
 
-        // Add-to-itinerary completion: VM keeps the time-selection sheet open while it
-        // shows its own bottom-sheet "Adding to itinerary" loader, runs the segment
-        // create → timeline fetch chain, then signals success here. The sheet then
-        // dismisses, a confirmation toast appears; we stay on the listing so the user
-        // can add more POIs in the same session.
         viewModel.addedToItinerarySuccess.observe(this) { result ->
             result?.let { handleAddedToItinerarySuccess(it) }
         }
 
-        // Observe filter changes
+        viewModel.addSegmentError.observe(this) { message ->
+            message?.let {
+                viewModel.clearAddSegmentError()
+                timeSelectionBottomSheet?.hideInSheetLoadingOverlay()
+                showAlert(AlertType.ERROR, it)
+            }
+        }
+
         viewModel.currentFilter.observe(this) { filter ->
             updateFilterButtonState(filter)
         }
 
-        // Observe sort changes
         viewModel.currentSort.observe(this) { sort ->
-//            updateSortButtonState(sort)
         }
 
-        // Observe scroll to top signal
         viewModel.scrollToTop.observe(this) { shouldScroll ->
             if (shouldScroll) {
                 binding.rvPOIs.scrollToPosition(0)
@@ -119,10 +113,8 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         binding.rvPOIs.apply {
             layoutManager = LinearLayoutManager(this@ACPOIListing)
             adapter = poiAdapter
-            // Disable item change animations for instant list updates
             itemAnimator = null
 
-            // Pagination — Theme 16: keep a reference so we can detach on destroy.
             paginationScrollListener = object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
@@ -166,11 +158,9 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     private fun setupFilterSortButtons() {
-        // Set initial button texts
         binding.btnFilters.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_FILTERS)
         binding.btnSortBy.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SORT_BY)
 
-        // Set click listeners
         binding.btnFilters.setOnClickListener {
             showFilterBottomSheet()
         }
@@ -206,14 +196,12 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
     private fun updateFilterButtonState(filter: FilterData) {
         val baseText = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_FILTERS)
-        // Update button text
         binding.btnFilters.text = if (filter.hasActiveFilter) {
             "$baseText (${filter.activeFilterCount})"
         } else {
             baseText
         }
 
-        // Update icon - use badge version when filters are active
         val iconRes = if (filter.hasActiveFilter) {
             R.drawable.trp_ic_filter_activity_badge
         } else {
@@ -228,10 +216,8 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     private fun showTimeRangeBottomSheet(poi: Poi) {
-        // Store the selected POI for use when time is confirmed
         selectedPoi = poi
 
-        // Show time selection bottom sheet (start time and end time)
         timeSelectionBottomSheet = TimeSelectionBottomSheet.newInstance(
             minTime = viewModel.minSelectableTimeForSelectedDay()
         )
@@ -240,10 +226,12 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             val selectedDate = viewModel.getSelectedDate() ?: return@setOnTimeSelectedListener
 
             if (startTime != null && endTime != null) {
+                timeSelectionBottomSheet?.showInSheetLoadingOverlay(
+                    LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary"
+                )
                 viewModel.createManualPoiSegment(currentPoi, selectedDate, startTime, endTime)
             }
 
-            // Clear the selection
             selectedPoi = null
             viewModel.clearTimeSelection()
         }
@@ -258,22 +246,18 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     }
 
     /**
-     * Final step of the add-POI flow. Dismisses the still-open time selection
-     * sheet and shows a confirmation toast — but stays on the listing so the user
-     * can add more places in the same session. RESULT_OK is set eagerly so when
-     * the user eventually navigates back, AddPlanContainerBottomSheet sees the
-     * positive result and re-syncs the timeline UI.
+     * Final step of the add-POI flow: dismisses the time selection sheet, shows a
+     * confirmation toast and pre-arms RESULT_OK for back navigation. Does not finish —
+     * the user can keep adding places in the same session.
      */
     private fun handleAddedToItinerarySuccess(result: ACPOIListingVM.AddedToItineraryResult) {
         viewModel.clearAddedToItinerarySuccess()
         timeSelectionBottomSheet?.dismiss()
         timeSelectionBottomSheet = null
 
-        // Day label, e.g. "Friday 29/05" — locale-aware day name, fixed dd/MM date.
         val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault())
             .format(result.selectedDate)
 
-        // iOS-style placeholders: backend default is "%1$@ has been added to %2$@".
         val template = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
             .ifBlank { "%1\$@ has been added to %2\$@" }
         val message = template
@@ -282,9 +266,6 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
         showAlert(AlertType.SUCCESS, message)
 
-        // Pre-arm the result so back navigation hands control back to AddPlan with
-        // the day index that should be reselected. We don't finish here — the user
-        // may add more places in the same session.
         val resultIntent = Intent().apply {
             putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
         }

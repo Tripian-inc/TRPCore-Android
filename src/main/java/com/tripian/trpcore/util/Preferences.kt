@@ -30,11 +30,9 @@ class Preferences @Inject constructor(var context: Context) {
         const val ONBOARDING_CONTINUE_COUNT = "trp_onboarding_continue_count"
         const val ONBOARDING_DISMISSED_PERMANENTLY = "trp_onboarding_dismissed_permanently"
 
-        // Shared preferences file name
         const val PREFER_NAME = "tone-preferences"
     }
 
-    // default mode private
     var pref: SharedPreferences = context.getSharedPreferences(PREFER_NAME, MODE_PRIVATE)
 
     fun getString(key: String, defValue: String): String {

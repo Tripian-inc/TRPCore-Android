@@ -18,10 +18,6 @@ import javax.inject.Inject
  */
 class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
 
-    // =====================
-    // LIVEDATA
-    // =====================
-
     private val _poi = MutableLiveData<Poi>()
     val poi: LiveData<Poi> = _poi
 
@@ -34,7 +30,6 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     private val _products = MutableLiveData<List<Product>>()
     val products: LiveData<List<Product>> = _products
 
-    // Section visibility
     private val _showActivitiesSection = MutableLiveData(false)
     val showActivitiesSection: LiveData<Boolean> = _showActivitiesSection
 
@@ -53,30 +48,20 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     private val _showOpeningHoursRow = MutableLiveData(false)
     val showOpeningHoursRow: LiveData<Boolean> = _showOpeningHoursRow
 
-    // Cuisines section (for Cafe/Restaurant)
     private val _showCuisinesSection = MutableLiveData(false)
     val showCuisinesSection: LiveData<Boolean> = _showCuisinesSection
 
     private val _cuisinesList = MutableLiveData<List<String>>()
     val cuisinesList: LiveData<List<String>> = _cuisinesList
 
-    // =====================
-    // INITIALIZATION
-    // =====================
-
-    /**
-     * Initialize ViewModel with POI data
-     * @param poi Poi object from intent
-     */
+    /** Initialize ViewModel with POI data */
     fun initialize(poi: Poi) {
         _poi.value = poi
 
-        // Parse data and determine section visibility
         processPoi(poi)
     }
 
     private fun processPoi(poi: Poi) {
-        // Activities Section - visible if has products from providerId 15 bookings
         val allProducts = poi.bookings
             ?.filter { it.providerId == 15 }
             ?.flatMap { it.products ?: emptyList() }
@@ -84,12 +69,10 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
         _products.value = allProducts
         _showActivitiesSection.value = allProducts.isNotEmpty()
 
-        // Phone visibility - only for Eat & Drink categories
         val hasPhone = !poi.phone.isNullOrBlank()
         val isEatAndDrink = isEatAndDrinkCategory(poi)
         _showPhoneRow.value = hasPhone && isEatAndDrink
 
-        // Opening hours
         val hasHours = !poi.hours.isNullOrBlank()
         if (hasHours) {
             val parsedHours = parseOpeningHours(poi.hours!!)
@@ -99,20 +82,12 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
             _showOpeningHoursRow.value = false
         }
 
-        // Key Data Section - visible if phone OR opening hours are shown
         _showKeyDataSection.value = (_showPhoneRow.value == true) || (_showOpeningHoursRow.value == true)
 
-        // Meeting Point Section - visible if has coordinate
         _showMeetingPointSection.value = poi.coordinate != null
 
-        // Features Section - DISABLED: Features view disabled
-        // _showFeaturesSection.value = !poi.tags.isNullOrEmpty()
         _showFeaturesSection.value = false
 
-        // Cuisines Section - DISABLED: Cuisines view disabled
-        // val cuisines = parseCuisines(poi.cuisines)
-        // _cuisinesList.value = cuisines
-        // _showCuisinesSection.value = isEatAndDrink && cuisines.isNotEmpty()
         _showCuisinesSection.value = false
     }
 
@@ -127,25 +102,17 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
             .filter { it.isNotEmpty() }
     }
 
-    // =====================
-    // PHONE VISIBILITY
-    // =====================
-
     /**
      * Check if POI belongs to Eat & Drink category
      * Phone is ONLY shown for Eat & Drink categories (IDs: 3, 4, 24)
      */
     private fun isEatAndDrinkCategory(poi: Poi): Boolean {
         val eatDrinkCategoryIds = POICategoryManager.getCategoryIds(POIListingType.EAT_AND_DRINK)
-            ?: listOf(3, 4, 24) // Fallback
+            ?: listOf(3, 4, 24)
 
         val poiCategoryIds = poi.category?.map { it.id } ?: emptyList()
         return poiCategoryIds.any { it in eatDrinkCategoryIds }
     }
-
-    // =====================
-    // OPENING HOURS PARSER
-    // =====================
 
     /**
      * Multi-language day name mappings to English abbreviations.
@@ -176,10 +143,10 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     )
 
     /**
-     * Get all recognized day names (for finding day parts in string)
+     * All recognized day names, longest first so "Monday" matches before "Mon".
      */
     private val allDayNames: List<String> by lazy {
-        dayNameMappings.keys.sortedByDescending { it.length } // Longer names first to match "Monday" before "Mon"
+        dayNameMappings.keys.sortedByDescending { it.length }
     }
 
     /**
@@ -193,18 +160,14 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
         val dayOrder = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
         val dayHoursMap = mutableMapOf<String, String>()
 
-        // Split by | to get each time range group
         val groups = hoursString.split("|").map { it.trim() }
 
         for (group in groups) {
-            // Split by : to separate days from time
             val colonIndex = group.lastIndexOf(":")
             if (colonIndex < 0) continue
 
-            // Find the first colon that separates days from time
-            // Days part might contain commas and hyphens
             val daysPart = findDaysPart(group)
-            if (daysPart.isEmpty()) continue // Skip if no day names found
+            if (daysPart.isEmpty()) continue
 
             val timePart = group.substring(daysPart.length).trim().removePrefix(":").trim()
 
@@ -216,14 +179,12 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
             }
         }
 
-        // Build result in day order
         for (day in dayOrder) {
             val localizedDay = getLocalizedDayName(day)
             val hours = dayHoursMap[day]
             if (hours != null) {
                 result.add(OpeningHourItem(localizedDay, hours, false))
             } else {
-                // Day is closed
                 result.add(OpeningHourItem(localizedDay, getLanguageForKey(LanguageConst.CLOSED), true))
             }
         }
@@ -260,7 +221,6 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
      */
     private fun normalizeDayName(localizedDay: String): String? {
         val trimmed = localizedDay.trim()
-        // Check exact match first (case-insensitive)
         for ((key, value) in dayNameMappings) {
             if (key.equals(trimmed, ignoreCase = true)) {
                 return value
@@ -270,20 +230,17 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     }
 
     /**
-     * Parse days string to list of day abbreviations (English)
-     * Handles formats like: "Mon-Fri", "Sun, Sat", "Mon, Wed, Fri"
-     * Also supports localized: "Lun-Vie", "Sáb, Dom"
+     * Parse days string to list of English day abbreviations.
+     * Handles "Mon-Fri", "Sun, Sat", localized names and wrap-around ranges (Fri-Mon).
      */
     private fun parseDays(daysString: String): List<String> {
         val result = mutableListOf<String>()
         val dayOrder = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
-        // Split by comma first
         val parts = daysString.split(",").map { it.trim() }
 
         for (part in parts) {
             if (part.contains("-")) {
-                // Range like "Mon-Fri" or "Lun-Vie"
                 val rangeParts = part.split("-").map { it.trim() }
                 if (rangeParts.size == 2) {
                     val startDay = normalizeDayName(rangeParts[0])
@@ -298,7 +255,6 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
                                     result.add(dayOrder[i])
                                 }
                             } else {
-                                // Wrap around (e.g., Fri-Mon)
                                 for (i in startIdx until dayOrder.size) {
                                     result.add(dayOrder[i])
                                 }
@@ -310,7 +266,6 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
                     }
                 }
             } else {
-                // Single day
                 val normalizedDay = normalizeDayName(part)
                 if (normalizedDay != null && dayOrder.contains(normalizedDay)) {
                     result.add(normalizedDay)
@@ -376,10 +331,6 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
             else -> day
         }
     }
-
-    // =====================
-    // ACTIONS
-    // =====================
 
     /**
      * Toggle description expanded state

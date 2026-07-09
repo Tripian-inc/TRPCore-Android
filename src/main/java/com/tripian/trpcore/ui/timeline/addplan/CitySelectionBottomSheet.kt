@@ -27,9 +27,6 @@ class CitySelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetCitySelectionB
     private var cities: List<City> = emptyList()
     private var selectedCityId: Int? = null
     private var onCitySelected: ((City) -> Unit)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -50,7 +47,6 @@ class CitySelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetCitySelectionB
     }
 
     private fun setupRecyclerView() {
-        // Filter unique cities by id
         val uniqueCities = cities.distinctBy { it.id }
 
         binding.rvCities.apply {
@@ -112,7 +108,6 @@ class CitySelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetCitySelectionB
                 val isSelected = city.id == selectedCityId
                 val context = binding.root.context
 
-                // Set color: selected = primary, unselected = text_primary
                 val textColor = if (isSelected) {
                     ContextCompat.getColor(context, R.color.trp_colorPrimary)
                 } else {
@@ -120,7 +115,6 @@ class CitySelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetCitySelectionB
                 }
                 binding.tvCityName.setTextColor(textColor)
 
-                // Set font: selected = semibold, unselected = light
                 val fontRes = if (isSelected) R.font.semibold else R.font.light
                 binding.tvCityName.typeface = ResourcesCompat.getFont(context, fontRes)
 

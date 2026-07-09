@@ -20,23 +20,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Theme 17 — post-load availability sweep.
- *
- * After a timeline is fetched, this manager iterates every non-past day,
- * batches the activity IDs for that day, calls
- * `POST /tour-api/schedule-bulk`, then marks expired any reserved activity
- * / activity step whose booked time no longer appears in the response.
- *
- * Properties:
- *  - **One-shot per timeline**: [runInitialAvailabilityCheck] is a no-op if
- *    a sweep has already completed; call [reset] before reusing.
- *  - **Cancellation**: [reset] / [cancel] cancel the running coroutine job;
- *    a fresh call starts a new one.
- *  - **Selected-day-first**: the user's currently-viewed day is requested
- *    before other days.
- *  - **Past-days skipped**: dates strictly before today are not queried.
- *  - **Sequential per-day**: one batched request per day, processed serially
- *    (avoids slamming the backend).
+ * Post-load availability sweep: after a timeline is fetched, iterates every
+ * non-past day (selected day first), batches that day's activity IDs into one
+ * `POST /tour-api/schedule-bulk` request per day (processed serially), then marks
+ * expired any reserved activity / activity step whose booked time no longer
+ * appears in the response. One-shot per timeline — call [reset] before reusing.
  */
 @Singleton
 class AvailabilityCheckManager @Inject constructor(
@@ -87,7 +75,6 @@ class AvailabilityCheckManager @Inject constructor(
                             lang = lang
                         )
                     } catch (_: Throwable) {
-                        // Best-effort sweep — skip the day, continue to the next.
                         continue
                     }
                     val items = response.data?.schedules.orEmpty()
@@ -145,6 +132,7 @@ class AvailabilityCheckManager @Inject constructor(
         return segmentDays
     }
 
+    /** Collects check targets for a day; booked_activity and manual_poi segments are not checked. */
     private fun collectTargetsForDay(
         timeline: Timeline,
         dayInfo: DayInfo,
@@ -182,7 +170,7 @@ class AvailabilityCheckManager @Inject constructor(
                         )
                     }
                 }
-                else -> { /* booked_activity and manual_poi are not checked */ }
+                else -> {}
             }
         }
         return targets

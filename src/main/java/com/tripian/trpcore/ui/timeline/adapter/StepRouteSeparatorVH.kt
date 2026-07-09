@@ -22,12 +22,10 @@ class StepRouteSeparatorVH(
      * @param routeInfo The route information containing distance and duration
      */
     fun bind(routeInfo: StepRouteInfo) {
-        // Set walking icon - always show walking icon as per design
         binding.ivTransportIcon.setImageResource(R.drawable.trp_icon_distance)
 
         val distanceFormat = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_FORMAT_DISTANCE)
             .takeIf { it.isNotEmpty() } ?: "%d min (%@ km)"
-        // Format route info text using the language format
         binding.tvRouteInfo.text = routeInfo.formatWithTemplate(distanceFormat)
     }
 }

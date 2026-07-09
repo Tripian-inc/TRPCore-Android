@@ -34,23 +34,16 @@ class MapBoxRouteCalculator {
     private var onLoadListener: OnLoadListener? = null
     private var onCurrentLocationLoadListener: OnCurrentLocationLoadListener? = null
 
-    /**
-     * This method should be used to mdRoute.
-     */
     var mdRoute: MapboxDirections? = null
 
-    /**
-     * This interface should be used to listen calculate function below.
-     */
+    /** Listener for [calculate] results. */
     interface OnLoadListener {
         fun onLoad(response: DirectionsResponse?)
 
         fun onMapBoxError(message: String?)
     }
 
-    /**
-     * This interface should be used to listen calculateToCurrentLocation function below.
-     */
+    /** Listener for [calculateToCurrentLocation] results. */
     interface OnCurrentLocationLoadListener {
         fun onLoad(response: Response<DirectionsResponse?>?, source: GeoJsonSource?)
 
@@ -58,23 +51,7 @@ class MapBoxRouteCalculator {
     }
 
     /**
-     * This method calculates the given parameters: origin, destination into its equivalent representation of points.
-     * This method should be used to create Direction Response via reaching [OnLoadListener].
-     * Here is an example:
-     * Let's say we want to calculate directions. First we have to create an instance of [MapBoxRouteCalculator] class,
-     * then we must set listener to get the direction response.
-     *
-     *  Here is an example:
-     * <pre> `TRPRouteCalculator trpRouteCalculator = new TRPRouteCalculator();
-     * trpRouteCalculator.setOnLoadListener(new TRPRouteCalculator.OnLoadListener() {
-     *
-     * public void onLoad(DirectionsResponse response) {
-     * drawRoute(response, style);
-     * }
-     * });
-     * trpRouteCalculator.calculate(style, origin, destination, points);
-    ` *  </pre>
-     *
+     * Calculates directions for the given waypoints and delivers the result to [OnLoadListener].
      *
      * @param origin      the origin of the route
      * @param destination the destination of the route
@@ -149,17 +126,11 @@ class MapBoxRouteCalculator {
     }
 
     /**
-     * Single batch request. No walking→automobile fallback, no recursion, no leg parsing.
-     * Caller receives the raw [DirectionsResponse] (or error) and is responsible for mapping
-     * legs to its own domain model.
-     *
-     * Use this for use cases that need predictable 1-call/1-response behavior — e.g. Timeline
-     * batch route calculation where leg count must match the requested waypoint pairs.
+     * Single batch request with no walking→automobile fallback: exactly one call, one response.
      *
      * @param points Full waypoint list (size >= 2). One leg returned per consecutive pair.
-     * @param profile Routing profile; defaults to WALKING (matches iOS TRPRouteCalculator).
-     * @param onResult Callback invoked once with either response body or throwable. Called on Mapbox's
-     *                 callback thread.
+     * @param profile Routing profile; defaults to WALKING.
+     * @param onResult Invoked once with either response body or throwable, on Mapbox's callback thread.
      */
     fun calculateBatch(
         points: List<Point>,
@@ -192,26 +163,8 @@ class MapBoxRouteCalculator {
     }
 
     /**
-     * This method calculates the given parameters: origin, destination into its equivalent representation
-     * of points, to be used for current location.
-     * This method should be used to create Direction Response via reaching [OnCurrentLocationLoadListener].
-     * Here is an example:
-     * Let's say we want to calculate directions for a given style, origin, destination.
-     * First we have to create an instance of [MapBoxRouteCalculator] class,
-     * then we must set listener to get the direction response.
-     *
-     *  Here is an example:
-     * <pre> `TRPRouteCalculator trpRouteCalculator = new TRPRouteCalculator();
-     * trpRouteCalculator.setOnCurrentLocationLoadListener(new TRPRouteCalculator.OnCurrentLocationLoadListener() {
-     *
-     * public void onLoad(Response<DirectionsResponse> response, GeoJsonSource source) {
-     * source.setGeoJson(FeatureCollection.fromFeature(Feature.fromGeometry(LineString.fromPolyline(Objects.requireNonNull(response.body().routes().get(0).geometry()),
-     * PRECISION_6))));
-     * }
-     * });
-     * trpRouteCalculator.calculateToCurrentLocation(style, origin, destination);
-    ` *  </pre>
-     *
+     * Calculates directions from the current location and delivers the result to
+     * [OnCurrentLocationLoadListener].
      *
      * @param style       the Style for which refers to the [Style] class instance
      * @param origin      the origin of the route
@@ -228,7 +181,7 @@ class MapBoxRouteCalculator {
                 RouteOptions.builder()
                     .coordinatesList(CollectionUtils.listOf(origin, destination))
                     .overview(DirectionsCriteria.OVERVIEW_FULL)
-                    .profile(getDirectionsCriteria(directionProfile)) //                                .steps(true)
+                    .profile(getDirectionsCriteria(directionProfile))
                     .build()
             )
             .accessToken(TRPCore.mapBoxApiKey).build()
@@ -252,7 +205,6 @@ class MapBoxRouteCalculator {
                     }
                     if (isErrorContainsNoRoute(response)) {
                         Toast.makeText(context, "NO ROUTE", Toast.LENGTH_SHORT).show()
-                        //                        DialogUtil.showErrorDialog((Activity) context, context.getString(R.string.route_error_mapbox));
                         return
                     }
                     if (style.isStyleLoaded()) {
@@ -345,16 +297,10 @@ class MapBoxRouteCalculator {
         }
     }
 
-    /**
-     * This method should be used to set OnLoadListener and thus calculate function will call this listener when operated.
-     */
     fun setOnLoadListener(onLoadListener: OnLoadListener?) {
         this.onLoadListener = onLoadListener
     }
 
-    /**
-     * This method should be used to set OnCurrentLocationLoadListener and thus calculateToCurrentLocation function will call this listener when operated.
-     */
     fun setOnCurrentLocationLoadListener(onCurrentLocationLoadListener: OnCurrentLocationLoadListener?) {
         this.onCurrentLocationLoadListener = onCurrentLocationLoadListener
     }

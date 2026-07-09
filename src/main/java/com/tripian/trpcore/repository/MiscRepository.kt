@@ -42,10 +42,7 @@ class MiscRepository @Inject constructor(
     var isLanguagesLoaded: Boolean = false
         private set
 
-    // Single Deferred<Boolean> coalesces concurrent fetches: the first caller
-    // kicks off the network request, every subsequent caller awaits the same
-    // result instead of issuing a parallel request. Replaces the prior
-    // BehaviorSubject + in-progress-flag dance.
+    /** Single Deferred coalesces concurrent fetches: subsequent callers await the same in-flight request. */
     private val fetchMutex = Mutex()
     private var inflight: Deferred<Boolean>? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -72,8 +69,7 @@ class MiscRepository @Inject constructor(
 
     /**
      * Forces a fresh /languages fetch, bypassing any cached in-flight result
-     * (but still respecting the fresh-cache TTL — the retry exists for stuck
-     * states, not to defeat the cache).
+     * (still respects the fresh-cache TTL).
      */
     suspend fun refetchLanguagesAsync(): Boolean {
         if (isLanguagesLoaded) return true
@@ -110,8 +106,6 @@ class MiscRepository @Inject constructor(
             }
             isLanguagesLoaded
         } catch (_: Throwable) {
-            // Network/server failure should not lock the user out if they have
-            // previously loaded translations — fall back to the cached blob.
             tryLoadCachedLanguages()
         }
     }
@@ -264,8 +258,7 @@ class MiscRepository @Inject constructor(
     }
 
     companion object {
-        // 1 hour. Frontend translation bundle changes rarely, so a cold start
-        // within this window can load from preferences and skip /languages.
+        /** Cold starts within this window load translations from preferences and skip /languages. */
         private const val LANGUAGE_CACHE_TTL_MS: Long = 60L * 60L * 1000L
     }
 }

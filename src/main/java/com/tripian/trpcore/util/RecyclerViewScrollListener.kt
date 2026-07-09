@@ -3,9 +3,6 @@ package com.tripian.trpcore.util
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-/**
- * Created by semihozkoroglu on 17.12.2021.
- */
 abstract class RecyclerViewScrollListener constructor(val layoutManager: LinearLayoutManager) :
     RecyclerView.OnScrollListener() {
 

@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  "Show more times" cell used by the time-selection grid when a schedule carries
-  ≥8 slots. Tapping it expands the grid to show all slots. Renders as an underlined
-  dark-text label sized like a normal time chip; underline is applied at runtime
-  via paintFlags (no native XML attribute for it).
--->
+<!-- "Show more times" cell used by the time-selection grid when a schedule carries ≥8 slots -->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"

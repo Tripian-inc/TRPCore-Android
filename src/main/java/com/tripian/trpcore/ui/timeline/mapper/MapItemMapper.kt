@@ -13,8 +13,7 @@ import javax.inject.Inject
 /**
  * Output of [MapItemMapper.buildMapSteps].
  *
- * @property mapSteps the marker list with `isSelected` already applied to the first
- *                    marker of every city group.
+ * @property mapSteps the marker list with the very first marker pre-selected.
  * @property hasMultipleCities `true` when the day spans more than one city.
  * @property firstStepIdOfFirstCity poiId of the first marker in city 0; consumed by
  *                                  the VM as the default selected step id when none
@@ -28,19 +27,17 @@ data class MapStepsResult(
 
 /**
  * Pure domain → UI mappers for the map view layer. No state, no side effects —
- * inputs in, models out. Kept separate so [com.tripian.trpcore.ui.timeline.ACTimelineVM]
- * stays focused on lifecycle and reactive state orchestration instead of carrying
- * hundreds of lines of conversion code.
+ * inputs in, models out.
  */
 class MapItemMapper @Inject constructor() {
 
     /**
      * Builds the per-step map markers for the given day's display items.
-     *
-     * Numbering rule: a global sequential counter (1, 2, 3…) is consumed by
-     * non-flexible items only. Flexible markers render a "−" chip on the map
-     * (no numeric position) and therefore do NOT advance the counter — this
-     * keeps the numeric sequence in lockstep with [buildMapBottomItems].
+     * A global counter (1, 2, 3…) numbers non-flexible items only — flexible markers
+     * render a "−" chip and do not advance it, keeping the sequence in lockstep with
+     * [buildMapBottomItems]. Unlocated items still consume a position (no marker drawn)
+     * so subsequent markers stay numbered correctly. Only the very first marker overall
+     * is pre-selected.
      */
     fun buildMapSteps(items: List<TimelineDisplayItem>): MapStepsResult {
         val mapSteps = mutableListOf<MapStep>()
@@ -64,11 +61,6 @@ class MapItemMapper @Inject constructor() {
             when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     item.steps.forEach { step ->
-                        // Every step consumes a position so the marker number stays
-                        // in lockstep with the bottom list. A coordinate-less step
-                        // keeps its number (no marker drawn) so the NEXT located
-                        // step is numbered correctly — e.g. step 1 unlocated → the
-                        // first marker on the map shows 2.
                         val pos = nextPosition()
                         val poi = step.poi
                         val coord = poi?.coordinate
@@ -93,8 +85,6 @@ class MapItemMapper @Inject constructor() {
                 }
 
                 is TimelineDisplayItem.BookedActivity -> {
-                    // Consume a position even when unlocated (it is one numbered
-                    // item in the bottom list); only draw a marker when located.
                     val pos = nextPosition()
                     if (!item.isNoLocation) {
                         val coord = item.segment.additionalData?.coordinate ?: item.segment.coordinate
@@ -148,8 +138,6 @@ class MapItemMapper @Inject constructor() {
                 }
 
                 is TimelineDisplayItem.ManualPoi -> {
-                    // Consume a position regardless of coordinate (it is numbered
-                    // in the bottom list); only draw a marker when located.
                     val pos = nextPosition()
                     val poi = item.step.poi
                     val coord = poi?.coordinate
@@ -176,18 +164,8 @@ class MapItemMapper @Inject constructor() {
             }
         }
 
-        // Auto-select the first marker of each city; remember the very first
-        // city-0 marker as the default selection candidate for the VM.
-        var firstStepIdOfFirstCity: String? = null
-        val seenCities = mutableSetOf<Int>()
-        mapSteps.forEach { step ->
-            if (seenCities.add(step.cityIndex)) {
-                step.isSelected = true
-                if (firstStepIdOfFirstCity == null && step.cityIndex == 0) {
-                    firstStepIdOfFirstCity = step.poiId
-                }
-            }
-        }
+        val firstStepIdOfFirstCity: String? =
+            mapSteps.firstOrNull()?.also { it.isSelected = true }?.poiId
 
         return MapStepsResult(
             mapSteps = mapSteps,
@@ -314,8 +292,6 @@ class MapItemMapper @Inject constructor() {
             }
         }
 
-        // Only one item can be selected across the entire list. Initial selection
-        // is always the very first item, regardless of city or marker presence.
         return bottomItems.mapIndexed { index, item ->
             if (index == 0) item.copy(isSelected = true) else item
         }

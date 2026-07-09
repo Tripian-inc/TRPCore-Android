@@ -46,15 +46,14 @@ import com.tripian.trpcore.util.LanguageConst
  * Displayed in center of screen (not bottom sheet) with custom buttons
  * @param minHour Minimum selectable hour (24h format, optional)
  * @param minMinute Minimum selectable minute (optional, used with minHour)
+ * @param treatMidnightAsEndOfDay Treats a midnight (00:00) selection as the end
+ * of the day (1440 minutes) for the min-time validation
  */
 class ComposeTimePickerDialog(
     private val initialHour: Int = 10,
     private val initialMinute: Int = 0,
     private val minHour: Int? = null,
     private val minMinute: Int? = null,
-    // When true, a midnight (00:00) selection is treated as the end of the day
-    // (1440 minutes) for the min-time validation, so picking 12:00 AM as an end
-    // time stays valid even when the start time is in the afternoon/evening.
     private val treatMidnightAsEndOfDay: Boolean = false,
     private val cancelText: String,
     private val selectText: String,
@@ -110,9 +109,7 @@ fun TimePickerDialogContent(
         is24Hour = false
     )
 
-    // Validate selected time against minimum time
     val isTimeValid = if (minHour != null && minMinute != null) {
-        // Midnight (00:00) selected as an end time counts as the end of the day.
         val selectedTotalMinutes =
             if (treatMidnightAsEndOfDay && timePickerState.hour == 0 && timePickerState.minute == 0) {
                 24 * 60
@@ -120,17 +117,15 @@ fun TimePickerDialogContent(
                 timePickerState.hour * 60 + timePickerState.minute
             }
         val minTotalMinutes = minHour * 60 + minMinute
-        selectedTotalMinutes > minTotalMinutes  // Must be strictly greater
+        selectedTotalMinutes > minTotalMinutes
     } else {
-        true  // No minimum time constraint
+        true
     }
 
-    // Load custom fonts
     val mediumFont = FontFamily(
         Font(R.font.medium, FontWeight.Medium)
     )
 
-    // Load colors
     val backgroundColor = colorResource(id = android.R.color.white)
     val textPrimary = colorResource(id = R.color.trp_text_primary)
     val primary = colorResource(id = R.color.trp_primary)
@@ -157,16 +152,15 @@ fun TimePickerDialogContent(
                     .padding(horizontal = 16.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // TimePicker with custom colors
                 MaterialTheme(
                     colorScheme = MaterialTheme.colorScheme.copy(
-                        primary = textPrimary,  // Clock hand and selected time background
-                        onPrimary = Color.White,  // Selected time text
-                        onSurface = textPrimary,  // Unselected time text and clock numbers
-                        primaryContainer = bgCloudy,  // AM/PM chip background
-                        onPrimaryContainer = textPrimary,  // AM/PM text
-                        surface = backgroundColor,  // Dialog background
-                        secondaryContainer = bgCloudy  // Clock dial background
+                        primary = textPrimary,
+                        onPrimary = Color.White,
+                        onSurface = textPrimary,
+                        primaryContainer = bgCloudy,
+                        onPrimaryContainer = textPrimary,
+                        surface = backgroundColor,
+                        secondaryContainer = bgCloudy
                     )
                 ) {
                     TimePicker(
@@ -193,12 +187,10 @@ fun TimePickerDialogContent(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Custom Buttons Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Cancel Button (Text Button)
                     TextButton(
                         onClick = onCancel,
                         modifier = Modifier
@@ -214,7 +206,6 @@ fun TimePickerDialogContent(
                         )
                     }
 
-                    // Confirm Button (Filled Button - TrpButtonPrimary style)
                     Button(
                         onClick = {
                             onConfirm(timePickerState.hour, timePickerState.minute)
@@ -262,7 +253,6 @@ fun Fragment.showComposeTimePicker(
         Pair(10, 0)
     }
 
-    // Parse minimum time if provided
     val minHourValue: Int?
     val minMinuteValue: Int?
     if (minTime != null) {
@@ -274,7 +264,6 @@ fun Fragment.showComposeTimePicker(
         minMinuteValue = null
     }
 
-    // Get localized button texts
     val cancelText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_CANCEL)
     val selectText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
 

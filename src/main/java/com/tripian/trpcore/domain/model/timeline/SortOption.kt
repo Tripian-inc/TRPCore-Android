@@ -38,9 +38,6 @@ enum class SortOption(
     DURATION_LONG_TO_SHORT(LanguageConst.SORT_BY_DURATION_LONG_SHORT, "duration", "desc");
 
     companion object {
-        /**
-         * Default sort option
-         */
         val DEFAULT = POPULARITY
 
         /**

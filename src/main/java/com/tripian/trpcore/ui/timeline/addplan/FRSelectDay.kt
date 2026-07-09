@@ -24,7 +24,6 @@ class FRSelectDay : Fragment() {
     private var _binding: FrAddPlanSelectDayBinding? = null
     private val binding get() = _binding!!
 
-    // Shared ViewModel from parent
     private val sharedVM: AddPlanContainerVM by lazy {
         ViewModelProvider(requireParentFragment())[AddPlanContainerVM::class.java]
     }
@@ -60,26 +59,21 @@ class FRSelectDay : Fragment() {
             TRPCore.core.miscRepository.getLanguageValueForKey(key)
         }
 
-        // Add to Day section
         binding.tvAddToDay.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
 
-        // City section
         binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_DESTINATION)
 
-        // Mode selection section
         binding.tvHowToAdd.text = getLanguage(LanguageConst.ADD_PLAN_HOW_TO_ADD)
         binding.tvSmartTitle.text = getLanguage(LanguageConst.ADD_PLAN_SMART_RECOMMENDATIONS)
         binding.tvSmartDesc.text = getLanguage(LanguageConst.ADD_PLAN_SMART_DESC)
         binding.tvManualTitle.text = getLanguage(LanguageConst.ADD_PLAN_ADD_MANUALLY)
         binding.tvManualDesc.text = getLanguage(LanguageConst.ADD_PLAN_MANUAL_DESC)
 
-        // Manual categories section
         binding.tvSelectCategoriesLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CATEGORIES)
         binding.tvCatActivities.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES)
         binding.tvCatPlaces.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_PLACES)
         binding.tvCatEatDrink.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK)
 
-        // Travelers section
         binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
         binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
     }
@@ -97,12 +91,10 @@ class FRSelectDay : Fragment() {
     }
 
     private fun setupModeSelection() {
-        // Smart Recommendations card
         binding.cardSmartRecommendations.setOnClickListener {
             selectMode(AddPlanMode.SMART_RECOMMENDATIONS)
         }
 
-        // Add Manually card
         binding.cardAddManually.setOnClickListener {
             selectMode(AddPlanMode.MANUAL)
         }
@@ -164,24 +156,19 @@ class FRSelectDay : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Available days
         sharedVM.availableDays.observe(viewLifecycleOwner) { days ->
             dayFilterAdapter?.setDays(days)
         }
 
-        // Selected day index
         sharedVM.selectedDayIndex.observe(viewLifecycleOwner) { index ->
             dayFilterAdapter?.setSelectedPosition(index)
         }
 
-        // Cities
         sharedVM.cities.observe(viewLifecycleOwner) { cities ->
-            // Show city selection if multiple cities OR if using all cities fallback (no timeline destination)
             val shouldShow = cities.size > 1 || sharedVM.shouldAlwaysShowCitySelection()
             binding.llCitySelection.visibility = if (shouldShow) View.VISIBLE else View.GONE
         }
 
-        // Loading state for cities
         sharedVM.isLoadingCities.observe(viewLifecycleOwner) { isLoading ->
             binding.btnCitySelection.isEnabled = !isLoading
             binding.tvSelectedCity.text = if (isLoading) {
@@ -191,69 +178,58 @@ class FRSelectDay : Fragment() {
             }
         }
 
-        // Selected city
         sharedVM.selectedCity.observe(viewLifecycleOwner) { city ->
             binding.tvSelectedCity.text = city?.name ?: ""
-            // Past-day check follows the selected city's clock.
             dayFilterAdapter?.timeZoneId = city?.timezone
         }
 
-        // Selected mode
         sharedVM.selectedMode.observe(viewLifecycleOwner) { mode ->
             updateModeSelection(mode)
         }
 
-        // Selected manual category
         sharedVM.selectedManualCategory.observe(viewLifecycleOwner) { category ->
             updateManualCategorySelection(category)
         }
 
-        // Travelers count
         sharedVM.travelers.observe(viewLifecycleOwner) { count ->
             binding.tvTravelersCount.text = count.toString()
-            // Disable minus button when count is 1
             binding.btnTravelersMinus.alpha = if (count <= 1) 0.5f else 1.0f
             binding.btnTravelersMinus.isEnabled = count > 1
         }
     }
 
     private fun updateModeSelection(mode: AddPlanMode) {
-        // Update card selection states
         val smartSelected = mode == AddPlanMode.SMART_RECOMMENDATIONS
         val manualSelected = mode == AddPlanMode.MANUAL
 
         binding.cardSmartRecommendations.isSelected = smartSelected
         binding.cardAddManually.isSelected = manualSelected
 
-        // Update card borders
         updateCardSelection(binding.cardSmartRecommendations, smartSelected)
         updateCardSelection(binding.cardAddManually, manualSelected)
 
-        // Show categories AND travelers together: both appear as soon as Add
-        // Manually is selected (travelers no longer waits for the Activities
-        // category to be picked).
         val manualVisibility = if (manualSelected) View.VISIBLE else View.GONE
         binding.llManualCategories.visibility = manualVisibility
         binding.llTravelersSection.visibility = manualVisibility
 
-        // Scroll to reveal the manual sections when manual mode is selected.
         if (manualSelected) {
             binding.root.post {
                 (binding.root as? androidx.core.widget.NestedScrollView)?.fullScroll(View.FOCUS_DOWN)
             }
         }
 
-        // Expand the bottom sheet to fit the manual sections.
         sharedVM.setExpandBottomSheet(manualSelected)
     }
 
+    /**
+     * Travelers section visibility is driven by manual mode in
+     * [updateModeSelection], not by which category is picked.
+     */
     private fun updateManualCategorySelection(category: ManualCategory?) {
-        // Reset all
         binding.cardManualActivities.isSelected = false
         binding.cardManualPlaces.isSelected = false
         binding.cardManualEatDrink.isSelected = false
 
-        // Select the chosen one
         when (category) {
             ManualCategory.ACTIVITIES -> binding.cardManualActivities.isSelected = true
             ManualCategory.PLACES_OF_INTEREST -> binding.cardManualPlaces.isSelected = true
@@ -261,13 +237,9 @@ class FRSelectDay : Fragment() {
             null -> {}
         }
 
-        // Update borders
         updateCardSelection(binding.cardManualActivities, category == ManualCategory.ACTIVITIES)
         updateCardSelection(binding.cardManualPlaces, category == ManualCategory.PLACES_OF_INTEREST)
         updateCardSelection(binding.cardManualEatDrink, category == ManualCategory.EAT_AND_DRINK)
-
-        // Travelers visibility is driven by manual mode (see updateModeSelection),
-        // not by which category is picked — both sections show together.
     }
 
     private fun updateCardSelection(card: com.google.android.material.card.MaterialCardView, selected: Boolean) {

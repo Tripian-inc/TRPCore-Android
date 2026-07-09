@@ -1,8 +1,5 @@
 package com.tripian.trpcore.util
 
-/**
- * Created by semihozkoroglu on 31.12.2021.
- */
 enum class ExperienceCategory(val id: Long, val names: String) {
     ADVENTURE(35, "Adventure"),
     FOOD(103, "Food"),

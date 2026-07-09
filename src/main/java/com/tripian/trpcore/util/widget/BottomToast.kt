@@ -52,20 +52,16 @@ class BottomToast private constructor(
     }
 
     private fun resolveParent(): ViewGroup =
-        parentOverride ?: activity.findViewById(android.R.id.content)
+        parentOverride ?: activity.window.decorView.findViewById(android.R.id.content)
 
     private fun display() {
-        // Remove any existing toast first
         removeExistingToast()
 
-        // Inflate the toast layout
         binding = ViewBottomToastBinding.inflate(LayoutInflater.from(activity))
         toastView = binding?.root
 
-        // Set message
         binding?.tvToastMessage?.text = message
 
-        // Set icon based on alert type
         val iconRes = when (alertType) {
             AlertType.SUCCESS -> R.drawable.trp_ic_success
             AlertType.WARNING -> R.drawable.trp_ic_info
@@ -74,8 +70,6 @@ class BottomToast private constructor(
             else -> R.drawable.trp_ic_success
         }
         binding?.ivToastIcon?.setImageResource(iconRes)
-        // Tint non-success icons to match the alert type; the success
-        // drawable already carries its own brand color.
         when (alertType) {
             AlertType.SUCCESS -> binding?.ivToastIcon?.clearColorFilter()
             AlertType.WARNING -> binding?.ivToastIcon?.setColorFilter(
@@ -101,17 +95,10 @@ class BottomToast private constructor(
             binding?.ivToastClose?.setOnClickListener { dismiss() }
         }
 
-        // Attach to the override parent when provided, otherwise the activity's
-        // root view. Using a dialog's decor view as the parent surfaces the
-        // toast on top of that dialog.
         val rootView = resolveParent()
         val density = activity.resources.displayMetrics.density
         val horizontalMargin = (16 * density).toInt()
-        // 16dp above the navigation bar (3-button or gesture) so the toast keeps a
-        // 16dp gap and never sits under the device buttons.
-        val navBarInset = ViewCompat.getRootWindowInsets(rootView)
-            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
-        val bottomMargin = (16 * density).toInt() + navBarInset
+        val bottomMargin = (16 * density).toInt() + navBarOverlap(rootView)
 
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -125,17 +112,13 @@ class BottomToast private constructor(
             view.tag = "bottom_toast"
             rootView.addView(view, params)
 
-            // Start off-screen (below)
             view.translationY = 500f
 
-            // Animate in (slide up)
             ObjectAnimator.ofFloat(view, "translationY", 500f, 0f).apply {
                 this.duration = ANIMATION_DURATION
                 start()
             }
 
-            // Error alerts persist until the user taps the close icon; all other
-            // types auto-dismiss after [duration].
             if (alertType != AlertType.ERROR) {
                 view.postDelayed({
                     dismiss()
@@ -144,9 +127,26 @@ class BottomToast private constructor(
         }
     }
 
+    /**
+     * Returns how far [rootView]'s bottom edge actually extends under the
+     * navigation bar. A decor-fitted parent already ends above the nav bar, so
+     * adding the full inset there would double the gap; an edge-to-edge parent
+     * needs the full inset. Falls back to the full inset before layout.
+     */
+    private fun navBarOverlap(rootView: ViewGroup): Int {
+        val inset = ViewCompat.getRootWindowInsets(rootView)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+        if (inset == 0) return 0
+        val windowHeight = rootView.rootView.height
+        if (windowHeight == 0 || rootView.height == 0) return inset
+        val location = IntArray(2)
+        rootView.getLocationInWindow(location)
+        val rootBottom = location[1] + rootView.height
+        return (rootBottom - (windowHeight - inset)).coerceIn(0, inset)
+    }
+
     private fun dismiss() {
         toastView?.let { view ->
-            // Animate out (slide down)
             ObjectAnimator.ofFloat(view, "translationY", 0f, 500f).apply {
                 this.duration = ANIMATION_DURATION
                 addListener(object : AnimatorListenerAdapter() {
@@ -167,7 +167,6 @@ class BottomToast private constructor(
             binding = null
             toastView = null
         } catch (e: Exception) {
-            // Ignore if activity is destroyed
         }
     }
 
@@ -179,7 +178,6 @@ class BottomToast private constructor(
                 rootView.removeView(it)
             }
         } catch (e: Exception) {
-            // Ignore
         }
     }
 }

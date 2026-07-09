@@ -13,14 +13,10 @@ import javax.inject.Inject
 /**
  * SyncReservedToBookedUseCase
  *
- * Transition'ları senkronize et: reserved'ları sil, booked'ları oluştur
- * iOS Guide Operation 3: Reserved → Booked Transition
- *
- * Two-phase sequential operation:
- * PHASE 1: Delete reserved segments (highest index first!)
- * PHASE 2: Create booked segments
- *
- * CRITICAL: Index ordering - must delete highest-index-first to prevent array shifting
+ * Syncs reserved→booked transitions in two sequential phases: deletes the reserved
+ * segments (highest index first, so backend array shifts don't invalidate the
+ * remaining indices), then creates the booked segments.
+ * iOS Reference: Guide Operation 3 (Reserved → Booked Transition)
  */
 class SyncReservedToBookedUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -33,7 +29,6 @@ class SyncReservedToBookedUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        // PHASE 1: Delete reserved segments (CRITICAL: highest index first!)
         val sortedTransitions = params.transitions.sortedByDescending { t -> t.segmentIndex }
 
         for (transition in sortedTransitions) {
@@ -47,7 +42,6 @@ class SyncReservedToBookedUseCase @Inject constructor(
             }
         }
 
-        // PHASE 2: Create booked segments
         for (transition in sortedTransitions) {
             val tripItem = transition.tripItem
             val cityId = tripItem.cityName?.let { name ->

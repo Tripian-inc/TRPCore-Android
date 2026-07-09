@@ -9,7 +9,6 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.util.LanguageConst
 
 /**
- * ActivitySortBottomSheet
  * Bottom sheet for sorting Activity list
  * iOS Reference: ActivitySortVC
  */
@@ -20,13 +19,9 @@ class ActivitySortBottomSheet : BaseSimpleBottomSheet<BottomSheetActivitySortBin
     private var currentSort: SortOption = SortOption.DEFAULT
     private var onSortSelected: ((SortOption) -> Unit)? = null
     private var getLanguage: ((String) -> String)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Restore initial values from arguments
         arguments?.let { args ->
             val sortName = args.getString(ARG_SORT)
             currentSort = sortName?.let {
@@ -39,10 +34,8 @@ class ActivitySortBottomSheet : BaseSimpleBottomSheet<BottomSheetActivitySortBin
     }
 
     private fun setupUI() {
-        // Set localized texts
         updateTexts()
 
-        // Set current selection
         when (currentSort) {
             SortOption.POPULARITY -> binding.rbPopularity.isChecked = true
             SortOption.RATING -> binding.rbRating.isChecked = true
@@ -87,7 +80,6 @@ class ActivitySortBottomSheet : BaseSimpleBottomSheet<BottomSheetActivitySortBin
 
     fun setLanguageProvider(provider: (String) -> String) {
         getLanguage = provider
-        // Update UI if view is already created
         if (view != null) {
             updateTexts()
         }

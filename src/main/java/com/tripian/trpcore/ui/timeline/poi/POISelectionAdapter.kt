@@ -37,10 +37,8 @@ class POISelectionAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(poi: Poi) {
-            // Name
             binding.tvName.text = poi.name
 
-            // Category
             poi.category?.firstOrNull()?.name?.let { category ->
                 binding.tvCategory.text = category
                 binding.tvCategory.visibility = View.VISIBLE
@@ -48,7 +46,6 @@ class POISelectionAdapter(
                 binding.tvCategory.visibility = View.GONE
             }
 
-            // Address
             poi.address?.let { address ->
                 binding.tvAddress.text = address
                 binding.addressContainer.visibility = View.VISIBLE
@@ -56,7 +53,6 @@ class POISelectionAdapter(
                 binding.addressContainer.visibility = View.GONE
             }
 
-            // Image
             poi.image?.url?.let { url ->
                 Glide.with(binding.ivImage)
                     .load(url)
@@ -67,7 +63,6 @@ class POISelectionAdapter(
                 binding.ivImage.setImageResource(R.drawable.trp_bg_place_holder_image)
             }
 
-            // Rating
             poi.rating?.let { rating ->
                 if (rating > 0) {
                     binding.tvRating.text = String.format("%.1f", rating)
@@ -79,7 +74,6 @@ class POISelectionAdapter(
                 binding.ratingContainer.visibility = View.GONE
             }
 
-            // Click listener
             binding.root.setOnClickListener {
                 onPoiClicked(poi)
             }

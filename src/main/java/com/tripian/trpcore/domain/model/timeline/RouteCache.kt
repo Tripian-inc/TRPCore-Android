@@ -21,10 +21,8 @@ object RouteCache {
         val isWalking: Boolean
     )
 
-    // In-memory cache: key -> cached route data
     private val cache = mutableMapOf<String, CachedRoute>()
 
-    // Coordinate precision for cache key (4 decimal places ≈ 11m accuracy)
     private const val COORDINATE_PRECISION = 4
 
     /**

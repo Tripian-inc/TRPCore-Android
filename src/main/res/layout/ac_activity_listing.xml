@@ -42,6 +42,7 @@
 
     <!-- Fixed: Search Bar -->
     <FrameLayout
+        android:id="@+id/searchContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
@@ -77,13 +78,25 @@
             app:elevation="0dp"
             app:liftOnScroll="false">
 
+            <!-- Scrollable: Category Filter -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvCategories"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/_18sdp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/_12sdp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_scrollFlags="scroll|enterAlways" />
+
             <!-- Scrollable: Filter & Sort Buttons Row -->
             <LinearLayout
                 android:id="@+id/llFilterSort"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/_12sdp"
-                android:layout_marginTop="@dimen/_18sdp"
+                android:layout_marginTop="@dimen/_12sdp"
                 android:orientation="horizontal"
                 app:layout_scrollFlags="scroll|enterAlways">
 
@@ -107,19 +120,6 @@
                     app:iconTint="@color/trp_text_primary"
                     tools:text="Sort by" />
             </LinearLayout>
-
-            <!-- Scrollable: Category Filter -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvCategories"
-                android:layout_width="match_parent"
-                android:layout_height="@dimen/_68sdp"
-                android:layout_marginTop="@dimen/_12sdp"
-                android:clipToPadding="false"
-                android:orientation="horizontal"
-                android:paddingStart="@dimen/_16sdp"
-                android:paddingEnd="@dimen/_16sdp"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                app:layout_scrollFlags="scroll|enterAlways" />
 
             <!-- Scrollable: Result Count -->
             <com.tripian.trpcore.util.widget.TextView

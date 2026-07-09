@@ -37,6 +37,7 @@ class ReservedActivityVH(
         }
     }
 
+    /** Binds the cell. Badge and status-suffix precedence: expired > conflict/overlap > normal. */
     fun bind(
         item: TimelineDisplayItem.BookedActivity,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -44,14 +45,10 @@ class ReservedActivityVH(
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
         onReservationClick: (TimelineDisplayItem.BookedActivity) -> Unit
     ) {
-        // Order badge — Theme 14: order 0 (or negative) renders as U+2212.
         binding.tvOrder.text = if (item.order <= 0)
             com.tripian.trpcore.util.extensions.MINUS_SIGN
         else item.order.toString()
 
-        // Badge styling precedence (Theme 7): expired > conflict > normal.
-        // Expired wins over conflict so the red "Not available" cue is never
-        // hidden by a time-overlap badge on the same item.
         when {
             item.isAvailabilityExpired -> {
                 binding.orderTimeContainer
@@ -70,15 +67,11 @@ class ReservedActivityVH(
             }
         }
 
-        // Title - semibold 16px
         binding.tvTitle.text = item.title
 
-        // Activity badge — always shown on ReservedActivity cells.
         binding.tvActivityBadge.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
 
-        // Time (startTime - endTime format)
-        // Status suffix precedence (Theme 7): "Not available" > "Time Overlap" > none
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
@@ -108,10 +101,8 @@ class ReservedActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Image - 80x80, 4dp corner radius (Nexus logo fallback via shared binder).
         TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
-        // Rating Row - from additionalData (hide if no data)
         val rating = item.segment.additionalData?.rating
         val reviewCount = item.segment.additionalData?.reviewCount
         if (rating != null && rating > 0) {
@@ -130,24 +121,20 @@ class ReservedActivityVH(
             binding.llRating.visibility = View.GONE
         }
 
-        // Duration Row - from additionalData
         val duration = item.duration
         if (duration != null && duration > 0) {
             binding.tvDuration.text = FormatUtils.formatDuration(duration)
-            binding.llDuration.visibility = View.VISIBLE
+            binding.tvDuration.visibility = View.VISIBLE
         } else {
-            binding.llDuration.visibility = View.GONE
+            binding.tvDuration.visibility = View.GONE
         }
 
-        // No-Location badge (Theme 6).
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
-        // Cancellation text - default "Free cancellation"
         val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
-        // Price - "From €XX" format or "FREE" when price is 0
         val price = item.price
         val currency = item.currency ?: "EUR"
         when {
@@ -168,10 +155,8 @@ class ReservedActivityVH(
             }
         }
 
-        // Reservation button text - use language service
         binding.btnReservation.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
 
-        // Click listeners
         binding.root.setOnClickListener {
             onItemClick(item)
         }

@@ -65,6 +65,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/_12sdp"
         android:clipToPadding="false"
+        android:nestedScrollingEnabled="false"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/_12sdp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
@@ -81,122 +82,141 @@
         android:textSize="12sp"
         tools:text="Select Time" />
 
-    <!-- Time Slots (Horizontal wrap layout using FlexboxLayout) -->
-    <com.google.android.flexbox.FlexboxLayout
-        android:id="@+id/flexTimeSlots"
+    <!-- Content area: one of (slot grid / no-slots label / flexible card /
+         trip-unavailable card) is visible at a time. Wraps its visible child so
+         the sheet height follows the content; the slot grid caps its own height
+         once expanded so it scrolls internally. -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:layout_weight="1"
-        android:nestedScrollingEnabled="true"
-        app:alignItems="flex_start"
-        app:flexWrap="wrap"
-        app:justifyContent="flex_start" />
+        android:layout_height="wrap_content">
 
-    <!-- No Time Slots Message -->
-    <com.tripian.trpcore.util.widget.TextView
-        android:id="@+id/tvNoTimeSlots"
-        style="@style/TrpTextBody2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/_24sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:gravity="center"
-        android:textColor="@color/trp_grey_30"
-        android:visibility="gone"
-        tools:text="No time slots available" />
-
-    <!-- Flexible info card — shown when the selected day has only
-         flexible (any-time) slots. Replaces the time grid. -->
-    <LinearLayout
-        android:id="@+id/flexibleInfoCard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:background="@drawable/trp_bg_flexible_info_card"
-        android:gravity="top"
-        android:orientation="horizontal"
-        android:padding="@dimen/_12sdp"
-        tools:visibility="visible"
-        android:visibility="gone">
-
-        <ImageView
-            android:layout_width="@dimen/_16sdp"
-            android:layout_height="@dimen/_16sdp"
-            android:contentDescription="Info"
-            android:src="@drawable/trp_ic_information"
-            app:tint="@color/trp_info_icon" />
-
-        <com.tripian.trpcore.util.widget.TextView
-            android:id="@+id/tvFlexibleTitle"
-            android:layout_width="0dp"
+        <!-- Time Slots (scrollable 4-column grid) -->
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollTimeSlots"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_8sdp"
-            android:layout_weight="1"
-            android:fontFamily="@font/medium"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="14sp"
-            tools:text="Valid at any time on the chosen day. Check the opening hours." />
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:overScrollMode="never"
+            android:scrollbars="none">
 
-    </LinearLayout>
+            <com.google.android.flexbox.FlexboxLayout
+                android:id="@+id/flexTimeSlots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:alignItems="flex_start"
+                app:flexWrap="wrap"
+                app:justifyContent="flex_start" />
 
-    <!-- Plain "pin to top of itinerary" hint, shown directly under the
-         flexible info card. Not part of the card itself. -->
-    <com.tripian.trpcore.util.widget.TextView
-        android:id="@+id/tvFlexibleTopOfItinerary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_8sdp"
-        android:fontFamily="@font/medium"
-        android:textColor="@color/trp_fgWeak"
-        android:textSize="14sp"
-        android:visibility="gone"
-        tools:text="Add it to top of your itinerary." />
+        </androidx.core.widget.NestedScrollView>
 
-    <!-- Trip-wide unavailability card — shown when no day in the trip
-         range has any schedule slot. Occupies the slot grid area while the
-         day filter stays visible above (flexible-card sibling). -->
-    <LinearLayout
-        android:id="@+id/tripUnavailableCard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_12sdp"
-        android:background="@drawable/trp_bg_conflict_warning"
-        android:gravity="top"
-        android:orientation="horizontal"
-        android:padding="@dimen/_12sdp"
-        android:visibility="gone"
-        tools:visibility="visible">
-
-        <ImageView
-            android:layout_width="@dimen/_20sdp"
-            android:layout_height="@dimen/_20sdp"
-            android:contentDescription="@null"
-            android:src="@drawable/trp_ic_warning" />
-
+        <!-- No Time Slots Message -->
         <com.tripian.trpcore.util.widget.TextView
-            android:id="@+id/tvTripUnavailable"
-            android:layout_width="0dp"
+            android:id="@+id/tvNoTimeSlots"
+            style="@style/TrpTextBody2"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_8sdp"
-            android:layout_weight="1"
-            android:fontFamily="@font/medium"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="14sp"
-            tools:text="This activity is not available on the days of your trip." />
+            android:layout_marginHorizontal="@dimen/_24sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:gravity="center"
+            android:textColor="@color/trp_grey_30"
+            android:visibility="gone"
+            tools:text="No time slots available" />
 
-    </LinearLayout>
+        <!-- Flexible-only day: info card + "top of itinerary" hint -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/flexibleInfoCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_12sdp"
+                android:layout_marginTop="@dimen/_12sdp"
+                android:background="@drawable/trp_bg_flexible_info_card"
+                android:gravity="top"
+                android:orientation="horizontal"
+                android:padding="@dimen/_12sdp"
+                tools:visibility="visible"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="@dimen/_16sdp"
+                    android:layout_height="@dimen/_16sdp"
+                    android:contentDescription="Info"
+                    android:src="@drawable/trp_ic_information"
+                    app:tint="@color/trp_info_icon" />
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvFlexibleTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/_8sdp"
+                    android:layout_weight="1"
+                    android:fontFamily="@font/medium"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="14sp"
+                    tools:text="Valid at any time on the chosen day. Check the opening hours." />
+
+            </LinearLayout>
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvFlexibleTopOfItinerary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/_12sdp"
+                android:layout_marginTop="@dimen/_8sdp"
+                android:fontFamily="@font/medium"
+                android:textColor="@color/trp_fgWeak"
+                android:textSize="14sp"
+                android:visibility="gone"
+                tools:text="Add it to top of your itinerary." />
+
+        </LinearLayout>
+
+        <!-- Trip-wide unavailability card -->
+        <LinearLayout
+            android:id="@+id/tripUnavailableCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/_12sdp"
+            android:layout_marginTop="@dimen/_12sdp"
+            android:background="@drawable/trp_bg_conflict_warning"
+            android:gravity="top"
+            android:orientation="horizontal"
+            android:padding="@dimen/_12sdp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="@dimen/_20sdp"
+                android:layout_height="@dimen/_20sdp"
+                android:contentDescription="@null"
+                android:src="@drawable/trp_ic_warning" />
+
+            <com.tripian.trpcore.util.widget.TextView
+                android:id="@+id/tvTripUnavailable"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/_8sdp"
+                android:layout_weight="1"
+                android:fontFamily="@font/medium"
+                android:textColor="@color/trp_text_primary"
+                android:textSize="14sp"
+                tools:text="This activity is not available on the days of your trip." />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
     <!-- Continue / Select Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"
         style="@style/TrpButtonPrimary"
         android:layout_marginHorizontal="@dimen/_12sdp"
-        android:layout_marginTop="@dimen/_40sdp"
+        android:layout_marginTop="@dimen/_24sdp"
         android:enabled="false"
         tools:text="Continue" />
 

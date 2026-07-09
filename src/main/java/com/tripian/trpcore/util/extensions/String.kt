@@ -53,22 +53,16 @@ fun String.containsAnyWord(words: List<String>): Boolean {
 /**
  * Converts a segment-level "yyyy-MM-dd HH:mm" datetime into the ISO-8601
  * "yyyy-MM-dd'T'HH:mm:ss" shape that `additionalData.startDatetime` /
- * `additionalData.endDatetime` expect (RESERVED_ACTIVITY_SEGMENT spec §3.2).
- *
- * Segment-level and additionalData formats intentionally differ — segment-level
- * stays space-separated, additionalData uses ISO. Seconds are always emitted as
- * `:00` because the source string never carries them and the spec example fixes
- * them to zero.
+ * `additionalData.endDatetime` expect. Seconds are always emitted as `:00`
+ * because the source string never carries them.
  */
 fun String.toAdditionalDataIso(): String = "$this:00".replace(' ', 'T')
 
 fun Uri.addQueryParameterIfAbsent(key: String, value: String): Uri {
-    // Check if the key is already present
     if (this.getQueryParameter(key) != null) {
-        return this // Return unchanged Uri
+        return this
     }
 
-    // Rebuild Uri with added parameter
     val builder = this.buildUpon().clearQuery()
     val existingParams = this.queryParameterNames
 

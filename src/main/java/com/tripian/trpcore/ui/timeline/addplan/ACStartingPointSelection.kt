@@ -58,44 +58,33 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
      * Set all label texts using language service
      */
     private fun setupLabels() {
-        // Search bar hint
         binding.etSearch.hint = getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI)
-
-        // Near Me option text
         binding.tvNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
-
-        // Section title
         binding.tvSectionTitle.text = getLanguageForKey(LanguageConst.ADD_PLAN_SAVED_ACTIVITIES)
     }
 
     override fun setReceivers() {
-        // Search results
         viewModel.searchResults.observe(this) { results ->
             searchResultsAdapter?.submitList(results)
         }
 
-        // Saved items
         viewModel.filteredSavedItems.observe(this) { items ->
             savedItemsAdapter?.submitList(items)
             updateSavedActivitiesSectionVisibility(items.isNotEmpty())
         }
 
-        // Loading state
         viewModel.isLoading.observe(this) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
-        // User in city (for Near Me visibility)
         viewModel.isUserInCity.observe(this) { isInCity ->
             binding.nearMeOption.visibility = if (isInCity) View.VISIBLE else View.GONE
         }
 
-        // City center display name
         viewModel.cityCenterDisplayName.observe(this) { name ->
             binding.tvCityCenterName.text = name
         }
 
-        // Selected place (result)
         viewModel.selectedPlace.observe(this) { selectedLocation ->
             selectedLocation?.let {
                 returnResult(it.coordinate, it.name, it.accommodation)
@@ -105,7 +94,6 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     private fun setupAdapters() {
-        // Saved items adapter
         savedItemsAdapter = SavedItemsAdapter { savedItem ->
             viewModel.selectSavedItem(savedItem)
         }
@@ -114,7 +102,6 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
             adapter = savedItemsAdapter
         }
 
-        // Search results adapter
         searchResultsAdapter = SearchResultsAdapter { place ->
             viewModel.fetchPlaceDetails(place)
         }
@@ -159,17 +146,14 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     private fun setupClickListeners() {
-        // Back button
         binding.btnBack.setOnClickListener {
             finish()
         }
 
-        // Near Me option
         binding.nearMeOption.setOnClickListener {
             handleNearMeTapped()
         }
 
-        // City Center option
         binding.cityCenterOption.setOnClickListener {
             viewModel.selectCityCenter()
         }
@@ -302,14 +286,12 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     companion object {
-        // Intent extras
         const val EXTRA_CITY = "city"
         const val EXTRA_BOOKED_ACTIVITIES = "booked_activities"
         const val EXTRA_FAVOURITE_ITEMS = "favourite_items"
         const val EXTRA_USER_LAT = "user_lat"
         const val EXTRA_USER_LNG = "user_lng"
 
-        // Result extras
         const val RESULT_COORDINATE_LAT = "coordinate_lat"
         const val RESULT_COORDINATE_LNG = "coordinate_lng"
         const val RESULT_NAME = "name"

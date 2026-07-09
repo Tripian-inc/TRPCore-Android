@@ -2,9 +2,6 @@ package com.tripian.trpcore.util
 
 import android.animation.Animator
 
-/**
- * Created by semihozkoroglu on 5.04.2020.
- */
 abstract class AnimatorListener : Animator.AnimatorListener {
     override fun onAnimationRepeat(p0: Animator) {
     }

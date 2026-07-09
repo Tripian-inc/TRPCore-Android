@@ -1,8 +1,5 @@
 package com.tripian.trpcore.util.extensions
 
-/**
- * Created by semihozkoroglu on 2019-08-15.
- */
 inline fun <T> MutableList<T>.replace(mutator: (T) -> T) {
     val iterate = this.listIterator()
     while (iterate.hasNext()) {

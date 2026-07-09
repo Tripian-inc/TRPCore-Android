@@ -5,9 +5,6 @@ import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.trip.model.Step
 import com.tripian.trpcore.domain.model.MapStep
 
-/**
- * Created by semihozkoroglu on 7.10.2020.
- */
 fun step2MapStep(step: Step, alternative: Boolean = false): MapStep {
     val mapStep = step.poi?.let { poi2MapStep(it, alternative) } ?: run { MapStep() }
     return mapStep.apply {

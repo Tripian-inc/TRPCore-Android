@@ -7,19 +7,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseBottomDialogFragment
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.BottomSheetActivityTimeSelectionBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
+import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.BottomToast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * ActivityTimeSelectionBottomSheet
  * Bottom sheet for selecting a time slot for an activity/tour
  * iOS Reference: ActivityTimeSelectionView
  *
@@ -42,54 +44,71 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
     private var onTimeSelectedListener: ((TourProduct, Date, String, Double?, Boolean) -> Unit)? = null
 
-    // SavedPlans flow: primary button becomes "Select" and an outlined "Remove"
-    // button is shown (always enabled). The normal activity-listing flow keeps
-    // the single "Continue" button.
+    /** SavedPlans flow: primary button becomes "Select" and an outlined "Remove" button is shown. */
     private var showSelectAndRemove: Boolean = false
     private var onRemoveListener: (() -> Unit)? = null
 
-    // For favorites mode (uses activityId for schedule API)
+    /** Favorites mode: the schedule API is called with the favorite's activityId. */
     private var isFavoriteMode: Boolean = false
     private var favoriteActivityId: String? = null
     private var favoriteCityId: Int? = null
     private var favoriteTitle: String? = null
     private var favoriteDuration: Double? = null
-    // Last param is the selected slot's min price (null when the slot carries no
-    // price); the caller uses it to set the new segment's price.
+    /** Last param is the selected slot's min price (null when the slot carries no price). */
     private var onFavoriteTimeSelectedListener: ((Date, String?, String?, Boolean, Double?) -> Unit)? = null
 
-    // Step-edit mode shares the favorite schedule load path (activityId + cityId)
-    // but routes the confirm action to a different callback that returns HH:mm
-    // start/end so the caller can patch the existing step's time. We also seed
-    // the time grid with the step's current slot on first render.
+    /** Step-edit mode shares the favorite schedule load path but confirms via a
+     *  callback returning HH:mm start/end and seeds the grid with the step's current slot. */
     private var isStepEditMode: Boolean = false
     private var isActivityNotAvailable: Boolean = false
     private var pendingInitialTimeSlot: String? = null
-    // Last param is the selected slot's min price (null when the slot carries no
-    // price); the caller uses it to update the activity's price on change-time.
+    /** Last param is the selected slot's min price (null when the slot carries no price). */
     private var onStepTimeSelectedListener: ((Date, String, String?, Double?) -> Unit)? = null
 
     /**
-     * Original booked time (`HH:mm`) kept beyond [pendingInitialTimeSlot]'s
-     * one-shot pre-selection so we can render it as a disabled chip when the
-     * user is on the step's original day and the schedule no longer offers it.
-     * Null in non-step-edit modes.
+     * Original booked time (`HH:mm`), rendered as a disabled chip when the user is
+     * on the step's original day and the schedule no longer offers it. Null in
+     * non-step-edit modes.
      */
     private var initialTimeSlot: String? = null
 
-    /**
-     * `yyyy-MM-dd` key of the step's original day. The disabled chip should
-     * only surface when the day filter is on this date — switching to another
-     * day clears the visual cue automatically because the keys mismatch.
-     */
+    /** `yyyy-MM-dd` key of the step's original day; the disabled chip only surfaces on this date. */
     private var initialDayKey: String? = null
+    private var lastSlideOffset: Float = 1f
 
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
+    /**
+     * Adds slack to swipe-to-dismiss: the base sheet runs with `skipCollapsed`,
+     * so any downward release hides it. This snaps the sheet back to expanded
+     * unless it was dragged past [DISMISS_SLIDE_THRESHOLD] of the way down,
+     * so a small over-scroll no longer closes the sheet.
+     */
+    private val dragDismissGuard = object : BottomSheetBehavior.BottomSheetCallback() {
+        override fun onSlide(bottomSheet: View, slideOffset: Float) {
+            lastSlideOffset = slideOffset
+        }
+
+        override fun onStateChanged(bottomSheet: View, newState: Int) {
+            if (newState == BottomSheetBehavior.STATE_SETTLING &&
+                lastSlideOffset > DISMISS_SLIDE_THRESHOLD
+            ) {
+                BottomSheetBehavior.from(bottomSheet).state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val sheet = dialog?.findViewById<View>(
+            com.google.android.material.R.id.design_bottom_sheet
+        ) ?: return
+        val behavior = BottomSheetBehavior.from(sheet)
+        behavior.removeBottomSheetCallback(dragDismissGuard)
+        behavior.addBottomSheetCallback(dragDismissGuard)
+    }
 
     override fun setListeners() {
         super.setListeners()
 
-        // Restore from arguments
         @Suppress("DEPRECATION")
         arguments?.let { args ->
             activity = args.getSerializable(ARG_ACTIVITY) as? TourProduct
@@ -118,41 +137,35 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         setupDayFilter()
         setupClickListeners()
 
-        // Request schedule from API (both for tours and favorites)
         requestScheduleLoad()
     }
 
     override fun setReceivers() {
         super.setReceivers()
 
-        // Observe resolved schedule (mode + timed slots + flexible price)
-        // from ViewModel. Loading is surfaced as a bottom-sheet Lottie via
-        // BaseBottomDialogFragment's central observer.
         viewModel.resolvedSchedule.observe(viewLifecycleOwner) { resolved ->
             updateSchedule(resolved)
         }
 
-        // Disable day-filter cells for days that have no slots, and bump the
-        // selection forward if the initially-selected day turned out empty.
         viewModel.availableDateStrings.observe(viewLifecycleOwner) { available ->
             dayAdapter?.availableDateStrings = available
             jumpToFirstAvailableIfNeeded(available)
         }
 
-        // Replace day filter + slot grid with a single warning card when the
-        // trip range has zero availability for this activity.
         viewModel.isUnavailableForTrip.observe(viewLifecycleOwner) { unavailable ->
             applyTripUnavailableState(unavailable)
         }
     }
 
+    /**
+     * Replaces the slot grid area with a warning card when the trip range has
+     * zero availability; the day filter stays visible with every cell disabled.
+     */
     private fun applyTripUnavailableState(unavailable: Boolean) {
         if (unavailable) {
-            // Day filter stays visible (every cell disabled via empty
-            // availableDateStrings). Only the slot grid area is replaced.
             binding.tripUnavailableCard.visibility = View.VISIBLE
             binding.tvSelectTime.visibility = View.GONE
-            binding.flexTimeSlots.visibility = View.GONE
+            binding.scrollTimeSlots.visibility = View.GONE
             binding.tvNoTimeSlots.visibility = View.GONE
             binding.flexibleInfoCard.visibility = View.GONE
             binding.tvFlexibleTopOfItinerary.visibility = View.GONE
@@ -188,13 +201,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     private fun setupUI() {
-        // Set localized texts
         updateTexts()
-        // Remove button: SavedPlans flow ("Select" + Remove) AND change-time
-        // (step-edit) flow both surface it. The host wires the action.
         binding.btnRemove.visibility =
             if (showSelectAndRemove || isStepEditMode) View.VISIBLE else View.GONE
-        // Update continue button state
         updateContinueButtonState()
     }
 
@@ -204,9 +213,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         } else {
             getLanguageForKey(LanguageConst.ADD_PLAN_TITLE)
         }
-        // Change-time on an available activity reframes the day filter as "Move
-        // day". The add flow — and change-time on an activity that is no longer
-        // available (re-add) — keep "Add to day".
         binding.tvAddToDay.text = if (isStepEditMode && !isActivityNotAvailable) {
             getLanguageForKey(LanguageConst.ADD_PLAN_MOVE_DAY)
         } else {
@@ -215,8 +221,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         binding.tvSelectTime.text = getLanguageForKey(LanguageConst.ADD_PLAN_SELECT_A_TIME)
         binding.tvNoTimeSlots.text = getLanguageForKey(LanguageConst.ADD_PLAN_NO_TIME_SLOTS)
         binding.tvTripUnavailable.text = getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS)
-        // SavedPlans flow uses "Select" as the primary CTA; everything else
-        // keeps the "Continue" label.
         binding.btnContinue.text = if (showSelectAndRemove) {
             getLanguageForKey(LanguageConst.ADD_PLAN_SELECT)
         } else {
@@ -234,34 +238,26 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             dayAdapter?.setSelectedPosition(index)
             clearTimeSlotSelection()
             updateContinueButtonState()
-            // Schedule for the full trip range was already fetched in setListeners();
-            // day switch just re-filters the cached response.
             availableDays.getOrNull(index)?.let { viewModel.selectDate(it) }
         }
         binding.rvDays.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
-        // Past-day check follows the activity's city clock (resolved by cityId).
         dayAdapter?.timeZoneId = com.tripian.trpcore.util.CityTimeZones.timezoneFor(favoriteCityId)
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
     }
 
     private fun setupClickListeners() {
-        // Back button
         binding.ivBack.setOnClickListener {
             dismiss()
         }
 
-        // Continue button - directly add activity without confirmation
         binding.btnContinue.setOnClickListener {
             addActivity()
         }
 
-        // Remove button - SavedPlans flow only. Confirmation + removal are
-        // handled by the host (it shows the alert and performs the removal).
-        // Independent of any time-slot selection, so always actionable.
         binding.btnRemove.setOnClickListener {
             onRemoveListener?.invoke()
         }
@@ -271,10 +267,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val date = availableDays.getOrNull(selectedDayIndex) ?: return
 
         if (isFlexibleSelected) {
-            // Flexible activity — segment is created with 00:00/23:59 + duration -1
-            // downstream. We forward "00:00" as a placeholder so the existing
-            // string-typed callback contract is preserved; the isFlexible flag
-            // is the source of truth.
             if (isFavoriteMode) {
                 onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59", true, currentFlexiblePrice)
             } else {
@@ -287,18 +279,12 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val timeSlot = selectedTimeSlot ?: return
 
         if (isStepEditMode) {
-            // Step-edit emits HH:mm start/end for the host VM to patch via
-            // updateStepTime. End time is computed from the step's stored
-            // duration (same recipe as the favorite path). selectedPrice is the
-            // chosen slot's price so the activity price can follow the new time.
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
             onStepTimeSelectedListener?.invoke(date, timeSlot, endTime, selectedPrice)
         } else if (isFavoriteMode) {
-            // For favorites - calculate end time from duration
             val endTime = calculateEndTimeFromDuration(timeSlot, favoriteDuration)
             onFavoriteTimeSelectedListener?.invoke(date, timeSlot, endTime, false, selectedPrice)
         } else {
-            // For tours - pass selected price (minimum price for the selected time slot)
             val tour = activity ?: return
             onTimeSelectedListener?.invoke(tour, date, timeSlot, selectedPrice, false)
         }
@@ -331,8 +317,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      * the response and serve day switches client-side via [ActivityTimeSelectionVM.selectDate].
      */
     private fun requestScheduleLoad() {
-        // Step-edit shares the favorite-mode load path: it already has an
-        // activityId + cityId in hand (from the existing step's POI).
         val activityId = if (isFavoriteMode || isStepEditMode) {
             favoriteActivityId
         } else {
@@ -343,7 +327,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         if (availableDays.isEmpty()) return
         val selectedDate = availableDays.getOrNull(selectedDayIndex) ?: availableDays.first()
 
-        // For favorites and step-edit, pass cityId for proper activityId formatting
         val cityId = if (isFavoriteMode || isStepEditMode) favoriteCityId else null
         viewModel.loadSchedule(activityId, availableDays, selectedDate, cityId)
     }
@@ -351,12 +334,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     /**
      * Render whichever combination of (time grid / flexible info card /
      * empty-state label) is appropriate for the resolved schedule. See
-     * [TimeSelectionMode] for the three shapes.
+     * [TimeSelectionMode] for the three shapes. Skips rendering entirely while
+     * trip-wide unavailability is active so the warning card isn't overridden.
      */
     private fun updateSchedule(resolved: ResolvedSchedule?) {
-        // Trip-wide unavailability takes over the whole sheet — skip per-day
-        // grid/flexible-card rendering so the warning card isn't overridden by
-        // a late `resolvedSchedule` emission.
         if (viewModel.isUnavailableForTrip.value == true) return
 
         val safe = resolved ?: ResolvedSchedule(
@@ -367,19 +348,18 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
         currentFlexiblePrice = safe.flexiblePrice
         currentSlots = safe.timedSlots
-        // Switching days/modes resets any previous selection.
         selectedTimeSlot = null
         selectedPrice = null
         isFlexibleSelected = false
 
-        // Step-edit mode: the very first render for the step's original day
-        // re-applies the step's current HH:mm if it still exists in the slot
-        // grid. Consumed on first match so day switches don't keep forcing it.
         pendingInitialTimeSlot?.let { initialSlot ->
             val match = currentSlots.firstOrNull { it.time == initialSlot }
             if (match != null) {
                 selectedTimeSlot = match.time
                 selectedPrice = match.minPrice
+                if (viewModel.getDisplayedSlots().none { it.time == match.time }) {
+                    viewModel.expandTimeSlots()
+                }
             }
             pendingInitialTimeSlot = null
         }
@@ -387,12 +367,11 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         when (safe.mode) {
             TimeSelectionMode.FLEXIBLE_ONLY -> {
                 binding.tvSelectTime.visibility = View.GONE
-                binding.flexTimeSlots.visibility = View.GONE
+                binding.scrollTimeSlots.visibility = View.GONE
                 binding.tvNoTimeSlots.visibility = View.GONE
                 binding.flexibleInfoCard.visibility = View.VISIBLE
                 binding.tvFlexibleTopOfItinerary.visibility = View.VISIBLE
                 applyFlexibleInfoTexts()
-                // Continue is enabled immediately — no chip selection needed.
                 isFlexibleSelected = true
             }
             TimeSelectionMode.TIMED -> {
@@ -401,14 +380,11 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 binding.tvFlexibleTopOfItinerary.visibility = View.GONE
 
                 if (currentSlots.isEmpty()) {
-                    // No available timed slots for the selected day → "not available" warning.
                     binding.tvNoTimeSlots.visibility = View.VISIBLE
-                    binding.flexTimeSlots.visibility = View.GONE
+                    binding.scrollTimeSlots.visibility = View.GONE
                 } else {
                     binding.tvNoTimeSlots.visibility = View.GONE
-                    binding.flexTimeSlots.visibility = View.VISIBLE
-                    // Theme 9: render the collapsed window (first N slots) when the VM
-                    // reports we should be in the show-more state.
+                    binding.scrollTimeSlots.visibility = View.VISIBLE
                     populateTimeSlots(viewModel.getDisplayedSlots())
                 }
             }
@@ -426,6 +402,12 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             .ifBlank { "Add it to top of your itinerary." }
     }
 
+    /**
+     * Renders the slot chips in a fixed 4-column grid. Past slots for the city's
+     * timezone are disabled; in step-edit mode on the step's original day, the
+     * originally-booked time that the backend no longer offers is appended as a
+     * disabled chip. All chips render in chronological order.
+     */
     private fun populateTimeSlots(slots: List<GroupedTimeSlot>) {
         binding.flexTimeSlots.removeAllViews()
 
@@ -434,22 +416,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val heightPx = (36 * density).toInt()
         val marginPx = (8 * density).toInt()
 
-        // Calculate item width for exactly 4 columns
-        // FlexboxLayout has 24sdp margin on each side (48sdp total)
         val flexboxMarginPx = (24 * density * 2).toInt()
         val screenWidth = resources.displayMetrics.widthPixels
         val availableWidth = screenWidth - flexboxMarginPx
-        // 4 items with 4 right margins (last item margin will overflow but FlexboxLayout handles wrap)
         val columnCount = 4
         val totalMargins = columnCount * marginPx
         val itemWidthPx = (availableWidth - totalMargins) / columnCount
 
-        // Build the full chip set: available slots + (optionally) the disabled
-        // chip representing the step's originally-booked time that the
-        // backend no longer offers. The disabled chip only appears in
-        // step-edit mode AND when the day filter is on the step's original
-        // day — switching days hides it automatically because the day keys
-        // mismatch. Both kinds render in chronological order.
         val currentDayKey = availableDays.getOrNull(selectedDayIndex)?.let {
             dayKeyFormatter.format(it)
         }
@@ -458,12 +431,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 isStepEditMode &&
                     currentDayKey != null &&
                     currentDayKey == initialDayKey &&
-                    slots.none { slot -> slot.time == it }
+                    currentSlots.none { slot -> slot.time == it }
             }
 
-        // Disable any slot that is already in the past for the selected day in the
-        // city's timezone (resolved by cityId). Future days / unknown tz → no slot
-        // is treated as past (device-tz fallback inside CityTimeZones).
         val selectedDay = availableDays.getOrNull(selectedDayIndex)
 
         data class ChipSpec(val time: String, val price: Double?, val isDisabled: Boolean)
@@ -486,10 +456,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             chipView.text = spec.time
 
             if (spec.isDisabled) {
-                // Solid-gray background + white text; chip is non-interactive
-                // because the backend has confirmed this slot is no longer
-                // available. The selector drawable from the layout is replaced
-                // wholesale so selected/activated states cannot kick in.
                 chipView.setBackgroundResource(R.drawable.trp_bg_time_slot_disabled)
                 chipView.setTextColor(disabledTextColor)
                 chipView.isClickable = false
@@ -509,7 +475,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 }
             }
 
-            // Set layout params for FlexboxLayout with fixed width for 4 columns
             val params = com.google.android.flexbox.FlexboxLayout.LayoutParams(
                 itemWidthPx,
                 heightPx
@@ -520,7 +485,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             binding.flexTimeSlots.addView(chipView)
         }
 
-        // Theme 9: append "Show more times" cell when the collapsed window is active.
         if (viewModel.shouldShowMoreCell) {
             val showMoreView = inflater.inflate(
                 R.layout.item_time_slot_show_more,
@@ -542,6 +506,36 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             params.setMargins(0, 0, marginPx, marginPx)
             showMoreView.layoutParams = params
             binding.flexTimeSlots.addView(showMoreView)
+        }
+
+        adjustSlotScrollHeight()
+    }
+
+    /**
+     * Keeps the slot grid content-sized while collapsed and caps it to
+     * [MAX_SLOT_SCROLL_HEIGHT_RATIO] of the screen once expanded, so a long fully
+     * expanded list scrolls inside the grid instead of stretching the sheet.
+     */
+    private fun adjustSlotScrollHeight() {
+        val scroll = binding.scrollTimeSlots
+        if (!viewModel.isTimeSlotsExpanded) {
+            setScrollHeight(scroll, ViewGroup.LayoutParams.WRAP_CONTENT)
+            return
+        }
+        val maxHeightPx = (resources.displayMetrics.heightPixels * MAX_SLOT_SCROLL_HEIGHT_RATIO).toInt()
+        scroll.post {
+            if (!isAdded) return@post
+            val contentHeight = binding.flexTimeSlots.height
+            val target = if (contentHeight > maxHeightPx) maxHeightPx else ViewGroup.LayoutParams.WRAP_CONTENT
+            setScrollHeight(scroll, target)
+        }
+    }
+
+    private fun setScrollHeight(scroll: View, height: Int) {
+        val params = scroll.layoutParams
+        if (params.height != height) {
+            params.height = height
+            scroll.layoutParams = params
         }
     }
 
@@ -601,7 +595,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      * of an existing activity-type timeline step).
      * @param listener Callback with (selectedDate, startTime HH:mm, endTime HH:mm or null,
      *                 selectedSlotPrice or null). The price drives the change-time
-     *                 price update (kept unchanged when null).
+     *                 price update (null leaves the price as is).
      */
     fun setOnStepTimeSelectedListener(listener: (Date, String, String?, Double?) -> Unit) {
         onStepTimeSelectedListener = listener
@@ -616,11 +610,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     /**
-     * Shows an inline loader inside this sheet (e.g. "Adding to itinerary" for
-     * the SavedPlans add flow, "Changing time" for the change-time flow) while
-     * the host performs the operation. Rendered by [BaseBottomDialogFragment] as
-     * an overlay over the sheet's own view tree (no separate window), unlike a
-     * full-screen/bottom-sheet loader dialog.
+     * Shows an inline loader inside this sheet while the host performs the
+     * operation. Rendered by [BaseBottomDialogFragment] as an overlay over the
+     * sheet's own view tree (no separate window).
      */
     fun showInSheetLoadingOverlay(languageKey: String, fallback: String) {
         viewModel.showInSheetLoader(languageKey, fallback)
@@ -631,8 +623,26 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         viewModel.hideLottieLoading()
     }
 
+    /**
+     * Surfaces an error over this sheet. Anchors [BottomToast] to the sheet's own
+     * dialog window so it appears on top of the sheet rather than behind it on the
+     * activity's content view.
+     */
+    fun showError(message: String) {
+        if (!isAdded) return
+        val parent = dialog?.window?.decorView as? ViewGroup
+        BottomToast.show(
+            activity = requireActivity(),
+            message = message,
+            alertType = AlertType.ERROR,
+            parent = parent
+        )
+    }
+
     companion object {
         const val TAG = "ActivityTimeSelectionBottomSheet"
+        private const val MAX_SLOT_SCROLL_HEIGHT_RATIO = 0.4f
+        private const val DISMISS_SLIDE_THRESHOLD = 0.7f
         private const val ARG_ACTIVITY = "activity"
         private const val ARG_AVAILABLE_DAYS = "available_days"
         private const val ARG_INITIAL_SELECTED_DAY = "initial_selected_day"
@@ -648,13 +658,12 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
         /**
          * Create instance for TourProduct (with API schedule loading)
+         * @param cityId used only to resolve the timezone for the past-slot check.
          */
         fun newInstance(
             activity: TourProduct,
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
-            // City of the activity — used only to resolve the timezone for the
-            // past-slot check (schedule still loads from the tour itself).
             cityId: Int? = null
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
@@ -669,6 +678,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
         /**
          * Create instance for SegmentFavoriteItem (with API schedule loading using activityId)
+         * @param showSelectAndRemove SavedPlans flow: show "Select" primary + outlined "Remove".
          */
         fun newInstanceForFavorite(
             favoriteActivityId: String?,
@@ -677,7 +687,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteDuration: Double?,
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
-            // SavedPlans flow: show "Select" primary + outlined "Remove".
             showSelectAndRemove: Boolean = false
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {

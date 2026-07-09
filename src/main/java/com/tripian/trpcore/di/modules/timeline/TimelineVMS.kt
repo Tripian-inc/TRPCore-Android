@@ -18,8 +18,7 @@ import dagger.Module
 import dagger.multibindings.IntoMap
 
 /**
- * TimelineVMS
- * Dagger bindings for ViewModels in Timeline module
+ * Dagger bindings for ViewModels in the Timeline module.
  */
 @Module
 abstract class TimelineVMS {

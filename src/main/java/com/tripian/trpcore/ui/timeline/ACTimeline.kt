@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
@@ -30,6 +31,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
@@ -47,6 +49,7 @@ import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.dp
 import kotlinx.coroutines.launch
+import java.util.Date
 
 /**
  * ACTimeline
@@ -68,11 +71,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var fabListInitialBottomMargin = 0
     private var contentInitialBottomPadding = 0
 
-    // Change-time sheet (ActivityTimeSelection step-edit). Retained so its inline
-    // loader can be shown on confirm and the sheet dismissed on completion.
     private var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
 
-    // POI Selection launcher
     private val poiSelectionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -88,13 +88,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
     }
 
-    // Saved Plans launcher
     private val savedPlansLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            // The SavedPlans add flow already fetched the generated timeline in
-            // the background; apply that cached snapshot instead of a second GET.
             viewModel.onReturnFromSavedPlans()
         }
     }
@@ -105,10 +102,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     override fun getViewBinding() = ActivityTimelineBinding.inflate(layoutInflater)
 
-
     override fun setListeners() {
-        // Handle navigation bar insets for FAB
-
         fabAddInitialBottomMargin =
             (binding.fabAddPlan.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
         val rvMapBottomListBottomMargin =
@@ -119,10 +113,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content)) { _, insets ->
             navigationBarInsetBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
 
-//            binding.fabAddPlan.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-//                bottomMargin = maxOf(fabAddInitialBottomMargin, bottomInset + extraFabSpacing)
-//            }
-//
             binding.rvMapBottomList.updateLayoutParams<ViewGroup.MarginLayoutParams> {
                 bottomMargin = maxOf(rvMapBottomListBottomMargin, navigationBarInsetBottom)
             }
@@ -131,39 +121,31 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             insets
         }
 
+
         binding.rvMapBottomList.doOnLayout {
             bottomListHeight = it.height
             updateFabPositions()
         }
 
-        // Back button
         binding.ivBack.setOnClickListener {
             handleBackNavigation()
         }
 
-        // Map FAB - switches to map mode
         binding.fabMap.setOnClickListener {
             viewModel.toggleMapMode()
         }
 
-        // List FAB - switches back to list mode
         binding.fabList.setOnClickListener {
             viewModel.toggleMapMode()
         }
 
-        // Add plan FAB
         binding.fabAddPlan.setOnClickListener {
             showAddPlanSheet()
         }
 
-        // Day filter
         binding.dayFilterView.setOnDaySelectedListener { index ->
             viewModel.selectDay(index)
-            // Scroll to top when day changes
             binding.rvTimeline.scrollToPosition(0)
-            // If on map view, recenter the camera to fit the new day's items.
-            // selectDay() synchronously updates mapSteps; the observer has already
-            // refreshed mapView's icons by the time we reach this line.
             if (viewModel.isMapMode.value == true) {
                 lifecycleScope.launch {
                     binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
@@ -171,34 +153,22 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Saved plans button
         binding.btnSavedPlans.setOnClickListener {
             openSavedPlans()
         }
 
-        // Swipe refresh — temporarily disabled
         binding.swipeRefresh.isEnabled = false
         binding.swipeRefresh.setOnRefreshListener {
-//            viewModel.refreshTimeline()
         }
 
-        // Near Me button
         binding.btnNearMe.setOnClickListener {
             viewModel.showNearMePois()
         }
 
-        // Map click listener
         binding.mapView.setOnMapClickListener { mapStep ->
             handleMapItemClick(mapStep)
         }
 
-        // Tapping empty map space toggles the bottom list. Two defenses:
-        //  1) If onMoveBegin fired moments earlier (slop or a pan that's ending),
-        //     the interaction listener already hid the list — skip the toggle so
-        //     we don't flip back to show.
-        //  2) Coalesce rapid empty-click callbacks from the same gesture: a
-        //     single tap was observed to invoke this listener twice (hide then
-        //     immediately re-show). Drop any second invocation within the guard.
         binding.mapView.setOnMapEmptyClickListener {
             if (viewModel.mapSteps.value.isNullOrEmpty()) return@setOnMapEmptyClickListener
             val now = System.currentTimeMillis()
@@ -216,31 +186,23 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Map load listener
         binding.mapView.setOnMapLoadListener {
-            // Map is ready, we can now show markers
         }
 
-        // Map interaction listener - hide bottom list when user pans or zooms
         binding.mapView.setOnMapInteractionListener {
             lastMapInteractionAtMs = System.currentTimeMillis()
             hideMapBottomList()
         }
 
-        // Zoom level listener for multi-city mode switching
         binding.mapView.setOnZoomLevelListener { zoomLevel ->
             viewModel.onZoomLevelChanged(zoomLevel)
         }
 
-        // Main View button - returns map to overview (city markers mode for multi-city)
         binding.btnMainView.setOnClickListener {
-            // Notify ViewModel to reset to overview mode
             viewModel.onMainViewClicked()
 
-            // Collapse bottom list
             hideMapBottomList()
 
-            // Zoom out to city overview
             lifecycleScope.launch {
                 binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
             }
@@ -248,55 +210,46 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     override fun setReceivers() {
-        // Onboarding
         viewModel.showOnboarding.observe(this) { shouldShow ->
             if (shouldShow) {
                 showOnboardingBottomSheet()
             }
         }
 
-        // Timeline data
         viewModel.timeline.observe(this) { timeline ->
             binding.swipeRefresh.isRefreshing = false
             updateUI(timeline != null)
         }
 
-        // Display items
         viewModel.displayItems.observe(this) { items ->
             timelineAdapter.submitList(items)
             updateEmptyState(items.isEmpty() || items.all { it is TimelineDisplayItem.EmptyState })
         }
 
-        // Available days
         viewModel.availableDays.observe(this) { days ->
             binding.dayFilterView.setDays(days)
         }
 
-        // Selected day
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
         }
 
-        // Map mode
         viewModel.isMapMode.observe(this) { isMapMode ->
             updateMapMode(isMapMode)
         }
 
-        // Error
         viewModel.error.observe(this) { error ->
             error?.let {
                 showAlert(AlertType.ERROR, it)
             }
         }
 
-        // No cities available - show NoCityView
         viewModel.noCitiesAvailable.observe(this) { noCities ->
             if (noCities == true) {
                 showNoCityState()
             }
         }
 
-        // Partial unavailable cities alert
         viewModel.showPartialUnavailableAlert.observe(this) { cityNames ->
             cityNames?.let {
                 showPartialUnavailableAlert(it)
@@ -304,7 +257,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Scroll to new segment after creation
         viewModel.scrollToNewSegmentPlanId.observe(this) { planId ->
             planId?.let {
                 scrollToNewSegment(it)
@@ -312,15 +264,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Add plan sheet
         viewModel.showAddPlanSheet.observe(this) { show ->
             if (show == true) {
                 showAddPlanSheet()
             }
         }
 
-        // Smart recommendation: dismiss the AddPlan sheet only once the initial
-        // segment create succeeds; failures keep the sheet open for retry.
         viewModel.smartSegmentCreated.observe(this) { selectedDayIndex ->
             selectedDayIndex?.let { dayIndex ->
                 addPlanSheet?.dismiss()
@@ -329,8 +278,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Surface create-segment errors on the AddPlan sheet so they appear
-        // in front of it instead of behind on the activity content layer.
         viewModel.smartCreateError.observe(this) { error ->
             error?.let {
                 addPlanSheet?.showCreateError(it)
@@ -338,9 +285,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Drive the AddPlan sheet's inline loader from the create-segment
-        // state. Routing through the sheet's own VM lets the sheet's loader
-        // observer render the overlay inside its view tree (no extra window).
         viewModel.smartCreateInProgress.observe(this) { inProgress ->
             val sheetVm = addPlanSheet?.viewModel ?: return@observe
             if (inProgress == true) {
@@ -350,32 +294,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Map steps for map mode
         viewModel.mapSteps.observe(this) { mapSteps ->
             if (viewModel.isMapMode.value == true) {
-                // Use the current markers mode to decide what to show
                 when (viewModel.mapMarkersMode.value) {
                     MapMarkersMode.CITY_MARKERS -> showCityMarkersMode()
                     MapMarkersMode.STEP_MARKERS -> showStepMarkersMode()
                     else -> showStepMarkersMode()
                 }
-                // Toggle the bottom list to match the new day's content. Without the
-                // else branch, switching from an empty day to a plan-bearing day
-                // would leave the list hidden forever (hideCompletely was sticky).
-                //
-                // Use mapBottomItems (not mapSteps): activities without a real
-                // coordinate produce no marker but still belong in the bottom
-                // list, so an "isNoLocation-only" day should still surface its
-                // cards instead of leaving the panel empty.
-                if (viewModel.mapBottomItems.value.isNullOrEmpty()) {
-                    hideMapBottomListCompletely()
-                } else {
-                    showMapBottomList()
-                }
             }
         }
 
-        // Map markers mode observer (for multi-city zoom-based switching)
         viewModel.mapMarkersMode.observe(this) { mode ->
             if (viewModel.isMapMode.value == true) {
                 when (mode) {
@@ -385,12 +313,17 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Map bottom items for horizontal list
         viewModel.mapBottomItems.observe(this) { items ->
             mapBottomListAdapter?.submitList(items)
+            if (viewModel.isMapMode.value == true) {
+                if (items.isNullOrEmpty()) {
+                    hideMapBottomListCompletely()
+                } else {
+                    showMapBottomList()
+                }
+            }
         }
 
-        // Launch POI selection
         viewModel.launchPoiSelection.observe(this) { data ->
             data?.let {
                 pendingAddPlanData = it
@@ -403,12 +336,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Near Me visibility
         viewModel.showNearMeButton.observe(this) { show ->
             binding.btnNearMe.visibility = if (show) View.VISIBLE else View.GONE
         }
 
-        // Saved Plans visibility and badge
         viewModel.savedPlansCount.observe(this) { count ->
             if (count > 0) {
                 binding.btnSavedPlans.visibility = View.VISIBLE
@@ -418,7 +349,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Change time picker for step
         viewModel.showChangeTimePickerStep.observe(this) { step ->
             step?.let {
                 showChangeTimePicker(it)
@@ -426,7 +356,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Change time picker for top-level segment (reserved / flexible activities)
         viewModel.showChangeTimePickerSegment.observe(this) { request ->
             request?.let {
                 showSegmentChangeTimePicker(it.segment, it.segmentIndex)
@@ -434,8 +363,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Inline change-time finished (ActivityTimeSelection sheet): dismiss the
-        // sheet on success; hide just the inline loader on failure (retry).
         viewModel.changeTimeFinished.observe(this) { result ->
             result?.let {
                 viewModel.resetChangeTimeFinished()
@@ -448,16 +375,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Route info updated - DiffUtil will handle partial updates via payload
         viewModel.routeInfoUpdated.observe(this) { segmentIndex ->
             segmentIndex?.let {
                 viewModel.clearRouteInfoUpdate()
             }
         }
 
-        // Main View button visibility (multi-city map mode).
-        // The button is only shown when active AND the bottom panel is fully shown;
-        // it must follow the panel's peek/hide state.
         viewModel.showMainViewButton.observe(this) {
             updateMainViewButtonVisibility()
         }
@@ -465,6 +388,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        ViewCompat.requestApplyInsets(binding.root)
         setupRecyclerView()
         setupMapBottomList()
         setupUI()
@@ -494,26 +419,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     // =====================
 
     private fun setupUI() {
-        // Title
         binding.tvTitle.text = getLanguageForKey(LanguageConst.ITINERARY)
 
-        // Saved plans card text
         binding.tvSavedPlansText.text = getLanguageForKey(LanguageConst.ADD_PLAN_EMPTY_SAVED)
 
-        // Near Me button
         binding.btnNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
 
-        // Main View button
         binding.btnMainView.text = getLanguageForKey(LanguageConst.TIMELINE_MAIN_VIEW)
 
-        // Empty state texts
         binding.tvEmptyTitle.text = getLanguageForKey(LanguageConst.NO_PLANS_YET)
         binding.tvEmptySubtitle.text = getLanguageForKey(LanguageConst.NO_PLANS_DESCRIPTION)
     }
 
     private fun setupRecyclerView() {
-        // Get distance format from language service with fallback
-
         timelineAdapter = TimelineAdapter(
             onItemClick = { item ->
                 handleItemClick(item)
@@ -525,26 +443,20 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 handleExpandClick(item)
             },
             onStepClick = { step ->
-                // When a step (POI within recommendations) is clicked
-                // Check stepType: "poi" -> open POI Detail, otherwise notify host app
                 if (step.stepType == "poi") {
-                    // Open POI Detail screen for POI steps
                     step.poi?.let { poi ->
                         startActivity(ACPOIDetail.launch(this, poi))
                     }
                 } else {
-                    // Activity steps - notify host app
                     val activityId = step.poi?.additionalData?.productId
                         ?: step.poi?.id
                     activityId?.let { viewModel.onActivityDetailRequested(it) }
                 }
             },
             onChangeTimeClick = { manualPoi ->
-                // Handle change time for ManualPoi
                 handleManualPoiChangeTimeClick(manualPoi)
             },
             onAddPlanClick = {
-                // When Add Plans button is clicked from empty state
                 showAddPlanSheet()
             },
             onReservedActivityChangeTimeClick = { reservedActivity ->
@@ -568,9 +480,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                                 }
                             )
                         }
-                    ) { startTime, endTime, slotPrice ->
+                    ) { selectedDate, startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            reservedActivity.segment, idx, startTime, endTime, slotPrice,
+                            reservedActivity.segment, idx, startTime, endTime,
+                            newDate = selectedDate.toApiDateString(),
+                            newPrice = slotPrice,
                             useInlineLoader = true
                         )
                     }
@@ -584,8 +498,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         title = flexibleActivity.title,
                         duration = flexibleActivity.segment.additionalData?.duration,
                         initialDateTime = flexibleActivity.segment.startDate,
-                        // Flexible items use a 00:00/23:59 placeholder; pre-selecting
-                        // it would mark a non-existent "00:00" slot as the choice.
                         seedInitialTimeSlot = false,
                         isNotAvailable = flexibleActivity.isAvailabilityExpired,
                         onRemove = {
@@ -599,62 +511,51 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                                 }
                             )
                         }
-                    ) { startTime, endTime, slotPrice ->
+                    ) { selectedDate, startTime, endTime, slotPrice ->
                         viewModel.updateSegmentTime(
-                            flexibleActivity.segment, idx, startTime, endTime, slotPrice,
+                            flexibleActivity.segment, idx, startTime, endTime,
+                            newDate = selectedDate.toApiDateString(),
+                            newPrice = slotPrice,
                             useInlineLoader = true
                         )
                     }
                 }
             },
             onReservationClick = { bookedActivity ->
-                // Handle reservation button click for reserved activities
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
-                    // Extract date part (yyyy-MM-dd) from startDateTime (yyyy-MM-dd HH:mm)
                     val dateString = bookedActivity.startDateTime?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(activityId, dateString)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
-                // Same reservation entry point as reserved activities; the start
-                // datetime is the placeholder 00:00 — extract the date only.
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
                     val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(activityId, dateString)
                 }
             },
-            // Step callbacks for Recommendations
             onStepChangeTimeClick = { step ->
-                // Handle change time for POI step
                 handleStepChangeTimeClick(step)
             },
             onStepDeleteClick = { step ->
-                // Handle delete for step
                 handleStepDeleteClick(step)
             },
             onStepReservationClick = { step ->
-                // Handle reservation for activity step
                 val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                 activityId?.let { id ->
-                    // Extract date part (yyyy-MM-dd) from startDateTimes (yyyy-MM-dd HH:mm)
                     val dateString = step.startDateTimes?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(id, dateString)
                 }
             },
-            // Route calculation callback for Recommendations
             onRequestRouteCalculation = { recommendations ->
                 viewModel.calculateRoutesForRecommendations(recommendations)
             },
-            // Theme 12: section collapse / expand
             onSectionToggle = { cityId ->
                 viewModel.toggleSectionCollapsed(cityId)
             },
             isSectionCollapsed = { cityId ->
                 viewModel.isSectionCollapsed(cityId)
             },
-            // Conflict banner — scrolls inline with the list now
             onConflictTap = {
-                // No-op for now; conflict styling on item badges is the primary cue.
             },
             onConflictDismiss = {
                 viewModel.dismissConflictBanner()
@@ -665,14 +566,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             layoutManager = LinearLayoutManager(this@ACTimeline)
             adapter = timelineAdapter
             setHasFixedSize(false)
-            // Disable add/remove/change animations. Day switching otherwise fades the
-            // previous day's items out while fading the new day in, leaving stale
-            // items visible for ~250ms.
             itemAnimator = null
         }
-        // Stack the device navigation bar inset onto the XML's base bottom
-        // padding (120dp for FAB clearance) so the last card clears gesture
-        // pills / 3-button bars and never sits behind the nav layer.
         binding.rvTimeline.applyBottomSystemBarInsetPadding()
     }
 
@@ -684,21 +579,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun setupMapBottomList() {
         mapBottomListAdapter = MapBottomListAdapter { item ->
             if (item.isSelected) {
-                // Item is already selected - navigate to detail
                 when {
-                    // Booked, reserved, or flexible activities
                     item.type == "booked" || item.type == "reserved" || item.type == "flexible" -> {
                         viewModel.onActivityDetailRequested(item.id)
                     }
-                    // Step with activity type - treat like reserved
                     item.type == "step" && item.stepType == "activity" -> {
-                        // Get productId from POI additionalData
                         findPoiById(item.id)?.let { poi ->
                             val activityId = poi.additionalData?.productId ?: poi.id ?: item.id
                             viewModel.onActivityDetailRequested(activityId)
                         }
                     }
-                    // POI types (step with poi stepType, manual)
                     else -> {
                         findPoiById(item.id)?.let { poi ->
                             startActivity(ACPOIDetail.launch(this, poi))
@@ -706,11 +596,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                 }
             } else {
-                // Item is not selected. If it has a real map marker, run the normal
-                // select-and-zoom flow. If it has no marker (no-location / missing
-                // coord, flexible or otherwise), bypass mapSteps selection (which
-                // would mis-deselect other markers in city 0) and just update the
-                // bottom-list selection + center the camera on the item's city.
                 val mapStep = viewModel.mapSteps.value?.find { it.poiId == item.id }
                 val markerCoord = mapStep?.coordinate
 
@@ -733,13 +618,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                 }
 
-                // Show Main View button when focusing on a marker (multi-city mode)
                 viewModel.onMarkerFocused()
 
-                // Show full list
                 showMapBottomList()
 
-                // Scroll the list to center on the clicked item
                 val position = mapBottomListAdapter?.currentList?.indexOfFirst { it.id == item.id } ?: -1
                 if (position >= 0) {
                     binding.rvMapBottomList.smoothScrollToPosition(position)
@@ -747,7 +629,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
-        // Create PagerSnapHelper for paging behavior
         val snapHelper = PagerSnapHelper()
 
         binding.rvMapBottomList.apply {
@@ -758,34 +639,26 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             )
             adapter = mapBottomListAdapter
 
-            // Attach paging snap helper
             snapHelper.attachToRecyclerView(this)
 
-            // Add scroll listener to select centered item when scroll stops
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    // Show full list when user starts scrolling
                     if (newState == RecyclerView.SCROLL_STATE_DRAGGING) {
                         showMapBottomList()
                     }
 
                     if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                        // Find the centered (snapped) item
                         val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
                         val snapView = snapHelper.findSnapView(layoutManager)
                         snapView?.let { view ->
                             val position = layoutManager.getPosition(view)
                             val item = mapBottomListAdapter?.currentList?.getOrNull(position)
                             item?.let { bottomItem ->
-                                // Select the item if not already selected
                                 if (!bottomItem.isSelected) {
-                                    // Select via ViewModel - updates mapSteps and mapBottomItems
                                     viewModel.selectStepOnMap(bottomItem.id)
 
-                                    // Select marker on map
                                     binding.mapView.selectMarker(bottomItem.id)
 
-                                    // Zoom to the item's coordinate
                                     val mapStep = viewModel.mapSteps.value?.find { it.poiId == bottomItem.id }
                                     mapStep?.coordinate?.let { coord ->
                                         binding.mapView.zoomToCoordinate(
@@ -803,15 +676,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             })
 
-            // Add touch listener to show full list when tapped (if partially hidden)
             setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
-                    // Show full list when touched (if not already visible)
                     if (!isBottomListVisible) {
                         showMapBottomList()
                     }
                 }
-                false // Don't consume the event, let RecyclerView handle it
+                false
             }
         }
     }
@@ -849,99 +720,65 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun updateUI(hasData: Boolean) {
         binding.rvTimeline.visibility = if (hasData) View.VISIBLE else View.GONE
-//        binding.emptyStateView.visibility = if (hasData) View.GONE else View.VISIBLE
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
-//        binding.emptyStateView.visibility = if (isEmpty) View.VISIBLE else View.GONE
     }
 
+    /**
+     * Switches between list and map UI. In map mode the root's top status-bar
+     * padding is dropped so the map fills behind a transparent status bar, and
+     * the header offsets itself using the real system-bar inset to stay clear
+     * of it; list mode restores the consumed top inset padding and the white bar.
+     */
     private fun updateMapMode(isMapMode: Boolean) {
         binding.swipeRefresh.visibility = if (isMapMode) View.GONE else View.VISIBLE
         binding.mapContainer.visibility = if (isMapMode) View.VISIBLE else View.GONE
 
-        // Map mode keeps the status bar visible but transparent so the map fills
-        // behind it. We previously went immersive
-        // (WindowInsetsController.hide + BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE),
-        // but any swipe-from-top / return from a sub-activity made the system
-        // re-render the bar as a translucent dark transient overlay — which
-        // read as a pitch-black status bar. Override the BaseActivity root
-        // padding listener so the map can extend behind the bar; the
-        // headerContainer offsets itself by statusBarHeight below.
-        if (isMapMode) {
-            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, _ ->
-                v.updatePadding(top = 0)
-                WindowInsetsCompat.CONSUMED
-            }
-            window.statusBarColor = android.graphics.Color.TRANSPARENT
-        } else {
-            binding.root.consumeSystemBarPadding(top = true)
-            window.statusBarColor = android.graphics.Color.WHITE
-            hideMapBottomListCompletely()
-        }
-        ViewCompat.requestApplyInsets(binding.root)
-
-        // Hide savedPlans in map mode
         if (isMapMode) {
             binding.btnSavedPlans.visibility = View.GONE
         } else {
-            // Restore savedPlans visibility based on count
+            hideMapBottomListCompletely()
             val count = viewModel.savedPlansCount.value ?: 0
             binding.btnSavedPlans.visibility = if (count > 0) View.VISIBLE else View.GONE
         }
 
-        // Header and DayFilter elevation + background for map mode
         val elevationDp = 8f * resources.displayMetrics.density
         val defaultPadding = (16 * resources.displayMetrics.density).toInt()
 
-        // Get status bar height from system resource
-        val statusBarHeight = resources.getIdentifier("status_bar_height", "dimen", "android")
-            .takeIf { it > 0 }
-            ?.let { resources.getDimensionPixelSize(it) }
-            ?: (24 * resources.displayMetrics.density).toInt() // fallback 24dp
-
         if (isMapMode) {
-            // Transparent background and elevation for map overlay
+            ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, windowInsets ->
+                v.updatePadding(top = 0)
+                val statusBarInset = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars()).top
+                binding.headerContainer.updatePadding(top = statusBarInset + defaultPadding)
+                WindowInsetsCompat.CONSUMED
+            }
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+
             binding.headerContainer.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             binding.headerContainer.elevation = elevationDp
             binding.dayFilterView.elevation = elevationDp
-
-            // Add status bar height as top padding to keep header in place
-            binding.headerContainer.setPadding(
-                binding.headerContainer.paddingLeft,
-                statusBarHeight + defaultPadding,
-                binding.headerContainer.paddingRight,
-                binding.headerContainer.paddingBottom
-            )
         } else {
-            // White background and no elevation for list mode
+            binding.root.consumeSystemBarPadding(top = true)
+            window.statusBarColor = android.graphics.Color.WHITE
+
             binding.headerContainer.setBackgroundColor(android.graphics.Color.WHITE)
             binding.headerContainer.elevation = 0f
             binding.dayFilterView.elevation = 0f
-
-            // Reset top padding to default
-            binding.headerContainer.setPadding(
-                binding.headerContainer.paddingLeft,
-                defaultPadding,
-                binding.headerContainer.paddingRight,
-                binding.headerContainer.paddingBottom
-            )
+            binding.headerContainer.updatePadding(top = defaultPadding)
         }
+        ViewCompat.requestApplyInsets(binding.root)
 
-        // FAB visibility
         if (isMapMode) {
-            // Map view: List + AddPlan FABs visible
             binding.fabMap.visibility = View.GONE
             binding.fabAddPlan.visibility = View.VISIBLE
             binding.fabList.visibility = View.VISIBLE
         } else {
-            // List view: Map + AddPlan FABs visible
             binding.fabMap.visibility = View.VISIBLE
             binding.fabAddPlan.visibility = View.VISIBLE
             binding.fabList.visibility = View.GONE
         }
 
-        // Show map markers when switching to map mode
         if (isMapMode) {
             val mapSteps = viewModel.mapSteps.value
             binding.mapView.clearMap()
@@ -951,10 +788,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             lifecycleScope.launch {
                 binding.mapView.moveCameraTo(viewModel.getSelectedDayCityCoordinate())
             }
-            // Bottom list visibility is driven by the full set of cards
-            // (including no-location items that produce no marker), not the
-            // marker count — otherwise a day with only no-location activities
-            // would land in map mode with an empty panel.
             if (viewModel.mapBottomItems.value.isNullOrEmpty()) {
                 hideMapBottomListCompletely()
             } else {
@@ -963,58 +796,35 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         } else {
             binding.mapView.clearMap()
-            // Hide bottom list completely when exiting map mode
             isBottomListVisible = false
             binding.rvMapBottomList.visibility = View.GONE
             binding.rvMapBottomList.translationY = 0f
-            // Reset FAB positions
             binding.fabList.translationY = 0f
             binding.fabAddPlan.translationY = 0f
-            // Hide Main View button
             binding.btnMainView.visibility = View.GONE
         }
     }
 
+    /**
+     * Handles map marker taps. City-marker taps (and any tap while in
+     * city-markers mode) only re-center the city without changing selection;
+     * step-marker taps update the selection and bottom list.
+     */
     private fun handleMapItemClick(mapStep: MapStep) {
-        // Check if this is a city marker
         if (mapStep.isCityMarker) {
-            // City marker clicked - handle via ViewModel
-            viewModel.onCityMarkerClicked(mapStep.cityId)
-
-            // Show Main View button
-            viewModel.onMarkerFocused()
-
-            // Fit the camera to all of this city's steps, just like opening a
-            // single-city map. Falls back to centering on the city coordinate
-            // when the city has no located steps.
-            val cityStepPoints = viewModel.getStepCoordinatesForCity(mapStep.cityId)
-            if (cityStepPoints.isNotEmpty()) {
-                lifecycleScope.launch {
-                    binding.mapView.fitCameraToPoints(cityStepPoints)
-                }
-            } else {
-                mapStep.coordinate?.let { coord ->
-                    binding.mapView.zoomToCoordinate(
-                        lng = coord.lng,
-                        lat = coord.lat,
-                        zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
-                    )
-                }
-            }
-
-            // Note: Don't call showCityMarkersMode() here as it will override camera movement
-            // The mapMarkersMode observer will handle marker updates when zoom changes
+            focusCityOnMap(mapStep)
             return
         }
 
-        // Step marker handling
-        // Select via ViewModel - updates mapSteps and mapBottomItems
+        if (viewModel.mapMarkersMode.value == MapMarkersMode.CITY_MARKERS) {
+            focusCityOnMap(mapStep)
+            return
+        }
+
         viewModel.selectStepOnMap(mapStep.poiId)
 
-        // Select the clicked marker (changes visual appearance)
         binding.mapView.selectMarker(mapStep.poiId)
 
-        // Zoom to the marker
         mapStep.coordinate?.let { coord ->
             binding.mapView.zoomToCoordinate(
                 lng = coord.lng,
@@ -1023,12 +833,33 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             )
         }
 
-        // Show Main View button when focusing on a marker (multi-city mode)
         viewModel.onMarkerFocused()
 
-        // Show bottom list and scroll to clicked item
         showMapBottomList()
         scrollToMapBottomItem(mapStep.position)
+    }
+
+    /**
+     * Centers the map on a city by fitting all of its steps (like opening a
+     * single-city map), without changing the step selection. Falls back to the
+     * marker's own coordinate when the city has no located steps.
+     */
+    private fun focusCityOnMap(mapStep: MapStep) {
+        viewModel.onMarkerFocused()
+        val cityStepPoints = viewModel.getStepCoordinatesForCity(mapStep.cityId)
+        if (cityStepPoints.isNotEmpty()) {
+            lifecycleScope.launch {
+                binding.mapView.fitCameraToPoints(cityStepPoints)
+            }
+        } else {
+            mapStep.coordinate?.let { coord ->
+                binding.mapView.zoomToCoordinate(
+                    lng = coord.lng,
+                    lat = coord.lat,
+                    zoomLevel = ACTimelineVM.CITY_MARKER_ZOOM_LEVEL
+                )
+            }
+        }
     }
 
     /**
@@ -1036,7 +867,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * Also moves the fabList button above the list.
      */
     private fun showMapBottomList() {
-        Log.d("ACTimelineMapList", "showMapBottomList called, visible=$isBottomListVisible", Throwable())
         if (isBottomListVisible) return
         isBottomListVisible = true
         isBottomListCompletelyHidden = false
@@ -1044,62 +874,26 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         binding.rvMapBottomList.visibility = View.VISIBLE
 
-
-//        binding.rvMapBottomList.post {
-//            bottomListHeight = binding.rvMapBottomList.height
-//            updateFabPositions()
-//        }
-//
-//        binding.rvMapBottomList.translationY = binding.rvMapBottomList.height.toFloat()
-//        binding.rvMapBottomList.animate()
-//            .translationY(0f)
-//            .setDuration(300)
-//            .setInterpolator(DecelerateInterpolator())
-//            .start()
         binding.rvMapBottomList.animate()
             .translationY(0f)
             .setDuration(300)
             .setInterpolator(android.view.animation.DecelerateInterpolator())
             .start()
         updateFabPositions()
-
-        // Move FABs above the bottom list (list height ~104dp + 16dp spacing)
-//        val fabOffset = -120f * resources.displayMetrics.density
-//        binding.fabAddPlan.animate()
-//            .translationY(fabOffset + bottomListHeight)
-//            .setDuration(300)
-//            .setInterpolator(android.view.animation.DecelerateInterpolator())
-//            .start()
     }
 
     /**
      * Hide the horizontal item list with slide-down animation.
-     * Keeps 10% of card item visible at the bottom for peek effect.
-     * Also moves the fabList button back to its original position.
+     * Keeps part of the card visible at the bottom for a peek effect.
      */
     private fun hideMapBottomList() {
-        Log.d("ACTimelineMapList", "hideMapBottomList called, visible=$isBottomListVisible", Throwable())
         if (!isBottomListVisible) return
         isBottomListVisible = false
         isBottomListCompletelyHidden = false
         updateMainViewButtonVisibility()
 
-//        binding.rvMapBottomList.animate()
-//            .translationY(binding.rvMapBottomList.height.toFloat() * 0.9f)
-//            .setDuration(300)
-//            .setInterpolator(DecelerateInterpolator())
-//            .withEndAction {
-//                binding.rvMapBottomList.visibility = View.GONE
-//                updateFabPositions()
-//            }
-//            .start()
-//
-//        updateFabPositions()
-
-        // Card item height is approximately 104dp (80dp image + 24dp margins)
-        // Show 50% of card for better peek effect
         val itemHeight = 104f * resources.displayMetrics.density
-        val translationY = itemHeight * 0.5f  // Show 50% of card
+        val translationY = itemHeight * 0.5f
 
         binding.rvMapBottomList.animate()
             .translationY(translationY)
@@ -1107,18 +901,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
         updateFabPositions()
-
-//        // Move FABs back to original position
-//        binding.fabList.animate()
-//            .translationY(0f)
-//            .setDuration(300)
-//            .setInterpolator(android.view.animation.AccelerateInterpolator())
-//            .start()
-//        binding.fabAddPlan.animate()
-//            .translationY(0f)
-//            .setDuration(300)
-//            .setInterpolator(android.view.animation.AccelerateInterpolator())
-//            .start()
     }
 
     /**
@@ -1137,11 +919,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     /**
-     * Sync btnMainView visibility with the bottom panel state. The button is
-     * visible whenever the bottom list is expanded (not collapsed) AND the
-     * selected day spans multiple cities; single-city days never show it
-     * (regardless of marker-focus / zoom). Clicking it collapses the bottom list
-     * (hideMapBottomList), which re-runs this and hides the button.
+     * Syncs btnMainView visibility: visible only while the bottom list is
+     * expanded and the selected day spans multiple cities.
      */
     private fun updateMainViewButtonVisibility() {
         val shouldShow = isBottomListVisible && viewModel.hasMultipleCities
@@ -1174,20 +953,13 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun showCityMarkersMode() {
         binding.mapView.clearMap()
 
-        // Show city markers
         viewModel.cityMarkers.value?.let { cities ->
             binding.mapView.showMapIcons(cities)
         }
 
-        // Show selected step marker
         viewModel.getSelectedStepMarker()?.let { selectedStep ->
             binding.mapView.showMapIcons(listOf(selectedStep))
         }
-
-        // Note: Don't call moveCameraTo() here - camera is controlled by:
-        // - Initial map mode entry (in updateMapMode)
-        // - City marker clicks (zoomToCoordinate)
-        // - List item clicks (zoomToCoordinate)
     }
 
     /**
@@ -1201,14 +973,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         viewModel.mapSteps.value?.let { steps ->
             binding.mapView.showMapIcons(steps)
         }
-
-        // Note: Don't call moveCameraTo() here - camera is controlled by user interactions
     }
 
+    /** Keeps the add-plan FAB above the bottom list's visible top edge (full, peek, or hidden). */
     private fun updateFabPositions() {
         val extraFabSpacing = 16.dp
-        // Peek-hide translates the list 50% of a card down (see hideMapBottomList).
-        // Mirror that here so the FAB tracks the list's *visible* top edge.
         val peekHidePx = (104f * resources.displayMetrics.density * 0.5f).toInt()
 
         val safeBottomForAddFab = maxOf(
@@ -1219,8 +988,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         val listExtra = when {
             isBottomListCompletelyHidden -> 0
             isBottomListVisible -> bottomListHeight
-            // Peek: list slid down by `peekHidePx`, so the FAB rides the same
-            // distance — it ends up sitting on top of the peeking card edge.
             else -> (bottomListHeight - peekHidePx).coerceAtLeast(0)
         }
         animateBottomMargin(
@@ -1228,11 +995,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             targetMargin = safeBottomForAddFab + listExtra,
             animated = true
         )
-//        binding.fabAddPlan.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-//            bottomMargin = safeBottomForAddFab + listExtra
-//        }
     }
-
 
     private fun animateBottomMargin(
         view: View,
@@ -1281,8 +1044,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private fun handleItemClick(item: TimelineDisplayItem) {
         when (item) {
             is TimelineDisplayItem.BookedActivity -> {
-                // booked_activity → booking detail (uses bookingId);
-                // reserved_activity → activity detail (uses activityId).
                 val data = item.segment.additionalData
                 if (item.isReserved) {
                     data?.activityId?.let { viewModel.onActivityDetailRequested(it) }
@@ -1291,10 +1052,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             }
             is TimelineDisplayItem.Recommendations -> {
-                // Show recommendations details or expand
             }
             is TimelineDisplayItem.ManualPoi -> {
-                // Open POI Detail screen for ManualPoi
                 item.step.poi?.let { poi ->
                     startActivity(ACPOIDetail.launch(this, poi))
                 }
@@ -1313,7 +1072,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleDeleteClick(item: TimelineDisplayItem, segmentIndex: Int?) {
         segmentIndex?.let { index ->
-            // Determine title and message based on item type
             val (title, message) = when (item) {
                 is TimelineDisplayItem.Recommendations -> {
                     Pair(
@@ -1329,7 +1087,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             }
 
-            // Show confirmation dialog before deleting segment
             showDeleteConfirmationDialog(
                 title = title,
                 message = message,
@@ -1342,31 +1099,24 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleExpandClick(item: TimelineDisplayItem) {
         if (item is TimelineDisplayItem.Recommendations) {
-            // Toggle via the VM so the expanded/collapsed state is written
-            // into the canonical `_displayItems` LiveData. Patching the
-            // adapter's currentList directly (the previous behaviour) left
-            // the VM out of sync, which meant a subsequent refresh would
-            // reset every Recommendations card back to expanded — even ones
-            // the user had just collapsed.
             viewModel.toggleRecommendationExpanded(item.plan.id)
         }
     }
 
     private fun scrollToNewSegment(planId: String) {
-        // Find position of the new segment by plan.id
         val position = timelineAdapter.currentList.indexOfFirst { item ->
             item is TimelineDisplayItem.Recommendations && item.plan.id == planId
         }
         if (position != -1) {
-            // Use smoothScrollToPosition for better UX
             binding.rvTimeline.smoothScrollToPosition(position)
         }
     }
 
+    /**
+     * Activity-type steps open the availability time-slot picker; other steps
+     * open the plain HH:mm picker.
+     */
     private fun handleStepChangeTimeClick(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        // Activity-type steps go through the same time-slot picker as the
-        // ACActivityListing add flow so the user sees real availability for
-        // the activity instead of an empty HH:mm spinner.
         if (step.stepType == "activity") {
             val poi = step.poi ?: return
             showActivityChangeTimeSheet(
@@ -1388,9 +1138,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         }
                     )
                 }
-            ) { startTime, endTime, _ ->
-                // Activity steps inside a Recommendations plan don't carry an
-                // editable price field, so the slot price is ignored here.
+            ) { _, startTime, endTime, _ ->
                 viewModel.updateStepTime(step.id, startTime, endTime, useInlineLoader = true)
             }
         } else {
@@ -1399,24 +1147,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     private fun handleManualPoiChangeTimeClick(manualPoi: TimelineDisplayItem.ManualPoi) {
-        // Show change time picker for the ManualPoi step
         viewModel.showStepChangeTimePicker(manualPoi.step)
     }
 
     /**
-     * Single entry point that opens [ActivityTimeSelectionBottomSheet] for
-     * every activity-bearing cell (Recommendations activity step, top-level
-     * reserved activity, flexible activity). Callers extract the cell-
-     * specific fields (the source of `activityId` / `title` / `duration`
-     * differs between Poi-backed step and segment-backed cells) and hand the
-     * shared parameters in. The terminal action is also caller-supplied:
-     * steps patch via `updateStepTime`, segments via `updateSegmentTime`.
+     * Opens [ActivityTimeSelectionBottomSheet] for an activity-bearing cell
+     * (Recommendations activity step, reserved or flexible activity).
      *
-     * @param activityId required — schedule-bulk and slot loading need it.
-     *   When null the sheet is not opened.
-     * @param seedInitialTimeSlot `true` for time-bearing cells (the existing
-     *   HH:mm pre-selects in the grid); `false` for flexible cells whose
-     *   recorded time is the 00:00/23:59 placeholder.
+     * @param activityId required for slot loading; when null the sheet is not opened.
+     * @param seedInitialTimeSlot `true` to pre-select the existing HH:mm in the
+     *   grid; `false` for flexible cells whose recorded time is a placeholder.
      */
     private fun showActivityChangeTimeSheet(
         activityId: String?,
@@ -1427,7 +1167,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         seedInitialTimeSlot: Boolean,
         isNotAvailable: Boolean = false,
         onRemove: () -> Unit,
-        onConfirm: (startTime: String, endTime: String?, slotPrice: Double?) -> Unit
+        onConfirm: (selectedDate: Date, startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
         if (activityId.isNullOrEmpty()) return
         val availableDays = viewModel.availableDays.value ?: emptyList()
@@ -1448,26 +1188,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             initialTimeSlot = initialTimeSlot,
             isNotAvailable = isNotAvailable
         )
-        sheet.setOnStepTimeSelectedListener { _, startTime, endTime, slotPrice ->
-            // Show the inline "changing time" loader inside the open sheet; the
-            // VM (useInlineLoader = true) skips its own loader and signals
-            // completion via changeTimeFinished, which dismisses the sheet.
+        sheet.setOnStepTimeSelectedListener { date, startTime, endTime, slotPrice ->
             changeTimeSheet?.showInSheetLoadingOverlay(
                 LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time"
             )
-            onConfirm(startTime, endTime, slotPrice)
+            onConfirm(date, startTime, endTime, slotPrice)
         }
-        // Change-time "Remove" — runs the same remove-from-plan flow as the
-        // timeline cell's remove button (segment delete or step delete). The
-        // confirmation appears over the still-open sheet; the host dismisses the
-        // sheet on confirm (see call sites). No double confirmation.
         sheet.setOnRemoveListener(onRemove)
         changeTimeSheet = sheet
         sheet.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 
     private fun handleStepDeleteClick(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        // Show confirmation dialog before deleting step
         showDeleteConfirmationDialog(
             title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
             message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
@@ -1477,10 +1209,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         )
     }
 
+    /**
+     * Shows the start/end time picker for a step, floored at the city's "now"
+     * for the step's day so the time can't be moved into the past.
+     */
     private fun showChangeTimePicker(step: com.tripian.one.api.timeline.model.TimelineStep) {
-        // Extract current start/end times from step (format: "yyyy-MM-dd HH:mm:ss")
         val startTime = step.startDateTimes?.let { dateTime ->
-            // Extract HH:mm from datetime string
             if (dateTime.length >= 16) dateTime.substring(11, 16) else null
         }
 
@@ -1488,9 +1222,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             if (dateTime.length >= 16) dateTime.substring(11, 16) else null
         }
 
-        // Floor the picker at the city's "now" for the step's day so the time
-        // can't be moved into the past (device-tz fallback when the step carries
-        // no resolvable city).
         val stepDay = step.startDateTimes.toDate()
         val minTime = stepDay?.let {
             com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, step.poi?.cityId)
@@ -1503,7 +1234,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         )
 
         timeSelectionSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
-            // Update step time via ViewModel
             viewModel.updateStepTime(step.id, newStartTime, newEndTime)
         }
 
@@ -1526,8 +1256,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         val endTime = timePart(segment.endDate)
             ?: timePart(segment.additionalData?.endDatetime)
 
-        // Floor at the city's "now" for the segment's day (city resolved by the
-        // segment's cityId) so the activity can't be moved into the past.
         val segmentDay = (segment.startDate ?: segment.additionalData?.startDatetime).toDate()
         val minTime = segmentDay?.let {
             com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, segment.cityId?.takeIf { c -> c > 0 })
@@ -1578,7 +1306,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         val availableDays = viewModel.availableDays.value ?: emptyList()
 
-        // Get city name to ID mapping for resolving host app cityIds to our system's cityIds
         val cityMap = viewModel.getCityNameToIdMap()
 
         val intent = ACSavedPlans.launch(
@@ -1608,7 +1335,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         addPlanSheet?.setOnAddPlanCompleteListener { data ->
             when {
                 data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
-                    // Manual mode: need to select POI first
                     pendingAddPlanData = data
                     val city = data.selectedCity
                     if (city != null) {
@@ -1617,13 +1343,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                 }
                 data.mode == AddPlanMode.SMART || data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
-                    // Smart mode: keep the sheet open while the initial segment
-                    // create runs. The VM emits [smartSegmentCreated] only on
-                    // success; on failure the sheet stays so the user can retry.
                     viewModel.onAddPlanComplete(data)
                 }
                 else -> {
-                    // Manual mode with POI already selected — existing flow.
                     addPlanSheet?.dismiss()
                     binding.root.postDelayed({
                         viewModel.onAddPlanComplete(data)
@@ -1634,11 +1356,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         addPlanSheet?.setOnSegmentCreatedListener { selectedDayIndex ->
-            // The manual listing (ACActivityListing/ACPOIListing) already fetched
-            // the generated timeline in the background and cached it; apply that
-            // snapshot instead of a second GET (no full-screen loader on return).
             viewModel.onReturnFromAddPlan()
-            // Auto-select the day for which the segment was created
             viewModel.selectDay(selectedDayIndex)
         }
 
@@ -1654,7 +1372,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * Hides all timeline UI elements and displays the no city state.
      */
     private fun showNoCityState() {
-        // Hide all timeline UI elements
         binding.dayFilterView.visibility = View.GONE
         binding.btnSavedPlans.visibility = View.GONE
         binding.swipeRefresh.visibility = View.GONE
@@ -1665,7 +1382,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.emptyStateView.visibility = View.GONE
         binding.btnNearMe.visibility = View.GONE
 
-        // Show no city view
         binding.noCityView.visibility = View.VISIBLE
         binding.noCityView.setup(
             title = getLanguageForKey(LanguageConst.TIMELINE_NO_CITY_TITLE),

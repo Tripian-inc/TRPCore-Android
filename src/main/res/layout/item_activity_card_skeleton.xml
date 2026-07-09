@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Skeleton mirror of item_activity_card.xml. Each TextView/ImageView is
-     replaced by a flat View with a placeholder background; ShimmerFrameLayout
-     sweeps the gradient over the whole hierarchy. -->
+<!-- Skeleton mirror of item_activity_card.xml -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"

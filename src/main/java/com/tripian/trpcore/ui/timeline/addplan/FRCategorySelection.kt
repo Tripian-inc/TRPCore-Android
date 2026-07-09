@@ -21,7 +21,6 @@ class FRCategorySelection : Fragment() {
     private var _binding: FrAddPlanCategorySelectionBinding? = null
     private val binding get() = _binding!!
 
-    // Shared ViewModel from parent
     private val sharedVM: AddPlanContainerVM by lazy {
         ViewModelProvider(requireParentFragment())[AddPlanContainerVM::class.java]
     }
@@ -63,13 +62,11 @@ class FRCategorySelection : Fragment() {
         val spanCount = 3
         val gridLayoutManager = GridLayoutManager(context, spanCount)
 
-        // Use SpanSizeLookup to center last row item
         gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
             override fun getSpanSize(position: Int): Int {
                 val itemCount = categoryAdapter?.itemCount ?: 0
                 val itemsInLastRow = itemCount % spanCount
 
-                // If last row has 1 item, make it span all 3 columns (will be centered by item layout)
                 if (itemsInLastRow == 1 && position == itemCount - 1) {
                     return spanCount
                 }
@@ -84,14 +81,12 @@ class FRCategorySelection : Fragment() {
     }
 
     private fun observeViewModel() {
-        // Selected categories
         sharedVM.selectedSmartCategories.observe(viewLifecycleOwner) { categories ->
             categoryAdapter?.updateSelectedCategories(categories)
         }
     }
 
     private fun getLanguageForKey(key: String): String {
-        // Get from parent's view model or use key as fallback
         return try {
             (parentFragment as? AddPlanContainerBottomSheet)?.getLanguageForKey(key) ?: key
         } catch (e: Exception) {

@@ -13,28 +13,20 @@ import com.tripian.trpcore.util.LanguageConst
 /**
  * Bottom sheet for time range selection (start + end time)
  * Uses ComposeTimePickerDialog for individual time selection
- *
- * Replaces deprecated TimePickerBottomSheet
  */
 class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionBinding>(
     BottomSheetTimeSelectionBinding::inflate
 ) {
-    // State
     private var startTime: String? = null  // Format: "HH:mm"
     private var endTime: String? = null    // Format: "HH:mm"
     // Earliest selectable "HH:mm" for the edited item's day in its city timezone
     // (null = no floor / future day). Blocks moving an activity into the past.
     private var minTime: String? = null
 
-    // Callback
     private var onTimeSelectedListener: ((startTime: String?, endTime: String?) -> Unit)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Restore from arguments
         arguments?.let { args ->
             startTime = args.getString(ARG_START_TIME)
             endTime = args.getString(ARG_END_TIME)
@@ -47,25 +39,20 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     }
 
     private fun setupLabels() {
-        // Title
         binding.tvTitle.text = TRPCore.core.miscRepository
-            .getLanguageValueForKey(LanguageConst.ADD_PLAN_TIME)  // "Cambiar hora"
+            .getLanguageValueForKey(LanguageConst.ADD_PLAN_TIME)
 
-        // Start time label
         binding.tvStartTimeLabel.text = TRPCore.core.miscRepository
-            .getLanguageValueForKey(LanguageConst.ADD_PLAN_START_TIME)  // "Hora de inicio"
+            .getLanguageValueForKey(LanguageConst.ADD_PLAN_START_TIME)
 
-        // End time label
         binding.tvEndTimeLabel.text = TRPCore.core.miscRepository
-            .getLanguageValueForKey(LanguageConst.ADD_PLAN_END_TIME)  // "Hora de finalización"
+            .getLanguageValueForKey(LanguageConst.ADD_PLAN_END_TIME)
 
-        // Confirm button
         binding.btnConfirm.text = TRPCore.core.miscRepository
-            .getLanguageValueForKey(LanguageConst.ADD_PLAN_CONFIRM)  // "Confirmar"
+            .getLanguageValueForKey(LanguageConst.ADD_PLAN_CONFIRM)
     }
 
     private fun updateTimeDisplays() {
-        // Start time
         val selectText = TRPCore.core.miscRepository
             .getLanguageValueForKey(LanguageConst.ADD_PLAN_SELECT)
 
@@ -80,7 +67,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             )
         )
 
-        // End time
         binding.tvEndTime.text = endTime?.let {
             MaterialTimePickerHelper.formatEndTimeTo12h(it)
         } ?: selectText
@@ -92,7 +78,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             )
         )
 
-        // Confirm is only enabled when both times are picked AND end > start
         binding.btnConfirm.isEnabled =
             startTime != null &&
             endTime != null &&
@@ -102,35 +87,32 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     private fun setupListeners() {
         binding.ivClose.setOnClickListener { dismiss() }
 
-        // Start time field click
         binding.llStartTime.setOnClickListener {
             showStartTimePicker()
         }
 
-        // End time field click
         binding.llEndTime.setOnClickListener {
             showEndTimePicker()
         }
 
-        // Confirm button
         binding.btnConfirm.setOnClickListener {
             onTimeSelectedListener?.invoke(startTime, endTime)
             dismiss()
         }
     }
 
+    /**
+     * Opens the start-time picker floored at [minTime] (exclusive) so a past
+     * start can't be chosen; defaults to the earliest selectable slot.
+     */
     private fun showStartTimePicker() {
         showComposeTimePicker(
-            // With no start chosen, open on the earliest selectable slot (one
-            // minute after the exclusive floor).
             initialTime = startTime ?: MaterialTimePickerHelper.addMinutes(minTime, 1),
-            // Don't allow a past start for the item's day in its city timezone.
             minTime = minTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 startTime = time24h
 
-                // Clear end time if it's now invalid (before new start time)
                 if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
                     endTime = null
                 }
@@ -140,12 +122,11 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         )
     }
 
+    /**
+     * Opens the end-time picker (min = later of start and [minTime]). A stored
+     * "23:59" end is the midnight sentinel, so the clock seeds at 00:00.
+     */
     private fun showEndTimePicker() {
-        // End time can be picked first — when start is set, enforce end > start
-        // via the picker's minTime; when start is null, allow any time.
-        // A stored "23:59" end is the midnight sentinel — seed the clock with
-        // 00:00 so it reopens on 12:00 AM rather than 11:59 PM. With no end chosen
-        // yet, default to one hour after the start (the min stays at the start).
         val initialTime = when {
             endTime == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
             endTime != null -> endTime
@@ -153,7 +134,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         }
         showComposeTimePicker(
             initialTime = initialTime,
-            // End must be after start AND not before the city's "now".
             minTime = MaterialTimePickerHelper.laterOf(startTime, minTime),
             treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->

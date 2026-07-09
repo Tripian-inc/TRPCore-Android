@@ -1,6 +1,5 @@
 package com.tripian.trpcore.di.modules
 
-//import com.tripian.trpcore.util.Preferences
 import android.app.Application
 import android.os.Build
 import android.util.Log
@@ -82,6 +81,7 @@ class NetworkModule {
             .build()
     }
 
+    /** Sets User-Agent via `header(...)` so OkHttp's default is overwritten, not appended. */
     @Provides
     @Singleton
     internal fun provideOkHttp(appConfig: AppConfig, app: Application, pinner: CertificatePinner): OkHttpClient {
@@ -105,8 +105,6 @@ class NetworkModule {
 
             val newRequestBuilder = originalRequest.newBuilder()
 
-            // `header(...)` (not `addHeader`) so we overwrite OkHttp's default
-            // `okhttp/<ver>` User-Agent rather than appending alongside it.
             newRequestBuilder
                 .header("User-Agent", userAgent)
                 .addHeader("Content-Type", "application/json;charset=UTF-8")

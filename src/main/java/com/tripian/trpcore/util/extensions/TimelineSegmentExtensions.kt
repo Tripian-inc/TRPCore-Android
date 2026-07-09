@@ -4,10 +4,8 @@ import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.TimelineSegment
 
 /**
- * U+2212 MINUS SIGN — used in place of a regular hyphen for "no order / flexible"
- * order chips so the character is vertically centered in the 20dp circle.
- *
- * NOTE: This is **not** an ASCII hyphen `-`. Keep the unicode codepoint.
+ * U+2212 MINUS SIGN (not an ASCII hyphen — keep the unicode codepoint) used for
+ * "no order / flexible" order chips so the character is vertically centered.
  */
 const val MINUS_SIGN: String = "−"
 
@@ -15,15 +13,10 @@ const val MINUS_SIGN: String = "−"
 private val FLEXIBLE_TIME_VALUES = setOf("00:00", "23:59")
 
 /**
- * Returns true when [TimelineSegment] represents a flexible-time reserved activity:
- *
- *  - segmentType == "reserved_activity"
- *  - additionalData.duration == -1
- *  - start and end times both fall in {00:00, 23:59}
- *
- * Flexible activities are pinned to the top of their city group, render via the
- * dedicated `FlexibleActivityVH`, and are excluded from time-conflict detection
- * (Theme 8) since the 00:00–23:59 envelope is a placeholder, not a real interval.
+ * True when [TimelineSegment] is a flexible-time reserved activity: segmentType
+ * "reserved_activity", additionalData.duration == -1, and start/end times both in
+ * {00:00, 23:59}. Flexible activities are pinned to the top of their city group and
+ * excluded from time-conflict detection since the envelope is a placeholder interval.
  */
 val TimelineSegment.isFlexibleActivity: Boolean
     get() {

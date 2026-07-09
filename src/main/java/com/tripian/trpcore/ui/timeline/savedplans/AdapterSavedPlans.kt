@@ -11,9 +11,7 @@ import com.tripian.trpcore.ui.timeline.common.ActivityCardData
 import com.tripian.trpcore.ui.timeline.common.ActivityCardViewHolder
 
 /**
- * AdapterSavedPlans
- * RecyclerView adapter for Saved Plans list with city grouping
- * Uses shared ActivityCardViewHolder to avoid code duplication
+ * RecyclerView adapter for Saved Plans list with city grouping.
  */
 class AdapterSavedPlans(
     private val getLanguage: (String) -> String,
@@ -48,7 +46,6 @@ class AdapterSavedPlans(
                     parent = parent,
                     getLanguage = getLanguage,
                     onAddClicked = { cardData ->
-                        // Find the original SegmentFavoriteItem by id and pass it to callback
                         currentList
                             .filterIsInstance<SavedPlansListItem.ActivityItem>()
                             .find { it.favorite.activityId == cardData.id }
@@ -57,7 +54,6 @@ class AdapterSavedPlans(
                     },
                     onItemClicked = onItemClicked?.let { callback ->
                         { cardData ->
-                            // Find the original SegmentFavoriteItem by id and pass it to callback
                             currentList
                                 .filterIsInstance<SavedPlansListItem.ActivityItem>()
                                 .find { it.favorite.activityId == cardData.id }

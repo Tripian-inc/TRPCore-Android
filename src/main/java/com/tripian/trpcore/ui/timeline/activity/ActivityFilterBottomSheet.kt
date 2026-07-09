@@ -11,15 +11,8 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 /**
- * ActivityFilterBottomSheet
- * Bottom sheet for filtering activities by price and duration
- *
- * Features:
- * - Price range slider (Free - 1500€, step 10€)
- * - Duration range slider (0h - 24h, step 30min)
- * - Clear Selection to reset filters
- * - Confirm to apply filters
- * - Persists filter state when reopened
+ * Bottom sheet for filtering activities with price and duration range sliders.
+ * Persists filter state when reopened.
  */
 class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilterBinding>(
     BottomSheetActivityFilterBinding::inflate
@@ -28,9 +21,7 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     private var currentFilter: ActivityFilterData = ActivityFilterData.default()
     private var currency: String = "EUR"
 
-    // Optional facet-driven bounds. When null, the sliders fall back to
-    // ActivityFilterData.DEFAULT_* — preserving previous behaviour for callers that
-    // don't pass bounds (older paths / first paint before any search response).
+    /** Optional facet-driven bounds; when null the sliders fall back to ActivityFilterData.DEFAULT_*. */
     private var minPriceBound: Float? = null
     private var maxPriceBound: Float? = null
     private var minDurationBound: Float? = null
@@ -38,13 +29,9 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
 
     private var onFilterConfirmedListener: ((ActivityFilterData) -> Unit)? = null
     private var getLanguageForKey: ((String) -> String)? = null
-
-    override fun getTheme(): Int = R.style.TrpTimelineBottomSheetDialog
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Restore from arguments
         @Suppress("DEPRECATION")
         arguments?.let { args ->
             (args.getSerializable(ARG_CURRENT_FILTER) as? ActivityFilterData)?.let {
@@ -73,28 +60,25 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     }
 
     private fun setupUI() {
-        // Set localized texts
         binding.tvTitle.text = getLanguage(LANG_KEY_FILTERS)
         binding.tvPriceLabel.text = getLanguage(LANG_KEY_PRICE)
         binding.tvDurationLabel.text = getLanguage(LANG_KEY_DURATION)
         binding.tvClearSelection.text = getLanguage(LANG_KEY_CLEAR_SELECTION)
         binding.btnConfirm.text = getLanguage(LANG_KEY_CONFIRM)
 
-        // Update range labels
         updatePriceLabels()
         updateDurationLabels()
     }
 
+    /**
+     * Facet bounds are snapped to the step grid: Material Slider throws when
+     * (valueTo - valueFrom) isn't an exact multiple of stepSize.
+     */
     private fun setupSliders() {
-        // Custom thumb drawable for both sliders
         val thumbDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.trp_bg_slider_thumb)
 
-        // Thumb radius in pixels (12.5dp = 25dp diameter / 2)
         val thumbRadiusPx = (12.5f * resources.displayMetrics.density).toInt()
 
-        // Price slider. Facet bounds (e.g. 3.43 – 220.0) are snapped to the
-        // PRICE_STEP grid: Material Slider throws when (valueTo - valueFrom)
-        // isn't an exact multiple of stepSize.
         val priceFromRaw = minPriceBound ?: ActivityFilterData.DEFAULT_MIN_PRICE
         val priceToRaw = (maxPriceBound ?: ActivityFilterData.DEFAULT_MAX_PRICE)
             .coerceAtLeast(priceFromRaw + ActivityFilterData.PRICE_STEP)
@@ -110,7 +94,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
                 currentFilter.maxPrice.coerceIn(priceFrom, priceTo)
             )
 
-            // Set thumb radius and custom drawable
             thumbRadius = thumbRadiusPx
             thumbDrawable?.let { setCustomThumbDrawable(it) }
 
@@ -124,7 +107,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             }
         }
 
-        // Duration slider. Same snap-to-grid treatment as the price slider.
         val durationFromRaw = minDurationBound ?: ActivityFilterData.DEFAULT_MIN_DURATION
         val durationToRaw = (maxDurationBound ?: ActivityFilterData.DEFAULT_MAX_DURATION)
             .coerceAtLeast(durationFromRaw + ActivityFilterData.DURATION_STEP)
@@ -140,7 +122,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
                 currentFilter.maxDuration.coerceIn(durationFrom, durationTo)
             )
 
-            // Set thumb radius and custom drawable
             thumbRadius = thumbRadiusPx
             thumbDrawable?.let { setCustomThumbDrawable(it) }
 
@@ -164,17 +145,14 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         if (step <= 0f) value else ceil(value / step) * step
 
     private fun setupListeners() {
-        // Close button
         binding.ivClose.setOnClickListener {
             dismiss()
         }
 
-        // Clear Selection
         binding.tvClearSelection.setOnClickListener {
             resetFilters()
         }
 
-        // Confirm
         binding.btnConfirm.setOnClickListener {
             onFilterConfirmedListener?.invoke(currentFilter)
             dismiss()
@@ -185,14 +163,12 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         val minPrice = currentFilter.minPrice
         val maxPrice = currentFilter.maxPrice
 
-        // Min price label
         binding.tvPriceMin.text = if (minPrice == 0f) {
             getLanguage(LANG_KEY_FREE)
         } else {
             formatPrice(minPrice)
         }
 
-        // Max price label
         binding.tvPriceMax.text = formatPrice(maxPrice)
     }
 
@@ -211,7 +187,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             else -> currency
         }
 
-        // EUR: symbol after, others: symbol before
         return if (currency.uppercase() == "EUR") {
             "$priceInt$symbol"
         } else {
@@ -222,7 +197,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     private fun resetFilters() {
         currentFilter = ActivityFilterData.default()
 
-        // Reset sliders
         binding.sliderPrice.values = listOf(
             ActivityFilterData.DEFAULT_MIN_PRICE,
             ActivityFilterData.DEFAULT_MAX_PRICE
@@ -232,7 +206,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             ActivityFilterData.DEFAULT_MAX_DURATION
         )
 
-        // Update labels
         updatePriceLabels()
         updateDurationLabels()
     }
@@ -266,7 +239,6 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         private const val ARG_CURRENT_FILTER = "current_filter"
         private const val ARG_CURRENCY = "currency"
 
-        // Language keys - matching LanguageConsts
         private const val LANG_KEY_FILTERS = "addPlan.button.filters"
         private const val LANG_KEY_PRICE = "addPlan.filter.price"
         private const val LANG_KEY_DURATION = "addPlan.filter.duration"
