@@ -4,9 +4,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.AppBarLayout
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
@@ -18,6 +20,7 @@ import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.dp
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -33,6 +36,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     private var filterBottomSheet: FilterBottomSheet? = null
     private var sortBottomSheet: SortBottomSheet? = null
     private var selectedPoi: Poi? = null
+    private var pendingScrollToTop = false
 
     override fun getViewBinding() = AcPoiListingBinding.inflate(layoutInflater)
 
@@ -41,6 +45,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         setupSearchBar()
         setupFilterSortButtons()
         setupClickListeners()
+        setupCollapseGap()
 
         intent?.let { intent ->
             @Suppress("DEPRECATION")
@@ -63,7 +68,13 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
     override fun setReceivers() {
         viewModel.pois.observe(this) { pois ->
-            poiAdapter?.submitList(pois)
+            poiAdapter?.submitList(pois) {
+                if (pendingScrollToTop) {
+                    pendingScrollToTop = false
+                    binding.rvPOIs.scrollToPosition(0)
+                    binding.appBarLayout.setExpanded(true, false)
+                }
+            }
             updateEmptyState(pois.isEmpty())
         }
 
@@ -98,7 +109,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
         viewModel.scrollToTop.observe(this) { shouldScroll ->
             if (shouldScroll) {
-                binding.rvPOIs.scrollToPosition(0)
+                pendingScrollToTop = true
                 viewModel.clearScrollToTop()
             }
         }
@@ -169,6 +180,26 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         }
     }
 
+    /**
+     * Keeps an 8dp gap between the fixed search bar and the collapsing content
+     * once the list has been scrolled up: the gap grows with the first pixels of
+     * collapse and holds at 8dp, and disappears again at the fully expanded top.
+     */
+    private fun setupCollapseGap() {
+        val gapPx = 8.dp
+        binding.appBarLayout.addOnOffsetChangedListener(
+            AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
+                val target = minOf(gapPx, -verticalOffset).coerceAtLeast(0)
+                val params = binding.searchContainer.layoutParams as? ViewGroup.MarginLayoutParams
+                    ?: return@OnOffsetChangedListener
+                if (params.bottomMargin != target) {
+                    params.bottomMargin = target
+                    binding.searchContainer.layoutParams = params
+                }
+            }
+        )
+    }
+
     private fun showFilterBottomSheet() {
         val currentFilter = viewModel.currentFilter.value ?: FilterData()
         val categoryGroups = viewModel.categoryGroups.value ?: emptyList()
@@ -219,7 +250,8 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         selectedPoi = poi
 
         timeSelectionBottomSheet = TimeSelectionBottomSheet.newInstance(
-            minTime = viewModel.minSelectableTimeForSelectedDay()
+            minTime = viewModel.minSelectableTimeForSelectedDay(),
+            defaultStartTime = viewModel.defaultStartTimeForSelectedDay()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { startTime, endTime ->
             val currentPoi = selectedPoi ?: return@setOnTimeSelectedListener

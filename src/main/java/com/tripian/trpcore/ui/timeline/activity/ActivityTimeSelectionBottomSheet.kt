@@ -62,6 +62,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     private var isStepEditMode: Boolean = false
     private var isActivityNotAvailable: Boolean = false
     private var pendingInitialTimeSlot: String? = null
+
+    /** Recommendations activity steps can't move day, so the day filter row is hidden entirely. */
+    private var hideDaySelector: Boolean = false
     /** Last param is the selected slot's min price (null when the slot carries no price). */
     private var onStepTimeSelectedListener: ((Date, String, String?, Double?) -> Unit)? = null
 
@@ -120,6 +123,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteDuration = args.getDouble(ARG_FAVORITE_DURATION, 0.0).takeIf { it > 0 }
             isStepEditMode = args.getBoolean(ARG_STEP_EDIT_MODE, false)
             isActivityNotAvailable = args.getBoolean(ARG_NOT_AVAILABLE, false)
+            hideDaySelector = args.getBoolean(ARG_HIDE_DAY_SELECTOR, false)
             showSelectAndRemove = args.getBoolean(ARG_SHOW_SELECT_AND_REMOVE, false)
             pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
             initialTimeSlot = pendingInitialTimeSlot
@@ -204,6 +208,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         updateTexts()
         binding.btnRemove.visibility =
             if (showSelectAndRemove || isStepEditMode) View.VISIBLE else View.GONE
+        if (hideDaySelector) {
+            binding.tvAddToDay.visibility = View.GONE
+            binding.rvDays.visibility = View.GONE
+        }
         updateContinueButtonState()
     }
 
@@ -655,6 +663,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         private const val ARG_NOT_AVAILABLE = "not_available"
         private const val ARG_INITIAL_TIME_SLOT = "initial_time_slot"
         private const val ARG_SHOW_SELECT_AND_REMOVE = "show_select_and_remove"
+        private const val ARG_HIDE_DAY_SELECTOR = "hide_day_selector"
 
         /**
          * Create instance for TourProduct (with API schedule loading)
@@ -708,6 +717,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
          * timeline step. Reuses the favorite-mode schedule loading path
          * (activityId + cityId) and seeds the slot grid with the step's
          * current HH:mm.
+         *
+         * @param hideDaySelector `true` hides the day filter row entirely, restricting
+         *   the sheet to [initialSelectedDay]'s time slots only.
          */
         fun newInstanceForStepEdit(
             activityId: String?,
@@ -717,12 +729,14 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
             initialTimeSlot: String? = null,
-            isNotAvailable: Boolean = false
+            isNotAvailable: Boolean = false,
+            hideDaySelector: Boolean = false
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
                     putBoolean(ARG_STEP_EDIT_MODE, true)
                     putBoolean(ARG_NOT_AVAILABLE, isNotAvailable)
+                    putBoolean(ARG_HIDE_DAY_SELECTOR, hideDaySelector)
                     activityId?.let { putString(ARG_FAVORITE_ACTIVITY_ID, it) }
                     cityId?.let { putInt(ARG_FAVORITE_CITY_ID, it) }
                     putString(ARG_FAVORITE_TITLE, title)

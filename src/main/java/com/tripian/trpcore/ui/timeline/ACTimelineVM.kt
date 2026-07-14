@@ -1297,15 +1297,6 @@ class ACTimelineVM @Inject constructor(
             "$dateStr 18:00"
         }
 
-        val filteredFavorites = getFilteredFavorites()
-        val favoriteActivityIds = filteredFavorites
-            .filter { it.activityId != null }
-            .map { formatActivityId(it.activityId, validCity.id) }
-
-        val combinedActivityIds = (data.activityIds + favoriteActivityIds)
-            .distinct()
-            .map { formatActivityId(it, validCity.id) }
-
         val timeline = _timeline.value
         val bookedAndReservedIds = timeline?.tripProfile?.segments
             ?.filter {
@@ -1328,7 +1319,6 @@ class ACTimelineVM @Inject constructor(
                         adults = data.travelers,
                         children = 0,
                         activityFreeText = data.smartCategoriesAsString,
-                        activityIds = combinedActivityIds,
                         excludedActivityIds = bookedAndReservedIds,
                         smartRecommendation = true,
                         accommodation = data.startingPointAccommodation
@@ -1503,7 +1493,11 @@ class ACTimelineVM @Inject constructor(
         startTime: String?,
         endTime: String?,
         // See [updateSegmentTime]'s useInlineLoader.
-        useInlineLoader: Boolean = false
+        useInlineLoader: Boolean = false,
+        // Direct result callback for callers that own their own sheet instance
+        // (e.g. a plain TimeSelectionBottomSheet local val) instead of routing
+        // through the shared [changeTimeFinished] LiveData.
+        onInlineResult: ((success: Boolean) -> Unit)? = null
     ) {
         if (startTime == null && endTime == null) return
 
@@ -1525,12 +1519,14 @@ class ACTimelineVM @Inject constructor(
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
                         applyLocalStepTimeUpdate(stepId, startTime, endTime)
                     }
+                    onInlineResult?.invoke(true)
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
                     if (useInlineLoader) _changeTimeFinished.value = false
+                    onInlineResult?.invoke(false)
                 }
         }
     }
@@ -1601,7 +1597,9 @@ class ACTimelineVM @Inject constructor(
         // true when the caller (ActivityTimeSelection change-time sheet) shows an
         // inline loader inside the open sheet and dismisses it via
         // [changeTimeFinished]; the VM then skips its own bottom-sheet loader.
-        useInlineLoader: Boolean = false
+        useInlineLoader: Boolean = false,
+        // See [updateStepTime]'s onInlineResult.
+        onInlineResult: ((success: Boolean) -> Unit)? = null
     ) {
         if (startTime == null || endTime == null) return
 
@@ -1627,12 +1625,14 @@ class ACTimelineVM @Inject constructor(
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
                         applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newDate, newPrice)
                     }
+                    onInlineResult?.invoke(true)
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
                     if (useInlineLoader) _changeTimeFinished.value = false
+                    onInlineResult?.invoke(false)
                 }
         }
     }
@@ -1642,11 +1642,18 @@ class ACTimelineVM @Inject constructor(
      * then closes the loader. On a fetch failure, falls back to the optimistic local
      * mutation. Closes the inline sheet via [changeTimeFinished] when
      * [useInlineLoader], otherwise hides the bottom-sheet loader.
+     *
+     * Clears the route-info cache first: a time change can re-sequence a
+     * Recommendations segment's steps (a different step becomes first), and the
+     * cached routes are keyed by segmentIndex only, not by step order — stale
+     * routes would otherwise be re-stamped onto the rebuilt item, most visibly
+     * as the wrong "distance to first step" label.
      */
     private suspend fun reloadTimelineAndFinishTimeChange(
         useInlineLoader: Boolean,
         applyLocalFallback: () -> Boolean
     ) {
+        clearRouteInfoCache()
         runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
             .onSuccess { timeline -> processTimeline(timeline) }
             .onFailure {

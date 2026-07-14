@@ -95,17 +95,17 @@ object CityTimeZones {
         minSelectableTime(day, timezoneFor(cityId))
 
     /**
-     * Earliest selectable "HH:mm" for the time pickers: a future day starts at 09:00;
-     * today floors at the next half-hour slot in the city's timezone (skipping ahead
-     * when fewer than 5 minutes remain). Exclusive — the minute before the earliest slot.
+     * Earliest selectable "HH:mm" for the time pickers: a future day is left fully
+     * open (no floor) so any start time can be picked; today floors at the next
+     * half-hour slot in the city's timezone (skipping ahead when fewer than 5
+     * minutes remain). Exclusive — the minute before the earliest slot. See
+     * [defaultStartTime] for the suggested prefill value.
      */
     fun minSelectableTimeRounded(day: Date, timeZoneId: String?): String? {
         val nowMinutes = minSelectableMinutes(day, timeZoneId)
-        val earliest = when {
-            nowMinutes <= 0 -> 9 * 60
-            nowMinutes >= 24 * 60 -> return "23:59"
-            else -> roundUpToHalfHour(nowMinutes)
-        }
+        if (nowMinutes <= 0) return null
+        if (nowMinutes >= 24 * 60) return "23:59"
+        val earliest = roundUpToHalfHour(nowMinutes)
         if (earliest >= 24 * 60) return "23:59"
         val floor = (earliest - 1).coerceAtLeast(0)
         return String.format("%02d:%02d", floor / 60, floor % 60)
@@ -113,6 +113,26 @@ object CityTimeZones {
 
     fun minSelectableTimeRounded(day: Date, city: City?): String? =
         minSelectableTimeRounded(day, timezoneFor(city?.id) ?: city?.timezone)
+
+    /**
+     * Suggested "HH:mm" to prefill a start-time picker with when nothing has been
+     * chosen yet: 09:00 for a future day, the next half-hour slot in the city's
+     * timezone for today (skipping ahead when fewer than 5 minutes remain).
+     * Unlike [minSelectableTimeRounded] this is never a restriction, just a default.
+     */
+    fun defaultStartTime(day: Date, timeZoneId: String?): String {
+        val nowMinutes = minSelectableMinutes(day, timeZoneId)
+        val slot = when {
+            nowMinutes <= 0 -> 9 * 60
+            nowMinutes >= 24 * 60 -> return "23:59"
+            else -> roundUpToHalfHour(nowMinutes)
+        }
+        if (slot >= 24 * 60) return "23:59"
+        return String.format("%02d:%02d", slot / 60, slot % 60)
+    }
+
+    fun defaultStartTime(day: Date, city: City?): String =
+        defaultStartTime(day, timezoneFor(city?.id) ?: city?.timezone)
 
     private fun roundUpToHalfHour(nowMinutes: Int): Int {
         val remainder = nowMinutes % 30

@@ -22,6 +22,9 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     // Earliest selectable "HH:mm" for the edited item's day in its city timezone
     // (null = no floor / future day). Blocks moving an activity into the past.
     private var minTime: String? = null
+    // Suggested "HH:mm" the start-time picker opens on when [startTime] is null;
+    // never a restriction, purely a prefill (see CityTimeZones.defaultStartTime).
+    private var defaultStartTime: String? = null
 
     private var onTimeSelectedListener: ((startTime: String?, endTime: String?) -> Unit)? = null
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -31,6 +34,7 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             startTime = args.getString(ARG_START_TIME)
             endTime = args.getString(ARG_END_TIME)
             minTime = args.getString(ARG_MIN_TIME)
+            defaultStartTime = args.getString(ARG_DEFAULT_START_TIME)
         }
 
         setupLabels()
@@ -97,7 +101,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
 
         binding.btnConfirm.setOnClickListener {
             onTimeSelectedListener?.invoke(startTime, endTime)
-            dismiss()
         }
     }
 
@@ -107,7 +110,7 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
      */
     private fun showStartTimePicker() {
         showComposeTimePicker(
-            initialTime = startTime ?: MaterialTimePickerHelper.addMinutes(minTime, 1),
+            initialTime = startTime ?: defaultStartTime,
             minTime = minTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
@@ -144,6 +147,11 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         )
     }
 
+    /**
+     * [listener] owns the sheet's lifecycle from here: confirming no longer
+     * auto-dismisses, so the caller can show [showInSheetLoadingOverlay] while its
+     * (usually async) operation runs and dismiss the sheet itself once it succeeds.
+     */
     fun setOnTimeSelectedListener(listener: (startTime: String?, endTime: String?) -> Unit) {
         onTimeSelectedListener = listener
     }
@@ -154,18 +162,22 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         private const val ARG_START_TIME = "start_time"
         private const val ARG_END_TIME = "end_time"
         private const val ARG_MIN_TIME = "min_time"
+        private const val ARG_DEFAULT_START_TIME = "default_start_time"
 
         fun newInstance(
             startTime: String? = null,
             endTime: String? = null,
             // Earliest selectable "HH:mm" (city-timezone "now" for the item's day).
-            minTime: String? = null
+            minTime: String? = null,
+            // Suggested "HH:mm" prefill for the start-time picker when startTime is null.
+            defaultStartTime: String? = null
         ): TimeSelectionBottomSheet {
             return TimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
                     startTime?.let { putString(ARG_START_TIME, it) }
                     endTime?.let { putString(ARG_END_TIME, it) }
                     minTime?.let { putString(ARG_MIN_TIME, it) }
+                    defaultStartTime?.let { putString(ARG_DEFAULT_START_TIME, it) }
                 }
             }
         }

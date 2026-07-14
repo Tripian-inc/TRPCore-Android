@@ -71,13 +71,6 @@ data class ItineraryWithActivities(
             ?: tripItems?.firstOrNull()?.countryName
 
     /**
-     * Returns favorite activity IDs (for Smart Recommendations)
-     */
-    fun getFavoriteActivityIds(): List<String> {
-        return favouriteItems?.mapNotNull { it.activityId } ?: emptyList()
-    }
-
-    /**
      * Converts tripItems to TimelineSegmentSettings list and inserts a single
      * TimelineDate control segment carrying the trip's date range at index 0
      * (iOS contract: keeps server-side index stability across re-fetches).

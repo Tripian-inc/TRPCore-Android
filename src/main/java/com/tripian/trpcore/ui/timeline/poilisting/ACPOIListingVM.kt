@@ -343,6 +343,11 @@ class ACPOIListingVM @Inject constructor(
         return CityTimeZones.minSelectableTimeRounded(day, planData?.selectedCity)
     }
 
+    fun defaultStartTimeForSelectedDay(): String? {
+        val day = planData?.selectedDay ?: return null
+        return CityTimeZones.defaultStartTime(day, planData?.selectedCity)
+    }
+
     fun getAvailableDays(): List<Date> = planData?.availableDays ?: emptyList()
 
     fun getListingType(): POIListingType = listingType

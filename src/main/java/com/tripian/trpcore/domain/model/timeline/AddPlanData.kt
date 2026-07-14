@@ -39,9 +39,6 @@ data class AddPlanData(
     var selectedSmartCategories: MutableList<SmartCategory> = mutableListOf(),
     var selectedCategories: MutableList<String> = mutableListOf(),
 
-    /** Selected activity IDs (from Favorites). */
-    var activityIds: MutableList<String> = mutableListOf(),
-
     var selectedPoi: Poi? = null,
     var tripHash: String? = null,
     var availableDays: List<Date> = emptyList(),
@@ -144,7 +141,6 @@ data class AddPlanData(
         endTime = null
         travelers = 1
         selectedSmartCategories.clear()
-        activityIds.clear()
         selectedPoi = null
     }
 

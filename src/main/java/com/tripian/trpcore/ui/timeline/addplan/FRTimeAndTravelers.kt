@@ -140,17 +140,17 @@ class FRTimeAndTravelers : Fragment() {
     }
 
     /**
-     * Show Compose TimePicker Dialog for start time selection.
-     * The picker is floored at the city's "now" for the selected day so a past
-     * time can't be chosen; with no start chosen, it opens on the earliest
-     * selectable slot.
+     * Show Compose TimePicker Dialog for start time selection. On the city's
+     * "today" the picker floors at the next half-hour slot so a past time can't
+     * be chosen; on a future day any time is selectable. With no start chosen,
+     * it opens on the suggested default slot (09:00 for a future day).
      */
     private fun showStartTimePicker() {
         val currentTime = sharedVM.startTime.value
         val minTime = sharedVM.minSelectableTimeForSelectedDay()
 
         showComposeTimePicker(
-            initialTime = currentTime ?: MaterialTimePickerHelper.addMinutes(minTime, 1),
+            initialTime = currentTime ?: sharedVM.defaultStartTimeForSelectedDay(),
             minTime = minTime,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)

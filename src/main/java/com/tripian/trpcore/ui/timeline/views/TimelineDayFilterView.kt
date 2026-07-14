@@ -35,6 +35,16 @@ class TimelineDayFilterView @JvmOverloads constructor(
     var mode: Mode = Mode.TIMELINE
 
     /**
+     * IANA timezone of the trip's city, forwarded to the adapter so "past day"
+     * rendering matches the AddPlan flow instead of falling back to the device clock.
+     */
+    var timeZoneId: String? = null
+        set(value) {
+            field = value
+            adapter.timeZoneId = value
+        }
+
+    /**
      * Extra day indices that should be disabled (greyed out, taps ignored). Used
      * by the AddPlan availability sweep to grey out days where no slots exist.
      */

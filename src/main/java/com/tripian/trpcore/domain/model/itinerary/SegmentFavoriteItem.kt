@@ -4,8 +4,8 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 /**
- * Activities that the user has added to favorites
- * Used as activityIds when creating Smart Recommendations.
+ * Activities that the user has added to favorites, surfaced on the Saved Plans
+ * screen for adding individually as a reserved-activity segment.
  */
 @Parcelize
 data class SegmentFavoriteItem(

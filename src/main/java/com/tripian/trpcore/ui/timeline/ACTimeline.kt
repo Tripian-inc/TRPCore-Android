@@ -234,6 +234,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             binding.dayFilterView.setSelectedDay(index)
         }
 
+        viewModel.cities.observe(this) { cities ->
+            binding.dayFilterView.timeZoneId = cities.firstOrNull()?.timezone
+        }
+
         viewModel.isMapMode.observe(this) { isMapMode ->
             updateMapMode(isMapMode)
         }
@@ -1127,6 +1131,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 initialDateTime = step.startDateTimes,
                 seedInitialTimeSlot = true,
                 isNotAvailable = step.isAvailabilityExpired,
+                restrictToInitialDay = true,
                 onRemove = {
                     showDeleteConfirmationDialog(
                         title = getLanguageForKey(LanguageConst.REMOVE_STEP),
@@ -1157,6 +1162,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
      * @param activityId required for slot loading; when null the sheet is not opened.
      * @param seedInitialTimeSlot `true` to pre-select the existing HH:mm in the
      *   grid; `false` for flexible cells whose recorded time is a placeholder.
+     * @param restrictToInitialDay `true` hides the day filter and locks the sheet to
+     *   [initialDateTime]'s day so only its time slots can be picked; used for
+     *   Recommendations activity steps, which have no way to move to a different
+     *   day. Reserved/flexible activities keep full day selection.
      */
     private fun showActivityChangeTimeSheet(
         activityId: String?,
@@ -1166,14 +1175,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         initialDateTime: String?,
         seedInitialTimeSlot: Boolean,
         isNotAvailable: Boolean = false,
+        restrictToInitialDay: Boolean = false,
         onRemove: () -> Unit,
         onConfirm: (selectedDate: Date, startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
         if (activityId.isNullOrEmpty()) return
-        val availableDays = viewModel.availableDays.value ?: emptyList()
+        val initialDay = initialDateTime.toDate()
+        val availableDays = if (restrictToInitialDay && initialDay != null) {
+            listOf(initialDay)
+        } else {
+            viewModel.availableDays.value ?: emptyList()
+        }
         if (availableDays.isEmpty()) return
 
-        val initialDay = initialDateTime.toDate()
         val initialTimeSlot = if (seedInitialTimeSlot) {
             initialDateTime?.takeIf { it.length >= 16 }?.substring(11, 16)
         } else null
@@ -1186,7 +1200,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             availableDays = availableDays,
             initialSelectedDay = initialDay,
             initialTimeSlot = initialTimeSlot,
-            isNotAvailable = isNotAvailable
+            isNotAvailable = isNotAvailable,
+            hideDaySelector = restrictToInitialDay
         )
         sheet.setOnStepTimeSelectedListener { date, startTime, endTime, slotPrice ->
             changeTimeSheet?.showInSheetLoadingOverlay(
@@ -1234,7 +1249,20 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         )
 
         timeSelectionSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
-            viewModel.updateStepTime(step.id, newStartTime, newEndTime)
+            timeSelectionSheet.showInSheetLoadingOverlay(
+                LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time"
+            )
+            viewModel.updateStepTime(
+                step.id, newStartTime, newEndTime,
+                useInlineLoader = true,
+                onInlineResult = { success ->
+                    if (success) {
+                        timeSelectionSheet.dismiss()
+                    } else {
+                        timeSelectionSheet.hideInSheetLoadingOverlay()
+                    }
+                }
+            )
         }
 
         timeSelectionSheet.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
@@ -1268,7 +1296,20 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         )
 
         sheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
-            viewModel.updateSegmentTime(segment, segmentIndex, newStartTime, newEndTime)
+            sheet.showInSheetLoadingOverlay(
+                LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time"
+            )
+            viewModel.updateSegmentTime(
+                segment, segmentIndex, newStartTime, newEndTime,
+                useInlineLoader = true,
+                onInlineResult = { success ->
+                    if (success) {
+                        sheet.dismiss()
+                    } else {
+                        sheet.hideInSheetLoadingOverlay()
+                    }
+                }
+            )
         }
 
         sheet.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)

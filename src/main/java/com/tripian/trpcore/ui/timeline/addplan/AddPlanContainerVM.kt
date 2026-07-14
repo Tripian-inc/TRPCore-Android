@@ -237,6 +237,15 @@ class AddPlanContainerVM @Inject constructor(
         return CityTimeZones.minSelectableTimeRounded(day, _selectedCity.value)
     }
 
+    /**
+     * Suggested "HH:mm" to prefill the start-time picker with when nothing has
+     * been chosen yet (see [CityTimeZones.defaultStartTime]).
+     */
+    fun defaultStartTimeForSelectedDay(): String? {
+        val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
+        return CityTimeZones.defaultStartTime(day, _selectedCity.value)
+    }
+
     /** Selected city's IANA timezone (e.g. "Europe/Madrid"), or null. */
     fun selectedCityTimeZone(): String? = _selectedCity.value?.timezone
 

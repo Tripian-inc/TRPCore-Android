@@ -42,6 +42,7 @@
 
     <!-- Fixed: Search Bar -->
     <FrameLayout
+        android:id="@+id/searchContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/_12sdp"
@@ -53,8 +54,8 @@
             android:layout_height="48dp" />
     </FrameLayout>
 
-    <!-- Collapsible region: filter+sort and result count scroll off when the
-         POI list is scrolled. -->
+    <!-- Collapsible region: filter+sort buttons scroll off when the POI list
+         is scrolled; the result count stays fixed. -->
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -99,7 +100,7 @@
                     tools:text="Sort by" />
             </LinearLayout>
 
-            <!-- Scrollable: Result Count -->
+            <!-- Fixed: Result Count -->
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvResultCount"
                 android:layout_width="wrap_content"
@@ -110,7 +111,6 @@
                 android:fontFamily="@font/regular"
                 android:textColor="@color/trp_activity_count_label"
                 android:textSize="12sp"
-                app:layout_scrollFlags="scroll|enterAlways"
                 tools:text="150 places found" />
 
         </com.google.android.material.appbar.AppBarLayout>

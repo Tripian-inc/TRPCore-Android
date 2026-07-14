@@ -39,6 +39,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var sortBottomSheet: ActivitySortBottomSheet? = null
     /** True while the inline shimmer skeleton is visible; the initial load uses the full-screen Lottie instead. */
     private var isSkeletonVisible: Boolean = false
+    private var pendingScrollToTop = false
 
     override fun onDestroy() {
         binding.skeletonList.root.stopShimmer()
@@ -94,7 +95,13 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
     override fun setReceivers() {
         viewModel.activities.observe(this) { activities ->
-            activityAdapter?.submitList(activities)
+            activityAdapter?.submitList(activities) {
+                if (pendingScrollToTop) {
+                    pendingScrollToTop = false
+                    binding.rvActivities.scrollToPosition(0)
+                    binding.appBarLayout.setExpanded(true, false)
+                }
+            }
             updateEmptyState(activities.isEmpty())
             hideSkeleton()
         }
@@ -158,7 +165,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
         viewModel.scrollToTop.observe(this) { shouldScroll ->
             if (shouldScroll) {
-                binding.rvActivities.scrollToPosition(0)
+                pendingScrollToTop = true
             }
         }
 
