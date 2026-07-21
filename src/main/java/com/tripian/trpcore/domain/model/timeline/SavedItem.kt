@@ -22,7 +22,7 @@ sealed class SavedItem : Serializable {
 
     val cityName: String?
         get() = when (this) {
-            is BookedActivity -> null // TimelineSegment doesn't have city name directly
+            is BookedActivity -> null
             is FavouriteActivity -> item.cityName
         }
 

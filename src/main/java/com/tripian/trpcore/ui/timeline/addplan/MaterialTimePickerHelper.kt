@@ -11,11 +11,9 @@ import com.tripian.trpcore.R
 object MaterialTimePickerHelper {
 
     /**
-     * End-of-day sentinel used for "midnight" end-time selections. The UI lets
-     * the user pick 12:00 AM as an end time, but storing it as "00:00" would
-     * make end < start and the API would read it as the start of the day. We
-     * store "23:59" instead (end > start, API sees the end of the day) while
-     * the field still renders it as "12:00 AM" via [formatEndTimeTo12h].
+     * End-of-day sentinel for "midnight" end-time selections: stored as "23:59"
+     * so end > start and the API reads it as the end of the day, while still
+     * rendering as "12:00 AM" via [formatEndTimeTo12h].
      */
     const val END_OF_DAY_24H = "23:59"
 
@@ -25,11 +23,9 @@ object MaterialTimePickerHelper {
      * @return MaterialTimePicker configured for 12-hour display
      */
     fun createTimePicker(initialTime: String?): MaterialTimePicker {
-        // Parse initial time or use defaults
         val (hour24, minute) = if (initialTime != null) {
             parseTime24h(initialTime)
         } else {
-            // Default: 10:00 AM
             Pair(10, 0)
         }
 
@@ -38,7 +34,7 @@ object MaterialTimePickerHelper {
             .setHour(hour24)
             .setMinute(minute)
             .setTheme(R.style.TrpCustomTimePickerTheme)
-            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)  // Clock-only mode
+            .setInputMode(MaterialTimePicker.INPUT_MODE_CLOCK)
             .build()
     }
 
@@ -63,6 +59,13 @@ object MaterialTimePickerHelper {
      */
     fun formatTo24h(hour: Int, minute: Int): String {
         return String.format("%02d:%02d", hour, minute)
+    }
+
+    /** Adds [minutes] to a "HH:mm" time, clamped to [END_OF_DAY_24H]. */
+    fun addMinutes(time: String?, minutes: Int): String? {
+        time ?: return null
+        val total = (timeToMinutes(time) + minutes).coerceIn(0, 23 * 60 + 59)
+        return formatTo24h(total / 60, total % 60)
     }
 
     /**
@@ -111,9 +114,9 @@ object MaterialTimePickerHelper {
 
         val isPM = hour24 >= 12
         val hour12 = when {
-            hour24 == 0 -> 12  // Midnight: 00:00 → 12:00 AM
-            hour24 > 12 -> hour24 - 12  // PM hours
-            else -> hour24  // AM hours
+            hour24 == 0 -> 12
+            hour24 > 12 -> hour24 - 12
+            else -> hour24
         }
 
         val amPm = if (isPM) "PM" else "AM"

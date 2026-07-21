@@ -6,11 +6,14 @@ import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.AppBarLayout
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
+import com.tripian.trpcore.util.extensions.dp
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
@@ -34,9 +37,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var timeSelectionBottomSheet: ActivityTimeSelectionBottomSheet? = null
     private var filterBottomSheet: ActivityFilterBottomSheet? = null
     private var sortBottomSheet: ActivitySortBottomSheet? = null
-    // True while the inline shimmer skeleton is visible (filter/sort/category/
-    // search reloads). The initial load uses the full-screen Lottie instead.
+    /** True while the inline shimmer skeleton is visible; the initial load uses the full-screen Lottie instead. */
     private var isSkeletonVisible: Boolean = false
+    private var pendingScrollToTop = false
 
     override fun onDestroy() {
         binding.skeletonList.root.stopShimmer()
@@ -49,7 +52,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             visibility = View.VISIBLE
             startShimmer()
         }
-        // Swap the result-count text for its shimmer placeholder while reloading.
         binding.tvResultCount.visibility = View.INVISIBLE
         with(binding.shimmerResultCount) {
             visibility = View.VISIBLE
@@ -78,8 +80,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         setupRecyclerViews()
         setupSearchBar()
         setupClickListeners()
+        setupCollapseGap()
 
-        // Initialize from intent
         intent?.let { intent ->
             @Suppress("DEPRECATION")
             val planData = intent.getSerializableExtra(EXTRA_PLAN_DATA) as? AddPlanData
@@ -92,23 +94,20 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     override fun setReceivers() {
-        // Observe activities
         viewModel.activities.observe(this) { activities ->
-            activityAdapter?.submitList(activities)
+            activityAdapter?.submitList(activities) {
+                if (pendingScrollToTop) {
+                    pendingScrollToTop = false
+                    binding.rvActivities.scrollToPosition(0)
+                    binding.appBarLayout.setExpanded(true, false)
+                }
+            }
             updateEmptyState(activities.isEmpty())
             hideSkeleton()
         }
 
-        // Observe loading state. Default: full-screen Lottie with the
-        // "getting activities" text. Filter/sort reloads switch to an inline
-        // shimmer skeleton; category reloads switch to a bottom-sheet Lottie.
-        // Those alternative paths set flags on the VM that we consume here.
         viewModel.isLoading.observe(this) { isLoading ->
             if (isLoading) {
-                // Consume both flags up-front — filter/sort sets both so the
-                // skeleton branch wins, but the suppression flag must still be
-                // cleared so the next non-skeleton reload doesn't accidentally
-                // skip its Lottie.
                 val useSkeleton = viewModel.consumeSkeletonRequest()
                 val loaderSuppressed = viewModel.consumeLoaderSuppression()
                 when {
@@ -125,59 +124,56 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             }
         }
 
-        // The in-flight search spinner became obsolete once filtering moved
-        // fully client-side — keep the view hidden permanently.
         binding.pbSearchProgress.visibility = View.GONE
 
-        // Observe activity count
         viewModel.activityCount.observe(this) { count ->
             binding.tvResultCount.text = "$count ${viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITIES)}"
         }
 
-        // Observe selected category indices (multiple selection)
         viewModel.selectedCategoryIndices.observe(this) { selectedIndices ->
             categoryAdapter?.setSelectedIndices(selectedIndices)
         }
 
-        // Rebuild the category chip strip when facets arrive (or change between searches).
         viewModel.facetCategories.observe(this) { _ ->
             rebuildCategoryAdapter()
         }
 
-        // Observe time selection trigger
         viewModel.showTimeSelection.observe(this) { activity ->
             activity?.let { showTimeSelectionBottomSheet(it) }
         }
 
-        // Add-to-itinerary completion: VM keeps the time-selection sheet open while it
-        // shows its own bottom-sheet "Adding to itinerary" loader, runs the segment
-        // create → timeline fetch chain, then signals success here. The sheet then
-        // dismisses, a confirmation toast appears, and we finish with RESULT_OK after
-        // the toast has had time to play.
         viewModel.addedToItinerarySuccess.observe(this) { result ->
             result?.let { handleAddedToItinerarySuccess(it) }
         }
 
-        // Observe filter state changes
+        viewModel.addSegmentError.observe(this) { message ->
+            message?.let {
+                viewModel.clearAddSegmentError()
+                val sheet = timeSelectionBottomSheet
+                if (sheet != null && sheet.isAdded) {
+                    sheet.hideInSheetLoadingOverlay()
+                    sheet.showError(it)
+                } else {
+                    showAlert(AlertType.ERROR, it)
+                }
+            }
+        }
+
         viewModel.currentFilter.observe(this) { filter ->
             updateFilterButton(filter)
         }
 
-        // Observe scroll to top event
         viewModel.scrollToTop.observe(this) { shouldScroll ->
             if (shouldScroll) {
-                binding.rvActivities.scrollToPosition(0)
+                pendingScrollToTop = true
             }
         }
 
-        // Set title
         binding.tvTitle.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES)
 
-        // Set button texts from language service
         updateFilterButton(viewModel.getCurrentFilter())
         binding.btnSortBy.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SORT_BY)
 
-        // Set empty state text from language service
         binding.tvEmpty.text = viewModel.getLanguageForKey(LanguageConst.ACTIVITY_LISTING_NO_ACTIVITIES)
     }
 
@@ -188,14 +184,12 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         val filterCount = filter.activeFilterCount()
         val baseText = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_FILTERS)
 
-        // Update button text
         binding.btnFilters.text = if (filterCount > 0) {
             "$baseText ($filterCount)"
         } else {
             baseText
         }
 
-        // Update icon - use badge version when filters are active
         val iconRes = if (filterCount > 0) {
             R.drawable.trp_ic_filter_activity_badge
         } else {
@@ -205,7 +199,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     private fun setupRecyclerViews() {
-        // Activity list with language callbacks
         activityAdapter = AdapterActivityListing(
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
             onAddClicked = { activity -> viewModel.onActivityAddClicked(activity) },
@@ -222,14 +215,10 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             layoutManager = LinearLayoutManager(this@ACActivityListing)
             adapter = activityAdapter
 
-            // Add separator decoration (skip last item)
             addItemDecoration(ActivitySeparatorDecoration(this@ACActivityListing))
         }
-        // Stack the device navigation bar inset onto the XML's base bottom
-        // padding so the last card clears gesture / 3-button bars.
         binding.rvActivities.applyBottomSystemBarInsetPadding()
 
-        // Category filter with icon and multi-selection support
         rebuildCategoryAdapter()
     }
 
@@ -257,9 +246,27 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             }
             adapter = categoryAdapter
         }
-        // Re-apply selection state in case the new facet set changed positions —
-        // we always default to "All" (index 0) after a rebuild since indices may shift.
         categoryAdapter?.setSelectedIndices(setOf(0))
+    }
+
+    /**
+     * Keeps an 8dp gap between the fixed search bar and the collapsing content
+     * once the list has been scrolled up: the gap grows with the first pixels of
+     * collapse and holds at 8dp, and disappears again at the fully expanded top.
+     */
+    private fun setupCollapseGap() {
+        val gapPx = 8.dp
+        binding.appBarLayout.addOnOffsetChangedListener(
+            AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
+                val target = minOf(gapPx, -verticalOffset).coerceAtLeast(0)
+                val params = binding.searchContainer.layoutParams as? ViewGroup.MarginLayoutParams
+                    ?: return@OnOffsetChangedListener
+                if (params.bottomMargin != target) {
+                    params.bottomMargin = target
+                    binding.searchContainer.layoutParams = params
+                }
+            }
+        )
     }
 
     private fun setupSearchBar() {
@@ -278,21 +285,21 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             finish()
         }
 
-        // Filter button - shows filter bottom sheet
         binding.btnFilters.setOnClickListener {
             showFilterBottomSheet()
         }
 
-        // Sort button - shows sort bottom sheet
         binding.btnSortBy.setOnClickListener {
             showSortBottomSheet()
         }
     }
 
+    /**
+     * Shows the filter sheet with facet-driven slider bounds. Backend price ranges
+     * arrive in minor units (cents) and are converted to whole currency units;
+     * duration bounds are already in minutes.
+     */
     private fun showFilterBottomSheet() {
-        // Pull facet-driven slider bounds (when present). Backend price ranges arrive
-        // in minor units (cents) — convert to whole currency units to match the
-        // slider's price scale. Duration bounds are already in minutes.
         val priceFacet = viewModel.priceRangeFacet.value
         val durationFacet = viewModel.durationRangeFacet.value
         val minPriceBound = priceFacet?.minimum?.amount?.let { it / 100f }
@@ -344,6 +351,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             cityId = viewModel.getCityId()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
+            timeSelectionBottomSheet?.showInSheetLoadingOverlay(
+                LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary"
+            )
             viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)
         }
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
@@ -357,22 +367,18 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     /**
-     * Final step of the add-activity flow. Dismisses the still-open time selection
-     * sheet and shows a confirmation toast — but stays on the listing so the user
-     * can add more activities in the same session. RESULT_OK is set eagerly so when
-     * the user eventually navigates back, AddPlanContainerBottomSheet sees the
-     * positive result and re-syncs the timeline UI.
+     * Final step of the add-activity flow: dismisses the time selection sheet,
+     * shows a confirmation toast, and pre-arms RESULT_OK so back navigation
+     * re-syncs the timeline UI. Stays on the listing for further additions.
      */
     private fun handleAddedToItinerarySuccess(result: ACActivityListingVM.AddedToItineraryResult) {
         viewModel.clearAddedToItinerarySuccess()
         timeSelectionBottomSheet?.dismiss()
         timeSelectionBottomSheet = null
 
-        // Day label, e.g. "Friday 29/05" — locale-aware day name, fixed dd/MM date.
         val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault())
             .format(result.selectedDate)
 
-        // iOS-style placeholders: backend default is "%1$@ has been added to %2$@".
         val template = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
             .ifBlank { "%1\$@ has been added to %2\$@" }
         val message = template
@@ -381,9 +387,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
         showAlert(AlertType.SUCCESS, message)
 
-        // Pre-arm the result so back navigation hands control back to AddPlan with
-        // the day index that should be reselected. We don't finish here — the user
-        // may add more activities in the same session.
         val resultIntent = Intent().apply {
             putExtra(RESULT_SELECTED_DAY_INDEX, viewModel.getSelectedDayIndex())
         }
@@ -397,9 +400,9 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private class ActivitySeparatorDecoration(context: Context) : RecyclerView.ItemDecoration() {
         private val paint = Paint().apply {
             color = ContextCompat.getColor(context, R.color.trp_lineWeak)
-            strokeWidth = context.resources.displayMetrics.density * 0.5f // 0.5dp
+            strokeWidth = context.resources.displayMetrics.density * 0.5f
         }
-        private val horizontalPadding = (context.resources.displayMetrics.density * 16).toInt() // 16dp
+        private val horizontalPadding = (context.resources.displayMetrics.density * 16).toInt()
 
         override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
             val childCount = parent.childCount
@@ -409,7 +412,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
                 val child = parent.getChildAt(i)
                 val position = parent.getChildAdapterPosition(child)
 
-                // Skip last item
                 if (position == RecyclerView.NO_POSITION || position >= itemCount - 1) {
                     continue
                 }

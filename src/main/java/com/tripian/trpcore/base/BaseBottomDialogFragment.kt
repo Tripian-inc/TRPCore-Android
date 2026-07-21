@@ -16,18 +16,18 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import androidx.fragment.app.FragmentActivity
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
+import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.setViewListener
 import dagger.android.support.AndroidSupportInjection
@@ -48,11 +48,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
 
     private var mBehavior: BottomSheetBehavior<FrameLayout>? = null
 
-    // Last presentation this sheet's VM asked us to show — used so that on a
-    // subsequent hide we only tear down what THIS sheet actually owns.
-    // Without this, the sheet's lifecycle hide (e.g. onPause during dismiss)
-    // would call LottieLoading.hide(activity) and wipe an unrelated
-    // activity-level loader that the host VM raised separately.
+    /** Last presentation this sheet's VM showed, so hide only tears down loaders this sheet owns. */
     private var lastInSheetPresentation: LottieLoadingPresentation? = null
 
     open fun setListeners() {
@@ -82,18 +78,18 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         super.onAttach(context)
     }
 
+    /**
+     * System bar insets are applied in a single place: forwarded from the sheet
+     * frame to the content root, since BottomSheetBehavior may swallow them
+     * before the root's own inset listener runs. When the sheet settles into
+     * the expanded state after its content resized mid-animation, the stale
+     * expanded offset leaves a gap below the sheet, so a layout is re-requested
+     * once the settle completes with the sheet bottom off the parent edge.
+     */
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val bottomSheetDialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         isCancelable = true
 
-        // Edge-to-edge: keep the dialog window unconstrained so the sheet's
-        // background extends all the way to the screen bottom. The previous
-        // setDecorFitsSystemWindows(true) opt-out worked on most devices but
-        // left a visible gap between the sheet bottom and the nav bar on
-        // some Samsung One UI / gesture-nav configurations because the
-        // decor offset didn't match the actual nav-bar height. With the
-        // decor unconstrained, the sheet fills to screen bottom and we
-        // pad the content manually below.
         bottomSheetDialog.window?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
 
         bottomSheetDialog.setOnShowListener { dialog: DialogInterface ->
@@ -110,13 +106,19 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
                     setupFullHeight(it)
                 }
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED)
+                bottomSheetBehavior.addBottomSheetCallback(object :
+                    BottomSheetBehavior.BottomSheetCallback() {
+                    override fun onStateChanged(sheet: View, newState: Int) {
+                        if (newState == BottomSheetBehavior.STATE_EXPANDED &&
+                            sheet.bottom != (sheet.parent as View).height
+                        ) {
+                            sheet.requestLayout()
+                        }
+                    }
 
-                // Forward the system bar insets to the sheet content's bottom
-                // padding. Attach on design_bottom_sheet (above our root) —
-                // Material 1.9's BottomSheetBehavior can swallow insets before
-                // they reach binding.root, in which case the consumeSystemBarPadding
-                // listener installed in setListeners() never fires and the
-                // Continue button ends up behind the nav bar.
+                    override fun onSlide(sheet: View, slideOffset: Float) {}
+                })
+
                 ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
                     val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
                     _binding?.root?.updatePadding(
@@ -177,7 +179,6 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         val inputManager =
             requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
-        // check if no view has focus:
         val v = requireActivity().currentFocus ?: return
 
         inputManager.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
@@ -191,32 +192,13 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
         viewModel.arguments = arguments
         viewModel.onViewCreated(savedInstanceState)
 
-        // Bridge the VM's lottie loading events to LottieLoading on the host activity.
-        // LottieLoading attaches its own DialogFragment via the activity's FragmentManager,
-        // which puts the loader in a window above this bottom sheet — the sheet stays
-        // open underneath the loader. Re-usable: any BaseBottomDialogFragment subclass
-        // whose VM calls showBottomSheetLoader/showLottieLoading gets this for free.
-        // We deliberately skip executePendingTransactions() — onPause fires a hide event
-        // while FragmentManager is already executing, and forcing another pass throws.
-        //
-        // INLINE_SHEET is handled here, not on the activity: the loader is
-        // attached as a child of this sheet's root so no new window opens.
-        // The activity observer skips this presentation to avoid double-firing.
         viewModel.lottieLoadingEvent.observe(viewLifecycleOwner) { event ->
             if (event == null) return@observe
             val host = activity as? FragmentActivity ?: return@observe
-            // Use Material's design_bottom_sheet wrapper (a FrameLayout) as
-            // the inline host: a child added there sits on top of the sheet's
-            // content in z-order, not appended below it like LinearLayout
-            // [binding.root] would do.
             val inlineHost = dialog?.findViewById<ViewGroup>(
                 com.google.android.material.R.id.design_bottom_sheet
             )
             if (!event.show) {
-                // Only tear down what THIS sheet actually raised. Hiding
-                // unconditionally would let the sheet's own lifecycle hide
-                // (onPause during dismiss) wipe out an activity-level loader
-                // that a different VM started.
                 when (lastInSheetPresentation) {
                     LottieLoadingPresentation.INLINE_SHEET ->
                         inlineHost?.let { LottieLoading.hideInline(it) }

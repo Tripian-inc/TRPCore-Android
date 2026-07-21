@@ -11,29 +11,22 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.viewbinding.ViewBinding
-import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.tripian.trpcore.R
+import com.tripian.trpcore.ui.common.loader.LottieLoading
+import com.tripian.trpcore.ui.common.loader.LottieLoadingText
 
 /**
  * Base class for simple BottomSheets that don't require ViewModel or DI.
- * Provides:
- * - ViewBinding support
- * - Draggable behavior configuration
- * - Fullscreen support
- * - Edge-to-edge insets handling
- *
- * Usage:
- * ```
- * class MyBottomSheet : BaseSimpleBottomSheet<MyBinding>(MyBinding::inflate) {
- *     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
- *         super.onViewCreated(view, savedInstanceState)
- *         // Setup UI
- *     }
- * }
- * ```
+ * Provides ViewBinding, drag configuration, fullscreen support and
+ * edge-to-edge insets handling.
  */
 abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
     private val bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> VB
@@ -41,6 +34,8 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
 
     private var _binding: VB? = null
     protected val binding get() = _binding!!
+
+    override fun getTheme(): Int = R.style.TrpAppTheme_BottomSheetDialog
 
     /**
      * Override to disable drag-to-dismiss behavior.
@@ -55,15 +50,18 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
     open fun isFullscreen(): Boolean = false
 
     /**
-     * Override to disable automatic system bar insets handling.
-     * Set to false if layout already handles its own padding.
-     * Default is false.
+     * Runs the sheet edge-to-edge: system bar insets are forwarded from the sheet
+     * frame to the content root's padding so the sheet background reaches the
+     * screen bottom while content stays above the nav bar. When the sheet settles
+     * into the expanded state after its content resized mid-animation, the stale
+     * expanded offset leaves a gap below the sheet, so a layout is re-requested
+     * once the settle completes with the sheet bottom off the parent edge.
      */
-    open fun applySystemBarInsets(): Boolean = false
-
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val bottomSheetDialog = super.onCreateDialog(savedInstanceState) as BottomSheetDialog
         isCancelable = true
+
+        bottomSheetDialog.window?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
 
         bottomSheetDialog.setOnShowListener { dialog ->
             val dg = dialog as BottomSheetDialog
@@ -79,6 +77,29 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
                     setupFullHeight(it)
                 }
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.addBottomSheetCallback(object :
+                    BottomSheetBehavior.BottomSheetCallback() {
+                    override fun onStateChanged(sheet: View, newState: Int) {
+                        if (newState == BottomSheetBehavior.STATE_EXPANDED &&
+                            sheet.bottom != (sheet.parent as View).height
+                        ) {
+                            sheet.requestLayout()
+                        }
+                    }
+
+                    override fun onSlide(sheet: View, slideOffset: Float) {}
+                })
+
+                ViewCompat.setOnApplyWindowInsetsListener(it) { _, insets ->
+                    val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    _binding?.root?.updatePadding(
+                        left = sysBars.left,
+                        right = sysBars.right,
+                        bottom = sysBars.bottom
+                    )
+                    insets
+                }
+                ViewCompat.requestApplyInsets(it)
             }
         }
         return bottomSheetDialog
@@ -100,20 +121,6 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
         return binding.root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        if (applySystemBarInsets()) {
-            setupWindowInsets()
-        }
-    }
-
-    /**
-     * Setup edge-to-edge insets for proper navigation bar handling.
-     */
-    private fun setupWindowInsets() {
-        binding.root.consumeSystemBarPadding(horizontal = true, bottom = true)
-    }
-
     override fun onStart() {
         super.onStart()
         dialog?.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -133,5 +140,26 @@ abstract class BaseSimpleBottomSheet<VB : ViewBinding>(
         val inputManager = requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         val v = requireActivity().currentFocus ?: return
         inputManager.hideSoftInputFromWindow(v.windowToken, InputMethodManager.HIDE_NOT_ALWAYS)
+    }
+
+    /**
+     * Surfaces a loader over this sheet's own view tree (no separate window/dialog)
+     * while the host performs an operation. Resolves [languageKey] via the shared
+     * language repository since this sheet has no ViewModel of its own.
+     */
+    fun showInSheetLoadingOverlay(languageKey: String, fallback: String) {
+        val host = dialog?.findViewById<ViewGroup>(
+            com.google.android.material.R.id.design_bottom_sheet
+        ) ?: return
+        val text = TRPCore.core.miscRepository.getLanguageValueForKey(languageKey).ifBlank { fallback }
+        LottieLoading.showInline(host, LottieLoadingText.Single(text))
+    }
+
+    /** Hides the inline loading overlay (e.g. on failure/retry). */
+    fun hideInSheetLoadingOverlay() {
+        val host = dialog?.findViewById<ViewGroup>(
+            com.google.android.material.R.id.design_bottom_sheet
+        ) ?: return
+        LottieLoading.hideInline(host)
     }
 }

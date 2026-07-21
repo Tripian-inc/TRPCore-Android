@@ -18,7 +18,8 @@ class AdapterActivityCategory(
     private val onSelectionChanged: (Set<Int>) -> Unit
 ) : RecyclerView.Adapter<AdapterActivityCategory.CategoryViewHolder>() {
 
-    private val selectedIndices = mutableSetOf(0) // "All" is selected by default
+    /** "All" is selected by default. */
+    private val selectedIndices = mutableSetOf(0)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoryViewHolder {
         val binding = ItemActivityCategoryBinding.inflate(
@@ -35,17 +36,15 @@ class AdapterActivityCategory(
 
     override fun getItemCount(): Int = categories.size
 
+    /** Selecting "All" (index 0) clears the others; an empty selection falls back to "All". */
     fun toggleSelection(index: Int) {
         if (index == 0) {
-            // "All" selected - clear all others
             val previousSelected = selectedIndices.toSet()
             selectedIndices.clear()
             selectedIndices.add(0)
-            // Notify all previously selected items
             previousSelected.forEach { notifyItemChanged(it) }
             notifyItemChanged(0)
         } else {
-            // Other category selected
             if (selectedIndices.contains(0)) {
                 selectedIndices.remove(0)
                 notifyItemChanged(0)
@@ -58,7 +57,6 @@ class AdapterActivityCategory(
             }
             notifyItemChanged(index)
 
-            // If nothing is selected, select "All"
             if (selectedIndices.isEmpty()) {
                 selectedIndices.add(0)
                 notifyItemChanged(0)
@@ -72,7 +70,6 @@ class AdapterActivityCategory(
         selectedIndices.clear()
         selectedIndices.addAll(indices)
 
-        // Notify changed items
         (previousSelected + indices).forEach { notifyItemChanged(it) }
     }
 
@@ -87,16 +84,11 @@ class AdapterActivityCategory(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(category: ActivityCategoryItem, isSelected: Boolean) {
-            // Set icon
             binding.ivCategoryIcon.setImageResource(category.iconRes)
 
-            // Prefer an explicit display label (used by facet-driven chips that have a
-            // server-provided label and no LanguageConst key); otherwise resolve through
-            // the language service.
             binding.tvCategoryName.text = category.displayLabel
                 ?: getLanguage(category.languageKey)
 
-            // Set selection state (for tint selector)
             binding.ivCategoryIcon.isSelected = isSelected
             binding.ivCategoryIcon.isActivated = isSelected
             binding.tvCategoryName.isSelected = isSelected

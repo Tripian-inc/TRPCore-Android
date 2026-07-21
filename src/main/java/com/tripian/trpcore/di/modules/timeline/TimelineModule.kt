@@ -3,8 +3,7 @@ package com.tripian.trpcore.di.modules.timeline
 import dagger.Module
 
 /**
- * TimelineModule
- * Dagger module for Timeline feature
+ * Dagger module for the Timeline feature.
  */
 @Module(includes = [TimelineVMS::class])
 class TimelineModule

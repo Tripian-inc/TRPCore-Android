@@ -174,8 +174,6 @@ object LanguageConst {
     const val SUNDAY = "sunday"
     const val CLOSED = "closed"
 
-
-
     //Create Trip
     const val CREATE_TRIP = "trips.createNewTrip.form.submit"
     const val DESTINATION = "trips.createNewTrip.stepHeaders.destination"
@@ -202,7 +200,6 @@ object LanguageConst {
     const val SAVED_PLANS = "saved_plans"
     const val MAP_VIEW = "map_view"
     const val LIST_VIEW = "list_view"
-    const val GENERATING_ITINERARY = "generating_itinerary"
     const val REMOVE_ACTIVITY = "timeline.removeActivity.title"
     const val REMOVE_ACTIVITY_MESSAGE = "timeline.removeActivity.message"
     const val REMOVE_STEP = "timeline.removeStep.title"
@@ -316,7 +313,6 @@ object LanguageConst {
     const val ADD_PLAN_SAVED_PLANS = "addPlan.title.savedPlans"
     const val ADD_PLAN_NO_SAVED_PLANS = "addPlan.emptyState.noSavedPlans"
     const val ADD_PLAN_NO_SAVED_PLANS_DESC = "addPlan.emptyState.noSavedPlansDescription"
-    // Shown when every saved plan has been added to the itinerary (list empty).
     const val ADD_PLAN_ALL_ADDED_TITLE = "addPlan.emptyState.allAddedTitle"
     const val ADD_PLAN_ALL_ADDED_DESCRIPTION = "addPlan.emptyState.allAddedDescription"
     const val ADD_PLAN_VIEW_ITINERARY = "addPlan.button.viewItinerary"
@@ -458,8 +454,7 @@ object LanguageConst {
     const val LOADING_TEXT_CHANGING_TIME = "loading.text.changingTime"
     const val LOADING_TEXT_GETTING_ITINERARY_PLAN = "loading.text.gettingYourItineraryPlan"
 
-    // Toast template — default backend value: "%1$@ has been added to %2$@"
-    // %1$@ = place / activity name, %2$@ = day label. iOS-style placeholders are
+    // Toast template — value uses iOS-style placeholders (%1$@ = name, %2$@ = day),
     // replaced on the Kotlin side via String.replace.
     const val ADD_PLAN_TOAST_ACTIVITY_ADDED = "addPlan.toast.activityAdded"
 
@@ -471,7 +466,7 @@ object LanguageConst {
     const val ADD_PLAN_BOOKING_AVAILABILITY_NOTICE = "addPlan.time.bookingAvailabilityNotice"
     const val ADD_PLAN_SOLD_OUT_WARNING = "addPlan.time.soldOutWarning"
 
-    // AddPlan — error messages (new addPlan.error.* namespace)
+    // AddPlan — error messages (addPlan.error.* namespace)
     const val ADD_PLAN_ERROR_TIMELINE_NOT_FOUND = "addPlan.error.timelineNotFound"
     const val ADD_PLAN_ERROR_ACTIVITY_LOCATION_NOT_AVAILABLE = "addPlan.error.activityLocationNotAvailable"
     const val ADD_PLAN_ERROR_SELECT_DATE = "addPlan.error.selectDate"

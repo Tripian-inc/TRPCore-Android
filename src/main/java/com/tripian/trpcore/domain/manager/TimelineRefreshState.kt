@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Theme 10 — global state holder for the "timeline is being refreshed" status.
+ * Global state holder for the "timeline is being refreshed" status.
  *
  * The single timeline view-model owns the actual refresh operation, but other
  * screens that can be open simultaneously (Saved Plans, the AddPlan Time

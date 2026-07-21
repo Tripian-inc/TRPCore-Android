@@ -30,7 +30,6 @@ class TextInputView @JvmOverloads constructor(
     init {
         orientation = VERTICAL
 
-        // Optional: still read XML attrs, but programmatic calls override them
         context?.withStyledAttributes(attrs, R.styleable.TrpPillInputView) {
             setLabel(getString(R.styleable.TrpPillInputView_trpLabelText))
             setPlaceholder(getString(R.styleable.TrpPillInputView_trpPlaceholderText))
@@ -53,9 +52,9 @@ class TextInputView @JvmOverloads constructor(
         }
     }
 
+    /** Clears hints so accessibility doesn't announce the label twice. */
     fun setLabel(text: CharSequence?) {
-        // accessibility: announce label as the field label
-        binding.et.hint = null // avoid double announcement
+        binding.et.hint = null
         binding.et.contentDescription = null
         binding.til.hint = null
     }
@@ -75,7 +74,6 @@ class TextInputView @JvmOverloads constructor(
             com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
         else
             com.google.android.material.textfield.TextInputLayout.END_ICON_NONE
-        // If you enable toggle, make sure inputType has password variation
         if (enabled && (binding.et.inputType and InputType.TYPE_TEXT_VARIATION_PASSWORD) == 0) {
             setInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
         }

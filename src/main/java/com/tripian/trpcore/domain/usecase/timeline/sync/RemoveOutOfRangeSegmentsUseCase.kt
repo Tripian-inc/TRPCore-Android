@@ -10,20 +10,16 @@ import javax.inject.Inject
 /**
  * RemoveOutOfRangeSegmentsUseCase
  *
- * When the host re-opens the SDK with a shifted date range (e.g. 1–5 June →
- * 3–7 June), the segments anchored on days that no longer exist (1 June,
- * 2 June) become orphans — visible in the data but not reachable from the
- * day filter. iOS leaves them in place; on Android we clean them up so the
- * data stays in sync with the new range.
+ * When the host re-opens the SDK with a shifted date range, removes segments
+ * anchored on days that fall outside the new range.
  *
  * Rules:
  *  - Skip the TimelineDate sentinel (`title == "TimelineDate" && !available`).
  *  - A segment is "out of range" when its `startDate` day prefix is strictly
  *    before the new start day or strictly after the new end day.
- *  - Segments without a parseable date are left alone — we can't decide.
- *  - Local mutation is optimistic (so the UI updates immediately when paired
- *    with a re-publish); server DELETEs run sequentially in descending index
- *    order to avoid array shifts on the backend.
+ *  - Segments without a parseable date are left alone.
+ *  - Local mutation is optimistic; server DELETEs run sequentially in
+ *    descending index order to avoid array shifts on the backend.
  */
 class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -43,8 +39,6 @@ class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
     override suspend fun execute(params: Params): Result {
         val result = applyLocally(params) ?: return Result(0)
         if (result.indicesDescending.isEmpty()) return Result(0)
-        // Server-side cleanup, sequential & descending. Errors are logged but
-        // don't break the chain.
         for (idx in result.indicesDescending) {
             try {
                 repository.deleteSegmentAsync(params.tripHash, idx)
@@ -60,6 +54,10 @@ class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
 
     private data class LocalPass(val indicesDescending: List<Int>)
 
+    /**
+     * Optimistically removes out-of-range segments from the in-memory list;
+     * if the list isn't mutable, the server delete + post-sync refetch reconcile.
+     */
     private fun applyLocally(params: Params): LocalPass? {
         val newRange = extractDayRange(params.itinerary) ?: return null
         val segments = params.timeline.tripProfile?.segments ?: return null
@@ -69,9 +67,6 @@ class RemoveOutOfRangeSegmentsUseCase @Inject constructor(
         }
         if (outOfRange.isEmpty()) return LocalPass(emptyList())
 
-        // Mutate the underlying list (Gson backs it with ArrayList). If the
-        // collection isn't mutable for any reason, skip the local pass and let
-        // the server-side delete + post-sync refetch reconcile.
         val mutable = segments as? MutableList<TimelineSegment>
         val indicesDesc = outOfRange.map { it.index }.sortedDescending()
         if (mutable != null) {

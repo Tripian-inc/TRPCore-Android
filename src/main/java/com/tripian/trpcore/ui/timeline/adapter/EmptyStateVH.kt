@@ -29,16 +29,12 @@ class EmptyStateVH(
         item: TimelineDisplayItem.EmptyState,
         onAddPlanClick: (() -> Unit)?
     ) {
-        // Title - localized
         binding.tvTitle.text = getLanguage(LanguageConst.NO_PLANS_YET)
 
-        // Description - localized
         binding.tvMessage.text = getLanguage(LanguageConst.NO_PLANS_DESCRIPTION)
 
-        // Button text - localized
         binding.btnAddPlans.text = getLanguage(LanguageConst.ADD_PLANS)
 
-        // Button click
         binding.btnAddPlans.setOnClickListener {
             onAddPlanClick?.invoke()
         }

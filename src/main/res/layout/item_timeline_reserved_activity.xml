@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginTop="16dp"
-    android:paddingHorizontal="16dp">
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="20dp">
 
     <!-- Order-Time Container (130x32, border) -->
     <LinearLayout
@@ -25,8 +25,8 @@
             android:layout_marginStart="6dp"
             android:background="@drawable/trp_bg_step_order_new"
             android:fontFamily="@font/semibold"
-            android:includeFontPadding="false"
             android:gravity="center"
+            android:includeFontPadding="false"
             android:textColor="@color/trp_white"
             android:textSize="16sp"
             tools:text="1" />
@@ -36,10 +36,10 @@
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:maxLines="1"
-            android:gravity="center_vertical"
             android:layout_marginHorizontal="10dp"
             android:fontFamily="@font/medium"
+            android:gravity="center_vertical"
+            android:maxLines="1"
             android:textColor="@color/trp_text_primary"
             android:textSize="14sp"
             tools:text="09:00 - 11:30" />
@@ -71,6 +71,7 @@
                 android:id="@+id/ivImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:background="@color/trp_bgCloudy"
                 android:contentDescription="Activity Image"
                 android:scaleType="centerCrop" />
 
@@ -85,7 +86,7 @@
             android:orientation="vertical">
 
             <!-- Title Row - Title + Delete Button -->
-            <LinearLayout
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
@@ -95,150 +96,166 @@
                     android:id="@+id/tvTitle"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:ellipsize="end"
                     android:fontFamily="@font/semibold"
                     android:maxLines="2"
                     android:textColor="@color/trp_text_primary"
                     android:textSize="16sp"
-                    tools:text="Visita guiada por la Basílica asd asd " />
+                    app:layout_constraintEnd_toStartOf="@id/llEditButtons"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:text="Guided tour of the " />
 
-                <!-- Change Time Button -->
-                <ImageButton
-                    android:id="@+id/btnChangeTime"
-                    android:layout_width="@dimen/_24sdp"
-                    android:layout_height="@dimen/_24sdp"
-                    android:layout_marginStart="8dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Change Time"
-                    android:src="@drawable/trp_ic_change_time" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tvTitle">
 
-                <!-- Remove Step Button -->
-                <ImageButton
-                    android:id="@+id/btnDelete"
-                    android:layout_width="@dimen/_24sdp"
-                    android:layout_height="@dimen/_24sdp"
-                    android:layout_marginStart="4dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Remove"
-                    android:src="@drawable/trp_ic_remove_step" />
+                    <LinearLayout
+                        android:id="@+id/llRating"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
 
-            </LinearLayout>
+                        <!-- Rating Value - Bold 14px -->
+                        <TextView
+                            android:id="@+id/tvRating"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/bold"
+                            android:textColor="@color/trp_text_primary"
+                            android:textSize="14sp"
+                            tools:text="4.5" />
+
+                        <!-- Star Icon 12x12 -->
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:layout_marginStart="2dp"
+                            android:contentDescription="Rating"
+                            android:src="@drawable/trp_ic_rating_star" />
+
+                        <!-- Review Count - Light 14px fgWeak -->
+                        <TextView
+                            android:id="@+id/tvReviewCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:fontFamily="@font/medium"
+                            android:textColor="@color/trp_fgWeak"
+                            android:textSize="14sp"
+                            tools:text="1,234 opinions" />
+
+                    </LinearLayout>
+
+                    <!-- Badge row: activity chip + "no exact location" chip
+                         sit side-by-side. Either may be hidden individually
+                         depending on stepType / coordinate availability. -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="4dp"
+                        android:orientation="horizontal">
+
+                        <!-- Activity Badge (only for stepType == "activity").
+                             Visually identical to the POI category badge. -->
+                        <TextView
+                            android:id="@+id/tvActivityBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/trp_bg_category_badge"
+                            android:fontFamily="@font/medium"
+                            android:gravity="center"
+                            android:includeFontPadding="false"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="6dp"
+                            android:textColor="@color/trp_grayFg"
+                            android:textSize="12sp"
+                            android:layout_marginEnd="6dp"
+                            tools:text="Activity" />
+
+                        <include
+                            android:id="@+id/noLocationBadge"
+                            layout="@layout/include_no_location_badge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                    </LinearLayout>
+
+                    <!-- Duration Row - icon 16x16, text -->
+                    <TextView
+                        android:id="@+id/tvDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:drawablePadding="4dp"
+                        android:fontFamily="@font/medium"
+                        android:textColor="@color/trp_text_primary"
+                        android:textSize="14sp"
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/trp_ic_duration"
+                        tools:text="2.5 hours"
+                        tools:visibility="visible" />
+
+                    <!-- Cancellation - Medium 14px, advantage color -->
+                    <TextView
+                        android:id="@+id/tvCancellation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/medium"
+                        android:textColor="@color/trp_advantage"
+                        android:textSize="14sp"
+                        tools:text="Free cancellation" />
+
+                </LinearLayout>
+
+                <!-- Action Buttons (Change Time + Delete) -->
+                <LinearLayout
+                    android:id="@+id/llEditButtons"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="top"
+                    android:orientation="horizontal"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <!-- Change Time Button -->
+                    <ImageButton
+                        android:id="@+id/btnChangeTime"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Change Time"
+                        android:padding="6dp"
+                        android:src="@drawable/trp_ic_change_time" />
+
+                    <!-- Remove Step Button -->
+                    <ImageButton
+                        android:id="@+id/btnDelete"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="4dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Remove"
+                        android:src="@drawable/trp_ic_remove_step" />
+
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <!-- Rating Row - rating + star + review count (hide if no data) -->
-            <LinearLayout
-                android:id="@+id/llRating"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                tools:visibility="visible">
 
-                <!-- Rating Value - Bold 14px -->
-                <TextView
-                    android:id="@+id/tvRating"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/bold"
-                    android:textColor="@color/trp_text_primary"
-                    android:textSize="14sp"
-                    tools:text="4.5" />
-
-                <!-- Star Icon 12x12 -->
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginStart="2dp"
-                    android:contentDescription="Rating"
-                    android:src="@drawable/trp_ic_rating_star" />
-
-                <!-- Review Count - Light 14px fgWeak -->
-                <TextView
-                    android:id="@+id/tvReviewCount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:fontFamily="@font/medium"
-                    android:textColor="@color/trp_fgWeak"
-                    android:textSize="14sp"
-                    tools:text="1,234 opinions" />
-
-            </LinearLayout>
-
-            <!-- Duration Row - icon 16x16, text -->
-            <LinearLayout
-                android:id="@+id/llDuration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <ImageView
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:contentDescription="Duration"
-                    android:src="@drawable/trp_ic_duration"/>
-
-                <TextView
-                    android:id="@+id/tvDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:fontFamily="@font/medium"
-                    android:textColor="@color/trp_text_primary"
-                    android:textSize="14sp"
-                    tools:text="2.5 hours" />
-
-            </LinearLayout>
-
-            <!-- Badge row: activity chip + "no exact location" chip side-by-side.
-                 Activity chip is always shown for ReservedActivity cells; the
-                 no-location chip is toggled by the VH based on segment data. -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/tvActivityBadge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/trp_bg_category_badge"
-                    android:fontFamily="@font/medium"
-                    android:gravity="center"
-                    android:includeFontPadding="false"
-                    android:paddingHorizontal="8dp"
-                    android:paddingVertical="6dp"
-                    android:textColor="@color/trp_grayFg"
-                    android:textSize="12sp"
-                    tools:text="Activity" />
-
-                <include
-                    android:id="@+id/noLocationBadge"
-                    layout="@layout/include_no_location_badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp" />
-
-            </LinearLayout>
-
-            <!-- Cancellation - Medium 14px, advantage color -->
-            <TextView
-                android:id="@+id/tvCancellation"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/medium"
-                android:textColor="@color/trp_advantage"
-                android:textSize="14sp"
-                tools:text="Free cancellation" />
 
             <!-- Price Row - Bottom Right -->
             <LinearLayout
@@ -246,9 +263,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="end"
-                android:orientation="horizontal"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tvFreeCancellation">
+                android:orientation="horizontal">
 
                 <!-- From Label - Medium 14sp -->
                 <com.tripian.trpcore.util.widget.TextView
@@ -273,29 +288,14 @@
 
             <!-- Reservation Button - Primary style -->
             <com.google.android.material.button.MaterialButton
-                style="@style/TrpButtonPrimary"
                 android:id="@+id/btnReservation"
-                android:layout_marginTop="@dimen/_8sdp"
+                style="@style/TrpButtonPrimary"
                 android:layout_height="@dimen/_31sdp"
-                tools:text="Reservation"/>
+                android:layout_marginTop="@dimen/_8sdp"
+                tools:text="Reservation" />
 
         </LinearLayout>
 
     </LinearLayout>
-
-    <!-- Bottom Row: Price + Reservation Button -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-    </LinearLayout>
-
-    <!-- Bottom spacing -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="16dp" />
 
 </LinearLayout>

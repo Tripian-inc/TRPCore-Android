@@ -58,11 +58,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         setupGallery()
         setupProductsRecyclerView()
         setupOpeningHoursRecyclerView()
-        // DISABLED: Features and Cuisines views disabled
-        // setupFeaturesRecyclerView()
-        // setupCuisinesRecyclerView()
 
-        // Initialize from intent
         @Suppress("DEPRECATION")
         val poi = intent.getSerializableExtra(EXTRA_POI) as? Poi
         poi?.let {
@@ -71,12 +67,10 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     }
 
     override fun setReceivers() {
-        // Observe POI data
         viewModel.poi.observe(this) { poi ->
             bindPoiData(poi)
         }
 
-        // Observe description expanded state
         viewModel.isDescriptionExpanded.observe(this) { isExpanded ->
             binding.tvDescription.maxLines = if (isExpanded) Int.MAX_VALUE else 4
             binding.tvReadMore.text = if (isExpanded) {
@@ -84,25 +78,20 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             } else {
                 getLanguageForKey(LanguageConst.POI_DETAIL_READ_FULL)
             }
-            // Add underline to text
             binding.tvReadMore.paintFlags = binding.tvReadMore.paintFlags or Paint.UNDERLINE_TEXT_FLAG
-            // Toggle chevron icon
             binding.ivReadMoreChevron.setImageResource(
                 if (isExpanded) R.drawable.trp_ic_chevron_up else R.drawable.trp_ic_chevron_down
             )
         }
 
-        // Observe products
         viewModel.products.observe(this) { products ->
             productAdapter?.submitList(products)
         }
 
-        // Observe opening hours
         viewModel.parsedOpeningHours.observe(this) { hours ->
             openingHoursAdapter?.submitList(hours)
         }
 
-        // Observe section visibility
         viewModel.showActivitiesSection.observe(this) { show ->
             binding.llActivitiesSection.visibility = if (show) View.VISIBLE else View.GONE
         }
@@ -123,27 +112,13 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             binding.llMeetingPointSection.visibility = if (show) View.VISIBLE else View.GONE
         }
 
-        // Features Section - DISABLED: Features view disabled
-        // viewModel.showFeaturesSection.observe(this) { show ->
-        //     binding.llFeaturesSection.visibility = if (show) View.VISIBLE else View.GONE
-        // }
         binding.llFeaturesSection.visibility = View.GONE
 
-        // Cuisines Section - DISABLED: Cuisines view disabled
-        // viewModel.showCuisinesSection.observe(this) { show ->
-        //     binding.llCuisinesSection.visibility = if (show) View.VISIBLE else View.GONE
-        // }
-        // viewModel.cuisinesList.observe(this) { cuisines ->
-        //     cuisinesAdapter?.submitList(cuisines)
-        // }
         binding.llCuisinesSection.visibility = View.GONE
 
-        // Set section header texts
         binding.tvActivitiesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_ACTIVITIES)
         binding.tvKeyDataHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_KEY_DATA)
         binding.tvMeetingPointHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_MEETING_POINT)
-        // DISABLED: Features view disabled
-        // binding.tvFeaturesHeader.text = getLanguageForKey(LanguageConst.POI_DETAIL_FEATURES)
         binding.tvPhoneLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_PHONE)
         binding.tvOpeningHoursLabel.text = getLanguageForKey(LanguageConst.POI_DETAIL_OPENING_HOURS)
         binding.tvViewMap.text = getLanguageForKey(LanguageConst.POI_DETAIL_VIEW_MAP)
@@ -151,11 +126,9 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     }
 
     private fun setupEdgeToEdge() {
-        // Make status bar transparent and draw behind it
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = Color.TRANSPARENT
 
-        // Apply insets to back button so it's below the status bar
         ViewCompat.setOnApplyWindowInsetsListener(binding.btnBack) { view, windowInsets ->
             val statusBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars())
             val marginDp = 16
@@ -178,7 +151,6 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         binding.vpGallery.adapter = galleryAdapter
         binding.vpGallery.orientation = ViewPager2.ORIENTATION_HORIZONTAL
 
-        // Setup page indicator
         binding.vpGallery.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 updatePageIndicator(position)
@@ -230,49 +202,22 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     }
 
     private fun bindPoiData(poi: Poi) {
-        // City name
         val cityName = viewModel.getCityName()
         binding.tvCityName.text = cityName ?: ""
         binding.tvCityName.visibility = if (cityName.isNullOrBlank()) View.GONE else View.VISIBLE
 
-        // POI name
         binding.tvPoiName.text = poi.name ?: ""
 
-        // Rating - DISABLED: Rating/review views disabled
         binding.llRating.visibility = View.GONE
-        /*
-        val rating = poi.rating
-        val reviewCount = poi.ratingCount
-        val turkishLocale = Locale("tr", "TR")
-        val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
-        if (rating > 0) {
-            binding.tvRating.text = String.format(turkishLocale, "%.1f", rating)
 
-            if (reviewCount != null && reviewCount > 0) {
-                val opinionsText = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_OPINIONS)
-                binding.tvRatingCount.text = "${reviewCountFormat.format(reviewCount)} $opinionsText"
-                binding.tvRatingCount.visibility = View.VISIBLE
-            } else {
-                binding.tvRatingCount.visibility = View.GONE
-            }
-
-            binding.llRating.visibility = View.VISIBLE
-        } else {
-            binding.llRating.visibility = View.GONE
-        }
-        */
-
-        // Description
         if (!poi.description.isNullOrBlank()) {
             binding.tvDescription.text = poi.description
             binding.tvDescription.visibility = View.VISIBLE
-            // Set initial underline
             binding.tvReadMore.paintFlags = binding.tvReadMore.paintFlags or Paint.UNDERLINE_TEXT_FLAG
             binding.tvDescription.post {
                 val layout = binding.tvDescription.layout
                 if (layout != null) {
                     val lineCount = layout.lineCount
-                    // Check if text is truncated (ellipsis on last visible line)
                     val isTextTruncated = lineCount > 0 && layout.getEllipsisCount(lineCount - 1) > 0
                     binding.llReadMore.visibility = if (isTextTruncated) View.VISIBLE else View.GONE
                 }
@@ -285,7 +230,6 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             binding.llReadMore.visibility = View.GONE
         }
 
-        // Gallery
         val images = poi.gallery ?: listOfNotNull(poi.image)
         galleryAdapter?.submitList(images)
         binding.llPageIndicator.visibility = if (images.size > 1) View.VISIBLE else View.GONE
@@ -293,7 +237,6 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             setupPageIndicators(images.size)
         }
 
-        // Phone
         binding.tvPhoneValue.text = poi.phone ?: ""
         binding.llPhoneRow.setOnClickListener {
             poi.phone?.let { phone ->
@@ -304,22 +247,15 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
             }
         }
 
-        // Address
         binding.tvAddress.text = poi.address ?: ""
         binding.tvAddress.visibility = if (poi.address.isNullOrBlank()) View.GONE else View.VISIBLE
 
-        // Map
         poi.coordinate?.let { coord ->
             setupMap(coord.lat, coord.lng)
             binding.btnViewMap.setOnClickListener {
                 openExternalMap(coord.lat, coord.lng, poi.name ?: "")
             }
         }
-
-        // Features (tags) - DISABLED: Features view disabled
-        // poi.tags?.let { tags ->
-        //     featureTagAdapter?.submitList(tags)
-        // }
     }
 
     private fun setupPageIndicators(count: Int) {
@@ -368,7 +304,6 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
 
     private fun setupMap(lat: Double, lng: Double) {
         binding.mapView.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
-            // Set camera position
             binding.mapView.mapboxMap.setCamera(
                 CameraOptions.Builder()
                     .center(Point.fromLngLat(lng, lat))
@@ -376,7 +311,6 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
                     .build()
             )
 
-            // Add marker
             val annotationApi = binding.mapView.annotations
             val pointAnnotationManager = annotationApi.createPointAnnotationManager()
 
@@ -408,12 +342,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     companion object {
         const val EXTRA_POI = "extra_poi"
 
-        /**
-         * Create intent to launch POI Detail screen
-         * @param context Context
-         * @param poi Poi object to display
-         * @return Intent to start ACPOIDetail
-         */
+        /** Create intent to launch POI Detail screen */
         fun launch(context: Context, poi: Poi): Intent {
             return Intent(context, ACPOIDetail::class.java).apply {
                 putExtra(EXTRA_POI, poi)

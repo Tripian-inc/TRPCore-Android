@@ -17,13 +17,9 @@ import javax.inject.Inject
  * CreateReservedActivitySegmentUseCase
  * Creates a reserved_activity segment for a tour/activity.
  *
- * No-location handling (migration Theme 6): when the tour returned by the
- * search endpoint carries no usable coordinate, we resolve it through
- * `tour-api/product-lookup` first so the eventual segment has either a real
- * coordinate from the canonical product record OR an explicit
- * `isNoLocation = true` flag. The previous Elvis-to-(0,0) fallback dropped a
- * marker into the Gulf of Guinea, which is the only spot on the planet that is
- * never a valid activity location.
+ * When the tour carries no usable coordinate, it is resolved through
+ * `tour-api/product-lookup` first so the segment has either a real coordinate
+ * or an explicit `isNoLocation = true` flag.
  */
 class CreateReservedActivitySegmentUseCase @Inject constructor(
     private val timelineRepository: TimelineRepository,
@@ -38,9 +34,10 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         val adults: Int = 1,
         val cityId: Int,
         val slotPrice: Double? = null, // Minimum price from selected time slot (if available)
-        // Flexible (any-time) activity flag. When true, the segment is created
-        // with 00:00–23:59 placeholders and duration = -1; timeline rendering
-        // recognises this shape and shows the FlexibleActivity cell.
+        /**
+         * Flexible (any-time) activity flag. When true, the segment is created
+         * with 00:00–23:59 placeholders and duration = -1, rendered as FlexibleActivity.
+         */
         val isFlexible: Boolean = false
     )
 
@@ -82,18 +79,17 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         return loc.lat != null && loc.lon != null
     }
 
+    /**
+     * additionalData datetimes are ISO-8601 while segment-level startDate/endDate
+     * stay "yyyy-MM-dd HH:mm" — the two formats are intentional (iOS spec).
+     * For flexible activities [resolveFlexibleWindow] keeps today's request ahead
+     * of "now", since the backend rejects segments starting in the past.
+     */
     private fun buildSegment(p: Params, tour: TourProduct): TimelineSegmentSettings {
-        // Build start and end datetime (format: "yyyy-MM-dd HH:mm").
-        // Flexible activities are pinned to the full-day window 00:00–23:59
-        // and carry duration -1 so timeline rendering can recognise them.
         val startDatetime: String
         val endDatetime: String
         val effectiveDuration: Double?
         if (p.isFlexible) {
-            // Bugün için backend 00:00 startı reddediyor (geçmişe segment).
-            // resolveFlexibleWindow bugünde start=end=23:59 döndürerek isteği
-            // her zaman "şimdiden ileri"de tutar; diğer günlerde 00:00–23:59
-            // davranışı korunur.
             val (start, end) = resolveFlexibleWindow(p.selectedDate)
             startDatetime = "${p.selectedDate} $start"
             endDatetime = "${p.selectedDate} $end"
@@ -104,9 +100,6 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             effectiveDuration = tour.duration
         }
 
-        // Only emit a coordinate when both axes are present. A half-null pair
-        // would have been silently rewritten to (0.0, 0.0) before — that's
-        // the Gulf of Guinea, not "no location".
         val loc = tour.locations?.firstOrNull()
         val coordinate = if (loc?.lat != null && loc.lon != null) {
             Coordinate().apply {
@@ -122,11 +115,6 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             activityId = tour.productId
             title = tour.title
             imageUrl = tour.images?.firstOrNull()?.url
-            description = tour.description
-            // iOS spec §1 + §3.2: additionalData carries ISO-8601 datetimes
-            // ("yyyy-MM-dd'T'HH:mm:ss") while the segment-level startDate/endDate
-            // stay in the space-separated "yyyy-MM-dd HH:mm" shape. The two
-            // formats are intentional — don't unify them.
             this.startDatetime = startDatetime.toAdditionalDataIso()
             this.endDatetime = endDatetime.toAdditionalDataIso()
             this.coordinate = coordinate
@@ -134,15 +122,10 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             duration = effectiveDuration
             price = p.slotPrice ?: tour.price
             currency = tour.currency ?: "EUR"
-            // iOS spec section 2.2: rating is copied straight from tour metadata,
-            // independent of the slot/booking. Without these the timeline's
-            // ReservedActivityVH hides the rating row entirely.
             rating = tour.rating
             reviewCount = tour.ratingCount
         }
 
-        // If we couldn't resolve a city from the user-selected one, fall back
-        // to whatever the lookup returned — better than the placeholder 0.
         val resolvedCityId = if (p.cityId > 0) p.cityId else tour.cityId
 
         return TimelineSegmentSettings().apply {
@@ -168,11 +151,9 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
      */
     private fun calculateEndTime(date: String, startTime: String, duration: Double?): String {
         if (duration == null || duration <= 0) {
-            // Default to 2 hours if no duration
             return calculateEndTimeWithMinutes(date, startTime, 120)
         }
 
-        // Duration is already in minutes from API
         val durationMinutes = duration.toInt()
         return calculateEndTimeWithMinutes(date, startTime, durationMinutes)
     }
@@ -187,10 +168,8 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             val endHour = (totalMinutes / 60) % 24
             val endMinute = totalMinutes % 60
 
-            // Format: "yyyy-MM-dd HH:mm" (no seconds)
             return "$date ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}"
         } catch (e: Exception) {
-            // Fallback: add 2 hours
             return "$date 00:00"
         }
     }

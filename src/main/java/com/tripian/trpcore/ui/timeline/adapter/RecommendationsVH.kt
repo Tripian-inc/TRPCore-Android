@@ -22,9 +22,10 @@ class RecommendationsVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     companion object {
-        // iOS parity: the starting-point row is hidden while the walking-distance
-        // row and route calculation continue to use the starting-point coordinate.
-        // Flip to true to bring the row back.
+        /**
+         * iOS parity: the starting-point row is hidden while the walking-distance
+         * row and route calculation still use the starting-point coordinate.
+         */
         private const val SHOWS_STARTING_POINT = false
     }
 
@@ -39,6 +40,10 @@ class RecommendationsVH(
     private var currentItem: TimelineDisplayItem.Recommendations? = null
     private var currentDistanceFormat: String = "%d min (%@ km)"
 
+    /**
+     * Binds the card. Route calculation requests are deferred with post() to
+     * avoid calling submitList() during layout.
+     */
     fun bind(
         item: TimelineDisplayItem.Recommendations,
         onItemClick: (TimelineDisplayItem) -> Unit,
@@ -57,21 +62,11 @@ class RecommendationsVH(
         currentReservationClickListener = onStepReservationClick
         currentStartingOrder = item.startingOrder
 
-        // Store for partial updates
         currentItem = item
         currentDistanceFormat = distanceFormat
 
-        android.util.Log.d(
-            "RECO_DEBUG",
-            "VH bind title='${item.title}' steps=${item.steps.size} isExpanded=${item.isExpanded} " +
-                "isGenerating=${item.isGenerating} hasNoPois=${item.hasNoPois} " +
-                "generatedStatus=${item.plan.generatedStatus}"
-        )
-
-        // Title only - no city, time, places info
         binding.tvTitle.text = item.title
 
-        // Generation status
         if (item.isGenerating) {
             binding.progressGenerating.visibility = View.VISIBLE
             binding.tvGenerating.visibility = View.VISIBLE
@@ -95,16 +90,11 @@ class RecommendationsVH(
             binding.tvGenerating.visibility = View.GONE
             binding.tvNoRecommendations.visibility = View.GONE
 
-            // Starting Point row — gated behind SHOWS_STARTING_POINT so it can be
-            // re-enabled easily. The distance row and route coordinate list below
-            // are independent of this flag (distance/route still use the starting
-            // point coordinate).
             val startingPointName = item.startingPointName
             if (SHOWS_STARTING_POINT && item.isExpanded && !startingPointName.isNullOrEmpty()) {
                 binding.tvStartingPointName.text = startingPointName
                 binding.startingPointContainer.visibility = View.VISIBLE
 
-                // Dynamically adjust corner radius to be half of container height
                 binding.startingPointContainer.post {
                     updateStartingPointBackground()
                 }
@@ -112,8 +102,6 @@ class RecommendationsVH(
                 binding.startingPointContainer.visibility = View.GONE
             }
 
-            // Starting Point Route - route from starting point to first step
-            // This route has fromStepId = null
             val startingPointRoute = item.routeInfoList.find { it.fromStepId == null }
             if (item.isExpanded && startingPointRoute != null && item.steps.isNotEmpty()) {
                 binding.startingPointRouteContainer.visibility = View.VISIBLE
@@ -122,13 +110,10 @@ class RecommendationsVH(
                 binding.startingPointRouteContainer.visibility = View.GONE
             }
 
-            // Steps
             if (item.steps.isNotEmpty() && item.isExpanded) {
                 binding.rvSteps.visibility = View.VISIBLE
                 setupStepsAdapter()
 
-                // Build step items with route separators if available
-                // Exclude the starting point route (fromStepId = null) as it's shown separately
                 val stepRoutes = item.routeInfoList.filter { it.fromStepId != null }
                 val stepItems = buildStepItemsWithRoutes(
                     steps = item.steps,
@@ -138,8 +123,6 @@ class RecommendationsVH(
                 )
                 stepsAdapter?.submitStepItemList(stepItems)
 
-                // Request route calculation if route info is empty and we have steps
-                // Use post() to defer the callback to avoid calling submitList() during layout
                 if (item.routeInfoList.isEmpty() && item.steps.size > 0) {
                     binding.root.post {
                         onRequestRouteCalculation?.invoke(item)
@@ -150,12 +133,10 @@ class RecommendationsVH(
             }
         }
 
-        // Expand/Collapse icon - chevron up when expanded, down when collapsed
         binding.ivExpand.setImageResource(
             if (item.isExpanded) R.drawable.trp_ic_chevron_up else R.drawable.trp_ic_chevron_down
         )
 
-        // Click listeners
         binding.root.setOnClickListener {
             onItemClick(item)
         }
@@ -173,11 +154,11 @@ class RecommendationsVH(
         }
     }
 
+    /**
+     * Reuses the steps adapter across bind() calls — swapping RecyclerView.adapter
+     * on every bind detaches/recreates child views and causes day-switch flicker.
+     */
     private fun setupStepsAdapter() {
-        // Reuse adapter across bind() calls. Swapping RecyclerView.adapter on every
-        // bind detaches/recreates child views and causes the day-switch flicker.
-        // Mutable callbacks + startingOrder keep behavior identical while letting
-        // ListAdapter's DiffUtil reuse already-attached views.
         val existing = stepsAdapter
         if (existing == null) {
             val newAdapter = TimelineStepsAdapter(
@@ -226,18 +207,11 @@ class RecommendationsVH(
     }
 
     /**
-     * Builds an interleaved list of TimelineStepItem containing:
-     * - Route separators between steps (if route info available)
-     * - Step items with correct order numbers and conflict flags
-     *
-     * Result order:
+     * Builds an interleaved list of [TimelineStepItem]:
      * [RouteSeparator(start→step1), Step(1), RouteSeparator(step1→step2), Step(2), ...]
      *
-     * @param steps List of TimelineStep to display
-     * @param routeInfoList List of StepRouteInfo for route separators
-     * @param conflictingStepIds Set of step IDs that have visual conflicts (ALL overlapping steps)
-     * @param timeOverlapStepIds Set of step IDs that should show "Time Overlap" text
-     * @return Interleaved list of TimelineStepItem
+     * @param conflictingStepIds Step IDs with visual conflicts (ALL overlapping steps)
+     * @param timeOverlapStepIds Step IDs that should show the "Time Overlap" text
      */
     private fun buildStepItemsWithRoutes(
         steps: List<TimelineStep>,
@@ -247,24 +221,18 @@ class RecommendationsVH(
     ): List<TimelineStepItem> {
         val items = mutableListOf<TimelineStepItem>()
 
-        // Create a map of route info by toStepId for quick lookup
         val routeInfoMap = routeInfoList.associateBy { it.toStepId }
 
         steps.forEachIndexed { index, step ->
             val stepId = step.id ?: 0
 
-            // Add route separator before this step if available
             routeInfoMap[stepId]?.let { routeInfo ->
                 items.add(TimelineStepItem.RouteSeparator(routeInfo))
             }
 
-            // Check conflict flags separately
-            val hasConflict = stepId in conflictingStepIds  // Visual conflict (red border)
-            val showTimeOverlap = stepId in timeOverlapStepIds  // Time Overlap text
+            val hasConflict = stepId in conflictingStepIds
+            val showTimeOverlap = stepId in timeOverlapStepIds
 
-            // Add the step with correct order number, conflict and availability flags.
-            // Theme 17: expired wins over conflict in the VH; we still pass both so
-            // the VH can render the proper precedence.
             items.add(
                 TimelineStepItem.Step(
                     step = step,
@@ -282,23 +250,18 @@ class RecommendationsVH(
     }
 
     /**
-     * Updates only route info without full rebind.
-     * Prevents flash/flicker when distance calculations complete.
-     *
-     * @param newItem The updated item with fresh route info and conflict data
+     * Updates only route info without a full rebind, preventing flash/flicker
+     * when distance calculations complete.
      */
     fun updateRouteInfo(newItem: TimelineDisplayItem.Recommendations) {
-        // Update currentItem to ensure we have fresh conflict data
         currentItem = newItem
 
-        // Update starting point route info
         val startingPointRoute = newItem.routeInfoList.find { it.fromStepId == null }
         if (newItem.isExpanded && startingPointRoute != null && newItem.steps.isNotEmpty()) {
             binding.startingPointRouteContainer.visibility = View.VISIBLE
             binding.tvStartingPointRouteInfo.text = startingPointRoute.formatWithTemplate(currentDistanceFormat)
         }
 
-        // Update steps adapter with new route info and conflict data
         if (newItem.steps.isNotEmpty() && newItem.isExpanded) {
             val stepRoutes = newItem.routeInfoList.filter { it.fromStepId != null }
             val stepItems = buildStepItemsWithRoutes(

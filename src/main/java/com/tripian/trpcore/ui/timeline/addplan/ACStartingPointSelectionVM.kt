@@ -78,13 +78,8 @@ class ACStartingPointSelectionVM @Inject constructor(
         this.favouriteItems = favouriteItems
         this.userLocation = userLocation
 
-        // Update city center display name
         updateCityCenterDisplayName()
-
-        // Filter items by city
         filterItemsByCity()
-
-        // Check if user is in city
         checkUserLocationInCity()
     }
 
@@ -118,14 +113,12 @@ class ACStartingPointSelectionVM @Inject constructor(
         val cityId = city?.id
         val cityName = city?.name
 
-        // Filter booked activities by city
         bookedActivities.forEach { segment ->
             if (matchesCityFilter(segment.cityId, null, cityId, cityName)) {
                 items.add(SavedItem.BookedActivity(segment))
             }
         }
 
-        // Filter favourite items by city
         favouriteItems.forEach { item ->
             if (matchesCityFilter(item.cityId, item.cityName, cityId, cityName)) {
                 items.add(SavedItem.FavouriteActivity(item))
@@ -141,17 +134,14 @@ class ACStartingPointSelectionVM @Inject constructor(
         filterCityId: Int?,
         filterCityName: String?
     ): Boolean {
-        // If no filter criteria, show all
         if (filterCityId == null && filterCityName == null) return true
 
-        // Filter by cityId if available
         filterCityId?.let { filterId ->
             itemCityId?.let { itemId ->
                 if (filterId == itemId) return true
             }
         }
 
-        // Fallback to city name matching
         filterCityName?.let { filterName ->
             itemCityName?.let { itemName ->
                 if (filterName.equals(itemName, ignoreCase = true)) return true
@@ -178,7 +168,6 @@ class ACStartingPointSelectionVM @Inject constructor(
             return
         }
 
-        // Check using city boundaries if available
         val boundary = city?.boundary
         if (boundary != null && boundary.size >= 4) {
             val south = boundary[0]
@@ -191,12 +180,11 @@ class ACStartingPointSelectionVM @Inject constructor(
 
             _isUserInCity.value = inLat && inLon
         } else {
-            // Fallback: Check distance from city center (50km radius)
             val distance = calculateDistance(
                 userLoc.lat, userLoc.lng,
                 cityCoord.lat, cityCoord.lng
             )
-            _isUserInCity.value = distance < 50000 // 50km in meters
+            _isUserInCity.value = distance < 50000
         }
     }
 
@@ -295,7 +283,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     }
 
     fun selectCityCenter() {
-        // Get city coordinate - use city object or fallback
         val coordinate: Coordinate
         val name: String
 
@@ -303,7 +290,6 @@ class ACStartingPointSelectionVM @Inject constructor(
             coordinate = city!!.coordinate!!
             name = getCityCenterName().ifEmpty { city!!.name ?: "City Center" }
         } else {
-            // Fallback if city or coordinate is null - still allow selection with default values
             coordinate = Coordinate().apply {
                 lat = 0.0
                 lng = 0.0

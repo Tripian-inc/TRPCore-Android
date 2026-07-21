@@ -16,72 +16,42 @@ import java.util.Date
  * iOS Reference: AddPlanContainerVC.swift
  */
 data class AddPlanData(
-    // Selected day
     var selectedDay: Date? = null,
     var selectedDayIndex: Int = 0,
-
-    // Selected city
     var selectedCity: City? = null,
-
-    // Mode selection
     var selectedMode: AddPlanMode = AddPlanMode.NONE,
-
-    // Manual mode - selected category
     var selectedManualCategory: ManualCategory? = null,
-
-    // Starting point (Smart Recommendations)
     var startingPointLocation: Coordinate? = null,
     var startingPointName: String? = null,
     var startingPointAccommodation: Accommodation? = null,
 
-    // Time information (Smart Recommendations) - String format "HH:mm"
+    /** Time in "HH:mm" format. */
     var startTime: String? = null,
     var endTime: String? = null,
 
-    // Legacy time fields (Date format) - for backward compatibility
     var startTimeDate: Date? = null,
     var endTimeDate: Date? = null,
 
-    // Traveler count (Smart Recommendations)
     var travelers: Int = 1,
-
-    // Legacy traveler fields - for backward compatibility
     var adults: Int = 1,
     var children: Int = 0,
 
-    // Selected categories (Smart Recommendations - multi-select)
     var selectedSmartCategories: MutableList<SmartCategory> = mutableListOf(),
-
-    // Legacy categories - for backward compatibility
     var selectedCategories: MutableList<String> = mutableListOf(),
 
-    // Selected activity IDs (from Favorites)
-    var activityIds: MutableList<String> = mutableListOf(),
-
-    // Manually added POI
     var selectedPoi: Poi? = null,
-
-    // Trip hash
     var tripHash: String? = null,
-
-    // Available days and cities
     var availableDays: List<Date> = emptyList(),
     var cities: List<City> = emptyList(),
-
-    // Legacy accommodation field - for backward compatibility
     var accommodation: Accommodation? = null
 ) : Serializable {
 
-    // =====================
-    // BACKWARD COMPATIBILITY ALIASES
-    // =====================
-
-    /** Alias for selectedDay - backward compatibility */
+    /** Alias for [selectedDay]. */
     var selectedDate: Date?
         get() = selectedDay
         set(value) { selectedDay = value }
 
-    /** Alias for selectedMode - backward compatibility */
+    /** Alias for [selectedMode]. */
     var mode: AddPlanMode
         get() = selectedMode
         set(value) { selectedMode = value }
@@ -118,7 +88,6 @@ data class AddPlanData(
      * City must be selected before proceeding
      */
     fun canContinueFromSelectDay(): Boolean {
-        // City must be selected
         if (selectedCity == null) return false
 
         return when (selectedMode) {
@@ -146,7 +115,6 @@ data class AddPlanData(
     }
 
     /**
-     * Legacy isValid() method - backward compatibility
      * Checks if data is valid for the selected mode
      */
     fun isValid(): Boolean {
@@ -173,7 +141,6 @@ data class AddPlanData(
         endTime = null
         travelers = 1
         selectedSmartCategories.clear()
-        activityIds.clear()
         selectedPoi = null
     }
 
@@ -198,7 +165,7 @@ data class AddPlanData(
         fun getDefaultEndTime(): String = "18:00"
 
         /**
-         * Default start time as Date - backward compatibility overload
+         * Default start time as Date
          */
         fun getDefaultStartTime(date: Date): Date {
             val calendar = Calendar.getInstance()
@@ -210,7 +177,7 @@ data class AddPlanData(
         }
 
         /**
-         * Default end time as Date - backward compatibility overload
+         * Default end time as Date
          */
         fun getDefaultEndTime(date: Date): Date {
             val calendar = Calendar.getInstance()
@@ -238,9 +205,9 @@ data class AddPlanData(
  * iOS Reference: AddPlanMode enum
  */
 enum class AddPlanMode {
-    NONE,               // No mode selected
+    NONE,
     SMART_RECOMMENDATIONS, // AI-powered smart recommendations
-    SMART,              // Alias for SMART_RECOMMENDATIONS (backward compatibility)
+    SMART,              // Alias for SMART_RECOMMENDATIONS
     MANUAL              // Manual POI/Activity addition
 }
 
@@ -327,13 +294,13 @@ enum class ManualCategory(
  */
 enum class StartingPointType {
     NEAR_ME,       // User's current location
-    CITY_CENTER,   // City center
-    ACCOMMODATION, // Accommodation location
-    CUSTOM         // Custom location
+    CITY_CENTER,
+    ACCOMMODATION,
+    CUSTOM
 }
 
 /**
- * Legacy AddPlan Category (for backward compatibility)
+ * Legacy AddPlan Category
  */
 data class AddPlanCategory(
     val id: String,

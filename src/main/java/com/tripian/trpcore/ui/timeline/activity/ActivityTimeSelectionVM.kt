@@ -26,22 +26,17 @@ data class GroupedTimeSlot(
 )
 
 /**
- * Shape of the selected day's schedule, derived from how the backend returns
- * slots:
- *  - [TIMED]: there are timed slots (slots with a concrete `time`); render the
- *    grid for time selection. Also used for the empty case (no slots at all),
- *    where the sheet shows the "not available" warning instead of a grid.
- *  - [FLEXIBLE_ONLY]: no timed slots, only flexible ones (`time == null`, price
- *    present); hide the grid and show the flexible info card. Continue is
- *    enabled with no chip selection — the segment is created with 00:00/23:59 +
- *    duration -1.
+ * Shape of the selected day's schedule:
+ *  - [TIMED]: timed slots exist (or none at all); render the time grid, or the
+ *    "not available" warning when empty.
+ *  - [FLEXIBLE_ONLY]: only flexible slots (`time == null`); show the flexible
+ *    info card and create the segment with 00:00/23:59 + duration -1.
  */
 enum class TimeSelectionMode { TIMED, FLEXIBLE_ONLY }
 
 /**
- * Resolved per-day schedule the bottom sheet renders from. Holds the timed
- * slots already grouped (existing behavior) plus the flexible slot price (if
- * any) used by the flexible info card.
+ * Resolved per-day schedule the bottom sheet renders from: grouped timed slots
+ * plus the flexible slot price (if any) used by the flexible info card.
  */
 data class ResolvedSchedule(
     val mode: TimeSelectionMode,
@@ -52,7 +47,6 @@ data class ResolvedSchedule(
 }
 
 /**
- * ActivityTimeSelectionVM
  * ViewModel for ActivityTimeSelectionBottomSheet
  * Handles schedule loading for both tours and favorites
  */
@@ -73,9 +67,8 @@ class ActivityTimeSelectionVM @Inject constructor(
 
     /**
      * Subset of trip days (in "yyyy-MM-dd" form) that actually have schedule
-     * slots. Days outside this set are rendered disabled in the day filter so
-     * users can't pick a day with no availability. Null while loading — the
-     * filter shows every day as selectable until the response is in.
+     * slots; days outside this set are rendered disabled in the day filter.
+     * Null while loading — every day shows as selectable until the response is in.
      */
     private val _availableDateStrings = MutableLiveData<Set<String>?>(null)
     val availableDateStrings: LiveData<Set<String>?> = _availableDateStrings
@@ -98,10 +91,9 @@ class ActivityTimeSelectionVM @Inject constructor(
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     /**
-     * Theme 9: show-more collapsing for long slot lists. When a schedule has at
-     * least [collapsedSlotThreshold] slots, only the first [collapsedSlotCount]
-     * are shown with a final "Show more" cell. Tapping it sets
-     * [isTimeSlotsExpanded] = true and the full list paints.
+     * Show-more collapsing for long slot lists: when a schedule has at least
+     * [collapsedSlotThreshold] slots, only the first [collapsedSlotCount] are
+     * shown with a final "Show more" cell that expands the full list.
      */
     val collapsedSlotThreshold: Int = 8
     val collapsedSlotCount: Int = 7
@@ -144,9 +136,7 @@ class ActivityTimeSelectionVM @Inject constructor(
      * [cachedSchedule]; subsequent day switches must go through [selectDate]
      * (no extra network call).
      *
-     * @param activityId The activity or tour ID
      * @param availableDays Trip date range (first = from, last = to)
-     * @param selectedDate Day whose slots should be shown after load
      * @param cityId The city ID (only for favorites mode, null for tour mode)
      */
     fun loadSchedule(
@@ -157,10 +147,7 @@ class ActivityTimeSelectionVM @Inject constructor(
     ) {
         if (availableDays.isEmpty()) return
 
-        // Inline Lottie loader rendered inside the time-selection sheet's own
-        // view tree — no extra window opens.
         showInSheetLoader(LanguageConst.LOADING_TEXT_LOADING_TIME_SLOTS, "Loading available times")
-        // Fresh load → collapse again so the user sees the trimmed first 7 chips.
         resetExpansionState()
         cachedSchedule = null
         _availableDateStrings.value = null
@@ -169,7 +156,6 @@ class ActivityTimeSelectionVM @Inject constructor(
         val formattedId = formatActivityIdForSchedule(activityId, cityId)
         val fromString = dateFormatter.format(availableDays.first())
         val toString = dateFormatter.format(availableDays.last())
-        // `to == from` is fine — backend still returns the per-day bucket shape.
         val toParam = if (toString == fromString) null else toString
 
         viewModelScope.launch {
@@ -186,9 +172,9 @@ class ActivityTimeSelectionVM @Inject constructor(
                 hideLottieLoading()
                 cachedSchedule = response.data
                 val available = computeAvailableDateStrings(response.data)
-                _availableDateStrings.value = available
                 _isUnavailableForTrip.value = available.isEmpty()
                 publishSlotsFor(selectedDate)
+                _availableDateStrings.value = available
             }.onFailure {
                 hideLottieLoading()
                 cachedSchedule = null
@@ -233,11 +219,9 @@ class ActivityTimeSelectionVM @Inject constructor(
 
     /**
      * Bucket raw slots into a [TimeSelectionMode]. Timed slots are grouped by
-     * time (lowest price wins, matching legacy behavior). If any timed slot
-     * exists we always show the time grid ([TIMED]); only when there are no
-     * timed slots at all but flexible ones ([FLEXIBLE_ONLY]) do we switch to the
-     * flexible card. An empty schedule stays [TIMED] (empty grid → the sheet
-     * shows the "not available" warning).
+     * time (lowest price wins). Any timed slot forces [TIMED]; only a schedule
+     * with exclusively flexible slots becomes [FLEXIBLE_ONLY]. An empty
+     * schedule stays [TIMED] (empty grid → "not available" warning).
      */
     private fun resolveSchedule(rawSlots: List<TourScheduleSlot>): ResolvedSchedule {
         if (rawSlots.isEmpty()) {
@@ -305,9 +289,7 @@ class ActivityTimeSelectionVM @Inject constructor(
     }
 
     /**
-     * Group slots by time and keep minimum price for each time
-     * If API returns: time:10:00,price:27.0 / time:10:00,price:29.0 / time:11:00,price:27.0
-     * Result will be: time:10:00,minPrice:27.0 / time:11:00,minPrice:27.0
+     * Group slots by time, keeping the minimum price for each time.
      */
     private fun groupSlotsByTime(slots: List<TourScheduleSlot>?): List<GroupedTimeSlot> {
         if (slots.isNullOrEmpty()) return emptyList()
@@ -337,21 +319,16 @@ class ActivityTimeSelectionVM @Inject constructor(
     }
 
     /**
-     * Format activityId for schedule API
-     * For favorites: Format is C_{rawId}_15_{cityId}
-     * For tours: activityId is used as-is
+     * Format activityId for the schedule API.
+     * For favorites the format is C_{rawId}_15_{cityId}; for tours the
+     * activityId is used as-is.
      *
-     * @param activityId The original activity ID
      * @param cityId The city ID (null for tour mode)
-     * @return Formatted activity ID for schedule API
      */
     private fun formatActivityIdForSchedule(activityId: String, cityId: Int?): String {
-        // Tour mode - use activityId as is
         if (cityId == null) return activityId
 
-        // Extract raw ID if starts with C_
         val rawId = if (activityId.startsWith("C_")) {
-            // Format: C_15423_15 → extract 15423
             activityId.removePrefix("C_").split("_").firstOrNull() ?: activityId
         } else {
             activityId

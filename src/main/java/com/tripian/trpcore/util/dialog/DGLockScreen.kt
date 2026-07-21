@@ -8,9 +8,6 @@ import android.view.Window
 import android.view.WindowManager
 import com.tripian.trpcore.R
 
-/**
- * Created by semihozkoroglu on 2019-08-31.
- */
 class DGLockScreen : Dialog {
 
     constructor(context: Context) : super(context) {

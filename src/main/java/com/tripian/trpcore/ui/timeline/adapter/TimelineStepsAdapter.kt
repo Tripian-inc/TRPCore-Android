@@ -96,7 +96,7 @@ class TimelineStepsAdapter(
     }
 
     /**
-     * Submit a list of TimelineStep without route info (backward compatibility)
+     * Submit a list of TimelineStep without route info.
      * Converts to TimelineStepItem.Step list
      */
     fun submitStepList(steps: List<TimelineStep>) {
@@ -140,7 +140,7 @@ class StepItemDiffCallback : DiffUtil.ItemCallback<TimelineStepItem>() {
 }
 
 /**
- * Legacy DiffUtil callback for TimelineStep (backward compatibility)
+ * DiffUtil callback for TimelineStep
  */
 class StepDiffCallback : DiffUtil.ItemCallback<TimelineStep>() {
     override fun areItemsTheSame(oldItem: TimelineStep, newItem: TimelineStep): Boolean {

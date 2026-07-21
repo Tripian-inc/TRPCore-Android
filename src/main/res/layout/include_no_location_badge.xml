@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-  Reusable "No exact location" badge for timeline cells.
-  Include with: <include android:id="@+id/noLocationBadge" layout="@layout/include_no_location_badge"/>
-  Default visibility is GONE — VH bind sets it visible when item.isNoLocation == true.
-
-  Sizing matches the category / activity chips (Montserrat Medium 12sp,
-  8dp horiz + 6dp vert padding) so badges line up visually in the same row.
--->
+<!-- Reusable "No exact location" badge for timeline cells -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/llNoLocationBadge"

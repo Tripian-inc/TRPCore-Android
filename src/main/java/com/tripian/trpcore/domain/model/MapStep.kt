@@ -6,9 +6,6 @@ import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.reactions.model.Reaction
 import com.tripian.one.api.trip.model.StepHours
 
-/**
- * Created by semihozkoroglu on 15.09.2020.
- */
 class MapStep : BaseModel() {
     var homeBase: Boolean = false
     var poiId: String = ""

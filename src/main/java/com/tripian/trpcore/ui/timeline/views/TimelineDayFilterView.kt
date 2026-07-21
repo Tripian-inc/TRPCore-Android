@@ -21,12 +21,8 @@ class TimelineDayFilterView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     /**
-     * Theme 3 — distinguishes how the day filter treats past days.
-     *
-     *  - [TIMELINE]  past days render in a muted style but remain tappable; the
-     *                cells themselves enforce read-only behaviour.
-     *  - [ADD_PLAN]  past days render muted AND tap events are swallowed —
-     *                you can't pick a day in the past from the AddPlan flow.
+     * How the day filter treats past days: [TIMELINE] renders them muted but tappable
+     * (cells enforce read-only), [ADD_PLAN] renders them muted and swallows taps.
      */
     enum class Mode { TIMELINE, ADD_PLAN }
 
@@ -37,6 +33,16 @@ class TimelineDayFilterView @JvmOverloads constructor(
 
     /** Defaults to [Mode.TIMELINE]; AddPlan callers flip this to [Mode.ADD_PLAN]. */
     var mode: Mode = Mode.TIMELINE
+
+    /**
+     * IANA timezone of the trip's city, forwarded to the adapter so "past day"
+     * rendering matches the AddPlan flow instead of falling back to the device clock.
+     */
+    var timeZoneId: String? = null
+        set(value) {
+            field = value
+            adapter.timeZoneId = value
+        }
 
     /**
      * Extra day indices that should be disabled (greyed out, taps ignored). Used
@@ -64,7 +70,6 @@ class TimelineDayFilterView @JvmOverloads constructor(
 
     fun setSelectedDay(index: Int) {
         adapter.setSelectedPosition(index)
-        // Scroll to selected
         binding.rvDays.scrollToPosition(index)
     }
 
@@ -73,8 +78,8 @@ class TimelineDayFilterView @JvmOverloads constructor(
     }
 
     /**
-     * Theme 3: AddPlan availability sweep passes the indices of days that have no
-     * available slots — they are visually disabled and tap-suppressed.
+     * Sets the indices of days that have no available slots — they are visually
+     * disabled and tap-suppressed.
      */
     fun setUnavailableDayIndices(indices: Set<Int>) {
         unavailableDayIndices.clear()

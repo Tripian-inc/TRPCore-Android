@@ -28,15 +28,11 @@ class ACWebPage : BaseActivity<AcWebPageBinding, ACWebPageVM>() {
 
     override fun onResume() {
         super.onResume()
-        // Enter -> this class
-        // Exit  -> paused class
         overridePendingTransition(R.anim.anim_slide_in_up, R.anim.anim_slide_out_up)
     }
 
     override fun onPause() {
         super.onPause()
-        // Enter -> resumed class
-        // Exit  -> this
         overridePendingTransition(R.anim.anim_slide_in_down, R.anim.anim_slide_out_down)
     }
 

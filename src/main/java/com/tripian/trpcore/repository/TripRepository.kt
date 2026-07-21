@@ -7,6 +7,7 @@ import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.base.awaitCallback
+import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.Preferences
 import javax.inject.Inject
 
@@ -44,6 +45,9 @@ class TripRepository @Inject constructor(
      * 1. If memory cache is empty, load from SharedPreferences first (fast).
      * 2. Always fetch from API and update both memory and SharedPreferences.
      * 3. On API failure, fall back to whatever is already in the in-memory cache.
+     *
+     * City timezones are registered by id so time/day pickers can resolve the
+     * city clock even when the selected city object carries no timezone.
      */
     suspend fun prefetchCitiesAsync(): Boolean {
         if (items.isEmpty()) {
@@ -51,6 +55,7 @@ class TripRepository @Inject constructor(
             if (cachedCities.isNotEmpty()) {
                 items.clear()
                 items.addAll(cachedCities)
+                CityTimeZones.register(items)
             }
         }
         return try {
@@ -61,8 +66,10 @@ class TripRepository @Inject constructor(
                 items.addAll(sortedCities)
                 saveCitiesToCache()
             }
+            CityTimeZones.register(items)
             true
         } catch (_: Throwable) {
+            CityTimeZones.register(items)
             items.isNotEmpty()
         }
     }

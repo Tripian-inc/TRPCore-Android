@@ -24,7 +24,8 @@ class StepActivityVH(
 ) : RecyclerView.ViewHolder(binding.root) {
 
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.US)
-    // Turkish locale for formatting: comma as decimal separator, dot as thousand separator
+
+    /** Yields comma as decimal separator, dot as thousand separator. */
     private val turkishLocale = Locale("tr", "TR")
     private val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
 
@@ -39,6 +40,11 @@ class StepActivityVH(
         }
     }
 
+    /**
+     * Binds the step. Badge/status precedence: expired > conflict/overlap > normal.
+     * A null or (0.0, 0.0) POI coordinate is the backend's no-location placeholder
+     * (online tours / audio guides) and shows the no-location badge.
+     */
     fun bind(
         step: TimelineStep,
         order: Int,
@@ -52,12 +58,8 @@ class StepActivityVH(
     ) {
         val poi = step.poi
 
-        // Order badge
         binding.tvOrder.text = order.toString()
 
-        // Badge styling precedence (Theme 17): expired > conflict > normal.
-        // Expired wins over conflict so the red "Not available" cue is never
-        // hidden by a time-overlap badge on the same step.
         when {
             isAvailabilityExpired -> {
                 binding.orderTimeContainer
@@ -76,8 +78,6 @@ class StepActivityVH(
             }
         }
 
-        // Time (startTime - endTime format). Suffix precedence (Theme 17):
-        // "Not available" > "Time Overlap" > none.
         val startTime = step.startDateTimes?.toDate()
         val endTime = step.endDateTimes?.toDate()
         if (startTime != null && endTime != null) {
@@ -107,13 +107,8 @@ class StepActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Title
         binding.tvTitle.text = poi?.name ?: ""
 
-        // Activity badge — only on activity-type steps. Mirrors the badge that
-        // ReservedActivity / FlexibleActivity cells show at the top-level
-        // segment so users can tell at a glance that this step is a bookable
-        // activity rather than a regular POI.
         if (step.stepType == "activity") {
             binding.tvActivityBadge.text = getLanguage(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
             binding.tvActivityBadge.visibility = View.VISIBLE
@@ -121,18 +116,12 @@ class StepActivityVH(
             binding.tvActivityBadge.visibility = View.GONE
         }
 
-        // No-Location badge (Theme 6) — shown next to the activity chip when
-        // the step's POI has no usable coordinate (null, or the (0.0, 0.0)
-        // placeholder our backend uses for online tours / audio guides).
         val coord = poi?.coordinate
         val isNoLocation = coord == null || (coord.lat == 0.0 && coord.lng == 0.0)
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, isNoLocation)
 
-        // Image - 80x80, 4dp corner radius
         TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url)
 
-        // Rating Row - from poi.rating and poi.ratingCount
-        // Rating uses comma as decimal separator (4,2), reviewCount uses dot as thousand separator (49.565)
         val rating = poi?.rating
         val reviewCount = poi?.ratingCount
         if (rating != null && rating > 0) {
@@ -151,22 +140,18 @@ class StepActivityVH(
             binding.llRating.visibility = View.GONE
         }
 
-        // Duration Row - from poi.duration (in minutes, convert to hours format)
         val duration = poi?.duration
         if (duration != null && duration > 0) {
             binding.tvDuration.text = FormatUtils.formatDuration(duration)
-            binding.llDuration.visibility = View.VISIBLE
+            binding.tvDuration.visibility = View.VISIBLE
         } else {
-            binding.llDuration.visibility = View.GONE
+            binding.tvDuration.visibility = View.GONE
         }
 
-        // Cancellation - from poi.additionalData.cancellation or default "Free cancellation"
         val cancellation = poi?.additionalData?.cancellation
             ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellation
 
-        // Price - from poi.additionalData.price and poi.additionalData.currency
-        // Shows "FREE" when price is 0
         val price = poi?.additionalData?.price ?: poi?.price?.toDouble()
         val currency = poi?.additionalData?.currency ?: "EUR"
         when {
@@ -187,10 +172,8 @@ class StepActivityVH(
             }
         }
 
-        // Reservation button text
         binding.btnReservation.text = getLanguage(LanguageConst.RESERVATION)
 
-        // Click listeners
         binding.root.setOnClickListener {
             onStepClick?.invoke(step)
         }

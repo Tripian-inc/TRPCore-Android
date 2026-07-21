@@ -171,10 +171,8 @@ abstract class BaseViewModel : ViewModel(), OnBackPressListener {
         dispatchLottieEvent(LottieLoadingEvent(false))
     }
 
+    /** Dispatches synchronously when already on the main thread so the loader attaches in the same frame. */
     private fun dispatchLottieEvent(event: LottieLoadingEvent) {
-        // setValue on main thread fires the observer synchronously, so the
-        // loader dialog can be committed in the same onCreate pass and shown
-        // alongside the first frame instead of one tick after it.
         if (Looper.myLooper() == Looper.getMainLooper()) {
             _lottieLoadingEvent.value = event
         } else {

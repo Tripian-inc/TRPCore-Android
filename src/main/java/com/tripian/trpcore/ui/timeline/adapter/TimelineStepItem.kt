@@ -29,17 +29,13 @@ sealed class TimelineStepItem : Serializable {
         val showTimeOverlapText: Boolean = false,
         val isAvailabilityExpired: Boolean = false,
         /**
-         * Captured at construction so the inner adapter's DiffUtil reacts when
-         * the VM mutates `step.startDateTimes` / `step.endDateTimes` in place
-         * (see `ACTimelineVM.applyLocalStepTimeUpdate`). Without these
-         * snapshots the `step` reference stays the same across rebuilds, the
-         * data class equals returns true and the StepPoiVH / StepActivityVH
-         * row never re-renders the updated time.
+         * Snapshots of `step.startDateTimes`/`endDateTimes` captured at construction
+         * so DiffUtil detects in-place time mutations on the shared `step` reference
+         * (see `ACTimelineVM.applyLocalStepTimeUpdate`).
          */
         val startDateTimeSnapshot: String? = null,
         val endDateTimeSnapshot: String? = null
     ) : TimelineStepItem() {
-        // Unique identifier for DiffUtil
         val id: String get() = "step_${step.id}"
     }
 
@@ -51,7 +47,6 @@ sealed class TimelineStepItem : Serializable {
     data class RouteSeparator(
         val routeInfo: StepRouteInfo
     ) : TimelineStepItem() {
-        // Unique identifier for DiffUtil
         val id: String get() = "route_${routeInfo.fromStepId ?: "start"}_${routeInfo.toStepId}"
     }
 }

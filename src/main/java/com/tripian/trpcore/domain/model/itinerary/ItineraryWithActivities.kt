@@ -14,20 +14,19 @@ import kotlinx.parcelize.Parcelize
  */
 @Parcelize
 data class ItineraryWithActivities(
-    val tripName: String? = null,                          // Trip name
+    val tripName: String? = null,
     val startDatetime: String,                             // Format: "yyyy-MM-dd HH:mm"
     val endDatetime: String,                               // Format: "yyyy-MM-dd HH:mm"
-    val uniqueId: String,                                  // User unique ID
+    val uniqueId: String,
     val tripianHash: String? = null,                       // Existing timeline hash if available
     val destinationItems: List<SegmentDestinationItem> = emptyList(),    // Optional - Can fallback to tripItems
-    val favouriteItems: List<SegmentFavoriteItem>? = null, // Favorite activities
+    val favouriteItems: List<SegmentFavoriteItem>? = null,
     val tripItems: List<SegmentActivityItem>? = null       // Booked/Reserved activities
 ) : Parcelable {
 
     /**
-     * Returns the cityId of the first destination.
-     * NOTE: Always returns null - cityId from itinerary model is NOT used.
-     * Host app sends garbage/invalid cityIds, so we resolve from coordinates instead.
+     * Always returns null — cityId from the itinerary model is not used;
+     * the city is resolved from coordinates instead.
      */
     fun getFirstCityId(): Int? = null
 
@@ -72,15 +71,9 @@ data class ItineraryWithActivities(
             ?: tripItems?.firstOrNull()?.countryName
 
     /**
-     * Returns favorite activity IDs (for Smart Recommendations)
-     */
-    fun getFavoriteActivityIds(): List<String> {
-        return favouriteItems?.mapNotNull { it.activityId } ?: emptyList()
-    }
-
-    /**
-     * Converts tripItems to TimelineSegmentSettings list and appends a single
-     * TimelineDate control segment carrying the trip's date range.
+     * Converts tripItems to TimelineSegmentSettings list and inserts a single
+     * TimelineDate control segment carrying the trip's date range at index 0
+     * (iOS contract: keeps server-side index stability across re-fetches).
      *
      * @param defaultCityId Fallback cityId for TimelineDate when destinationItems has none
      */
@@ -89,8 +82,6 @@ data class ItineraryWithActivities(
             createBookedActivitySegment(item)
         }?.toMutableList() ?: mutableListOf()
 
-        // iOS contract: TimelineDate is inserted at index 0 so server-side
-        // index stability holds across re-fetches.
         buildTimelineDateSegment(defaultCityId)?.let { segments.add(0, it) }
 
         return segments
@@ -129,8 +120,6 @@ data class ItineraryWithActivities(
      */
     private fun extractDatePart(datetime: String): String? {
         if (datetime.isEmpty()) return null
-        // Date prefix is always the first 10 chars when the string starts with
-        // "yyyy-MM-dd". Anything shorter is malformed.
         val candidate = datetime.take(10)
         return candidate.takeIf { it.length == 10 && it[4] == '-' && it[7] == '-' }
     }
@@ -138,9 +127,10 @@ data class ItineraryWithActivities(
     /**
      * Creates a booked activity segment from SegmentActivityItem.
      * Single source of truth — both initial create and sync paths must use this.
+     * cityId is intentionally not set (host cityIds are unreliable; the server resolves
+     * it from the coordinate), and items without datetimes borrow the trip-level range.
      */
     internal fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
-        // Calculate endDatetime if not provided (use startDatetime + duration)
         val calculatedEndDatetime = calculateEndDatetime(
             item.startDatetime,
             item.endDatetime,
@@ -149,8 +139,6 @@ data class ItineraryWithActivities(
 
         return TimelineSegmentSettings().apply {
             title = item.title
-            // iOS fallback: a tripItem without datetime borrows the trip-level
-            // range so the segment is never left without bounds.
             startDate = item.startDatetime ?: this@ItineraryWithActivities.startDatetime
             endDate = calculatedEndDatetime ?: this@ItineraryWithActivities.endDatetime
             segmentType = "booked_activity"
@@ -174,13 +162,11 @@ data class ItineraryWithActivities(
             }
             coordinate = coord
 
-            // Additional data for booked activity
             additionalData = TimelineSegmentAdditionalData().apply {
                 activityId = item.activityId
                 bookingId = item.bookingId
                 this.title = item.title
                 imageUrl = item.imageUrl
-                description = item.description
                 startDatetime = item.startDatetime
                 endDatetime = calculatedEndDatetime
                 cancellation = item.cancellation
@@ -210,12 +196,10 @@ data class ItineraryWithActivities(
         endDatetime: String?,
         durationMinutes: Double?
     ): String? {
-        // If endDatetime exists, use it
         if (!endDatetime.isNullOrBlank()) {
             return endDatetime
         }
 
-        // If no startDatetime or duration, cannot calculate
         if (startDatetime.isNullOrBlank() || durationMinutes == null || durationMinutes <= 0) {
             return null
         }
@@ -224,7 +208,6 @@ data class ItineraryWithActivities(
             val formatter = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.US)
             val startDate = formatter.parse(startDatetime) ?: return null
 
-            // Add duration (in minutes) to start time
             val calendar = java.util.Calendar.getInstance()
             calendar.time = startDate
             calendar.add(java.util.Calendar.MINUTE, durationMinutes.toInt())

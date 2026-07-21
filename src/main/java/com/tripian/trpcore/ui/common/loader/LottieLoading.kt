@@ -12,6 +12,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import com.airbnb.lottie.LottieAnimationView
@@ -28,30 +32,17 @@ import com.tripian.trpcore.databinding.DialogLottieBottomSheetBinding
 import com.tripian.trpcore.util.LanguageConst
 
 /**
- * Lottie loading API.
- *
- * Two presentation modes:
- *  - [LottieLoadingPresentation.FULL_SCREEN] — view-attached overlay added
- *    directly to the activity's content frame (android.R.id.content). This
- *    avoids the one-frame delay that a DialogFragment incurs from its
- *    asynchronous WindowManager.addView() — the loader is part of the
- *    activity's own window and therefore renders on the first frame the
- *    activity is drawn.
- *  - [LottieLoadingPresentation.BOTTOM_SHEET] — modal bottom sheet. Single
- *    text only, drag disabled. Still a DialogFragment because its
- *    slide-from-bottom semantics need a separate window.
- *
- * Used for long-running operations (timeline create, segment create, step delete/edit, refresh).
- * Existing simple progress (DGLockScreen) is kept for short network calls.
+ * Presentation modes for the Lottie loader:
+ * [FULL_SCREEN] is an overlay attached to the activity's content frame,
+ * [BOTTOM_SHEET] is a modal bottom sheet with a single text and drag disabled.
  */
 enum class LottieLoadingPresentation {
     FULL_SCREEN,
     BOTTOM_SHEET,
     /**
-     * Inline overlay rendered inside an existing bottom sheet's own view tree.
-     * Resolved by [com.tripian.trpcore.base.BaseBottomDialogFragment]'s loader
-     * observer — calling this from a VM whose host isn't a bottom-sheet does
-     * nothing (BaseActivity skips this presentation).
+     * Inline overlay rendered inside an existing bottom sheet's own view tree,
+     * resolved by [com.tripian.trpcore.base.BaseBottomDialogFragment]'s loader
+     * observer. No-op when the host isn't a bottom sheet.
      */
     INLINE_SHEET
 }
@@ -91,8 +82,7 @@ object LottieLoading {
     private const val ROTATION_INTERVAL_MS = 3_500L
     private const val OVERLAY_ELEVATION_DP = 32f
 
-    // One rotation handle per activity — WeakHashMap so we don't pin the
-    // FragmentActivity once it's gone.
+    /** One rotation handle per activity; weak keys so finished activities aren't pinned. */
     private val rotations = java.util.WeakHashMap<FragmentActivity, RotationHandle>()
 
     private data class RotationHandle(val handler: Handler, val runnable: Runnable)
@@ -106,9 +96,6 @@ object LottieLoading {
         when (presentation) {
             LottieLoadingPresentation.FULL_SCREEN -> showFullScreenView(activity, text)
             LottieLoadingPresentation.BOTTOM_SHEET -> showBottomSheet(activity, text)
-            // INLINE_SHEET is rendered by the hosting bottom sheet itself,
-            // not by the activity-level loader. The sheet observes the same
-            // event and calls [showInline] on its own view tree.
             LottieLoadingPresentation.INLINE_SHEET -> Unit
         }
     }
@@ -124,12 +111,14 @@ object LottieLoading {
     // ------------------------------------------------------------------
 
     /**
-     * Attaches the loader as a child view of [host] (typically a bottom sheet's
-     * root). Idempotent — if a loader is already attached, just refreshes the
-     * text. Use [hideInline] with the same [host] to remove it.
+     * Attaches the loader as a child view of [host]; idempotent (re-showing just
+     * refreshes the text). Rotation text only animates when [host]'s context
+     * resolves to a [FragmentActivity]. Remove with [hideInline].
      *
-     * Rotation text only animates when [host]'s context resolves to a
-     * [FragmentActivity]; otherwise the first text frame is shown statically.
+     * [host] is the bottom sheet's `design_bottom_sheet` frame, a sibling of the
+     * sheet's own rounded-top-corner root view rather than a child of it — the
+     * overlay is given a matching rounded-top background so it doesn't square off
+     * the sheet's corners while it covers the content underneath.
      */
     @JvmStatic
     fun showInline(host: ViewGroup, text: LottieLoadingText) {
@@ -145,6 +134,7 @@ object LottieLoading {
         overlay.isClickable = true
         overlay.isFocusable = true
         overlay.elevation = OVERLAY_ELEVATION_DP * host.resources.displayMetrics.density
+        overlay.setBackgroundResource(R.drawable.trp_bg_bottom_sheet)
         tintLoader(overlay)
         activity?.let { applyText(it, overlay, text) }
         host.addView(overlay)
@@ -178,30 +168,34 @@ object LottieLoading {
     // FULL_SCREEN — view-attached overlay
     // ------------------------------------------------------------------
 
+    /**
+     * Attaches the overlay to the window's decor view (not android.R.id.content):
+     * the content frame stops above the system bars on decor-fitted screens, which
+     * would leave the status/nav bar strips uncovered.
+     */
     private fun showFullScreenView(activity: FragmentActivity, text: LottieLoadingText) {
-        val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-        val existing = content.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW)
+        val decor = activity.window.decorView as? ViewGroup ?: return
+        val existing = decor.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW)
         if (existing != null) {
-            // Already attached — just refresh the text.
             applyText(activity, existing, text)
             return
         }
         val overlay = LayoutInflater.from(activity)
-            .inflate(R.layout.dialog_lottie_full_screen, content, false)
+            .inflate(R.layout.dialog_lottie_full_screen, decor, false)
         overlay.tag = TAG_FULL_SCREEN_VIEW
         overlay.isClickable = true
         overlay.isFocusable = true
         overlay.elevation = OVERLAY_ELEVATION_DP * activity.resources.displayMetrics.density
         tintLoader(overlay)
         applyText(activity, overlay, text)
-        content.addView(overlay)
+        decor.addView(overlay)
     }
 
     private fun hideFullScreenView(activity: FragmentActivity) {
         cancelRotation(activity)
-        val content = activity.findViewById<ViewGroup>(android.R.id.content) ?: return
-        val overlay = content.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW) ?: return
-        content.removeView(overlay)
+        val decor = activity.window.decorView as? ViewGroup ?: return
+        val overlay = decor.findViewWithTag<View>(TAG_FULL_SCREEN_VIEW) ?: return
+        decor.removeView(overlay)
     }
 
     private fun applyText(activity: FragmentActivity, overlay: View, text: LottieLoadingText) {
@@ -233,7 +227,7 @@ object LottieLoading {
             private var index = 0
             override fun run() {
                 index += 1
-                if (index >= texts.size) return // Last text stays visible.
+                if (index >= texts.size) return
                 tv.text = texts[index]
                 if (index < texts.size - 1) {
                     handler.postDelayed(this, ROTATION_INTERVAL_MS)
@@ -250,7 +244,7 @@ object LottieLoading {
     }
 
     // ------------------------------------------------------------------
-    // BOTTOM_SHEET — DialogFragment (semantics need a separate window)
+    // BOTTOM_SHEET — DialogFragment
     // ------------------------------------------------------------------
 
     private fun showBottomSheet(activity: FragmentActivity, text: LottieLoadingText) {
@@ -280,6 +274,7 @@ class LottieBottomSheetDialog : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return BottomSheetDialog(requireContext(), theme).apply {
             setCanceledOnTouchOutside(false)
+            window?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
         }
     }
 
@@ -303,20 +298,28 @@ class LottieBottomSheetDialog : BottomSheetDialogFragment() {
         }
     }
 
+    /** Material's design_bottom_sheet background must be cleared so the root view's rounded corners stay visible. */
     override fun onStart() {
         super.onStart()
         val bsDialog = dialog as? BottomSheetDialog
-        // Force expanded + lock drag
         bsDialog?.behavior?.apply {
             state = BottomSheetBehavior.STATE_EXPANDED
             isDraggable = false
             skipCollapsed = true
         }
-        // Material's design_bottom_sheet ships with a solid white drawable that
-        // hides the rounded background on our root view. Clear it so the
-        // trp_bg_bottom_sheet drawable's rounded top corners are visible.
-        bsDialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            ?.setBackgroundResource(android.R.color.transparent)
+        bsDialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)?.let { sheet ->
+            sheet.setBackgroundResource(android.R.color.transparent)
+            ViewCompat.setOnApplyWindowInsetsListener(sheet) { _, insets ->
+                val sysBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                _binding?.root?.updatePadding(
+                    left = sysBars.left,
+                    right = sysBars.right,
+                    bottom = sysBars.bottom
+                )
+                insets
+            }
+            ViewCompat.requestApplyInsets(sheet)
+        }
     }
 
     override fun onDestroyView() {

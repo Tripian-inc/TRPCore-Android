@@ -22,21 +22,16 @@ object CurrencyUtil {
     )
 
     /**
-     * Resolves currency code from various input formats.
-     * Supports:
-     * - ISO 4217 currency codes (e.g., "USD", "EUR", "MXN")
-     * - Locale format (e.g., "es-MX", "en-US", "de-DE")
+     * Resolves an ISO 4217 currency code from either a code ("USD") or a locale string ("es-MX").
      *
      * @param input The currency code or locale string
      * @return The ISO 4217 currency code (e.g., "MXN" for "es-MX")
      */
     fun resolveCurrencyCode(input: String): String {
-        // If it's already a valid 3-letter currency code, return as-is
         if (input.length == 3 && input.all { it.isLetter() }) {
             return input.uppercase()
         }
 
-        // Try to parse as locale format (e.g., "es-MX", "en_US")
         val parts = input.replace("_", "-").split("-")
         if (parts.size == 2) {
             val language = parts[0].lowercase()
@@ -47,12 +42,10 @@ object CurrencyUtil {
                 val currency = Currency.getInstance(locale)
                 currency.currencyCode
             } catch (e: Exception) {
-                // Fallback: return input as-is if parsing fails
                 input.uppercase()
             }
         }
 
-        // Return input as-is if no pattern matches
         return input.uppercase()
     }
 

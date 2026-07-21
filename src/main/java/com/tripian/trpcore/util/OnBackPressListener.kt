@@ -1,8 +1,5 @@
 package com.tripian.trpcore.util
 
-/**
- * Created by semihozkoroglu on 2019-08-04.
- */
 interface OnBackPressListener {
 
     /**

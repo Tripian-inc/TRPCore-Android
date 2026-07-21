@@ -18,11 +18,9 @@ import java.util.Date
 import javax.inject.Inject
 
 /**
- * ACSavedPlansVM
- * ViewModel for Saved Plans screen
- * Groups favorite items by city and handles adding them to timeline
- *
- * Note: Receives pre-filtered favorites from ACTimeline (already excludes reserved activities)
+ * ViewModel for Saved Plans screen.
+ * Groups favorite items by city and handles adding them to the timeline.
+ * Receives pre-filtered favorites from ACTimeline (already excludes reserved activities).
  */
 class ACSavedPlansVM @Inject constructor(
     private val createReservedActivityFromFavoriteUseCase: CreateReservedActivityFromFavoriteUseCase,
@@ -44,17 +42,14 @@ class ACSavedPlansVM @Inject constructor(
     private val _segmentCreated = MutableLiveData(false)
     val segmentCreated: LiveData<Boolean> = _segmentCreated
 
-    // Emitted when segment creation fails so the screen can hide the in-sheet
-    // loader (the sheet stays open for retry; the alert is shown by the VM).
+    /** Emitted when segment creation fails so the screen can hide the in-sheet loader. */
     private val _segmentCreationFailed = MutableLiveData<Boolean?>()
     val segmentCreationFailed: LiveData<Boolean?> = _segmentCreationFailed
 
     private val _showTimeSelection = MutableLiveData<SegmentFavoriteItem?>()
     val showTimeSelection: LiveData<SegmentFavoriteItem?> = _showTimeSelection
 
-    // Emitted after a favorite is removed so the screen can dismiss the sheet
-    // and refresh. Carries true when the list became empty (so the screen can
-    // close), false otherwise.
+    /** Emitted after a favorite is removed; carries true when the list became empty. */
     private val _favoriteRemoved = MutableLiveData<Boolean?>()
     val favoriteRemoved: LiveData<Boolean?> = _favoriteRemoved
 
@@ -68,7 +63,7 @@ class ACSavedPlansVM @Inject constructor(
     private var selectedDate: Date? = null
     private var pendingFavorite: SegmentFavoriteItem? = null
 
-    // City name to ID mapping - maps cityName (lowercase) to our system's cityId
+    /** Maps cityName (lowercase) to our system's cityId. */
     private var cityNameToIdMap: Map<String, Int> = emptyMap()
 
     // =====================
@@ -77,7 +72,6 @@ class ACSavedPlansVM @Inject constructor(
 
     /**
      * Initialize with pre-filtered favorites from ACTimeline
-     * No need to fetch timeline - favorites are already filtered
      * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
      */
     fun initialize(
@@ -92,7 +86,6 @@ class ACSavedPlansVM @Inject constructor(
         this.selectedDate = availableDays.firstOrNull()
         this.cityNameToIdMap = cityNameToIdMap
 
-        // Process and display items directly
         processAndDisplayItems()
     }
 
@@ -105,18 +98,14 @@ class ACSavedPlansVM @Inject constructor(
             return
         }
 
-        // Group favorites by city
         val groupedByCity = favorites.groupBy { it.cityName }
 
-        // Create list items with section headers
         val items = mutableListOf<SavedPlansListItem>()
 
         groupedByCity.forEach { (cityName, cityFavorites) ->
-            // Add section header
             val cityId = cityFavorites.firstOrNull()?.cityId
             items.add(SavedPlansListItem.SectionHeader(cityName, cityId))
 
-            // Add activity items
             cityFavorites.forEach { favorite ->
                 items.add(SavedPlansListItem.ActivityItem(favorite))
             }
@@ -145,8 +134,8 @@ class ACSavedPlansVM @Inject constructor(
     }
 
     /**
-     * Create reserved activity segment
-     * Called from Activity when user selects time in bottom sheet
+     * Creates a reserved activity segment when the user selects a time in the bottom sheet.
+     * For flexible favorites the time window is resolved by the use case, so start/end are sent as null.
      */
     fun createReservedActivitySegment(
         selectedDate: Date,
@@ -157,13 +146,6 @@ class ACSavedPlansVM @Inject constructor(
     ) {
         val favorite = pendingFavorite ?: return
 
-        // The "adding to itinerary" loader is shown inline inside the open time
-        // selection sheet (driven by the sheet's own VM); see ACSavedPlans.
-
-        // Flexible favorite: window'u use case helper'ı belirliyor; lokal
-        // calculateEndTime'ı atlıyoruz. Timed flow için bottom-sheet zaten
-        // hesaplanmış endTime gönderiyor, gönderilmediyse duration'dan
-        // türetiyoruz.
         val resolvedEndTime = if (isFlexible) {
             null
         } else {
@@ -171,7 +153,6 @@ class ACSavedPlansVM @Inject constructor(
         }
         val resolvedStartTime = if (isFlexible) null else startTime
 
-        // Get resolved cityId from mapping (our system's ID)
         val resolvedCityId = getResolvedCityId(favorite.cityName)
 
         viewModelScope.launch {
@@ -199,24 +180,17 @@ class ACSavedPlansVM @Inject constructor(
     }
 
     /**
-     * Wait for segment generation to complete
+     * Waits for segment generation, caches the resulting timeline for the timeline screen,
+     * then drops the added favorite and signals success. The segment is already created even
+     * if polling times out, so the favorite is dropped either way.
      */
     private fun waitForSegmentGeneration() {
         viewModelScope.launch {
-            // Whether generation polling succeeds or times out, the segment was
-            // created — so drop the added favorite from the list either way and
-            // signal success. The screen stays open and shows the empty state
-            // once the list is exhausted.
             val timeline = runCatching {
                 waitForGenerationUseCase(WaitForGenerationUseCase.Params(tripHash))
             }.getOrNull()
-            // Cache the freshly-generated timeline so the timeline screen can
-            // apply it on return without issuing a second GET (the wait above
-            // already fetched it in the background).
             timeline?.let { timelineRepository.cacheGeneratedTimeline(tripHash, it) }
             dropAddedFavorite()
-            // The inline loader is torn down when the host dismisses the sheet
-            // on segmentCreated.
             _segmentCreated.value = true
         }
     }
@@ -263,15 +237,12 @@ class ACSavedPlansVM @Inject constructor(
      * the base activityId, drops it from the list and emits [favoriteRemoved].
      */
     fun removeFavorite(favorite: SegmentFavoriteItem) {
-        // Persist the removal so this favorite won't reappear for this timeline.
         RemovedFavoritesStore.addRemoved(preferences, tripHash, favorite.activityId)
 
-        // Notify host with the base activityId (C_ prefix / suffixes stripped).
         RemovedFavoritesStore.baseActivityId(favorite.activityId)?.let { baseId ->
             TRPCore.notifyActivityRemovedFromSavedPlans(baseId)
         }
 
-        // Drop it from the in-memory list and re-render.
         favorites = favorites.filterNot { it.activityId == favorite.activityId }
         pendingFavorite = null
         processAndDisplayItems()
@@ -305,7 +276,6 @@ class ACSavedPlansVM @Inject constructor(
 
     /**
      * Returns the resolved cityId for a given cityName.
-     * Uses the cityNameToIdMap passed from ACTimeline.
      * @param cityName The city name from host app data
      * @return Our system's cityId, or null if not found
      */

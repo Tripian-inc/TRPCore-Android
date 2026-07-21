@@ -77,15 +77,17 @@ class MapBottomListAdapter(
         super.submitList(updatedList)
     }
 
+    /**
+     * Card width is screen width minus 24dp per side; with the symmetric 6dp
+     * horizontal margins, PagerSnapHelper centers the card with exactly 24dp
+     * clear on the left and right.
+     */
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemMapBottomCardBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
             false
         )
-        // Card width = screen width minus 24dp on each side. With the symmetric
-        // 6dp horizontal margins, PagerSnapHelper centers the card so it ends up
-        // with exactly 24dp clear on the left and right.
         val metrics = parent.context.resources.displayMetrics
         val sideMarginPx = (24f * metrics.density).toInt()
         binding.root.layoutParams = binding.root.layoutParams.apply {
@@ -103,10 +105,8 @@ class MapBottomListAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(item: MapBottomItem) {
-            // Order badge — flexible items use U+2212 minus, matching FlexibleActivityVH chip
             binding.tvOrderBadge.text = if (item.isFlexible) "−" else item.order.toString()
 
-            // Apply selection styling to badge - same color for all cities
             if (item.isSelected) {
                 binding.tvOrderBadge.background = ContextCompat.getDrawable(
                     binding.root.context,
@@ -125,7 +125,6 @@ class MapBottomListAdapter(
                 )
             }
 
-            // City name above title
             if (!item.cityName.isNullOrBlank()) {
                 binding.tvCityName.visibility = View.VISIBLE
                 binding.tvCityName.text = item.cityName
@@ -133,10 +132,8 @@ class MapBottomListAdapter(
                 binding.tvCityName.visibility = View.GONE
             }
 
-            // Title
             binding.tvTitle.text = item.title
 
-            // Thumbnail image
             if (!item.imageUrl.isNullOrEmpty()) {
                 val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_corner_radius_3dp)
                 Glide.with(binding.ivThumbnail)
@@ -148,7 +145,6 @@ class MapBottomListAdapter(
                 binding.ivThumbnail.setImageResource(R.color.trp_grey_10)
             }
 
-            // No-exact-location badge — shared include used by timeline cells
             binding.noLocationBadge.llNoLocationBadge.visibility = if (item.isNoLocation) {
                 binding.noLocationBadge.tvNoLocationLabel.text = TRPCore.core.miscRepository
                     .getLanguageValueForKey(LanguageConst.TIMELINE_NO_EXACT_LOCATION)
@@ -157,9 +153,6 @@ class MapBottomListAdapter(
                 View.GONE
             }
 
-            // Start time row.
-            // Flexible items: render the short "Flexible" label in place of the time —
-            // the clock icon stays since this row is the time slot for the item.
             when {
                 item.isFlexible -> {
                     binding.llStartTime.visibility = View.VISIBLE
@@ -176,7 +169,6 @@ class MapBottomListAdapter(
                 }
             }
 
-            // Click listener
             binding.root.setOnClickListener {
                 onItemClicked(item)
             }

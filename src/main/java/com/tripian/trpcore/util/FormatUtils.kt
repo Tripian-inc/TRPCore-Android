@@ -3,12 +3,11 @@ package com.tripian.trpcore.util
 import java.util.Locale
 
 /**
- * FormatUtils
- * Common formatting utility functions
+ * Common formatting utility functions.
  */
 object FormatUtils {
 
-    // Turkish locale for formatting: comma as decimal separator
+    /** Formatting locale with comma as decimal separator. */
     private val turkishLocale = Locale("tr", "TR")
 
     /**
@@ -32,18 +31,9 @@ object FormatUtils {
     }
 
     /**
-     * Format price with currency symbol. Always renders two decimals (",00"
-     * for whole values) so price layouts stay visually aligned across the app.
-     *
-     * @param price The price value
-     * @param currency The currency code (EUR, USD, GBP, TRY, etc.)
-     * @return Formatted price string with currency symbol
-     *
-     * Examples:
-     * - EUR: "25,00 €" (symbol after, comma decimal separator)
-     * - USD: "$25,00" (symbol before, comma decimal separator)
-     * - GBP: "£25,00" (symbol before, comma decimal separator)
-     * - TRY: "₺25,00" (symbol before, comma decimal separator)
+     * Format price with currency symbol. Always renders two decimals with comma
+     * separator so price layouts stay visually aligned; EUR places the symbol
+     * after the amount ("25,00 €"), other currencies before ("$25,00").
      */
     fun formatPriceWithCurrency(price: Double, currency: String): String {
         val formattedPrice = String.format(turkishLocale, "%.2f", price)
@@ -56,7 +46,6 @@ object FormatUtils {
             else -> currency
         }
 
-        // EUR: symbol after, others: symbol before
         return if (currency.uppercase() == "EUR") {
             "$formattedPrice $symbol"
         } else {

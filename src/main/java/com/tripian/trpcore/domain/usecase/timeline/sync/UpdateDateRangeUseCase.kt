@@ -53,23 +53,18 @@ class UpdateDateRangeUseCase @Inject constructor(
             return Result(mutated = false)
         }
 
-        // STEP 1 — Local optimistic update. The caller holds the same Timeline
-        // reference and will re-emit it after we return.
         existing.startDate = target.startDate
         existing.endDate = target.endDate
 
-        // STEP 3 — Background PUT. `segmentIndex` tells the server this is an
-        // UPDATE on the existing TimelineDate, not a new insertion.
         target.segmentIndex = existingIndex
         fireAndForgetEdit(params.tripHash, target)
 
         return Result(mutated = true)
     }
 
+    /** Runs in GlobalScope because the TimelineDate sync must outlive the caller coroutine. */
     @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
     private fun fireAndForgetEdit(tripHash: String, segment: TimelineSegmentSettings) {
-        // Mirrors the legacy Schedulers.io() subscribe — survives the caller
-        // coroutine because the TimelineDate sync must outlive its trigger.
         GlobalScope.launch(Dispatchers.IO) {
             try {
                 repository.editSegmentAsync(tripHash, segment)

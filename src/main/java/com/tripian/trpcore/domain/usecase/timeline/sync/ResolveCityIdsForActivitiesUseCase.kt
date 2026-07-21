@@ -10,10 +10,9 @@ import javax.inject.Inject
 /**
  * ResolveCityIdsForActivitiesUseCase
  *
- * tripItems ve favouriteItems için cityId'leri toplu çözme
- * iOS Guide Operation 1: City Resolution
- *
- * BLOCKING operation - diğer sync operasyonları bunu bekler
+ * Bulk-resolves cityIds for tripItems and favouriteItems by coordinate.
+ * Blocking operation — the other sync operations wait on its result.
+ * iOS Reference: Guide Operation 1 (City Resolution)
  */
 class ResolveCityIdsForActivitiesUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -26,7 +25,6 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): Map<String, Int> {
-        // 1. Unique city names topla (tripItems + favourites)
         val cityNames = mutableSetOf<String>()
         params.tripItems.forEach { item ->
             item.cityName?.let { name -> cityNames.add(name) }
@@ -35,7 +33,6 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
             cityNames.add(item.cityName)
         }
 
-        // 2. Cache'de olmayanları filtrele
         val missingCities = cityNames.filter { name ->
             !params.existingCityMap.containsKey(name)
         }
@@ -44,7 +41,6 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
             return params.existingCityMap
         }
 
-        // 3. Koordinatları topla (missing cities için)
         val coordinatesToResolve = mutableListOf<Coordinate>()
         val cityNamesList = mutableListOf<String>()
 

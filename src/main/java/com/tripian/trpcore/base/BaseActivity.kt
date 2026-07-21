@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewbinding.ViewBinding
 import com.airbnb.lottie.LottieCompositionFactory
@@ -15,12 +14,12 @@ import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
 import com.tripian.trpcore.util.AlertType
-import com.tripian.trpcore.util.widget.BottomToast
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.ToolbarProperties
 import com.tripian.trpcore.util.dialog.DGLockScreen
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.setViewListener
+import com.tripian.trpcore.util.widget.BottomToast
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
@@ -73,7 +72,6 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
         _binding = getViewBinding()
         setContentView(binding.root)
 
-        // Apply window insets to handle status bar
         binding.root.consumeSystemBarPadding(top = true)
 
         viewModel = ViewModelProvider(this, viewModelFactory)
@@ -81,9 +79,6 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
         viewModel.fragmentManager = supportFragmentManager
 
-        /**
-         * ViewModel'e listener setlenir
-         */
         setViewListener()
 
         viewModel.arguments = intent.extras
@@ -91,23 +86,14 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
         viewModel.lottieLoadingEvent.observe(this) { event ->
             if (event == null) return@observe
-            // INLINE_SHEET is owned by the hosting bottom sheet — it attaches
-            // the loader into its own view tree. Skip here to avoid opening a
-            // second loader at the activity level.
             if (event.presentation == LottieLoadingPresentation.INLINE_SHEET) return@observe
             if (event.show) {
-                // Force-hide the legacy DGLockScreen spinner so the two loaders
-                // never stack on top of each other.
                 hideLoading()
                 LottieLoading.show(this, event.presentation, event.text)
             } else {
                 LottieLoading.hide(this)
                 hideLoading()
             }
-            // Force the DialogFragment transaction to run now so the loader
-            // attaches in the same frame as the activity's first draw — without
-            // this the dialog commit waits for the FragmentManager's next idle
-            // pass and the empty screen flashes briefly.
             if (!supportFragmentManager.isStateSaved) {
                 supportFragmentManager.executePendingTransactions()
             }
@@ -138,11 +124,8 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
     }
 
     /**
-     * Legacy DGLockScreen spinner. Disabled SDK-wide — all callers route through
-     * `showLottieLoading()` / `hideLottieLoading()` (full-screen Lottie) or
-     * `showBottomSheetLoader()` (bottom-sheet Lottie) instead. Kept as a no-op
-     * so existing call sites don't need to be rewritten. Any DGLockScreen that
-     * was previously surfaced (older builds, defensive) is dismissed here too.
+     * Legacy DGLockScreen spinner, kept as a no-op; loaders route through the
+     * Lottie loading helpers instead.
      */
     fun hideLoading() {
         dgLockScreen?.dismiss()
@@ -150,14 +133,11 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
     }
 
     fun showLoading() {
-        // no-op — see [hideLoading] doc. If anything previously inflated the
-        // legacy lock screen, dismiss it so the SDK is loader-uniform.
         dgLockScreen?.dismiss()
         dgLockScreen = null
     }
 
     open fun backPressed() {
-//        super.onBackPressed()
         if (viewModel.isBackEnable()) {
             if (viewModel.onBackPressed()) {
                 onBackPressedDispatcher.onBackPressed()
@@ -174,24 +154,6 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
             }
         }
     }
-
-//    override fun onBackPressed() {
-//        if (viewModel.isBackEnable()) {
-//            if (viewModel.onBackPressed()) {
-//                super.onBackPressed()
-//            }
-//        } else {
-//            if (onBackPressListener != null &&
-//                onBackPressListener!!.isBackEnable()
-//            ) {
-//                if (onBackPressListener!!.onBackPressed()) {
-//                    super.onBackPressed()
-//                }
-//            } else {
-//                super.onBackPressed()
-//            }
-//        }
-//    }
 
     @CallSuper
     override fun onRequestPermissionsResult(

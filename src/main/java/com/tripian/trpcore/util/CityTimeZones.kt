@@ -7,20 +7,10 @@ import java.util.TimeZone
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * CityTimeZones
- *
- * Central registry mapping a cityId to its IANA timezone (e.g. "Europe/Madrid",
- * from [City.timezone]) plus helpers to enforce "no past time" checks against the
- * SELECTED CITY's local clock — not the device clock.
- *
- * Example: device in Istanbul shows 13:00 on Jun 18; a trip to Barcelona
- * (Europe/Madrid) is one hour behind, so the city's "now" is 12:00 and the
- * earliest selectable slot on Jun 18 is 12:00.
- *
- * Every time/day selection surface resolves the timezone by cityId (which it
- * already has) instead of threading the string through constructors. When a city
- * has no registered timezone the helpers fall back to the device timezone, i.e.
- * the previous behavior.
+ * Central registry mapping a cityId to its IANA timezone (from [City.timezone])
+ * plus helpers to enforce "no past time" checks against the selected city's local
+ * clock — not the device clock. Falls back to the device timezone for cities
+ * without a registered zone.
  */
 object CityTimeZones {
 
@@ -47,12 +37,11 @@ object CityTimeZones {
     /** "Now" in the timezone registered for [cityId]. */
     fun nowForCity(cityId: Int?): Calendar = nowInZone(timezoneFor(cityId))
 
-    // y-m-d collapsed to a comparable int (e.g. 2026-06-18 -> 20260618).
+    /** y-m-d collapsed to a comparable int (e.g. 2026-06-18 -> 20260618). */
     private fun dayKey(c: Calendar): Int =
         c.get(Calendar.YEAR) * 10000 + c.get(Calendar.MONTH) * 100 + c.get(Calendar.DAY_OF_MONTH)
 
-    // Trip days are device-local Date(s) representing calendar days, so read their
-    // y-m-d in the device tz (how they were built).
+    /** Trip days are device-local calendar days, so their y-m-d is read in the device tz. */
     private fun dayKeyOf(day: Date): Int =
         dayKey(Calendar.getInstance().apply { time = day })
 
@@ -86,13 +75,9 @@ object CityTimeZones {
         isDayInPast(day, timezoneFor(cityId))
 
     /**
-     * Picker floor as "HH:mm", or null when the whole day is open (a future day).
-     * Returns "23:59" when the day is fully past.
-     *
-     * Time pickers validate selection with a STRICT "> min", but the city's "now"
-     * itself must stay selectable (e.g. 12:00 when now is 12:00), so this returns
-     * one minute BEFORE "now" — `> (now-1)` then permits exactly "now".
-     * (Slot grids use [isTimeSlotInPast], which is inclusive of "now" directly.)
+     * Picker floor as "HH:mm"; null when the whole day is open, "23:59" when fully past.
+     * Pickers validate with a strict "> min", so this returns one minute BEFORE the
+     * city's "now" to keep "now" itself selectable.
      */
     fun minSelectableTime(day: Date, timeZoneId: String?): String? {
         val minutes = minSelectableMinutes(day, timeZoneId)
@@ -108,6 +93,53 @@ object CityTimeZones {
 
     fun minSelectableTime(day: Date, cityId: Int?): String? =
         minSelectableTime(day, timezoneFor(cityId))
+
+    /**
+     * Earliest selectable "HH:mm" for the time pickers: a future day is left fully
+     * open (no floor) so any start time can be picked; today floors at the next
+     * half-hour slot in the city's timezone (skipping ahead when fewer than 5
+     * minutes remain). Exclusive — the minute before the earliest slot. See
+     * [defaultStartTime] for the suggested prefill value.
+     */
+    fun minSelectableTimeRounded(day: Date, timeZoneId: String?): String? {
+        val nowMinutes = minSelectableMinutes(day, timeZoneId)
+        if (nowMinutes <= 0) return null
+        if (nowMinutes >= 24 * 60) return "23:59"
+        val earliest = roundUpToHalfHour(nowMinutes)
+        if (earliest >= 24 * 60) return "23:59"
+        val floor = (earliest - 1).coerceAtLeast(0)
+        return String.format("%02d:%02d", floor / 60, floor % 60)
+    }
+
+    fun minSelectableTimeRounded(day: Date, city: City?): String? =
+        minSelectableTimeRounded(day, timezoneFor(city?.id) ?: city?.timezone)
+
+    /**
+     * Suggested "HH:mm" to prefill a start-time picker with when nothing has been
+     * chosen yet: 09:00 for a future day, the next half-hour slot in the city's
+     * timezone for today (skipping ahead when fewer than 5 minutes remain).
+     * Unlike [minSelectableTimeRounded] this is never a restriction, just a default.
+     */
+    fun defaultStartTime(day: Date, timeZoneId: String?): String {
+        val nowMinutes = minSelectableMinutes(day, timeZoneId)
+        val slot = when {
+            nowMinutes <= 0 -> 9 * 60
+            nowMinutes >= 24 * 60 -> return "23:59"
+            else -> roundUpToHalfHour(nowMinutes)
+        }
+        if (slot >= 24 * 60) return "23:59"
+        return String.format("%02d:%02d", slot / 60, slot % 60)
+    }
+
+    fun defaultStartTime(day: Date, city: City?): String =
+        defaultStartTime(day, timezoneFor(city?.id) ?: city?.timezone)
+
+    private fun roundUpToHalfHour(nowMinutes: Int): Int {
+        val remainder = nowMinutes % 30
+        var slot = if (remainder == 0) nowMinutes else nowMinutes - remainder + 30
+        if (slot - nowMinutes < 5) slot += 30
+        return slot
+    }
 
     /**
      * True when the "HH:mm" [timeSlot] on [day] is in the past for the city's clock.

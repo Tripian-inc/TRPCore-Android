@@ -21,10 +21,9 @@ data class StepRouteInfo(
 ) : Serializable {
 
     companion object {
-        // Walking threshold in meters (1.8 km)
         const val WALKING_THRESHOLD_METERS = 1800.0
 
-        // Walking speed assumption: ~5 km/h = ~12 min/km
+        /** Walking speed assumption: ~5 km/h = ~12 min/km. */
         private const val WALKING_MINUTES_PER_KM = 12.0
     }
 
@@ -41,7 +40,6 @@ data class StepRouteInfo(
      */
     val durationMinutes: Int
         get() = if (isWalking && distanceKm < 2.0) {
-            // Walking heuristic: ~12 min per km
             (distanceKm * WALKING_MINUTES_PER_KM).toInt().coerceAtLeast(1)
         } else {
             (durationSeconds / 60).toInt().coerceAtLeast(1)
@@ -64,7 +62,6 @@ data class StepRouteInfo(
      * @return Formatted route info string (e.g., "5 min (1,2 km)")
      */
     fun formatWithTemplate(format: String): String {
-        // Replace %d with minutes and %@ with distance
         return format
             .replace("%d", durationMinutes.toString())
             .replace("%@", formattedDistanceValue)

@@ -16,6 +16,7 @@ import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.PoiRepository
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -37,10 +38,6 @@ class ACPOIListingVM @Inject constructor(
     private val poiRepository: PoiRepository,
     private val timelineRepository: com.tripian.trpcore.repository.TimelineRepository
 ) : BaseViewModel() {
-
-    // =====================
-    // LIVEDATA
-    // =====================
 
     private val _pois = MutableLiveData<List<Poi>>()
     val pois: LiveData<List<Poi>> = _pois
@@ -69,28 +66,29 @@ class ACPOIListingVM @Inject constructor(
         _addedToItinerarySuccess.value = null
     }
 
-    // Filter & Sort state
+    private val _addSegmentError = MutableLiveData<String?>()
+    val addSegmentError: LiveData<String?> = _addSegmentError
+
+    fun clearAddSegmentError() {
+        _addSegmentError.value = null
+    }
+
     private val _currentFilter = MutableLiveData(FilterData())
     val currentFilter: LiveData<FilterData> = _currentFilter
 
     private val _currentSort = MutableLiveData(SortOption.DEFAULT)
     val currentSort: LiveData<SortOption> = _currentSort
 
-    // Category groups for filter
     private val _categoryGroups = MutableLiveData<List<PoiCategoryGroup>>()
     val categoryGroups: LiveData<List<PoiCategoryGroup>> = _categoryGroups
 
-    // Scroll to top signal (triggered when page 1 is loaded or sort changes)
+    /** Fires when page 1 loads or sort changes. */
     private val _scrollToTop = MutableLiveData<Boolean>()
     val scrollToTop: LiveData<Boolean> = _scrollToTop
 
     fun clearScrollToTop() {
         _scrollToTop.value = false
     }
-
-    // =====================
-    // STATE
-    // =====================
 
     private var planData: AddPlanData? = null
     private var tripHash: String = ""
@@ -104,10 +102,7 @@ class ACPOIListingVM @Inject constructor(
     private var isLoadingMore: Boolean = false
     private var totalCount: Int = 0
 
-    // =====================
-    // INITIALIZATION
-    // =====================
-
+    /** Sets up state and loads POIs. The loader is shown before category prefetch to avoid a blank-screen flash. */
     fun initialize(planData: AddPlanData, tripHash: String, listingType: POIListingType) {
         this.planData = planData
         this.tripHash = tripHash
@@ -115,26 +110,14 @@ class ACPOIListingVM @Inject constructor(
         this.listingType = listingType
         this.selectedDayIndex = planData.selectedDayIndex
 
-        // Show the loader synchronously here — POICategoryManager.prefetchIfNeeded
-        // may have to hit the network before loadPOIs() (and its own loader call)
-        // can run, and we don't want a blank-screen flash in the meantime.
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
 
-        // Fetch categories for filter UI
         fetchCategories()
 
-        // Prefetch categories for POICategoryManager (for listing type filtering)
         POICategoryManager.prefetchIfNeeded(poiRepository) {
-            // Initial load after categories are ready — keep the full-screen
-            // loader; subsequent calls (filter / sort / search) fall back to
-            // the lighter bottom-sheet loader.
             loadPOIs(useFullScreen = true)
         }
     }
-
-    // =====================
-    // FETCH CATEGORIES
-    // =====================
 
     /**
      * Category IDs that identify "Eat & Drink" groups
@@ -163,15 +146,9 @@ class ACPOIListingVM @Inject constructor(
         }
     }
 
-    // =====================
-    // SEARCH
-    // =====================
-
     /**
-     * Cache the latest query without firing a request. The actual search only
-     * runs when the user submits via the keyboard's Enter/IME action (see
-     * [submitSearch]) — this keeps typing cheap and avoids spamming the API
-     * while the user is mid-word.
+     * Caches the latest query without firing a request; the search only runs
+     * on the keyboard's Enter/IME action (see [submitSearch]).
      */
     fun updateSearchText(query: String) {
         currentSearchQuery = query
@@ -186,15 +163,9 @@ class ACPOIListingVM @Inject constructor(
     }
 
     private fun resetAndSearch() {
-        isLoadingMore = false  // Ensure fresh load, not pagination
-        // Filter / sort / search updates use the bottom-sheet loader so the
-        // user's chips and search field stay visible while the new page loads.
+        isLoadingMore = false
         loadPOIs(useFullScreen = false)
     }
-
-    // =====================
-    // LOAD POIs
-    // =====================
 
     /**
      * @param useFullScreen `true` for the very first load (covers the empty-list
@@ -205,7 +176,6 @@ class ACPOIListingVM @Inject constructor(
     fun loadPOIs(useFullScreen: Boolean = false) {
         if (cityId <= 0) return
 
-        // isLoadingMore = true means pagination, false means fresh load
         val isPagination = isLoadingMore
         if (!isPagination) {
             if (useFullScreen) {
@@ -216,27 +186,19 @@ class ACPOIListingVM @Inject constructor(
             currentPage = 1
         }
 
-        // Get current filter and sort
         val filter = _currentFilter.value ?: FilterData()
         val sort = _currentSort.value ?: SortOption.DEFAULT
 
-        // 1. First get category IDs based on listing type
         val listingTypeCategoryIds = POICategoryManager.getCategoryIds(listingType) ?: emptyList()
 
-        // 2. If user selected categories from filter, intersect with listing type categories
         val categoryIds = if (filter.selectedCategoryIds.isNotEmpty()) {
-            // Intersection: only categories that are both in listing type AND user selection
             listingTypeCategoryIds.filter { it in filter.selectedCategoryIds }
         } else {
-            // No filter selection, use all listing type categories
             listingTypeCategoryIds
         }.takeIf { it.isNotEmpty() }
 
-        // Calculate page to fetch
         val pageToFetch = if (isPagination) currentPage + 1 else 1
 
-        // For POPULARITY, don't send sorting params (API default is popularity)
-        // For other options, send sorting params
         val sortingBy = if (sort == SortOption.POPULARITY) null else sort.sortingBy
         val sortingType = if (sort == SortOption.POPULARITY) null else sort.sortingType
 
@@ -289,10 +251,6 @@ class ACPOIListingVM @Inject constructor(
         }
     }
 
-    // =====================
-    // TIME SELECTION
-    // =====================
-
     fun onPOIAddClicked(poi: Poi) {
         _showTimeSelection.value = poi
     }
@@ -300,10 +258,6 @@ class ACPOIListingVM @Inject constructor(
     fun clearTimeSelection() {
         _showTimeSelection.value = null
     }
-
-    // =====================
-    // FILTER & SORT
-    // =====================
 
     /**
      * Apply filter and reload POIs
@@ -331,20 +285,14 @@ class ACPOIListingVM @Inject constructor(
         resetAndSearch()
     }
 
-    // =====================
-    // CREATE SEGMENT
-    // =====================
-
     /**
-     * Confirm flow from [TimeSelectionBottomSheet]: keep the time picker open,
-     * show a bottom-sheet "adding to itinerary" loader, create the manual-POI
-     * segment, then re-fetch the timeline so the host has the latest state cached.
-     * Only after the fetch completes do we hide the loader and emit the success event
-     * — the Activity then dismisses the sheet and shows the toast.
+     * Confirm flow from [TimeSelectionBottomSheet]: creates the manual-POI segment,
+     * then re-fetches the timeline. The success event is emitted only after the
+     * fetch completes. The loader itself is the sheet's own inline overlay, driven
+     * by the caller (see [ACPOIListing.showTimeRangeBottomSheet]) — this VM never
+     * shows a separate loader.
      */
     fun createManualPoiSegment(poi: Poi, selectedDate: Date, startTime: String, endTime: String) {
-        showBottomSheetLoader(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "Adding to itinerary")
-
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val dateString = dateFormat.format(selectedDate)
 
@@ -364,22 +312,18 @@ class ACPOIListingVM @Inject constructor(
                 .onSuccess { refreshTimelineAfterSegment(poi, selectedDate) }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
-                    hideLottieLoading()
-                    showAlert(AlertType.ERROR, msg)
+                    _addSegmentError.value = msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 }
         }
     }
 
-    /** Second leg of the add-POI flow: re-fetch the timeline so we have the latest
-     *  state before signaling success to the UI. */
+    /** Second leg of the add-POI flow: re-fetches and caches the timeline so the
+     *  timeline screen applies it on return without a second GET, then signals success. */
     private fun refreshTimelineAfterSegment(poi: Poi, selectedDate: Date) {
         viewModelScope.launch {
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
                 .onSuccess { timeline ->
-                    // Cache the freshly-fetched timeline so the timeline screen
-                    // applies it on return without a second GET.
                     timelineRepository.cacheGeneratedTimeline(tripHash, timeline)
-                    hideLottieLoading()
                     _addedToItinerarySuccess.value = AddedToItineraryResult(
                         poiName = poi.name.orEmpty(),
                         selectedDate = selectedDate
@@ -387,20 +331,22 @@ class ACPOIListingVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
-                    hideLottieLoading()
-                    showAlert(
-                        AlertType.ERROR,
-                        msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
-                    )
+                    _addSegmentError.value = msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 }
         }
     }
 
-    // =====================
-    // HELPERS
-    // =====================
-
     fun getSelectedDate(): Date? = planData?.selectedDay
+
+    fun minSelectableTimeForSelectedDay(): String? {
+        val day = planData?.selectedDay ?: return null
+        return CityTimeZones.minSelectableTimeRounded(day, planData?.selectedCity)
+    }
+
+    fun defaultStartTimeForSelectedDay(): String? {
+        val day = planData?.selectedDay ?: return null
+        return CityTimeZones.defaultStartTime(day, planData?.selectedCity)
+    }
 
     fun getAvailableDays(): List<Date> = planData?.availableDays ?: emptyList()
 

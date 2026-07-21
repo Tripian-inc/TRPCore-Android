@@ -21,23 +21,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Theme 17 — post-load availability sweep.
- *
- * After a timeline is fetched, this manager iterates every non-past day,
- * batches the activity IDs for that day, calls
- * `POST /tour-api/schedule-bulk`, then marks expired any reserved activity
- * / activity step whose booked time no longer appears in the response.
- *
- * Properties:
- *  - **One-shot per timeline**: [runInitialAvailabilityCheck] is a no-op if
- *    a sweep has already completed; call [reset] before reusing.
- *  - **Cancellation**: [reset] / [cancel] cancel the running coroutine job;
- *    a fresh call starts a new one.
- *  - **Selected-day-first**: the user's currently-viewed day is requested
- *    before other days.
- *  - **Past-days skipped**: dates strictly before today are not queried.
- *  - **Sequential per-day**: one batched request per day, processed serially
- *    (avoids slamming the backend).
+ * Post-load availability sweep: after a timeline is fetched, iterates every
+ * non-past day (selected day first), batches that day's activity IDs into one
+ * `POST /tour-api/schedule-bulk` request per day (processed serially), then marks
+ * expired any reserved activity / activity step whose booked time no longer
+ * appears in the response. One-shot per timeline — call [reset] before reusing.
  */
 @Singleton
 class AvailabilityCheckManager @Inject constructor(
@@ -88,7 +76,6 @@ class AvailabilityCheckManager @Inject constructor(
                             lang = lang
                         )
                     } catch (_: Throwable) {
-                        // Best-effort sweep — skip the day, continue to the next.
                         continue
                     }
                     val items = response.data?.schedules.orEmpty()
@@ -146,6 +133,7 @@ class AvailabilityCheckManager @Inject constructor(
         return segmentDays
     }
 
+    /** Collects check targets for a day; booked_activity and manual_poi segments are not checked. */
     private fun collectTargetsForDay(
         timeline: Timeline,
         dayInfo: DayInfo,
@@ -159,7 +147,7 @@ class AvailabilityCheckManager @Inject constructor(
             when (segment.segmentType) {
                 SegmentType.RESERVED_ACTIVITY -> {
                     val rawId = segment.additionalData?.activityId ?: return@forEachIndexed
-                    val activityId = normalizeActivityId(rawId, providerId)
+                    val activityId = normalizeActivityId(rawId, providerId, segment.cityId ?: 0)
                     val expectedTime = if (segment.isFlexibleActivity) null
                     else extractHourMinute(segment.startDate)
                     targets += Target(
@@ -174,15 +162,16 @@ class AvailabilityCheckManager @Inject constructor(
                     plan.steps?.forEach { step ->
                         if (step.stepType != "activity") return@forEach
                         val rawId = step.poi?.id ?: return@forEach
+                        val cityId = step.poi?.cityId ?: plan.city?.id ?: segment.cityId ?: 0
                         targets += Target(
                             segmentIndex = index,
                             stepId = step.id,
-                            activityId = normalizeActivityId(rawId, providerId),
+                            activityId = normalizeActivityId(rawId, providerId, cityId),
                             expectedTime = extractHourMinute(step.startDateTimes)
                         )
                     }
                 }
-                else -> { /* booked_activity and manual_poi are not checked */ }
+                else -> {}
             }
         }
         return targets
@@ -232,8 +221,20 @@ class AvailabilityCheckManager @Inject constructor(
         return cal.time
     }
 
-    private fun normalizeActivityId(raw: String, providerId: Int): String =
-        if (raw.startsWith("C_")) raw else "C_${raw}_${providerId}"
+    /**
+     * Builds the schedule-bulk product id as `C_{baseId}_{providerId}_{cityId}`,
+     * matching the rest of the SDK. The `_{cityId}` suffix is required for the
+     * bulk endpoint to resolve availability; it is dropped only when the city is
+     * unknown.
+     */
+    private fun normalizeActivityId(raw: String, providerId: Int, cityId: Int): String {
+        val baseId = if (raw.startsWith("C_")) {
+            raw.removePrefix("C_").split("_").firstOrNull() ?: raw
+        } else {
+            raw
+        }
+        return if (cityId > 0) "C_${baseId}_${providerId}_$cityId" else "C_${baseId}_$providerId"
+    }
 
     /**
      * Extracts the "HH:mm" portion of a datetime string. The timeline payload

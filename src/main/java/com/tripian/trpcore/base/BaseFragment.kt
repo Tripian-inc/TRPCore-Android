@@ -80,9 +80,6 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
         if (!isViewCreated) {
             isViewCreated = false
 
-            /**
-             * ViewModel'e listener setlenir
-             */
             setViewListener()
 
             viewModel.onViewCreated(savedInstanceState)
@@ -91,17 +88,12 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
                 if (event == null) return@observe
                 val host = activity ?: return@observe
                 if (event.show) {
-                    // Force-hide the legacy DGLockScreen spinner on the host
-                    // activity so the two loaders never stack.
                     (host as? BaseActivity<*, *>)?.hideLoading()
                     LottieLoading.show(host, event.presentation, event.text)
                 } else {
                     LottieLoading.hide(host)
                     (host as? BaseActivity<*, *>)?.hideLoading()
                 }
-                // Force-commit the DialogFragment transaction so the loader
-                // attaches in the same frame as the first draw rather than one
-                // FragmentManager idle pass later.
                 val fm = host.supportFragmentManager
                 if (!fm.isStateSaved) {
                     fm.executePendingTransactions()
@@ -140,11 +132,6 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
         super.onResume()
 
         if (activity is BaseActivity<*, *>) {
-            /**
-             * Activity'nin onBackPress methoduna register olunur.
-             *
-             * @see BaseActivity.onBackPressed
-             */
             if (isBackEnable()) {
                 (activity as BaseActivity<*, *>).onBackPressListener = this
             }

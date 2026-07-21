@@ -45,7 +45,6 @@ class POIProductCardAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(product: Product) {
-            // Image
             val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_poi_product_card_corner_radius)
             Glide.with(binding.root.context)
                 .load(product.image)
@@ -55,12 +54,10 @@ class POIProductCardAdapter(
                 .transform(RoundedCorners(cornerRadius))
                 .into(binding.ivProductImage)
 
-            // Title
             binding.tvProductTitle.text = product.title ?: ""
 
             val turkishLocale = Locale("tr", "TR")
             val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
-            // Rating
             val rating = product.rating
             val reviewCount = product.ratingCount
             if (rating != null && rating > 0) {
@@ -79,14 +76,11 @@ class POIProductCardAdapter(
                 binding.llRating.visibility = View.GONE
             }
 
-            // Cancellation - from poi.additionalData.cancellation or default "Free cancellation"
             val cancellation = if (product.info?.contains("non_refundable") != true) {
                 getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
             } else null
             binding.tvCancellation.text = cancellation
 
-            // Price - from poi.additionalData.price and poi.additionalData.currency
-            // Shows "FREE" when price is 0
             val price = product.price
             val currency = product.currency ?: "EUR"
             when {
@@ -107,7 +101,6 @@ class POIProductCardAdapter(
                 }
             }
 
-            // Click listener
             binding.root.setOnClickListener {
                 onItemClicked(product)
             }

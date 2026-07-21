@@ -10,10 +10,9 @@ import javax.inject.Inject
 /**
  * DetectReservedToBookedTransitionUseCase
  *
- * Reserved olan ama artık tripItems'ta booked olarak gelen activity'leri bulur
- * iOS Guide Operation 3: Reserved → Booked Transition
- *
- * Pure logic, API call yok - sadece detection
+ * Finds reserved_activity segments whose activityId now arrives as booked in
+ * tripItems. Pure detection — no API calls.
+ * iOS Reference: Guide Operation 3 (Reserved → Booked Transition)
  */
 class DetectReservedToBookedTransitionUseCase @Inject constructor() :
     SuspendUseCase<List<TransitionInfo>, DetectReservedToBookedTransitionUseCase.Params>() {
@@ -26,22 +25,16 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
     override suspend fun execute(params: Params): List<TransitionInfo> =
         detectTransitions(params.timeline, params.tripItems)
 
-    /**
-     * Timeline'daki reserved_activity segmentlerini tripItems ile karşılaştır
-     * Aynı activityId'ye sahip olanları transition olarak işaretle
-     */
     private fun detectTransitions(
         timeline: Timeline,
         tripItems: List<SegmentActivityItem>
     ): List<TransitionInfo> {
         val segments = timeline.tripProfile?.segments ?: return emptyList()
 
-        // tripItems activityId'lerini Set'e al (O(1) lookup için)
         val bookedActivityIds = tripItems
             .mapNotNull { it.activityId }
             .toSet()
 
-        // Reserved olan ama artık booked'da olan segmentleri bul
         val transitions = mutableListOf<TransitionInfo>()
 
         segments.forEachIndexed { index, segment ->
@@ -49,7 +42,6 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
                 val activityId = segment.additionalData?.activityId
 
                 if (activityId != null && activityId in bookedActivityIds) {
-                    // Bu reserved activity artık booked olmuş
                     val tripItem = tripItems.find { it.activityId == activityId }
 
                     tripItem?.let { item ->

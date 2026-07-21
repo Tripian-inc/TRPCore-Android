@@ -6,9 +6,6 @@ import androidx.fragment.app.FragmentActivity
 import com.tripian.trpcore.util.fragment.FragmentFactory
 import kotlin.reflect.KClass
 
-/**
- * Created by semihozkoroglu on 2019-08-06.
- */
 interface ViewListener {
 
     fun showFragment(factory: FragmentFactory)

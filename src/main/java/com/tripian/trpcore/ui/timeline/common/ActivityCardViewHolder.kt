@@ -31,30 +31,22 @@ class ActivityCardViewHolder(
     fun bind(data: ActivityCardData) {
         currentData = data
 
-        // Title
         binding.tvTitle.text = data.title
 
-        // Image
         bindImage(data.imageUrl)
 
-        // Rating
         bindRating(data.rating, data.ratingCount)
 
-        // Duration
         bindDuration(data.duration)
 
-        // Free Cancellation
         bindCancellation(data.isRefundable)
 
-        // Price
         bindPrice(data.price, data.currency)
 
-        // Add button click
         binding.btnAdd.setOnClickListener {
             currentData?.let { onAddClicked(it) }
         }
 
-        // Item click (whole card)
         binding.root.setOnClickListener {
             currentData?.let { onItemClicked?.invoke(it) }
         }

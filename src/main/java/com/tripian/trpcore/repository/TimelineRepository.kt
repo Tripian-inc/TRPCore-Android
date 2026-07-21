@@ -24,11 +24,11 @@ class TimelineRepository @Inject constructor(
     private val trpRest: TRPRest
 ) {
 
-    // One-shot cache for a freshly-generated timeline. The SavedPlans add flow
-    // already fetches the generated timeline in the background (via
-    // WaitForGenerationUseCase); caching it here lets the timeline screen apply
-    // it on return instead of issuing a second GET. Guarded by tripHash so a
-    // cache from one trip can never be applied to another.
+    /**
+     * One-shot cache for a freshly-generated timeline, letting the timeline
+     * screen apply it on return instead of issuing a second GET. Guarded by
+     * tripHash so a cache from one trip can never be applied to another.
+     */
     @Volatile
     private var pendingTimeline: Timeline? = null
     @Volatile

@@ -2,10 +2,6 @@ package com.tripian.trpcore.util.extensions
 
 import com.tripian.trpcore.R
 
-
-/**
- * Created by semihozkoroglu on 4.10.2020.
- */
 var mapIcons: Map<String, Int> = mapOf(
     "IceCream" to R.drawable.trp_ic_map_icon_icecream,
     "Burger" to R.drawable.trp_ic_map_icon_burger,

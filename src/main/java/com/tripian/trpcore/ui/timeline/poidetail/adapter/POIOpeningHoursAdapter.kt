@@ -38,7 +38,6 @@ class POIOpeningHoursAdapter : ListAdapter<OpeningHourItem, POIOpeningHoursAdapt
             binding.tvDayName.text = item.dayName
             binding.tvHours.text = item.hours
 
-            // Style closed days differently
             if (item.isClosed) {
                 binding.tvHours.setTextColor(
                     ContextCompat.getColor(binding.root.context, R.color.trp_text_secondary)

@@ -6,9 +6,6 @@ import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 
-/**
- * Created by Semih Özköroğlu on 29.09.2019
- */
 class FragmentFactory {
     private var mFragment: Fragment? = null
     private var mDialogFragment: DialogFragment? = null
@@ -92,7 +89,6 @@ class FragmentFactory {
      *
      * @param fragment [Fragment] that will be added / replaced
      */(fragment: Fragment) {
-        // Default
         var mManager: FragmentManager? = null
         var mTag: String? = null
 

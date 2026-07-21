@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ViewBottomToastBinding
 import com.tripian.trpcore.util.AlertType
@@ -50,30 +52,24 @@ class BottomToast private constructor(
     }
 
     private fun resolveParent(): ViewGroup =
-        parentOverride ?: activity.findViewById(android.R.id.content)
+        parentOverride ?: activity.window.decorView.findViewById(android.R.id.content)
 
     private fun display() {
-        // Remove any existing toast first
         removeExistingToast()
 
-        // Inflate the toast layout
         binding = ViewBottomToastBinding.inflate(LayoutInflater.from(activity))
         toastView = binding?.root
 
-        // Set message
         binding?.tvToastMessage?.text = message
 
-        // Set icon based on alert type
         val iconRes = when (alertType) {
-            AlertType.SUCCESS -> R.drawable.trp_ic_tick
+            AlertType.SUCCESS -> R.drawable.trp_ic_success
             AlertType.WARNING -> R.drawable.trp_ic_info
             AlertType.ERROR -> R.drawable.trp_ic_close
             AlertType.INFO -> R.drawable.trp_ic_info
-            else -> R.drawable.trp_ic_tick
+            else -> R.drawable.trp_ic_success
         }
         binding?.ivToastIcon?.setImageResource(iconRes)
-        // Tint non-success icons to match the alert type; the success tick
-        // drawable already carries its own brand color.
         when (alertType) {
             AlertType.SUCCESS -> binding?.ivToastIcon?.clearColorFilter()
             AlertType.WARNING -> binding?.ivToastIcon?.setColorFilter(
@@ -88,13 +84,21 @@ class BottomToast private constructor(
             else -> binding?.ivToastIcon?.clearColorFilter()
         }
 
-        // Attach to the override parent when provided, otherwise the activity's
-        // root view. Using a dialog's decor view as the parent surfaces the
-        // toast on top of that dialog.
+        if (alertType == AlertType.ERROR) {
+            binding?.cardToast?.radius = 8 * activity.resources.displayMetrics.density
+            binding?.cardToast?.setCardBackgroundColor(
+                ContextCompat.getColor(activity, R.color.trp_error_bg)
+            )
+            binding?.llToastContainer?.setBackgroundResource(R.drawable.trp_bg_alert_error)
+            binding?.ivToastIcon?.visibility = View.GONE
+            binding?.ivToastClose?.visibility = View.VISIBLE
+            binding?.ivToastClose?.setOnClickListener { dismiss() }
+        }
+
         val rootView = resolveParent()
         val density = activity.resources.displayMetrics.density
-        val horizontalMargin = (32 * density).toInt()
-        val bottomMargin = (45 * density).toInt()
+        val horizontalMargin = (16 * density).toInt()
+        val bottomMargin = (16 * density).toInt() + navBarOverlap(rootView)
 
         val params = FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
@@ -108,25 +112,41 @@ class BottomToast private constructor(
             view.tag = "bottom_toast"
             rootView.addView(view, params)
 
-            // Start off-screen (below)
             view.translationY = 500f
 
-            // Animate in (slide up)
             ObjectAnimator.ofFloat(view, "translationY", 500f, 0f).apply {
                 this.duration = ANIMATION_DURATION
                 start()
             }
 
-            // Schedule removal
-            view.postDelayed({
-                dismiss()
-            }, duration)
+            if (alertType != AlertType.ERROR) {
+                view.postDelayed({
+                    dismiss()
+                }, duration)
+            }
         }
+    }
+
+    /**
+     * Returns how far [rootView]'s bottom edge actually extends under the
+     * navigation bar. A decor-fitted parent already ends above the nav bar, so
+     * adding the full inset there would double the gap; an edge-to-edge parent
+     * needs the full inset. Falls back to the full inset before layout.
+     */
+    private fun navBarOverlap(rootView: ViewGroup): Int {
+        val inset = ViewCompat.getRootWindowInsets(rootView)
+            ?.getInsets(WindowInsetsCompat.Type.navigationBars())?.bottom ?: 0
+        if (inset == 0) return 0
+        val windowHeight = rootView.rootView.height
+        if (windowHeight == 0 || rootView.height == 0) return inset
+        val location = IntArray(2)
+        rootView.getLocationInWindow(location)
+        val rootBottom = location[1] + rootView.height
+        return (rootBottom - (windowHeight - inset)).coerceIn(0, inset)
     }
 
     private fun dismiss() {
         toastView?.let { view ->
-            // Animate out (slide down)
             ObjectAnimator.ofFloat(view, "translationY", 0f, 500f).apply {
                 this.duration = ANIMATION_DURATION
                 addListener(object : AnimatorListenerAdapter() {
@@ -147,7 +167,6 @@ class BottomToast private constructor(
             binding = null
             toastView = null
         } catch (e: Exception) {
-            // Ignore if activity is destroyed
         }
     }
 
@@ -159,7 +178,6 @@ class BottomToast private constructor(
                 rootView.removeView(it)
             }
         } catch (e: Exception) {
-            // Ignore
         }
     }
 }

@@ -15,23 +15,16 @@ import com.tripian.trpcore.ui.timeline.adapter.TimeBadgeStatus.EXPIRED
 import com.tripian.trpcore.ui.timeline.adapter.TimeBadgeStatus.OVERLAP
 
 /**
- * Two visual states the badge can take:
- *  - [OVERLAP]: orange warning (the vector's own fillColor #D6771A).
- *  - [EXPIRED]: red warning (`trp_expired_fg`).
- *
- * Label text always inherits the TextView's default color — only the icon
- * tint differs between the two states. The surrounding pill (container
- * background, order chip) carries the rest of the state's color cue.
+ * Visual states for the time badge: [OVERLAP] renders the orange warning icon,
+ * [EXPIRED] the red one (`trp_expired_fg`). Only the icon tint differs — the
+ * label always inherits the TextView's default color.
  */
 enum class TimeBadgeStatus { OVERLAP, EXPIRED }
 
 /**
  * `ImageSpan` variant that aligns the drawable's vertical center to the text
- * line's vertical center (using ascent/descent average) instead of the
- * baseline. The stock `ImageSpan.ALIGN_BASELINE` sits a symmetric icon — like
- * the warning triangle — visibly below the middle of the text; the stock
- * `ALIGN_CENTER` only exists from API 29+. This subclass works on every
- * supported API and renders the same on all of them.
+ * line's vertical center (ascent/descent average) instead of the baseline.
+ * Works on every supported API, unlike `ALIGN_CENTER` (API 29+).
  */
 private class CenteredImageSpan(d: Drawable) : ImageSpan(d, ALIGN_BASELINE) {
     override fun draw(
@@ -47,8 +40,6 @@ private class CenteredImageSpan(d: Drawable) : ImageSpan(d, ALIGN_BASELINE) {
     ) {
         val b = drawable
         val fm = paint.fontMetricsInt
-        // y is the baseline. Text vertical centre = y + (ascent + descent) / 2.
-        // Translate so the drawable's vertical centre lands on that point.
         val textCenter = y + (fm.ascent + fm.descent) / 2
         val transY = textCenter - b.bounds.height() / 2
         canvas.save()
@@ -59,15 +50,10 @@ private class CenteredImageSpan(d: Drawable) : ImageSpan(d, ALIGN_BASELINE) {
 }
 
 /**
- * Builds the status label rendered inline in time-bearing timeline cells.
- *
- * Format with [timeText]:    "HH:mm - HH:mm · <warning icon> <localized status label>"
- * Format without [timeText]: "<warning icon> <localized status label>"
- *
- * The same layout is shared between the time-overlap and availability-expired
- * states; [TimeBadgeStatus] picks the colors so callers don't recompute them.
- * Cells without a real time range (flexible activity) pass [timeText] = null
- * so only the icon + label render, with no leading time prefix or middle dot.
+ * Builds the status label rendered inline in time-bearing timeline cells:
+ * "HH:mm - HH:mm · <warning icon> <localized status label>", or icon + label
+ * only when [timeText] is null (e.g. flexible activities). [TimeBadgeStatus]
+ * picks the colors so callers don't recompute them.
  */
 object TimeOverlapTextBuilder {
 
@@ -76,7 +62,8 @@ object TimeOverlapTextBuilder {
 
     /**
      * Build the spanned label. Falls back to a plain string if the warning drawable
-     * cannot be resolved (extremely unlikely — vector is bundled).
+     * cannot be resolved. The icon keeps square bounds; spacing to the label comes
+     * from the trailing space character, not from widened drawable bounds.
      */
     fun build(
         context: Context,
@@ -90,13 +77,6 @@ object TimeOverlapTextBuilder {
 
         val density = context.resources.displayMetrics.density
         val sizePx = (ICON_SIZE_DP * density).toInt()
-        // Square bounds so the vector renders at its native 1:1 aspect ratio.
-        // Spacing between the glyph and the label is provided by the trailing
-        // space character appended to the SpannableStringBuilder below — baking
-        // extra width into the drawable bounds (as the older `+ paddingPx`
-        // variant did) horizontally stretches the icon, which is what made the
-        // expired pill's warning triangle look noticeably wider than the same
-        // glyph in the conflict banner.
         icon.setBounds(0, 0, sizePx, sizePx)
 
         if (status == TimeBadgeStatus.EXPIRED) {

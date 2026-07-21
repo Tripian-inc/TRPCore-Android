@@ -101,19 +101,19 @@ class DayFilterAdapter(
         private val binding: ItemDayFilterBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        /**
+         * Past/unavailable days dim only their text and keep the muted "unselected"
+         * typography even when selected, so the selection border stays at full opacity.
+         */
         fun bind(date: Date, position: Int, isSelected: Boolean) {
-            // Use app language for locale instead of system default
             val locale = Locale.forLanguageTag(appLanguage)
 
-            // Day letter (first letter of day name, e.g., "M" for Monday)
             val dayLetterFormat = SimpleDateFormat("EEEEE", locale)
             binding.tvDayLetter.text = dayLetterFormat.format(date).uppercase(locale)
 
-            // Day number (e.g., "13")
             val dayNumberFormat = SimpleDateFormat("d", locale)
             binding.tvDayNumber.text = dayNumberFormat.format(date)
 
-            // Month abbreviation (3 letters, e.g., "may")
             val monthFormat = SimpleDateFormat("MMM", locale)
             binding.tvMonth.text = monthFormat.format(date).lowercase(locale)
 
@@ -125,23 +125,15 @@ class DayFilterAdapter(
             val isUnavailable = availableDateStrings?.let { isoDateFormatter.format(date) !in it } ?: false
             val isDisabled = isPastDisabled || isUnavailable
 
-            // Background: same drawable for past/future — selected gets the border
-            // ring, unselected has no border. Past days do NOT dim the container
-            // (we dim individual texts instead) so the selection border keeps its
-            // full opacity, "default black" look.
             if (isSelected) {
                 binding.llDayContainer.setBackgroundResource(R.drawable.trp_bg_day_filter_selected)
             } else {
                 binding.llDayContainer.setBackgroundResource(R.drawable.trp_bg_day_filter_unselected)
             }
 
-            // Text styling: past or unavailable days keep the muted "unselected"
-            // typography even when selected — only the border ring indicates the
-            // selection.
             val applyActiveText = isSelected && !isPast && !isUnavailable
 
             if (applyActiveText) {
-                // Selected (future): all text primary color, day number bold
                 val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
                 binding.tvDayLetter.setTextColor(fgColor)
                 binding.tvDayNumber.setTextColor(fgColor)
@@ -150,8 +142,6 @@ class DayFilterAdapter(
                     binding.tvDayNumber.typeface = it
                 }
             } else {
-                // Unselected, OR past (with or without selection): day letter fgWeak,
-                // others fg, all medium.
                 val fgWeakColor = ContextCompat.getColor(context, R.color.trp_fgWeak)
                 val fgColor = ContextCompat.getColor(context, R.color.trp_text_primary)
                 binding.tvDayLetter.setTextColor(fgWeakColor)
@@ -162,8 +152,6 @@ class DayFilterAdapter(
                 }
             }
 
-            // Past and unavailable days dim only their text. The container (and
-            // therefore the selection border) stays at full opacity.
             val textAlpha = if (isPast || isUnavailable) 0.4f else 1.0f
             binding.tvDayLetter.alpha = textAlpha
             binding.tvDayNumber.alpha = textAlpha
@@ -171,7 +159,6 @@ class DayFilterAdapter(
             binding.llDayContainer.alpha = 1.0f
             binding.llDayContainer.isEnabled = !isDisabled
 
-            // Click listener
             binding.llDayContainer.setOnClickListener {
                 if (isDisabled) return@setOnClickListener
                 if (position != selectedPosition) {

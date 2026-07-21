@@ -160,18 +160,6 @@
         <item name="android:navigationBarColor">@color/trp_white</item>
     </style>
 
-    <style name="TrpTimelineBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
-        <item name="bottomSheetStyle">@style/TrpTimelineBottomSheet</item>
-        <item name="android:colorBackground">@android:color/transparent</item>
-        <!-- Edge-to-edge support for navigation bar -->
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowIsFloating">true</item>
-    </style>
-
-    <style name="TrpTimelineBottomSheet" parent="Widget.Design.BottomSheet.Modal">
-        <item name="android:background">@drawable/trp_bg_bottom_sheet</item>
-    </style>
-
     <!-- AddPlan Continue Button Style -->
     <style name="TrpButtonPrimary">
         <item name="android:layout_width">match_parent</item>

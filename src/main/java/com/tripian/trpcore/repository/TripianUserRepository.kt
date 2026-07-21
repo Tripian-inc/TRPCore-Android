@@ -41,15 +41,9 @@ class TripianUserRepository @Inject constructor(
     }
 
     /**
-     * Logs the user out by clearing local state. Wired up from
+     * Local-only logout: clears persisted SDK state. Wired up from
      * [com.tripian.trpcore.base.ApiErrorMapper] on a refresh-token failure so
      * the host can re-init the SDK and grab a fresh session.
-     */
-    /**
-     * Local-only logout: clears persisted SDK state. The previous
-     * implementation called `service.logout()` for a server-side cleanup,
-     * but did not subscribe to the returned Observable, so the HTTP request
-     * never actually fired — same behaviour, no RxJava dependency.
      */
     fun logout() {
         pref.clearAllData()

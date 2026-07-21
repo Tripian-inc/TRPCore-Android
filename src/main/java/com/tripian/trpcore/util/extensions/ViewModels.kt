@@ -9,16 +9,9 @@ import com.tripian.trpcore.util.fragment.TransitionType
 import kotlin.reflect.KClass
 
 /**
- * fragmentManager is set to each view's ViewModel from BaseActivity and BaseFragment.
- *
- * @see BaseFragment.onCreateView
- * @see BaseActivity.onCreate
- *
- * Activity uses supportFragmentManager while Fragments use childFragmentManager.
- * When using inner fragments without backstack, set fragmentManagerEnable to true.
- * backPress must be manually overridden for pop.
- *
- * @see BaseViewModel.fragmentManager
+ * Navigates to [fragment] via [BaseViewModel.fragmentManager] (supportFragmentManager
+ * on Activities, childFragmentManager on Fragments). For inner fragments without
+ * backstack set [fragmentManagerEnable] to true; backPress must then be overridden for pop.
  */
 fun BaseViewModel.navigateToFragment(
     fragment: Fragment,
@@ -43,23 +36,18 @@ fun BaseViewModel.navigateToFragment(
 }
 
 /**
- * Legacy alias — every `showLoading()` call across the SDK now routes through the
- * full-screen Lottie loader with the default rotating texts. Callers that want
- * the bottom-sheet variant must use [BaseViewModel.showBottomSheetLoader] (or
- * `showLottieLoading(BOTTOM_SHEET, …)`) directly.
- *
- * The legacy DGLockScreen path remains wired up but is itself a no-op (see
- * `BaseActivity.showLoading`), so existing call sites that haven't been ported
- * yet still get a coherent Lottie experience.
+ * Shows the full-screen Lottie loader with the default rotating texts. Callers
+ * that want the bottom-sheet variant must use [BaseViewModel.showBottomSheetLoader]
+ * (or `showLottieLoading(BOTTOM_SHEET, …)`) directly.
  */
 fun BaseViewModel.showLoading() {
     showLottieLoading()
-    viewListener?.showLoading()  // legacy no-op path, kept for back-compat
+    viewListener?.showLoading()
 }
 
 fun BaseViewModel.hideLoading() {
     hideLottieLoading()
-    viewListener?.hideLoading()  // legacy no-op path, kept for back-compat
+    viewListener?.hideLoading()
 }
 
 fun BaseViewModel.goBack() {

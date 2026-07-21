@@ -14,13 +14,8 @@ import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
- * Created by semihozkoroglu on 19.08.2020.
- */
-
-/**
  * True when the receiver's calendar day is strictly before today (clock time is
- * ignored — only year-month-day are compared). Used by Theme 3 to mute past-day
- * cells on Timeline and to disable past days in the AddPlan day filter.
+ * ignored — only year-month-day are compared).
  */
 fun Date.isPastDay(): Boolean {
     val today = Calendar.getInstance().apply {
@@ -191,7 +186,6 @@ fun String.formatDate(): String? {
     try {
         date = format.parse(this)
     } catch (e: ParseException) {
-//        TRPLogger.debug(e.message)
     }
     return formatTo.format(date)
 }
@@ -204,7 +198,6 @@ fun String.formatDateWithShortName(): String? {
     try {
         date = format.parse(this)
     } catch (e: ParseException) {
-//        TRPLogger.debug(e.message)
     }
     return formatTo.format(date)
 }
@@ -217,7 +210,6 @@ fun String.formatDateDay(): String? {
     try {
         date = format.parse(this)
     } catch (e: ParseException) {
-//        TRPLogger.debug(e.message)
     }
     return formatTo.format(date)
 }
@@ -230,7 +222,6 @@ fun String.formatDateDayShortName(): String? {
     try {
         date = format.parse(this)
     } catch (e: ParseException) {
-//        TRPLogger.debug(e.message)
     }
     return formatTo.format(date)
 }
@@ -243,12 +234,8 @@ fun today(): String {
 
 /**
  * Flexible (any-time) bir activity segmentinin start/end window'unu üretir.
- * Backend, [dateStr] bugün ise 00:00–23:59 aralığını "geçmişe segment" sayarak
- * reddediyor. Bugün için start ve end'i 23:59'a sabitleyerek istek hep
- * "şimdiden ileri"de kalır; diğer günlerde davranış aynen 00:00–23:59 olur.
- * Renderer flexible cell'i duration == -1 markerı ile tanıdığı için bugünün
- * dar (23:59–23:59) window'u görsel olarak normal flexible item'dan ayırt
- * edilmez.
+ * Backend bugün için 00:00–23:59 aralığını "geçmişe segment" sayarak reddettiğinden,
+ * [dateStr] bugün ise start/end 23:59'a sabitlenir; diğer günlerde 00:00–23:59 döner.
  */
 fun resolveFlexibleWindow(dateStr: String): Pair<String, String> {
     return if (dateStr == today()) {
@@ -276,7 +263,6 @@ fun Long.formatDate(format: String = "MMM dd, yyyy"): String {
     }
     val locale = Locale.forLanguageTag(appLanguage)
     val newFormat = SimpleDateFormat("MMM dd, yyyy", locale)
-//    newFormat.timeZone = TimeZone.getTimeZone("UTC")
     return newFormat.format(Date(date))
 }
 
@@ -334,30 +320,6 @@ fun getDiffDate(date2: Long, date1: Long): Long {
     }
 }
 
-//fun String?.numberOfDaysBetween(toDate: String): String {
-//    val calToday = Calendar.getInstance()
-//    calToday.timeInMillis = this?.parseDate() ?: 0
-//    calToday[Calendar.HOUR_OF_DAY] = 0
-//    calToday[Calendar.MINUTE] = 0
-//    calToday[Calendar.SECOND] = 0
-//    calToday[Calendar.MILLISECOND] = 0
-//
-//    val calDepart = Calendar.getInstance()
-//    calDepart.timeInMillis = toDate.parseDate()
-//    calDepart[Calendar.HOUR_OF_DAY] = 0
-//    calDepart[Calendar.MINUTE] = 0
-//    calDepart[Calendar.SECOND] = 0
-//    calDepart[Calendar.MILLISECOND] = 0
-//
-//    val diff = calDepart.time.time - calToday.time.time
-//    val days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) + 1
-//    return if (days > 1) {
-//        (days).toString() + " days"
-//    } else {
-//        "1 day"
-//    }
-//}
-
 fun String?.numberOfDaysBetweenCount(toDate: String): Int {
     val calToday = Calendar.getInstance()
     calToday.timeInMillis = this?.parseDate() ?: 0
@@ -384,8 +346,6 @@ fun String.parseDate(): Long {
     if (dates != null && dates.size > 1) {
         val dateArr: Array<String> = dates[0].split("-").toTypedArray()
         val year = Integer.valueOf(dateArr[0])
-        //month − Value to be used for MONTH field. 0 is January
-        //month − Value to be used for MONTH field. 0 is January
         val monthOfYear = Integer.valueOf(dateArr[1]) - 1
         val dayOfMonth = Integer.valueOf(dateArr[2])
 
@@ -500,7 +460,6 @@ fun getWeekDaysAsDictionary(): MutableMap<String, Array<String>> {
     return dictionary
 }
 
-//returns week days as a dictionary.
 fun getDayInNewLine(dayName: String, dayValue: String): String {
     val dayInNewLine = java.lang.StringBuilder()
     dayInNewLine.append(dayName)
@@ -529,12 +488,9 @@ var closedText: String = "Closed"
 val appLanguage: String
     get() = TRPCore.core.appConfig.appLanguage
 
-enum class DayOfWeek(//Getters and Setters
-    //Instance Variables
-    //Associate a number with the day of the week.
+enum class DayOfWeek(
     open val dayNumber: Int, val dayName: String
 ) {
-    //Days of week and values associated with them.
     SUN(1, sundayText) {
         override operator fun next(): DayOfWeek {
             return MON
@@ -571,49 +527,27 @@ enum class DayOfWeek(//Getters and Setters
         }
     };
 
-    //new toString implementation
     override fun toString(): String {
         return dayName
     }
 
-    //to implement in the enum values.
     open fun next(): DayOfWeek {
         return values()[(ordinal + 1) % values().size]
     }
 
 }
 
-//fun String.getBirthDateFromAge(): String {
-//    val year = Calendar.getInstance().get(Calendar.YEAR)
-//    val birthYear = year - (this.toIntOrNull() ?: 0)
-//    return "$birthYear-01-01"
-//}
-//
-//fun String.getAgeFromBirthDate(): String {
-//    val dateFormatter: DateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-//    val cal = Calendar.getInstance()
-//    cal.time = dateFormatter.parse(this) ?: Date()
-//    val birthYear = cal.get(Calendar.YEAR)
-//    val age = Calendar.getInstance().get(Calendar.YEAR) - birthYear
-//    return age.toString()
-//}
-
 fun String.getDayMonthYear(): Triple<Int, Int, Int> {
 
     val dateArr: Array<String> = split("-").toTypedArray()
     val year = Integer.valueOf(dateArr[0])
-    //month − Value to be used for MONTH field. 0 is January
-    //month − Value to be used for MONTH field. 0 is January
     val monthOfYear = Integer.valueOf(dateArr[1]) - 1
     val dayOfMonth = Integer.valueOf(dateArr[2])
     return Triple(dayOfMonth, monthOfYear, year)
 }
 
 fun getDiffDay(cal2: Calendar, cal1: Calendar): Int {
-//    val diff = cal2.time.time - cal1.time.time
-
     return cal2[Calendar.DAY_OF_YEAR] - cal1[Calendar.DAY_OF_YEAR]
-//    return TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS)
 }
 
 

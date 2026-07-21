@@ -38,12 +38,10 @@ class BookedActivityVH(
         onItemClick: (TimelineDisplayItem) -> Unit,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit
     ) {
-        // Order badge — Theme 14: order 0 (or negative) renders as U+2212.
         binding.tvOrder.text = if (item.order <= 0)
             com.tripian.trpcore.util.extensions.MINUS_SIGN
         else item.order.toString()
 
-        // Apply conflict styling (no "Time Overlap" text for BookedActivity)
         if (item.hasConflict) {
             binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
@@ -52,12 +50,8 @@ class BookedActivityVH(
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_new)
         }
 
-        // Title
         binding.tvTitle.text = item.title
 
-        // Time (startTime - endTime format)
-        // Reserved activity CAN show "Time Overlap" text
-        // Booked activity NEVER shows "Time Overlap" text
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
         if (startTime != null && endTime != null) {
@@ -76,18 +70,14 @@ class BookedActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        // Image (Nexus default logo fallback handled by the shared binder).
         TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
 
-        // Badge - Confirmed style (green bg, green text)
         binding.tvBadge.text = getLanguage(LanguageConst.CONFIRMED)
         binding.tvBadge.setBackgroundResource(R.drawable.trp_bg_confirmed_badge)
         binding.tvBadge.setTextColor(binding.root.context.getColor(R.color.trp_confirmed_badge_text))
 
-        // No-Location badge.
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, item.isNoLocation)
 
-        // Travelers - "X Adults, Y Children" format
         val travelers = mutableListOf<String>()
         if (item.adults > 0) {
             val adultsText = getLanguage(LanguageConst.ADULTS)
@@ -104,12 +94,11 @@ class BookedActivityVH(
             binding.llTravelers.visibility = View.GONE
         }
 
-        // Cancellation info - advantage color
-        val cancellationText = item.cancellation ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
+        val cancellationText = item.cancellation?.takeIf { it.isNotBlank() }
+            ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
         binding.tvCancellation.isVisible = cancellationText.isNotEmpty()
 
-        // Click listener
         binding.root.setOnClickListener {
             onItemClick(item)
         }

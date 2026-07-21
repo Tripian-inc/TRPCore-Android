@@ -89,7 +89,6 @@ abstract class AdapterPoiCategories(
                 }
 
                 notifyItemChanged(position)
-//                selectedItemIds(getSelectedItems())
             }
         }
     }

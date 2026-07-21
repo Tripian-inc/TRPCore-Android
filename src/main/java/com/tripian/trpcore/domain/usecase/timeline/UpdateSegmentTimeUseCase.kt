@@ -27,13 +27,15 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         val original: TimelineSegment,
         val newStartTime: String,  // "HH:mm"
         val newEndTime: String,    // "HH:mm"
-        // Price of the newly selected time slot. When non-null it overrides the
-        // segment price; null keeps the existing price (slot had no price).
+        /** Target day "yyyy-MM-dd"; when null the segment's existing date is kept. */
+        val newDate: String? = null,
+        /** Price of the newly selected time slot; overrides the segment price when non-null. */
         val newPrice: Double? = null
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val baseDate = datePart(params.original.startDate)
+        val baseDate = datePart(params.newDate)
+            ?: datePart(params.original.startDate)
             ?: datePart(params.original.additionalData?.startDatetime)
             ?: return ResponseModelBase().apply { status = 200 }
 
@@ -46,12 +48,10 @@ class UpdateSegmentTimeUseCase @Inject constructor(
                 bookingId = src.bookingId
                 title = src.title
                 imageUrl = src.imageUrl
-                description = src.description
                 startDatetime = newStartDate
                 endDatetime = newEndDate
                 coordinate = src.coordinate
                 cancellation = src.cancellation
-                // Slot price wins when present; otherwise keep the original.
                 price = params.newPrice ?: src.price
                 currency = src.currency
                 duration = src.duration
@@ -65,7 +65,6 @@ class UpdateSegmentTimeUseCase @Inject constructor(
             segmentIndex = params.segmentIndex
             cityId = params.original.cityId
             title = params.original.title
-            description = params.original.description
             startDate = newStartDate
             endDate = newEndDate
             adults = params.original.adults
@@ -100,7 +99,6 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         if (raw.isNullOrBlank()) return null
         val spaceIdx = raw.indexOf(' ')
         val datePiece = if (spaceIdx > 0) raw.substring(0, spaceIdx) else raw
-        // Expect "yyyy-MM-dd"
         return if (datePiece.length >= 10 && datePiece[4] == '-' && datePiece[7] == '-')
             datePiece.substring(0, 10) else null
     }
