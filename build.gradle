@@ -10,6 +10,11 @@ plugins {
     id 'maven-publish'
 }
 
+def kotlinPluginVersion = org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapperKt.getKotlinPluginVersion(project)
+if (!kotlinPluginVersion.startsWith('1.')) {
+    apply plugin: 'org.jetbrains.kotlin.plugin.compose'
+}
+
 group = "com.github.Tripian-inc"
 version = "nexus-1.0.0"
 
