@@ -22,9 +22,14 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.event.SingleLiveEvent
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
+import java.util.GregorianCalendar
 import java.util.Locale
+import java.util.TimeZone
 import javax.inject.Inject
+
+private const val TRIP_END_PADDING_DAYS = 5
 
 /**
  * Entry-point ViewModel used when the SDK is started from a host app (e.g. the
@@ -140,13 +145,9 @@ class ACSplashVM @Inject constructor(
             val uri = r.detailURL?.let { raw -> runCatching { Uri.parse(raw) }.getOrNull() }
             val startDate = uri?.getQueryParameter("startDate")
             val endDate = uri?.getQueryParameter("endDate")
-            // Trip range: every reservation contributes its window so the timeline
-            // spans the EARLIEST start … LATEST end. endDate may be missing → fall
-            // back to this reservation's own start, then its service date, so the
-            // range always extends to the latest reservation's end.
             val serviceDate = r.date?.takeIf { it.length >= 10 }?.take(10)
-            (startDate ?: serviceDate)?.let { startDates.add(it) }
-            (endDate ?: startDate ?: serviceDate)?.let { endDates.add(it) }
+            (startDate ?: serviceDate ?: endDate)?.let { startDates.add(it) }
+            (endDate ?: serviceDate ?: startDate)?.let { endDates.add(it) }
 
             // The destination/activity build below needs a parseable detailURL.
             if (uri == null) return@forEach
@@ -242,7 +243,7 @@ class ACSplashVM @Inject constructor(
         if (destinations.isEmpty() && activities.isEmpty()) return null
 
         val start = startDates.minOrNull()
-        val end = endDates.maxOrNull() ?: start
+        val end = (endDates.maxOrNull() ?: start)?.let { plusDaysUtc(it, TRIP_END_PADDING_DAYS) }
         // Host policy: the stored tripHash to resume (null when the host passes its own).
         val storedHash = TRPCore.host.storedTripHash(preferences)
 
@@ -268,6 +269,23 @@ class ACSplashVM @Inject constructor(
 
     private fun today(): String =
         SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+
+    /**
+     * Shifts a "yyyy-MM-dd" date by [days] on the UTC Gregorian calendar,
+     * returning "yyyy-MM-dd". Returns [date] unchanged when it cannot be parsed.
+     */
+    private fun plusDaysUtc(date: String, days: Int): String = runCatching {
+        val utc = TimeZone.getTimeZone("UTC")
+        val format = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+            timeZone = utc
+            isLenient = false
+        }
+        val calendar = GregorianCalendar(utc).apply {
+            time = format.parse(date)!!
+            add(Calendar.DAY_OF_MONTH, days)
+        }
+        format.format(calendar.time)
+    }.getOrDefault(date)
 
     /**
      * Converts a reservation date — e.g. "2026-07-02T20:30:00" (ISO) or
