@@ -14,6 +14,7 @@ import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.one.TRPRest
 import com.tripian.trpcore.di.DaggerAppComponent
+import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
@@ -62,6 +63,8 @@ class TRPCore {
             }
             core.activityInjector().inject(activity)
         }
+
+        fun isInitialized(): Boolean = ::core.isInitialized
 
         // =====================
         // ACTIVITY TRACKING
@@ -249,6 +252,9 @@ class TRPCore {
 
     @Inject
     lateinit var actInjector: DispatchingAndroidInjector<Activity>
+
+    @Inject
+    internal lateinit var viewModelFactory: ViewModelFactory
 
     @Inject
     lateinit var miscRepository: MiscRepository
@@ -485,7 +491,7 @@ class TRPCore {
      * background-refreshes the city cache so its translations match the
      * requested language.
      */
-    private fun applyLanguageAndPrefetchCities(appLanguage: String) {
+    internal fun applyLanguageAndPrefetchCities(appLanguage: String) {
         if (appLanguage.isNotEmpty()) {
             appConfig.appLanguage = appLanguage
             trpRest.setLanguage(appLanguage)
