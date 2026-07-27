@@ -9,9 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
-import com.tripian.trpcore.ui.common.loader.LottieLoadingText
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
-import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
 
 object TimelineRoutes {
@@ -60,14 +58,17 @@ fun TimelineNexus(
         ) {
             NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
                 composable(TimelineRoutes.TIMELINE) {
-                    TimelinePlaceholderScreen()
+                    TimelineScreen(
+                        itinerary = itinerary,
+                        tripHash = tripHash ?: itinerary.tripianHash,
+                        uniqueId = uniqueId ?: itinerary.uniqueId,
+                        appLanguage = appLanguage,
+                        appCurrency = appCurrency,
+                        onDismiss = onDismiss
+                    )
                 }
             }
         }
     }
 }
 
-@Composable
-private fun TimelinePlaceholderScreen() {
-    TimelineLoaderOverlay(LottieLoadingText.None)
-}
