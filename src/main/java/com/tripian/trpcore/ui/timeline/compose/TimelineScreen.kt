@@ -73,6 +73,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -112,7 +115,9 @@ import com.tripian.trpcore.ui.timeline.adapter.RecommendationsVH
 import com.tripian.trpcore.ui.timeline.adapter.ReservedActivityVH
 import com.tripian.trpcore.ui.timeline.adapter.SectionFooterVH
 import com.tripian.trpcore.ui.timeline.adapter.SectionHeaderVH
-import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
+import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
+import com.tripian.trpcore.ui.timeline.compose.addplan.AddPlanSheet
+import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
 import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
@@ -152,6 +157,11 @@ fun TimelineScreen(
     val fragmentManager = fragmentActivity?.supportFragmentManager
     val sheets = remember { TimelineSheetHolder() }
     val mapUi = remember { MapModeUiState() }
+    val vmFactory = LocalTimelineViewModelFactory.current
+    val addPlanState = remember { AddPlanHostState() }
+    DisposableEffect(Unit) {
+        onDispose { addPlanState.store.clear() }
+    }
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
@@ -218,42 +228,33 @@ fun TimelineScreen(
     }
 
     fun showAddPlanSheet() {
-        val fm = fragmentManager ?: return
-        val sheet = AddPlanContainerBottomSheet.newInstance(
-            availableDays = viewModel.availableDays.value ?: emptyList(),
-            cities = viewModel.cities.value ?: emptyList(),
-            selectedDayIndex = viewModel.selectedDayIndex.value ?: 0,
-            selectedCity = viewModel.getSelectedCity(),
-            tripHash = viewModel.tripHash,
-            bookedActivities = viewModel.getBookedActivities()
-        )
-        sheet.setOnAddPlanCompleteListener { data ->
-            when {
-                data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
-                    sheets.pendingAddPlanData = data
-                    data.selectedCity?.let { city ->
-                        poiSelectionLauncher.launch(ACPOISelection.launch(context, city))
-                    }
-                }
-                data.mode == AddPlanMode.SMART || data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
-                    viewModel.onAddPlanComplete(data)
-                }
-                else -> {
-                    sheets.addPlanSheet?.dismiss()
-                    scope.launch {
-                        delay(300)
-                        viewModel.onAddPlanComplete(data)
-                        viewModel.selectDay(data.selectedDayIndex)
-                    }
-                }
+        addPlanState.store.clear()
+        val owner = object : ViewModelStoreOwner {
+            override val viewModelStore: ViewModelStore = addPlanState.store
+        }
+        val sheetVm = ViewModelProvider(owner, vmFactory)[AddPlanContainerVM::class.java]
+        sheetVm.initializeFromArgs(Bundle().apply {
+            putSerializable(
+                AddPlanContainerVM.ARG_AVAILABLE_DAYS,
+                ArrayList(viewModel.availableDays.value ?: emptyList())
+            )
+            putSerializable(
+                AddPlanContainerVM.ARG_CITIES,
+                ArrayList(viewModel.cities.value ?: emptyList())
+            )
+            putInt(AddPlanContainerVM.ARG_SELECTED_DAY_INDEX, viewModel.selectedDayIndex.value ?: 0)
+            viewModel.getSelectedCity()?.let {
+                putSerializable(AddPlanContainerVM.ARG_SELECTED_CITY, it)
             }
-        }
-        sheet.setOnSegmentCreatedListener { selectedDayIndex ->
-            viewModel.onReturnFromAddPlan()
-            viewModel.selectDay(selectedDayIndex)
-        }
-        sheets.addPlanSheet = sheet
-        sheet.show(fm, AddPlanContainerBottomSheet.TAG)
+            putString(AddPlanContainerVM.ARG_TRIP_HASH, viewModel.tripHash)
+            putSerializable(
+                AddPlanContainerVM.ARG_BOOKED_ACTIVITIES,
+                ArrayList(viewModel.getBookedActivities())
+            )
+        })
+        addPlanState.error = null
+        addPlanState.viewModel = sheetVm
+        addPlanState.visible = true
     }
 
     fun openSavedPlans() {
@@ -624,7 +625,7 @@ fun TimelineScreen(
     val smartSegmentCreated by viewModel.smartSegmentCreated.observeAsState()
     LaunchedEffect(smartSegmentCreated) {
         smartSegmentCreated?.let { dayIndex ->
-            sheets.addPlanSheet?.dismiss()
+            addPlanState.visible = false
             viewModel.selectDay(dayIndex)
             viewModel.clearSmartSegmentCreated()
         }
@@ -633,14 +634,14 @@ fun TimelineScreen(
     val smartCreateError by viewModel.smartCreateError.observeAsState()
     LaunchedEffect(smartCreateError) {
         smartCreateError?.let {
-            sheets.addPlanSheet?.showCreateError(it)
+            addPlanState.error = it
             viewModel.clearSmartCreateError()
         }
     }
 
     val smartCreateInProgress by viewModel.smartCreateInProgress.observeAsState()
     LaunchedEffect(smartCreateInProgress) {
-        val sheetVm = sheets.addPlanSheet?.viewModel ?: return@LaunchedEffect
+        val sheetVm = addPlanState.viewModel ?: return@LaunchedEffect
         if (smartCreateInProgress == true) {
             sheetVm.showInSheetLoaderNoText()
         } else {
@@ -1011,13 +1012,57 @@ fun TimelineScreen(
                 onClick = { showAddPlanSheet() }
             )
         }
+
+        if (addPlanState.visible) {
+            addPlanState.viewModel?.let { addPlanVm ->
+                AddPlanSheet(
+                    viewModel = addPlanVm,
+                    errorMessage = addPlanState.error,
+                    onErrorDismiss = { addPlanState.error = null },
+                    onDismissRequest = { addPlanState.visible = false },
+                    onAddPlanComplete = { data ->
+                        when {
+                            data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
+                                sheets.pendingAddPlanData = data
+                                data.selectedCity?.let { city ->
+                                    poiSelectionLauncher.launch(ACPOISelection.launch(context, city))
+                                }
+                            }
+                            data.mode == AddPlanMode.SMART ||
+                                data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
+                                viewModel.onAddPlanComplete(data)
+                            }
+                            else -> {
+                                addPlanState.visible = false
+                                scope.launch {
+                                    delay(300)
+                                    viewModel.onAddPlanComplete(data)
+                                    viewModel.selectDay(data.selectedDayIndex)
+                                }
+                            }
+                        }
+                    },
+                    onSegmentCreated = { selectedDayIndex ->
+                        viewModel.onReturnFromAddPlan()
+                        viewModel.selectDay(selectedDayIndex)
+                        addPlanState.visible = false
+                    }
+                )
+            }
+        }
     }
 }
 
 private class TimelineSheetHolder {
-    var addPlanSheet: AddPlanContainerBottomSheet? = null
     var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
     var pendingAddPlanData: AddPlanData? = null
+}
+
+private class AddPlanHostState {
+    val store = ViewModelStore()
+    var visible by mutableStateOf(false)
+    var viewModel by mutableStateOf<AddPlanContainerVM?>(null)
+    var error by mutableStateOf<String?>(null)
 }
 
 private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L
