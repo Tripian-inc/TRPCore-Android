@@ -4,6 +4,7 @@ import android.app.Application
 import com.tripian.trpcore.base.AppConfig
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.di.modules.*
+import com.tripian.trpcore.di.modules.timeline.TimelineComponent
 import dagger.BindsInstance
 import dagger.Component
 import javax.inject.Singleton
@@ -34,4 +35,6 @@ interface AppComponent {
     }
 
     fun inject(provider: TRPCore)
+
+    fun timelineComponent(): TimelineComponent
 }

@@ -17,7 +17,6 @@ import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.ToolbarProperties
 import com.tripian.trpcore.util.extensions.setViewListener
-import dagger.android.support.AndroidSupportInjection
 import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 
@@ -50,7 +49,7 @@ abstract class BaseFragment<VB: ViewBinding,VM : BaseViewModel>(private val bind
     }
 
     override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
+        injectSdkFragment(this, context)
 
         if (!::viewModel.isInitialized) {
             viewModel = ViewModelProvider(this, viewModelFactory)

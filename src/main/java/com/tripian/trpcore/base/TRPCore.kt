@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.one.TRPRest
+import com.tripian.trpcore.di.AppComponent
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
@@ -254,7 +255,22 @@ class TRPCore {
     lateinit var actInjector: DispatchingAndroidInjector<Activity>
 
     @Inject
+    internal lateinit var androidInjector: DispatchingAndroidInjector<Any>
+
+    @Inject
     internal lateinit var viewModelFactory: ViewModelFactory
+
+    private lateinit var appComponent: AppComponent
+
+    /**
+     * ViewModel factory for the Compose Timeline flow. Unlike [viewModelFactory],
+     * which only knows the app-level ViewModels, this one comes from the Timeline
+     * subcomponent and can create the Timeline ViewModels that the View-based
+     * flow resolves through its Activity injectors.
+     */
+    internal val timelineViewModelFactory: ViewModelFactory by lazy {
+        appComponent.timelineComponent().viewModelFactory()
+    }
 
     @Inject
     lateinit var miscRepository: MiscRepository
@@ -370,7 +386,7 @@ class TRPCore {
             }
         }
 
-        DaggerAppComponent.builder()
+        appComponent = DaggerAppComponent.builder()
             .configurations(object : AppConfig() {
                 override fun tripianServiceUrl(): String {
                     return BASE_URL
@@ -390,7 +406,7 @@ class TRPCore {
             })
             .application(app)
             .build()
-            .inject(this)
+            .also { it.inject(this) }
 
         if (FirebaseApp.getApps(app).isEmpty()) {
             FirebaseApp.initializeApp(app)

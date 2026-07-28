@@ -30,7 +30,6 @@ import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.setViewListener
-import dagger.android.support.AndroidSupportInjection
 import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 
@@ -68,7 +67,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     }
 
     override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
+        injectSdkFragment(this, context)
 
         if (!::viewModel.isInitialized) {
             viewModel = ViewModelProvider(this, viewModelFactory)

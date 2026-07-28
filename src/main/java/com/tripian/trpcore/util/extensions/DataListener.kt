@@ -10,7 +10,21 @@ import com.tripian.trpcore.base.BaseFragment
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.ViewListener
 import com.tripian.trpcore.util.fragment.FragmentFactory
+import com.tripian.trpcore.util.widget.BottomToast
 import kotlin.reflect.KClass
+
+/**
+ * Shows an SDK alert on [host]. Fragments embedded in a Compose host are not
+ * attached to a [BaseActivity], so the toast is shown on the plain Activity
+ * instead of routing through the base class.
+ */
+private fun showAlertOnHost(host: FragmentActivity?, type: AlertType, message: String) {
+    when (host) {
+        null -> Unit
+        is BaseActivity<*, *> -> host.showAlert(type, message)
+        else -> BottomToast.show(host, message, type)
+    }
+}
 
 fun BaseActivity<*, *>.setViewListener() {
     val baseActivity = this
@@ -96,13 +110,13 @@ fun BaseFragment<*,*>.setViewListener() {
 
         override fun showLoading() {
             if (activity != null) {
-                (activity as BaseActivity<*, *>).showLoading()
+                (activity as? BaseActivity<*, *>)?.showLoading()
             }
         }
 
         override fun hideLoading() {
             if (activity != null) {
-                (activity as BaseActivity<*, *>).hideLoading()
+                (activity as? BaseActivity<*, *>)?.hideLoading()
             }
         }
 
@@ -115,7 +129,7 @@ fun BaseFragment<*,*>.setViewListener() {
         }
 
         override fun showAlert(type: AlertType, message: String) {
-            (activity as BaseActivity<*, *>).showAlert(type, message)
+            showAlertOnHost(activity, type, message)
         }
 
     }
@@ -152,11 +166,11 @@ fun BaseDialogFragment<*, *>.setViewListener() {
         }
 
         override fun showLoading() {
-            (activity as BaseActivity<*, *>).showLoading()
+            (activity as? BaseActivity<*, *>)?.showLoading()
         }
 
         override fun hideLoading() {
-            (activity as BaseActivity<*, *>).hideLoading()
+            (activity as? BaseActivity<*, *>)?.hideLoading()
         }
 
         override fun showFragment(factory: FragmentFactory) {
@@ -164,7 +178,7 @@ fun BaseDialogFragment<*, *>.setViewListener() {
         }
 
         override fun showAlert(type: AlertType, message: String) {
-            (activity as BaseActivity<*, *>).showAlert(type, message)
+            showAlertOnHost(activity, type, message)
         }
 
     }
@@ -201,11 +215,11 @@ fun BaseBottomDialogFragment<*, *>.setViewListener() {
         }
 
         override fun showLoading() {
-            (activity as BaseActivity<*, *>).showLoading()
+            (activity as? BaseActivity<*, *>)?.showLoading()
         }
 
         override fun hideLoading() {
-            (activity as BaseActivity<*, *>).hideLoading()
+            (activity as? BaseActivity<*, *>)?.hideLoading()
         }
 
         override fun showFragment(factory: FragmentFactory) {
@@ -213,7 +227,7 @@ fun BaseBottomDialogFragment<*, *>.setViewListener() {
         }
 
         override fun showAlert(type: AlertType, message: String) {
-            (activity as BaseActivity<*, *>).showAlert(type, message)
+            showAlertOnHost(activity, type, message)
         }
 
     }

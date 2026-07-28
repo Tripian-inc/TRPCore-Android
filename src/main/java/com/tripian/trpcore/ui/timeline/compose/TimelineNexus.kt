@@ -54,7 +54,7 @@ fun TimelineNexus(
 
     TimelineTheme {
         CompositionLocalProvider(
-            LocalTimelineViewModelFactory provides TRPCore.core.viewModelFactory
+            LocalTimelineViewModelFactory provides TRPCore.core.timelineViewModelFactory
         ) {
             NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
                 composable(TimelineRoutes.TIMELINE) {

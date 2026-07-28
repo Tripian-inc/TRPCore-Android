@@ -17,7 +17,6 @@ import androidx.viewbinding.ViewBinding
 import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.util.extensions.setViewListener
-import dagger.android.support.AndroidSupportInjection
 import java.lang.reflect.ParameterizedType
 import javax.inject.Inject
 
@@ -40,7 +39,7 @@ abstract class BaseDialogFragment<VB: ViewBinding,VM : BaseViewModel>(private va
     open fun setReceivers() {}
 
     override fun onAttach(context: Context) {
-        AndroidSupportInjection.inject(this)
+        injectSdkFragment(this, context)
 
         if (!::viewModel.isInitialized) {
             viewModel = ViewModelProvider(this, viewModelFactory)
