@@ -72,8 +72,10 @@ class TRPCore {
          * Called from BaseActivity.onCreate()
          */
         internal fun registerActivity(activity: Activity) {
-            activityStack.removeAll { it.get() == null }
-            activityStack.add(WeakReference(activity))
+            synchronized(activityStack) {
+                activityStack.removeAll { it.get() == null }
+                activityStack.add(WeakReference(activity))
+            }
         }
 
         /**
@@ -81,20 +83,34 @@ class TRPCore {
          * Called from BaseActivity.onDestroy()
          */
         internal fun unregisterActivity(activity: Activity) {
-            activityStack.removeAll { it.get() == activity || it.get() == null }
+            synchronized(activityStack) {
+                activityStack.removeAll { it.get() == activity || it.get() == null }
+            }
         }
 
         /**
          * Closes the SDK by finishing all open SDK activities.
-         * Can be called from the host app to dismiss the SDK.
+         * Host apps may call this from any thread; the activities are always
+         * finished on the main thread.
          */
         fun closeSDK() {
-            activityStack.reversed().forEach { ref ->
-                ref.get()?.finish()
+            val openActivities = synchronized(activityStack) {
+                val snapshot = activityStack.mapNotNull { it.get() }.asReversed()
+                activityStack.clear()
+                snapshot
             }
-            activityStack.clear()
+            runOnMainThread {
+                openActivities.forEach { it.finish() }
+                listener?.onSDKDismissed()
+            }
+        }
 
-            listener?.onSDKDismissed()
+        private fun runOnMainThread(action: () -> Unit) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                action()
+            } else {
+                Handler(Looper.getMainLooper()).post(action)
+            }
         }
 
         /**

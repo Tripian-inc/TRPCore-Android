@@ -16,12 +16,13 @@ class TripRepository @Inject constructor(
     val preferences: Preferences
 ) {
 
-    private var items = ArrayList<City>()
+    @Volatile
+    private var items: List<City> = emptyList()
     private val gson = Gson()
 
-    private fun saveCitiesToCache() {
-        if (items.isNotEmpty()) {
-            val json = gson.toJson(items)
+    private fun saveCitiesToCache(cities: List<City>) {
+        if (cities.isNotEmpty()) {
+            val json = gson.toJson(cities)
             preferences.setString(Preferences.Keys.CACHED_CITIES, json)
         }
     }
@@ -48,29 +49,31 @@ class TripRepository @Inject constructor(
      *
      * City timezones are registered by id so time/day pickers can resolve the
      * city clock even when the selected city object carries no timezone.
+     *
+     * The cache is published as an immutable snapshot so concurrent readers on
+     * other threads never observe a partially replaced list.
      */
     suspend fun prefetchCitiesAsync(): Boolean {
         if (items.isEmpty()) {
             val cachedCities = loadCitiesFromCache()
             if (cachedCities.isNotEmpty()) {
-                items.clear()
-                items.addAll(cachedCities)
-                CityTimeZones.register(items)
+                items = cachedCities
+                CityTimeZones.register(cachedCities)
             }
         }
         return try {
             val response = service.getCitiesAsync(null, 1000, null)
             response.data?.let { list ->
                 val sortedCities = list.sortedBy { it.name }
-                items.clear()
-                items.addAll(sortedCities)
-                saveCitiesToCache()
+                items = sortedCities
+                saveCitiesToCache(sortedCities)
             }
             CityTimeZones.register(items)
             true
         } catch (_: Throwable) {
-            CityTimeZones.register(items)
-            items.isNotEmpty()
+            val snapshot = items
+            CityTimeZones.register(snapshot)
+            snapshot.isNotEmpty()
         }
     }
 
@@ -167,7 +170,7 @@ class TripRepository @Inject constructor(
     }
 
     fun clearItems() {
-        items.clear()
+        items = emptyList()
     }
 
     fun getContinentImage(slug: String): Int {

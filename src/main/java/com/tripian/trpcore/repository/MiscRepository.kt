@@ -32,10 +32,16 @@ class MiscRepository @Inject constructor(
     var app: Application,
     val preferences: Preferences
 ) {
-    private lateinit var languageValues: JSONObject
-    private lateinit var currentLanguageValues: JSONObject
-    var languageCodes: ArrayList<Pair<String, String>> = arrayListOf()
+    @Volatile
+    private var languageValues: JSONObject? = null
 
+    @Volatile
+    private var currentLanguageValues: JSONObject? = null
+
+    @Volatile
+    var languageCodes: List<Pair<String, String>> = emptyList()
+
+    @Volatile
     private var configList: ConfigList? = null
 
     @Volatile
@@ -156,9 +162,9 @@ class MiscRepository @Inject constructor(
         languageValues = json.getJSONObject("translations")
         preferences.setString(Preferences.Keys.APP_LANGUAGE_TRANSLATIONS, jsonText)
         val langCodesJson = json.getJSONArray("lang_codes")
-        for (i in 0 until langCodesJson.length()) {
-            val item = langCodesJson.getJSONObject(i)
-            languageCodes.add(Pair(item.getString("value"), item.getString("label")))
+        languageCodes = (0 until langCodesJson.length()).map { index ->
+            val item = langCodesJson.getJSONObject(index)
+            Pair(item.getString("value"), item.getString("label"))
         }
         setCurrentLanguageKeys()
         setDaysTexts()
@@ -166,10 +172,11 @@ class MiscRepository @Inject constructor(
     }
 
     private fun setCurrentLanguageKeys() {
+        val values = languageValues ?: return
         val currentLang = preferences.getString(Preferences.Keys.APP_LANGUAGE)
-        val resolvedLang = resolveLanguageCode(currentLang)
+        val resolvedLang = resolveLanguageCode(values, currentLang)
         TRPCore.core.appConfig.appLanguage = resolvedLang
-        currentLanguageValues = languageValues.getJSONObject(resolvedLang).getJSONObject("keys")
+        currentLanguageValues = values.getJSONObject(resolvedLang).getJSONObject("keys")
     }
 
     /**
@@ -177,7 +184,7 @@ class MiscRepository @Inject constructor(
      * Handles null/empty values, regional locales (e.g., "es-MX" → "es"),
      * and falls back to "en" if not found.
      */
-    private fun resolveLanguageCode(langCode: String?): String {
+    private fun resolveLanguageCode(languageValues: JSONObject, langCode: String?): String {
         if (langCode.isNullOrEmpty()) return "en"
         if (languageValues.has(langCode)) return langCode
         val baseLang = langCode.split("-", "_").firstOrNull()?.lowercase()
@@ -198,9 +205,14 @@ class MiscRepository @Inject constructor(
         closedText = getLanguageValueForKey(LanguageConst.CLOSED)
     }
 
+    /**
+     * Persists [lang] and re-points the in-memory key table at it. A translation
+     * blob missing the resolved language leaves the previous keys in place
+     * instead of propagating a parse error to the caller.
+     */
     fun changeLanguage(lang: String) {
         preferences.setString(Preferences.Keys.APP_LANGUAGE, lang)
-        if (isLanguagesLoaded) setCurrentLanguageKeys()
+        if (isLanguagesLoaded) runCatching { setCurrentLanguageKeys() }
     }
 
     /**
@@ -224,8 +236,9 @@ class MiscRepository @Inject constructor(
 
     fun getLanguageValueForKey(key: String): String {
         if (key.isEmpty()) return ""
+        val values = currentLanguageValues ?: return key
         return try {
-            getNestedValue(currentLanguageValues, key)
+            getNestedValue(values, key)
         } catch (_: Exception) {
             key
         }
@@ -249,8 +262,9 @@ class MiscRepository @Inject constructor(
     fun getLanguageValueForKeyWithText(key: String, texts: List<String>): String {
         if (key.isEmpty()) return ""
         if (texts.isEmpty()) return getLanguageValueForKey(key)
+        val values = currentLanguageValues ?: return key
         return try {
-            val translatedText = getNestedValue(currentLanguageValues, key).replace("%s", "%S")
+            val translatedText = getNestedValue(values, key).replace("%s", "%S")
             String.format(translatedText, *texts.toTypedArray())
         } catch (_: Exception) {
             key
