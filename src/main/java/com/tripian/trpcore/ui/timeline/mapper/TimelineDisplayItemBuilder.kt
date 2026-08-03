@@ -100,7 +100,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 planId = planId,
                                 isNoLocation = segment.additionalData?.isNoLocation == true,
                                 isAvailabilityExpired =
-                                    segment.additionalData?.isAvailabilityExpired == true
+                                    segment.additionalData?.isAvailabilityExpired == true,
+                                priceSnapshot = segment.additionalData?.price
                             )
                         )
                     } else {
@@ -116,7 +117,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 startDateTimeSnapshot = segment.startDate
                                     ?: segment.additionalData?.startDatetime,
                                 endDateTimeSnapshot = segment.endDate
-                                    ?: segment.additionalData?.endDatetime
+                                    ?: segment.additionalData?.endDatetime,
+                                priceSnapshot = segment.additionalData?.price
                             )
                         )
                     }
@@ -138,7 +140,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             .map { it.id }
                             .toSet()
                         val stepFingerprint = steps.joinToString("|") {
-                            "${it.id}:${it.startDateTimes}:${it.endDateTimes}"
+                            "${it.id}:${it.startDateTimes}:${it.endDateTimes}:" +
+                                "${it.poi?.additionalData?.price}"
                         }
                         items.add(
                             TimelineDisplayItem.Recommendations(

@@ -210,6 +210,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     override fun setReceivers() {
+        viewModel.languagesReady.observe(this) { ready ->
+            if (ready) setupUI()
+        }
+
         viewModel.showOnboarding.observe(this) { shouldShow ->
             if (shouldShow) {
                 showOnboardingBottomSheet()
@@ -1370,7 +1374,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             selectedDayIndex = viewModel.selectedDayIndex.value ?: 0,
             selectedCity = viewModel.getSelectedCity(),
             tripHash = viewModel.tripHash,
-            bookedActivities = viewModel.getBookedActivities()
+            bookedActivities = viewModel.getBookedActivities(),
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->

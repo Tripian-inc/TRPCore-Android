@@ -1,1 +1,10 @@
 rootProject.name = 'TRPCore'
+
+// Temporary composite build — redirects `com.github.Tripian-inc:TRPOne-Android`
+// to the local TRPOne checkout so source changes are picked up without cutting a
+// new TRPOne release. Remove this block once a new TRPOne release is published.
+includeBuild('/Users/cemcaygoz/Documents/GitHub/Android/Tripian Public Modules /TRPOne') {
+    dependencySubstitution {
+        substitute module('com.github.Tripian-inc:TRPOne-Android') using project(':')
+    }
+}

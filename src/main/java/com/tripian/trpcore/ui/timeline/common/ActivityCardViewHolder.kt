@@ -1,6 +1,5 @@
 package com.tripian.trpcore.ui.timeline.common
 
-import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -112,7 +111,6 @@ class ActivityCardViewHolder(
             price == 0.0 -> {
                 binding.tvFromLabel.visibility = View.GONE
                 binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                binding.tvPrice.setTypeface(null, Typeface.BOLD)
                 binding.llPriceRow.visibility = View.VISIBLE
             }
             else -> {

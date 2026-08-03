@@ -138,11 +138,12 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
     private fun showTimeSelectionBottomSheet(favorite: SegmentFavoriteItem) {
         viewModel.clearTimeSelectionTrigger()
 
-        val resolvedCityId = viewModel.getResolvedCityId(favorite.cityName)
+        val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
+            ?: viewModel.getResolvedCityId(favorite.cityName)
 
         timeSelectionBottomSheet = ActivityTimeSelectionBottomSheet.newInstanceForFavorite(
             favoriteActivityId = favorite.activityId,
-            favoriteCityId = resolvedCityId ?: favorite.cityId,
+            favoriteCityId = resolvedCityId,
             favoriteTitle = favorite.title,
             favoriteDuration = favorite.duration,
             availableDays = viewModel.getAvailableDays(),

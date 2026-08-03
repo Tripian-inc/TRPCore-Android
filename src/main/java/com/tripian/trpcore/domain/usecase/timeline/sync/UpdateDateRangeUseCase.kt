@@ -16,7 +16,7 @@ import javax.inject.Inject
  * then fires a background PUT /timeline/{hash} with a segmentIndex hint so the
  * server treats it as an update, not an insertion.
  * Detection uses BOTH `title == "TimelineDate"` AND `available == false` (SDK
- * sentinel contract). No polling: TimelineDate carries `doNotGenerate=1`.
+ * sentinel contract). No polling: `available = false` keeps it out of plan generation.
  */
 class UpdateDateRangeUseCase @Inject constructor(
     private val repository: TimelineRepository

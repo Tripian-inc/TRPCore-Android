@@ -7,6 +7,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 import java.text.NumberFormat
 import java.util.Locale
@@ -112,6 +113,8 @@ class FlexibleActivityVH(
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
+        bindPrice(item.price, item.currency ?: DEFAULT_CURRENCY)
+
         binding.btnReservation.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
         binding.btnReservation.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
@@ -134,6 +137,33 @@ class FlexibleActivityVH(
             if (isPastDayMode) return@setOnClickListener
             onReservationClick(item)
         }
+    }
+
+    /**
+     * Flexible activities carry the price of their any-time slot; the row is hidden
+     * only when no price is known.
+     */
+    private fun bindPrice(price: Double?, currency: String) {
+        when {
+            price == null -> {
+                binding.llPriceRow.visibility = View.GONE
+            }
+            price == 0.0 -> {
+                binding.tvFromLabel.visibility = View.GONE
+                binding.tvPrice.text = getLanguage(LanguageConst.FREE)
+                binding.llPriceRow.visibility = View.VISIBLE
+            }
+            else -> {
+                binding.tvFromLabel.visibility = View.VISIBLE
+                binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
+                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
+                binding.llPriceRow.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    companion object {
+        private const val DEFAULT_CURRENCY = "EUR"
     }
 
     private fun applyOrderRowStyle(muted: Boolean) {

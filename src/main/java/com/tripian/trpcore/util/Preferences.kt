@@ -17,6 +17,12 @@ class Preferences @Inject constructor(var context: Context) {
         const val APP_LANGUAGE = "app_language"
         const val APP_LANGUAGE_TRANSLATIONS = "app_language_translations"
         const val APP_LANGUAGE_TRANSLATIONS_FETCHED_AT = "app_language_translations_fetched_at"
+
+        /** Translation blobs are language scoped: the API returns a single language per response. */
+        fun translationsForLanguage(lang: String) = "${APP_LANGUAGE_TRANSLATIONS}_$lang"
+
+        fun translationsFetchedAtForLanguage(lang: String) =
+            "${APP_LANGUAGE_TRANSLATIONS_FETCHED_AT}_$lang"
         const val APP_CURRENCY = "app_currency"
         const val CACHED_CITIES = "cached_cities"
         // TOKEN info

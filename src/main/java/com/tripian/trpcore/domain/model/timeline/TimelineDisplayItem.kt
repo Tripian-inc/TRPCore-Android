@@ -73,7 +73,12 @@ sealed class TimelineDisplayItem : Serializable {
          * so DiffUtil detects in-place time updates on the underlying segment.
          */
         val startDateTimeSnapshot: String? = null,
-        val endDateTimeSnapshot: String? = null
+        val endDateTimeSnapshot: String? = null,
+        /**
+         * Snapshot of the segment price captured at construction, so DiffUtil
+         * detects the schedule sweep rewriting it on the underlying segment.
+         */
+        val priceSnapshot: Double? = null
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -276,7 +281,12 @@ sealed class TimelineDisplayItem : Serializable {
         override val order: Int = -1,
         override val planId: String? = null,
         val isAvailabilityExpired: Boolean = false,
-        val isNoLocation: Boolean = false
+        val isNoLocation: Boolean = false,
+        /**
+         * Snapshot of the segment price captured at construction, so DiffUtil
+         * detects the schedule sweep rewriting it on the underlying segment.
+         */
+        val priceSnapshot: Double? = null
     ) : TimelineDisplayItem() {
         override val startTime: Date?
             get() = segment.startDate?.toDate()
@@ -286,6 +296,12 @@ sealed class TimelineDisplayItem : Serializable {
 
         val imageUrl: String?
             get() = segment.additionalData?.imageUrl
+
+        val price: Double?
+            get() = segment.additionalData?.price
+
+        val currency: String?
+            get() = segment.additionalData?.currency
 
         val cancellation: String?
             get() = segment.additionalData?.cancellation

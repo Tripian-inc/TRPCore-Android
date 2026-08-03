@@ -3,6 +3,7 @@ package com.tripian.trpcore.domain.manager
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.tour.model.TourScheduleAvailabilityItem
+import com.tripian.one.api.tour.model.TourScheduleSlot
 import com.tripian.trpcore.repository.TourRepository
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
 import kotlinx.coroutines.CoroutineScope
@@ -35,9 +36,14 @@ class AvailabilityCheckManager @Inject constructor(
         /**
          * Invoked on the main thread when a single (segmentIndex, stepId)
          * target resolves to an expiration verdict. [stepId] is non-null
-         * only for itinerary steps inside a Recommendations plan.
+         * only for itinerary steps inside a Recommendations plan. [price] is
+         * the booked slot's price in the requested currency, null when the
+         * schedule no longer covers the booked time or carries no price.
          */
-        fun onItemUpdated(segmentIndex: Int, stepId: Int?, isExpired: Boolean)
+        fun onItemUpdated(segmentIndex: Int, stepId: Int?, isExpired: Boolean, price: Double?)
+
+        /** Invoked on the main thread after each day's batch has been applied. */
+        fun onDayCompleted()
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -80,6 +86,7 @@ class AvailabilityCheckManager @Inject constructor(
                     val items = response.data?.schedules.orEmpty()
                     withContext(Dispatchers.Main) {
                         processResults(targets, items, listener)
+                        listener.onDayCompleted()
                     }
                 }
             } finally {
@@ -188,11 +195,11 @@ class AvailabilityCheckManager @Inject constructor(
         val byId = response.associateBy { it.id }
         targets.forEach { target ->
             val item = byId[target.activityId]
+            val slots = item?.schedule?.allSlots.orEmpty()
             val expired = when {
                 item == null -> true
                 item.schedule == null -> true
                 else -> {
-                    val slots = item.schedule!!.allSlots
                     if (target.expectedTime == null) {
                         slots.isEmpty()
                     } else {
@@ -202,8 +209,28 @@ class AvailabilityCheckManager @Inject constructor(
                     }
                 }
             }
-            listener.onItemUpdated(target.segmentIndex, target.stepId, expired)
+            val price = if (expired) null else resolveSlotPrice(slots, target.expectedTime)
+            listener.onItemUpdated(target.segmentIndex, target.stepId, expired, price)
         }
+    }
+
+    /**
+     * Price of the slot the activity is booked into: the cheapest slot at
+     * [expectedTime], falling back to the flexible (any-time) slots and finally
+     * to the cheapest slot of the day.
+     */
+    private fun resolveSlotPrice(
+        slots: List<TourScheduleSlot>,
+        expectedTime: String?
+    ): Double? {
+        val exact = expectedTime?.let { time -> slots.filter { it.time == time } }.orEmpty()
+        val flexible = slots.filter { it.time == null }
+        val candidates = when {
+            exact.isNotEmpty() -> exact
+            flexible.isNotEmpty() -> flexible
+            else -> slots
+        }
+        return candidates.mapNotNull { it.price }.minOrNull()
     }
 
     // ------------------------------------------------------------------

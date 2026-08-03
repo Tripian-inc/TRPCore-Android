@@ -16,6 +16,7 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TourCategoryIconMapper
@@ -130,14 +131,32 @@ class ACActivityListingVM @Inject constructor(
     /** Backend returns at most this many tours per call. */
     private val fetchLimit: Int = 10
 
+    /**
+     * "yyyy-MM-dd" → activity ids that day already holds. Seeded from the timeline
+     * snapshot this screen was opened with and kept up to date locally by
+     * [markActivityAdded], so re-opening the time selection sheet reflects an add
+     * without a timeline round-trip.
+     */
+    private val activityIdsByDay: MutableMap<String, MutableList<String>> = mutableMapOf()
+
+    private val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
     // =====================
     // INITIALIZATION
     // =====================
 
-    fun initialize(planData: AddPlanData, tripHash: String) {
+    fun initialize(
+        planData: AddPlanData,
+        tripHash: String,
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+    ) {
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
+        activityIdsByDay.clear()
+        plannedActivityIdsByDay.forEach { (day, ids) ->
+            activityIdsByDay[day] = ids.toMutableList()
+        }
         com.tripian.trpcore.util.CityTimeZones.register(listOfNotNull(planData.selectedCity))
         this.selectedDayIndex = planData.selectedDayIndex
 
@@ -403,6 +422,26 @@ class ACActivityListingVM @Inject constructor(
         _showTimeSelection.value = null
     }
 
+    /**
+     * What each day already holds; the time selection sheet blocks the days holding
+     * the picked activity and the chosen day's ids ship as `excludedActivityIds`.
+     */
+    fun plannedActivityIdsByDay(): Map<String, List<String>> =
+        activityIdsByDay.mapValues { it.value.toList() }
+
+    /** Records a day just taken by [tour] so re-opening the sheet reflects it right away. */
+    private fun markActivityAdded(tour: TourProduct, day: Date) {
+        val id = ActivityIdFormat.make(
+            activityId = tour.productId,
+            providerId = tour.providerId,
+            cityId = tour.cityId.takeIf { it > 0 } ?: cityId.takeIf { it > 0 }
+        )
+        if (id.isEmpty()) return
+
+        val dayIds = activityIdsByDay.getOrPut(dayKeyFormat.format(day)) { mutableListOf() }
+        if (id !in dayIds) dayIds += id
+    }
+
     // =====================
     // CREATE SEGMENT
     // =====================
@@ -421,8 +460,7 @@ class ACActivityListingVM @Inject constructor(
         slotPrice: Double?,
         isFlexible: Boolean = false
     ) {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val dateString = dateFormat.format(selectedDate)
+        val dateString = dayKeyFormat.format(selectedDate)
 
         viewModelScope.launch {
             runCatching {
@@ -435,11 +473,13 @@ class ACActivityListingVM @Inject constructor(
                         adults = planData?.travelers ?: 1,
                         cityId = cityId,
                         slotPrice = slotPrice,
-                        isFlexible = isFlexible
+                        isFlexible = isFlexible,
+                        excludedActivityIds = activityIdsByDay[dateString].orEmpty()
                     )
                 )
             }
                 .onSuccess {
+                    markActivityAdded(tour, selectedDate)
                     tour.productId?.let { TRPCore.notifyActivityAdded(it) }
                     refreshTimelineAfterSegment(tour, selectedDate)
                 }

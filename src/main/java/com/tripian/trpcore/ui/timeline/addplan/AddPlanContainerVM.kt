@@ -15,6 +15,7 @@ import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
+import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.CityTimeZones
@@ -130,6 +131,8 @@ class AddPlanContainerVM @Inject constructor(
 
     private var bookedActivities: List<TimelineSegment> = emptyList()
 
+    private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+
     var selectedStartingPointOptionId: Int = StartingPointOption.CITY_CENTER
         private set
 
@@ -151,6 +154,7 @@ class AddPlanContainerVM @Inject constructor(
         val tripHash = args.getString(ARG_TRIP_HASH)
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
+        plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
 
         if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
             val todayIndex = days.indexOfFirst { it.isTodayDate() }
@@ -325,6 +329,9 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     fun getBookedActivities(): List<TimelineSegment> = bookedActivities
+
+    /** "yyyy-MM-dd" → activity ids that day already holds, as handed over by the timeline. */
+    fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
 
     fun clearStartingPoint() {
         _startingPointName.value = null
@@ -597,5 +604,6 @@ class AddPlanContainerVM @Inject constructor(
         const val ARG_TRIP_HASH = "tripHash"
         const val ARG_ACCOMMODATION = "accommodation"
         const val ARG_BOOKED_ACTIVITIES = "bookedActivities"
+        const val ARG_PLANNED_ACTIVITY_IDS = "plannedActivityIdsByDay"
     }
 }

@@ -1,6 +1,5 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
-import android.graphics.Typeface
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.trpcore.R
@@ -144,7 +143,6 @@ class ReservedActivityVH(
             price == 0.0 -> {
                 binding.tvFromLabel.visibility = View.GONE
                 binding.tvPrice.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.FREE)
-                binding.tvPrice.setTypeface(null, Typeface.BOLD)
                 binding.llPriceRow.visibility = View.VISIBLE
             }
             else -> {

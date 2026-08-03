@@ -16,6 +16,8 @@ import com.tripian.trpcore.databinding.BottomSheetActivityTimeSelectionBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.asIdsByDay
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.trpcore.util.widget.BottomToast
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,6 +67,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
     /** Recommendations activity steps can't move day, so the day filter row is hidden entirely. */
     private var hideDaySelector: Boolean = false
+
+    /** "yyyy-MM-dd" → activity ids that day already holds. Empty in edit flows. */
+    private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
     /** Last param is the selected slot's min price (null when the slot carries no price). */
     private var onStepTimeSelectedListener: ((Date, String, String?, Double?) -> Unit)? = null
 
@@ -125,6 +130,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             isActivityNotAvailable = args.getBoolean(ARG_NOT_AVAILABLE, false)
             hideDaySelector = args.getBoolean(ARG_HIDE_DAY_SELECTOR, false)
             showSelectAndRemove = args.getBoolean(ARG_SHOW_SELECT_AND_REMOVE, false)
+            plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
             pendingInitialTimeSlot = args.getString(ARG_INITIAL_TIME_SLOT)
             initialTimeSlot = pendingInitialTimeSlot
 
@@ -167,6 +173,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
      */
     private fun applyTripUnavailableState(unavailable: Boolean) {
         if (unavailable) {
+            binding.tvTripUnavailable.text = getLanguageForKey(viewModel.unavailableBannerKey())
             binding.tripUnavailableCard.visibility = View.VISIBLE
             binding.tvSelectTime.visibility = View.GONE
             binding.scrollTimeSlots.visibility = View.GONE
@@ -336,6 +343,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val selectedDate = availableDays.getOrNull(selectedDayIndex) ?: availableDays.first()
 
         val cityId = if (isFavoriteMode || isStepEditMode) favoriteCityId else null
+        viewModel.applyPlannedActivities(plannedActivityIdsByDay, activity?.productId ?: activityId)
         viewModel.loadSchedule(activityId, availableDays, selectedDate, cityId)
     }
 
@@ -664,16 +672,20 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         private const val ARG_INITIAL_TIME_SLOT = "initial_time_slot"
         private const val ARG_SHOW_SELECT_AND_REMOVE = "show_select_and_remove"
         private const val ARG_HIDE_DAY_SELECTOR = "hide_day_selector"
+        private const val ARG_PLANNED_ACTIVITY_IDS = "planned_activity_ids"
 
         /**
          * Create instance for TourProduct (with API schedule loading)
          * @param cityId used only to resolve the timezone for the past-slot check.
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → ids that day already holds. Days
+         *   holding this activity render unselectable; edit flows pass none.
          */
         fun newInstance(
             activity: TourProduct,
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
-            cityId: Int? = null
+            cityId: Int? = null,
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -681,6 +693,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                     putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
                     initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
                     cityId?.let { putInt(ARG_FAVORITE_CITY_ID, it) }
+                    putSerializable(
+                        ARG_PLANNED_ACTIVITY_IDS,
+                        plannedActivityIdsByDay.toSerializableIdsByDay()
+                    )
                 }
             }
         }

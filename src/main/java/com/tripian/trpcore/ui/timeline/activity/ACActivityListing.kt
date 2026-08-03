@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
+import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.dp
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
@@ -86,9 +88,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             @Suppress("DEPRECATION")
             val planData = intent.getSerializableExtra(EXTRA_PLAN_DATA) as? AddPlanData
             val tripHash = intent.getStringExtra(EXTRA_TRIP_HASH) ?: ""
+            val plannedActivityIdsByDay =
+                intent.getSerializableExtra(EXTRA_PLANNED_ACTIVITY_IDS).asIdsByDay()
 
             planData?.let {
-                viewModel.initialize(it, tripHash)
+                viewModel.initialize(it, tripHash, plannedActivityIdsByDay)
             }
         }
     }
@@ -339,7 +343,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             activity = activity,
             availableDays = viewModel.getAvailableDays(),
             initialSelectedDay = viewModel.getSelectedDate(),
-            cityId = viewModel.getCityId()
+            cityId = viewModel.getCityId(),
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
             timeSelectionBottomSheet?.showInSheetLoadingOverlay(
@@ -419,12 +424,27 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     companion object {
         const val EXTRA_PLAN_DATA = "plan_data"
         const val EXTRA_TRIP_HASH = "trip_hash"
+        const val EXTRA_PLANNED_ACTIVITY_IDS = "planned_activity_ids"
         const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"
 
-        fun launch(context: Context, planData: AddPlanData, tripHash: String): Intent {
+        /**
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → activity ids that day already
+         *   holds; days already holding the picked activity are unselectable in the
+         *   time selection sheet and the chosen day's ids ship as `excludedActivityIds`.
+         */
+        fun launch(
+            context: Context,
+            planData: AddPlanData,
+            tripHash: String,
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+        ): Intent {
             return Intent(context, ACActivityListing::class.java).apply {
                 putExtra(EXTRA_PLAN_DATA, planData)
                 putExtra(EXTRA_TRIP_HASH, tripHash)
+                putExtra(
+                    EXTRA_PLANNED_ACTIVITY_IDS,
+                    plannedActivityIdsByDay.toSerializableIdsByDay()
+                )
             }
         }
     }

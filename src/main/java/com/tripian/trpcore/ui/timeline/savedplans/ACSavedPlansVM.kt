@@ -12,6 +12,7 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.RemovedFavoritesStore
+import com.tripian.trpcore.util.extensions.cityNameKey
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -153,7 +154,8 @@ class ACSavedPlansVM @Inject constructor(
         }
         val resolvedStartTime = if (isFlexible) null else startTime
 
-        val resolvedCityId = getResolvedCityId(favorite.cityName)
+        val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
+            ?: getResolvedCityId(favorite.cityName)
 
         viewModelScope.launch {
             runCatching {
@@ -281,6 +283,6 @@ class ACSavedPlansVM @Inject constructor(
      */
     fun getResolvedCityId(cityName: String?): Int? {
         if (cityName.isNullOrBlank()) return null
-        return cityNameToIdMap[cityName.lowercase().trim()]
+        return cityNameToIdMap[cityName.cityNameKey()]
     }
 }

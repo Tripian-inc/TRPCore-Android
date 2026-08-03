@@ -22,10 +22,13 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
+import com.tripian.trpcore.domain.model.timeline.PlannedActivitySource
 import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
 import com.tripian.trpcore.domain.model.timeline.generateDateRange
+import com.tripian.trpcore.domain.model.timeline.plannedActivities
+import com.tripian.trpcore.domain.model.timeline.plannedActivityIdsByDay
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.domain.usecase.timeline.CreateSegmentUseCase
@@ -40,8 +43,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
-import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveOutOfRangeSegmentsUseCase
-import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveSegmentsForDeletedCitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveObsoleteSegmentsUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncReservedToBookedUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.UpdateDateRangeUseCase
@@ -49,9 +51,12 @@ import com.tripian.trpcore.repository.CityResolveResult
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomItem
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import java.util.concurrent.TimeUnit
+import com.tripian.trpcore.util.extensions.applyScheduledPrice
+import com.tripian.trpcore.util.extensions.cityNameKey
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
 import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
@@ -89,8 +94,7 @@ class ACTimelineVM @Inject constructor(
     private val syncReservedToBookedUseCase: SyncReservedToBookedUseCase,
     private val addMissingBookedActivitiesUseCase: AddMissingBookedActivitiesUseCase,
     private val updateDateRangeUseCase: UpdateDateRangeUseCase,
-    private val removeOutOfRangeSegmentsUseCase: RemoveOutOfRangeSegmentsUseCase,
-    private val removeSegmentsForDeletedCitiesUseCase: RemoveSegmentsForDeletedCitiesUseCase,
+    private val removeObsoleteSegmentsUseCase: RemoveObsoleteSegmentsUseCase,
     private val availabilityCheckManager: com.tripian.trpcore.domain.manager.AvailabilityCheckManager,
     private val mapItemMapper: com.tripian.trpcore.ui.timeline.mapper.MapItemMapper,
     private val displayItemBuilder: com.tripian.trpcore.ui.timeline.mapper.TimelineDisplayItemBuilder
@@ -177,6 +181,11 @@ class ACTimelineVM @Inject constructor(
     val showOnboarding: LiveData<Boolean> = _showOnboarding
     private var onboardingCompleted = false
 
+    // Translations for the requested language are in memory: static texts laid
+    // out before the fetch completed must be re-applied.
+    private val _languagesReady = MutableLiveData<Boolean>()
+    val languagesReady: LiveData<Boolean> = _languagesReady
+
     // Scroll to new segment event - contains plan.id to scroll to
     private val _scrollToNewSegmentPlanId = MutableLiveData<String?>()
     val scrollToNewSegmentPlanId: LiveData<String?> = _scrollToNewSegmentPlanId
@@ -257,6 +266,7 @@ class ACTimelineVM @Inject constructor(
         val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
         if (!language.isNullOrEmpty()) {
             TRPCore.core.appConfig.appLanguage = language
+            miscRepository.changeLanguage(language)
         }
 
         val currencyFromIntent = arguments?.getString(TRPCore.EXTRA_APP_CURRENCY)
@@ -288,6 +298,7 @@ class ACTimelineVM @Inject constructor(
      */
     private fun ensureLanguagesLoadedThenProceed() {
         if (miscRepository.isLanguagesLoaded) {
+            _languagesReady.value = true
             showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
             proceedAfterLanguagesLoaded()
             return
@@ -314,6 +325,7 @@ class ACTimelineVM @Inject constructor(
                     }
                 }
                 if (loaded && miscRepository.isLanguagesLoaded) {
+                    _languagesReady.value = true
                     waitForLoginThenProceed {
                         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_ITINERARY_PLAN, "")
                         proceedAfterLanguagesLoaded()
@@ -506,8 +518,8 @@ class ACTimelineVM @Inject constructor(
         itinerary = currentItinerary.copy(destinationItems = updatedDestinations)
 
         resolvedCities.forEach { city ->
-            city.name?.lowercase()?.trim()?.let { name ->
-                cityNameToIdMap[name] = city.id
+            city.name?.takeIf { it.isNotBlank() }?.let { name ->
+                cityNameToIdMap[name.cityNameKey()] = city.id
             }
         }
     }
@@ -745,7 +757,9 @@ class ACTimelineVM @Inject constructor(
         _error.value = null
 
         viewModelScope.launch {
-            runCatching { createTimelineUseCase(CreateTimelineUseCase.Params(itineraryData)) }
+            resolveActivityCityIds(itineraryData, knownActivityIds = emptySet())
+            val resolvedItinerary = itinerary ?: itineraryData
+            runCatching { createTimelineUseCase(CreateTimelineUseCase.Params(resolvedItinerary)) }
                 .onSuccess { timeline ->
                     _tripHash = timeline.tripHash ?: ""
                     if (_tripHash.isNotEmpty()) {
@@ -988,16 +1002,27 @@ class ACTimelineVM @Inject constructor(
             lang = lang,
             listener = object :
                 com.tripian.trpcore.domain.manager.AvailabilityCheckManager.ItemUpdateListener {
-                override fun onItemUpdated(segmentIndex: Int, stepId: Int?, isExpired: Boolean) {
+                override fun onItemUpdated(
+                    segmentIndex: Int,
+                    stepId: Int?,
+                    isExpired: Boolean,
+                    price: Double?
+                ) {
                     val tl = _timeline.value ?: return
                     val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return
                     if (stepId == null) {
                         segment.additionalData?.isAvailabilityExpired = isExpired
+                        segment.additionalData?.applyScheduledPrice(price, currency)
                     } else {
                         val step = tl.plans?.getOrNull(segmentIndex)?.steps
                             ?.firstOrNull { it.id == stepId }
                         step?.isAvailabilityExpired = isExpired
+                        step?.poi?.applyScheduledPrice(price, currency)
                     }
+                }
+
+                override fun onDayCompleted() {
+                    updateDisplayItems()
                 }
             },
             onCompleted = {
@@ -1239,22 +1264,28 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     /**
-     * Formats an activity ID for the Smart Recommendations API (provider ID 15 = Civitatis).
-     *
-     * @param activityId The original activity ID (plain "12345", partial "C_12345_15", or full "C_12345_15_28")
-     * @param cityId The target city ID
-     * @return Formatted activity ID: "C_{rawId}_15_{cityId}"
+     * "yyyy-MM-dd" → the activity ids that day already holds, in API form. Handed to
+     * the AddPlan flow, which blocks days already holding the picked activity and
+     * sends the chosen day's ids as `excludedActivityIds`.
      */
-    private fun formatActivityId(activityId: String?, cityId: Int): String {
-        if (activityId.isNullOrBlank()) return ""
+    fun plannedActivityIdsByDay(): Map<String, List<String>> =
+        _timeline.value?.plannedActivityIdsByDay() ?: emptyMap()
 
-        val rawId = if (activityId.startsWith("C_")) {
-            activityId.removePrefix("C_").split("_").firstOrNull() ?: activityId
-        } else {
-            activityId
-        }
+    /**
+     * Activity ids the engine must not suggest for [dayKey]: booked/reserved activities
+     * anywhere in the trip, plus activity steps already planned on that day.
+     *
+     * @param dayKey "yyyy-MM-dd" of the day the new segment covers.
+     * @param cityId fallback city for planned activities that carry none.
+     */
+    private fun collectExcludedActivityIds(dayKey: String, cityId: Int): List<String> {
+        val timeline = _timeline.value ?: return emptyList()
 
-        return "C_${rawId}_15_$cityId"
+        return timeline.plannedActivities()
+            .filter { it.source == PlannedActivitySource.BOOKING || it.day == dayKey }
+            .map { ActivityIdFormat.make(it.productId, it.providerId, it.cityId ?: cityId) }
+            .filter { it.isNotEmpty() }
+            .distinct()
     }
 
     fun createSmartRecommendationSegment(data: AddPlanData) {
@@ -1297,15 +1328,7 @@ class ACTimelineVM @Inject constructor(
             "$dateStr 18:00"
         }
 
-        val timeline = _timeline.value
-        val bookedAndReservedIds = timeline?.tripProfile?.segments
-            ?.filter {
-                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                it.segmentType == SegmentType.RESERVED_ACTIVITY
-            }
-            ?.mapNotNull { it.additionalData?.activityId }
-            ?.map { formatActivityId(it, validCity.id) }
-            ?: emptyList()
+        val excludedActivityIds = collectExcludedActivityIds(dateStr, validCity.id)
 
         viewModelScope.launch {
             runCatching {
@@ -1319,7 +1342,7 @@ class ACTimelineVM @Inject constructor(
                         adults = data.travelers,
                         children = 0,
                         activityFreeText = data.smartCategoriesAsString,
-                        excludedActivityIds = bookedAndReservedIds,
+                        excludedActivityIds = excludedActivityIds,
                         smartRecommendation = true,
                         accommodation = data.startingPointAccommodation
                     )
@@ -2086,7 +2109,7 @@ class ACTimelineVM @Inject constructor(
 
         return favourites.filter { favourite ->
             favourite.activityId !in bookedAndReservedIds &&
-            getResolvedCityId(favourite.cityName) != null &&
+            (favourite.cityId?.takeIf { it > 0 } ?: getResolvedCityId(favourite.cityName)) != null &&
             com.tripian.trpcore.util.RemovedFavoritesStore
                 .baseActivityId(favourite.activityId) !in removedBaseIds
         }
@@ -2100,7 +2123,7 @@ class ACTimelineVM @Inject constructor(
      */
     fun getResolvedCityId(cityName: String?): Int? {
         if (cityName.isNullOrBlank()) return null
-        return cityNameToIdMap[cityName.lowercase().trim()]
+        return cityNameToIdMap[cityName.cityNameKey()]
     }
 
     /**
@@ -2299,24 +2322,61 @@ class ACTimelineVM @Inject constructor(
         val tracker = SyncMutationTracker()
 
         viewModelScope.launch {
-            runCatching {
-                resolveCityIdsForActivitiesUseCase(
-                    ResolveCityIdsForActivitiesUseCase.Params(
-                        tripItems,
-                        favouriteItems,
-                        cityNameToIdMap.toMap()
-                    )
-                )
+            val itineraryData = itinerary
+            if (itineraryData != null) {
+                resolveActivityCityIds(itineraryData, timelineActivityIds(initialTimeline))
             }
-                .onSuccess { updatedCityMap ->
-                    cityNameToIdMap.putAll(updatedCityMap)
-                    runParallelSyncForInitial(initialTimeline, tripItems, updatedCityMap, tracker)
-                }
-                .onFailure {
-                    runParallelSyncForInitial(initialTimeline, tripItems, cityNameToIdMap.toMap(), tracker)
-                }
+            runParallelSyncForInitial(
+                initialTimeline,
+                itinerary?.tripItems ?: tripItems,
+                cityNameToIdMap.toMap(),
+                tracker
+            )
         }
     }
+
+    /**
+     * Fills in the cityId of the host's booked/favourite activities and stores the
+     * result back on [itinerary]. Runs while the loader is still up — a city that
+     * lands after the days are drawn would pop a new activity onto the user's screen.
+     *
+     * @param knownActivityIds activities the timeline already holds; they keep the
+     *   city their segment was created with instead of being looked up again.
+     */
+    private suspend fun resolveActivityCityIds(
+        itineraryData: ItineraryWithActivities,
+        knownActivityIds: Set<String>
+    ) {
+        val tripItems = itineraryData.tripItems ?: emptyList()
+        val favouriteItems = itineraryData.favouriteItems ?: emptyList()
+        if (tripItems.isEmpty() && favouriteItems.isEmpty()) return
+
+        runCatching {
+            resolveCityIdsForActivitiesUseCase(
+                ResolveCityIdsForActivitiesUseCase.Params(
+                    tripItems = tripItems,
+                    favouriteItems = favouriteItems,
+                    existingCityMap = cityNameToIdMap.toMap(),
+                    knownActivityIds = knownActivityIds
+                )
+            )
+        }.onSuccess { result ->
+            cityNameToIdMap.putAll(result.cityMap)
+            // Absent lists stay absent: "host sent no tripItems" must not read as
+            // "host reports no bookings", which would strip every booked segment.
+            itinerary = itineraryData.copy(
+                tripItems = itineraryData.tripItems?.let { result.tripItems },
+                favouriteItems = itineraryData.favouriteItems?.let { result.favouriteItems }
+            )
+        }
+    }
+
+    /** Base activity ids already present on the timeline as booked/reserved segments. */
+    private fun timelineActivityIds(timeline: Timeline): Set<String> =
+        timeline.tripProfile?.segments
+            ?.mapNotNull { segment -> ActivityIdFormat.base(segment.additionalData?.activityId) }
+            ?.toSet()
+            .orEmpty()
 
     /**
      * STEP 2: 3 parallel ops — transition detection, AddMissing, UpdateDateRange.
@@ -2398,7 +2458,12 @@ class ACTimelineVM @Inject constructor(
             viewModelScope.launch {
                 runCatching {
                     syncReservedToBookedUseCase(
-                        SyncReservedToBookedUseCase.Params(_tripHash, transitions, cityMap)
+                        SyncReservedToBookedUseCase.Params(
+                            tripHash = _tripHash,
+                            transitions = transitions,
+                            cityNameToIdMap = cityMap,
+                            itinerary = itinerary!!
+                        )
                     )
                 }
                     .onSuccess { finalizeInitialFetch(initialTimeline, tracker.anyMutated) }
@@ -2437,12 +2502,11 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Background deletion of segments that no longer belong on the timeline
-     * (city removed from itinerary; day outside the trip's TimelineDate
-     * range). Computes the target indices client-side, hides them from the
-     * UI immediately by stashing them in [pendingDeletionSegmentIndices], then
-     * fires the two cleanup use cases sequentially. A silent fetch at the
-     * end reconciles local state with the server and clears the hidden set.
+     * Background deletion of segments that no longer belong on the timeline —
+     * see [computeBackgroundDeletionIndices] for the reasons. The union is
+     * computed client-side, hidden from the UI immediately by stashing it in
+     * [pendingDeletionSegmentIndices], then deleted in one descending pass. A
+     * silent fetch reconciles local state with the server and clears the hidden set.
      */
     private fun schedulePostSyncDeletion(timeline: Timeline) {
         val itineraryData = itinerary ?: return
@@ -2454,27 +2518,8 @@ class ACTimelineVM @Inject constructor(
 
         viewModelScope.launch {
             runCatching {
-                removeSegmentsForDeletedCitiesUseCase(
-                    RemoveSegmentsForDeletedCitiesUseCase.Params(
-                        _tripHash,
-                        timeline,
-                        itineraryData.destinationItems
-                    )
-                )
-            }
-                .onSuccess { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
-                .onFailure { runOutOfRangeDeletionThenSilentRefresh(timeline, itineraryData) }
-        }
-    }
-
-    private fun runOutOfRangeDeletionThenSilentRefresh(
-        timeline: Timeline,
-        itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
-    ) {
-        viewModelScope.launch {
-            runCatching {
-                removeOutOfRangeSegmentsUseCase(
-                    RemoveOutOfRangeSegmentsUseCase.Params(_tripHash, itineraryData, timeline)
+                removeObsoleteSegmentsUseCase(
+                    RemoveObsoleteSegmentsUseCase.Params(_tripHash, indices)
                 )
             }
                 .onSuccess { silentRefreshAfterBackgroundDeletion() }
@@ -2499,11 +2544,19 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Computes which segment indices should be hidden + deleted in the
-     * background. Combines the deleted-city predicate
-     * ([RemoveSegmentsForDeletedCitiesUseCase]) and the out-of-range predicate
-     * ([RemoveOutOfRangeSegmentsUseCase]) so the UI hides the union before the
-     * server-side sweeps fire.
+     * Every reason a segment no longer belongs on the timeline, unioned by index
+     * against a single snapshot: its city left the itinerary, its day fell outside
+     * the trip range, or it is a booked activity the host no longer reports.
+     * The UI hides the union immediately and [RemoveObsoleteSegmentsUseCase]
+     * deletes it in one descending pass.
+     *
+     * The host's `tripItems` is the full booking state at startup, so a booked
+     * segment missing from it — including when the host sends none at all — is
+     * stale. Booked segments are the only host-owned ones; a reserved activity the
+     * user added inside the SDK is never touched.
+     *
+     * Never a candidate: the TimelineDate sentinel, a segment whose city is simply
+     * unresolved, and a booked segment carrying no activityId to match on.
      */
     private fun computeBackgroundDeletionIndices(
         timeline: Timeline,
@@ -2520,16 +2573,28 @@ class ACTimelineVM @Inject constructor(
         val tripEnd = itineraryData.endDatetime.take(10).takeIf { d ->
             d.length == 10 && d[4] == '-' && d[7] == '-'
         }
+        val hostBookedIds = itineraryData.tripItems.orEmpty()
+            .mapNotNull { item -> ActivityIdFormat.base(item.activityId) }
+            .toSet()
 
         val out = mutableSetOf<Int>()
         segments.forEachIndexed { idx, seg ->
-            if (seg.segmentType == "TimelineDate") return@forEachIndexed
             if (seg.title == "TimelineDate" && !seg.available) return@forEachIndexed
 
             val cityId = seg.cityId
-            if (cityId == null || cityId <= 0 || cityId !in currentCityIds) {
+            if (currentCityIds.isNotEmpty() && cityId != null && cityId > 0 &&
+                cityId !in currentCityIds
+            ) {
                 out += idx
                 return@forEachIndexed
+            }
+
+            if (seg.segmentType == SegmentType.BOOKED_ACTIVITY) {
+                val activityId = ActivityIdFormat.base(seg.additionalData?.activityId)
+                if (activityId != null && activityId !in hostBookedIds) {
+                    out += idx
+                    return@forEachIndexed
+                }
             }
 
             if (tripStart != null && tripEnd != null) {

@@ -1,6 +1,5 @@
 package com.tripian.trpcore.ui.timeline.poidetail.adapter
 
-import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -90,7 +89,6 @@ class POIProductCardAdapter(
                 price == 0f -> {
                     binding.tvFromLabel.visibility = View.GONE
                     binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                    binding.tvPrice.setTypeface(null, Typeface.BOLD)
                     binding.llPriceRow.visibility = View.VISIBLE
                 }
                 else -> {
