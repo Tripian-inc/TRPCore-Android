@@ -113,7 +113,13 @@ class FlexibleActivityVH(
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
-        bindPrice(item.price, item.currency ?: DEFAULT_CURRENCY)
+        TimelineCellBinder.bindPrice(
+            priceRow = binding.llPriceRow,
+            fromLabel = binding.tvFromLabel,
+            priceView = binding.tvPrice,
+            price = item.price,
+            currency = item.currency
+        )
 
         binding.btnReservation.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
@@ -123,11 +129,15 @@ class FlexibleActivityVH(
             applyPastDayStyle()
         }
 
-        binding.btnChangeTime.visibility = View.GONE
+        binding.btnChangeTime.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
         binding.root.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
             onItemClick(item)
+        }
+        binding.btnChangeTime.setOnClickListener {
+            if (isPastDayMode) return@setOnClickListener
+            onChangeTimeClick(item)
         }
         binding.btnDelete.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
@@ -139,32 +149,6 @@ class FlexibleActivityVH(
         }
     }
 
-    /**
-     * Flexible activities carry the price of their any-time slot; the row is hidden
-     * only when no price is known.
-     */
-    private fun bindPrice(price: Double?, currency: String) {
-        when {
-            price == null -> {
-                binding.llPriceRow.visibility = View.GONE
-            }
-            price == 0.0 -> {
-                binding.tvFromLabel.visibility = View.GONE
-                binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-            else -> {
-                binding.tvFromLabel.visibility = View.VISIBLE
-                binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
-                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-        }
-    }
-
-    companion object {
-        private const val DEFAULT_CURRENCY = "EUR"
-    }
 
     private fun applyOrderRowStyle(muted: Boolean) {
         val ctx = binding.root.context

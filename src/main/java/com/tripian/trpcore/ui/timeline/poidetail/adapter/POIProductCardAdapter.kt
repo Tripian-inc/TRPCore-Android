@@ -9,9 +9,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.tripian.one.api.pois.model.Product
+import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemPoiProductCardBinding
+import com.tripian.trpcore.ui.timeline.adapter.TimelineCellBinder
 import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 import java.text.NumberFormat
@@ -23,8 +24,8 @@ import java.util.Locale
  */
 class POIProductCardAdapter(
     private val getLanguage: (String) -> String,
-    private val onItemClicked: (Product) -> Unit
-) : ListAdapter<Product, POIProductCardAdapter.ViewHolder>(DIFF_CALLBACK) {
+    private val onItemClicked: (TourProduct) -> Unit
+) : ListAdapter<TourProduct, POIProductCardAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemPoiProductCardBinding.inflate(
@@ -36,24 +37,25 @@ class POIProductCardAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        val product = currentList.getOrNull(position) ?: return
+        holder.bind(product)
     }
 
     inner class ViewHolder(
         private val binding: ItemPoiProductCardBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(product: Product) {
+        fun bind(product: TourProduct) {
             val cornerRadius = binding.root.context.resources.getDimensionPixelSize(R.dimen.trp_poi_product_card_corner_radius)
             Glide.with(binding.root.context)
-                .load(product.image)
+                .load(product.images?.firstOrNull()?.url)
                 .placeholder(R.color.trp_grey_10)
                 .error(R.color.trp_grey_10)
                 .transition(DrawableTransitionOptions.withCrossFade())
                 .transform(RoundedCorners(cornerRadius))
                 .into(binding.ivProductImage)
 
-            binding.tvProductTitle.text = product.title ?: ""
+            binding.tvProductTitle.text = product.title
 
             val turkishLocale = Locale("tr", "TR")
             val reviewCountFormat = NumberFormat.getNumberInstance(turkishLocale)
@@ -75,29 +77,20 @@ class POIProductCardAdapter(
                 binding.llRating.visibility = View.GONE
             }
 
-            val cancellation = if (product.info?.contains("non_refundable") != true) {
+            val isRefundable = product.tags?.contains(TAG_FULL_REFUNDABLE) == true
+            binding.tvCancellation.text = if (isRefundable) {
                 getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
-            } else null
-            binding.tvCancellation.text = cancellation
-
-            val price = product.price
-            val currency = product.currency ?: "EUR"
-            when {
-                price == null -> {
-                    binding.llPriceRow.visibility = View.GONE
-                }
-                price == 0f -> {
-                    binding.tvFromLabel.visibility = View.GONE
-                    binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                    binding.llPriceRow.visibility = View.VISIBLE
-                }
-                else -> {
-                    binding.tvFromLabel.visibility = View.VISIBLE
-                    binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
-                    binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price.toDouble(), currency)
-                    binding.llPriceRow.visibility = View.VISIBLE
-                }
+            } else {
+                null
             }
+
+            TimelineCellBinder.bindPrice(
+                priceRow = binding.llPriceRow,
+                fromLabel = binding.tvFromLabel,
+                priceView = binding.tvPrice,
+                price = product.currentPrice ?: product.price,
+                currency = product.currency
+            )
 
             binding.root.setOnClickListener {
                 onItemClicked(product)
@@ -106,13 +99,18 @@ class POIProductCardAdapter(
     }
 
     companion object {
-        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Product>() {
-            override fun areItemsTheSame(oldItem: Product, newItem: Product): Boolean {
-                return oldItem.id == newItem.id
+        private const val TAG_FULL_REFUNDABLE = "full_refundable"
+
+        private val DIFF_CALLBACK = object : DiffUtil.ItemCallback<TourProduct>() {
+            override fun areItemsTheSame(oldItem: TourProduct, newItem: TourProduct): Boolean {
+                return oldItem.productId == newItem.productId
             }
 
-            override fun areContentsTheSame(oldItem: Product, newItem: Product): Boolean {
-                return oldItem.id == newItem.id && oldItem.title == newItem.title
+            override fun areContentsTheSame(oldItem: TourProduct, newItem: TourProduct): Boolean {
+                return oldItem.productId == newItem.productId &&
+                    oldItem.title == newItem.title &&
+                    oldItem.price == newItem.price &&
+                    oldItem.currentPrice == newItem.currentPrice
             }
         }
     }

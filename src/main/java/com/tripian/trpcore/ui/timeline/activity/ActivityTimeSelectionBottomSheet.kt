@@ -282,7 +282,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         val date = availableDays.getOrNull(selectedDayIndex) ?: return
 
         if (isFlexibleSelected) {
-            if (isFavoriteMode) {
+            if (isStepEditMode) {
+                onStepTimeSelectedListener?.invoke(date, "00:00", "23:59", currentFlexiblePrice)
+            } else if (isFavoriteMode) {
                 onFavoriteTimeSelectedListener?.invoke(date, "00:00", "23:59", true, currentFlexiblePrice)
             } else {
                 val tour = activity ?: return
@@ -389,6 +391,9 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 binding.tvFlexibleTopOfItinerary.visibility = View.VISIBLE
                 applyFlexibleInfoTexts()
                 isFlexibleSelected = true
+                if (isStepEditMode) {
+                    binding.tvTitle.text = getLanguageForKey(LanguageConst.CHANGE_DAY)
+                }
             }
             TimeSelectionMode.TIMED -> {
                 binding.tvSelectTime.visibility = View.VISIBLE
@@ -704,6 +709,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         /**
          * Create instance for SegmentFavoriteItem (with API schedule loading using activityId)
          * @param showSelectAndRemove SavedPlans flow: show "Select" primary + outlined "Remove".
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → ids that day already holds. Days
+         *   holding this favorite are not selectable.
          */
         fun newInstanceForFavorite(
             favoriteActivityId: String?,
@@ -712,7 +719,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             favoriteDuration: Double?,
             availableDays: List<Date>,
             initialSelectedDay: Date? = null,
-            showSelectAndRemove: Boolean = false
+            showSelectAndRemove: Boolean = false,
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
         ): ActivityTimeSelectionBottomSheet {
             return ActivityTimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -724,6 +732,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                     putSerializable(ARG_AVAILABLE_DAYS, ArrayList(availableDays))
                     initialSelectedDay?.let { putSerializable(ARG_INITIAL_SELECTED_DAY, it) }
                     putBoolean(ARG_SHOW_SELECT_AND_REMOVE, showSelectAndRemove)
+                    putSerializable(
+                        ARG_PLANNED_ACTIVITY_IDS,
+                        plannedActivityIdsByDay.toSerializableIdsByDay()
+                    )
                 }
             }
         }

@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.tour.model.TourScheduleAvailabilityItem
 import com.tripian.one.api.tour.model.TourScheduleSlot
 import com.tripian.trpcore.repository.TourRepository
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,9 +47,19 @@ class AvailabilityCheckManager @Inject constructor(
         fun onDayCompleted()
     }
 
+    /** Price the schedule reported for a booked slot, in the currency it was requested in. */
+    data class RefreshedPrice(val price: Double, val currency: String?)
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var currentJob: Job? = null
     private var hasRunInitialCheck: Boolean = false
+
+    /**
+     * Refreshed prices keyed by `{activityId}|{yyyy-MM-dd}|{HH:mm or flexible}`.
+     * Survives a timeline re-fetch so a re-processed timeline does not fall back to
+     * the price the server has stored on the segment.
+     */
+    private val refreshedPrices = mutableMapOf<String, RefreshedPrice>()
 
     fun runInitialAvailabilityCheck(
         timeline: Timeline,
@@ -85,7 +96,7 @@ class AvailabilityCheckManager @Inject constructor(
                     }
                     val items = response.data?.schedules.orEmpty()
                     withContext(Dispatchers.Main) {
-                        processResults(targets, items, listener)
+                        processResults(targets, items, dayInfo.dateString, currency, listener)
                         listener.onDayCompleted()
                     }
                 }
@@ -113,6 +124,19 @@ class AvailabilityCheckManager @Inject constructor(
     // ------------------------------------------------------------------
     // Day / target collection
     // ------------------------------------------------------------------
+
+    /** Every day the timeline holds a segment on, past ones included. */
+    private fun collectDays(timeline: Timeline): List<DayInfo> {
+        return timeline.tripProfile?.segments
+            ?.mapNotNull { it.startDate?.substringBefore(" ") }
+            ?.distinct()
+            ?.mapNotNull { dateStr ->
+                runCatching {
+                    SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(dateStr)
+                }.getOrNull()?.let { DayInfo(dateStr, startOfDay(it)) }
+            }
+            ?: emptyList()
+    }
 
     private fun collectNonPastDaysWithSelectedFirst(
         timeline: Timeline,
@@ -190,6 +214,8 @@ class AvailabilityCheckManager @Inject constructor(
     private fun processResults(
         targets: List<Target>,
         response: List<TourScheduleAvailabilityItem>,
+        dateString: String,
+        currency: String?,
         listener: ItemUpdateListener
     ) {
         val byId = response.associateBy { it.id }
@@ -210,27 +236,65 @@ class AvailabilityCheckManager @Inject constructor(
                 }
             }
             val price = if (expired) null else resolveSlotPrice(slots, target.expectedTime)
+            if (price != null) {
+                refreshedPrices[cacheKey(target.activityId, dateString, target.expectedTime)] =
+                    RefreshedPrice(price, currency)
+            }
             listener.onItemUpdated(target.segmentIndex, target.stepId, expired, price)
         }
     }
 
     /**
-     * Price of the slot the activity is booked into: the cheapest slot at
-     * [expectedTime], falling back to the flexible (any-time) slots and finally
-     * to the cheapest slot of the day.
+     * Re-applies prices resolved by an earlier sweep. Called right after a timeline
+     * is processed so a re-fetch does not surface the segment's stored price while
+     * the next sweep is still running.
+     */
+    fun applyCachedPrices(
+        timeline: Timeline,
+        providerId: Int = DEFAULT_PROVIDER_ID,
+        apply: (segmentIndex: Int, stepId: Int?, price: Double, currency: String?) -> Unit
+    ) {
+        if (refreshedPrices.isEmpty()) return
+
+        collectDays(timeline).forEach { dayInfo ->
+            collectTargetsForDay(timeline, dayInfo, providerId).forEach { target ->
+                val cached = refreshedPrices[
+                    cacheKey(target.activityId, dayInfo.dateString, target.expectedTime)
+                ] ?: return@forEach
+                apply(target.segmentIndex, target.stepId, cached.price, cached.currency)
+            }
+        }
+    }
+
+    /** Drops every cached entry of [activityId]; its slot moved or the item is gone. */
+    fun invalidatePricesFor(activityId: String?) {
+        val baseId = ActivityIdFormat.base(activityId) ?: return
+        refreshedPrices.keys
+            .filter { key -> ActivityIdFormat.base(key.substringBefore('|')) == baseId }
+            .forEach { refreshedPrices.remove(it) }
+    }
+
+    private fun cacheKey(activityId: String, day: String, time: String?): String {
+        return "$activityId|$day|${time ?: FLEXIBLE_SLOT_KEY}"
+    }
+
+    /**
+     * Price of the slot the activity is booked into. A flexible target takes the
+     * any-time slot and falls back to the day's cheapest; a timed target takes its
+     * own hour and falls back to the any-time slot only. A non-positive price is
+     * reported as absent so the caller keeps whatever the timeline already holds.
      */
     private fun resolveSlotPrice(
         slots: List<TourScheduleSlot>,
         expectedTime: String?
     ): Double? {
-        val exact = expectedTime?.let { time -> slots.filter { it.time == time } }.orEmpty()
         val flexible = slots.filter { it.time == null }
-        val candidates = when {
-            exact.isNotEmpty() -> exact
-            flexible.isNotEmpty() -> flexible
-            else -> slots
+        val candidates = if (expectedTime == null) {
+            flexible.ifEmpty { slots }
+        } else {
+            slots.filter { it.time == expectedTime }.ifEmpty { flexible }
         }
-        return candidates.mapNotNull { it.price }.minOrNull()
+        return candidates.mapNotNull { it.price }.minOrNull()?.takeIf { it > 0.0 }
     }
 
     // ------------------------------------------------------------------
@@ -248,18 +312,11 @@ class AvailabilityCheckManager @Inject constructor(
     }
 
     /**
-     * Builds the schedule-bulk product id as `C_{baseId}_{providerId}_{cityId}`,
-     * matching the rest of the SDK. The `_{cityId}` suffix is required for the
-     * bulk endpoint to resolve availability; it is dropped only when the city is
-     * unknown.
+     * The `_{cityId}` suffix is what lets the bulk endpoint resolve availability,
+     * so it is kept whenever the city is known.
      */
     private fun normalizeActivityId(raw: String, providerId: Int, cityId: Int): String {
-        val baseId = if (raw.startsWith("C_")) {
-            raw.removePrefix("C_").split("_").firstOrNull() ?: raw
-        } else {
-            raw
-        }
-        return if (cityId > 0) "C_${baseId}_${providerId}_$cityId" else "C_${baseId}_$providerId"
+        return ActivityIdFormat.make(raw, providerId, cityId.takeIf { it > 0 })
     }
 
     /**
@@ -281,6 +338,7 @@ class AvailabilityCheckManager @Inject constructor(
     )
 
     companion object {
-        const val DEFAULT_PROVIDER_ID: Int = 15
+        const val DEFAULT_PROVIDER_ID: Int = ActivityIdFormat.DEFAULT_PROVIDER_ID
+        private const val FLEXIBLE_SLOT_KEY = "flexible"
     }
 }

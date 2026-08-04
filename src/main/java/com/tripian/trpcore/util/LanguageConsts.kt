@@ -74,7 +74,7 @@ object LanguageConst {
     const val LOCATION_PERMISSION = "location_permission"
     const val ENABLE_LOCATION_PERMISSION = "enable_location"
     const val ERROR_LOCATION_PERMISSION = "location_permission_denied"
-    const val SETTINGS = "common.button.settings"
+    const val SETTINGS = "go_to_settings"
     const val BACK = "common.button.back"
     const val NOT_IN_CITY = "your_current_location_is_not_in_city"
     const val ENTER_TWO_CHARS = "trips.myTrips.exploreMore.placeholder"
@@ -184,7 +184,6 @@ object LanguageConst {
 
     // Timeline
     const val RECOMMENDATIONS = "timeline.label.recommendations"
-    const val NO_PLANS_FOR_DAY = "no_plans_for_day"
     const val CONFIRMED = "timeline.bookedActivity.confirmed"
     const val RESERVATION = "timeline.bookedActivity.reservation"
     const val VIEW_DETAILS = "view_details"
@@ -198,7 +197,6 @@ object LanguageConst {
     const val REMOVE_STEP = "timeline.removeStep.title"
     const val REMOVE_STEP_MESSAGE = "timeline.removeStep.message"
     const val REMOVE_BUTTON = "timeline.removeActivity.remove"
-    const val SAVED_PLANS_REMOVE_CONFIRM = "savedPlans.removeActivity.message"
     const val REMOVE_RECOMMENDATIONS = "timeline.removeRecommendations.title"
     const val REMOVE_RECOMMENDATIONS_MESSAGE = "timeline.removeRecommendations.message"
     const val NO_PLANS_YET = "timeline.emptyState.noPlansYet"
@@ -351,7 +349,7 @@ object LanguageConst {
     // Legacy keys (still in use)
     const val TIME_AND_TRAVELERS = "time_and_travelers"
     const val STARTING_POINT = "starting_point"
-    const val ACCOMMODATION_POINT = "accommodation"
+    const val ACCOMMODATION_POINT = "trips.createNewTrip.form.travelerInfo.accommodation.label"
     const val CUSTOM_LOCATION = "custom_location"
     const val GENERATE_RECOMMENDATIONS = "generate_recommendations"
     const val SELECT_POI = "select_poi"

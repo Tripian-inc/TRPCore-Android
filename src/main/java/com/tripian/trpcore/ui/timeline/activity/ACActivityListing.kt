@@ -7,7 +7,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,6 +23,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.SearchBarView
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -90,9 +90,16 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             val tripHash = intent.getStringExtra(EXTRA_TRIP_HASH) ?: ""
             val plannedActivityIdsByDay =
                 intent.getSerializableExtra(EXTRA_PLANNED_ACTIVITY_IDS).asIdsByDay()
+            val tripWideExcludedActivityIds =
+                intent.getStringArrayListExtra(EXTRA_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
 
             planData?.let {
-                viewModel.initialize(it, tripHash, plannedActivityIdsByDay)
+                viewModel.initialize(
+                    it,
+                    tripHash,
+                    plannedActivityIdsByDay,
+                    tripWideExcludedActivityIds
+                )
             }
         }
     }
@@ -266,12 +273,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
     private fun setupSearchBar() {
         binding.searchBar.setHint(viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_ACTIVITY))
-        binding.searchBar.setOnTextChangedListener { query ->
-            viewModel.updateSearchText(query)
-        }
-        binding.searchBar.setOnSearchActionListener {
-            hideKeyboard()
-            viewModel.submitSearch()
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.LOCAL) { query ->
+            viewModel.search(query)
         }
     }
 
@@ -355,13 +358,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
-    }
-
     /**
      * Final step of the add-activity flow: dismisses the time selection sheet,
      * shows a confirmation toast, and pre-arms RESULT_OK so back navigation
@@ -425,6 +421,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         const val EXTRA_PLAN_DATA = "plan_data"
         const val EXTRA_TRIP_HASH = "trip_hash"
         const val EXTRA_PLANNED_ACTIVITY_IDS = "planned_activity_ids"
+        const val EXTRA_TRIP_WIDE_EXCLUDED_IDS = "trip_wide_excluded_ids"
         const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"
 
         /**
@@ -436,7 +433,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             context: Context,
             planData: AddPlanData,
             tripHash: String,
-            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            tripWideExcludedActivityIds: List<String> = emptyList()
         ): Intent {
             return Intent(context, ACActivityListing::class.java).apply {
                 putExtra(EXTRA_PLAN_DATA, planData)
@@ -444,6 +442,10 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
                 putExtra(
                     EXTRA_PLANNED_ACTIVITY_IDS,
                     plannedActivityIdsByDay.toSerializableIdsByDay()
+                )
+                putStringArrayListExtra(
+                    EXTRA_TRIP_WIDE_EXCLUDED_IDS,
+                    ArrayList(tripWideExcludedActivityIds)
                 )
             }
         }

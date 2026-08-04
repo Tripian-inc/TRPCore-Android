@@ -30,6 +30,11 @@ import javax.inject.Inject
  *
  * Whatever survives all three keeps the incoming value. Blocking operation — the
  * other sync operations wait on its result.
+ *
+ * The activity duration is normalized in the same pass: hosts express it in their
+ * own unit, so the product lookup's value (minutes) replaces the incoming one and
+ * every consumer — saved plans cards, end-time math, segment payloads — reads a
+ * single unit.
  * iOS Reference: Guide Operation 1 (City Resolution)
  */
 class ResolveCityIdsForActivitiesUseCase @Inject constructor(
@@ -51,7 +56,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 
     /**
      * @param tripItems / [favouriteItems] the input lists with every resolved
-     *   cityId written back onto the item.
+     *   cityId and product duration written back onto the item.
      * @param cityMap cityName → cityId, keyed by [cityNameKey].
      */
     data class Result(
@@ -65,16 +70,24 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 
         val tripCityIds = arrayOfNulls<Int>(params.tripItems.size)
         val favouriteCityIds = arrayOfNulls<Int>(params.favouriteItems.size)
+        val tripDurations = arrayOfNulls<Double>(params.tripItems.size)
+        val favouriteDurations = arrayOfNulls<Double>(params.favouriteItems.size)
 
-        applyLookupTier(params, tripCityIds, favouriteCityIds)
+        applyLookupTier(params, tripCityIds, favouriteCityIds, tripDurations, favouriteDurations)
         applyCoordinateTier(params, tripCityIds, favouriteCityIds)
         applyCityNameTier(params, tripCityIds, favouriteCityIds, cityMap)
 
         val tripItems = params.tripItems.mapIndexed { index, item ->
-            tripCityIds[index]?.let { cityId -> item.copy(cityId = cityId) } ?: item
+            item.copy(
+                cityId = tripCityIds[index] ?: item.cityId,
+                duration = tripDurations[index] ?: item.duration
+            )
         }
         val favouriteItems = params.favouriteItems.mapIndexed { index, item ->
-            favouriteCityIds[index]?.let { cityId -> item.copy(cityId = cityId) } ?: item
+            item.copy(
+                cityId = favouriteCityIds[index] ?: item.cityId,
+                duration = favouriteDurations[index] ?: item.duration
+            )
         }
 
         tripItems.forEach { item -> rememberCity(item.cityName, item.cityId, cityMap) }
@@ -86,12 +99,14 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
     /**
      * Tier 1. Every distinct activity id the timeline doesn't already hold is looked
      * up once, concurrently; a failed or city-less lookup leaves the item to the
-     * next tier.
+     * next tier. The product's duration is taken from the same response.
      */
     private suspend fun applyLookupTier(
         params: Params,
         tripCityIds: Array<Int?>,
-        favouriteCityIds: Array<Int?>
+        favouriteCityIds: Array<Int?>,
+        tripDurations: Array<Double?>,
+        favouriteDurations: Array<Double?>
     ) {
         val activityIds = (
             params.tripItems.map { it.activityId } + params.favouriteItems.map { it.activityId }
@@ -104,19 +119,21 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 
         val resolved = coroutineScope {
             activityIds
-                .map { activityId -> async { activityId to lookupCityId(activityId) } }
+                .map { activityId -> async { activityId to lookupProduct(activityId) } }
                 .map { deferred -> deferred.await() }
-                .mapNotNull { (activityId, cityId) ->
-                    if (cityId != null && cityId > 0) activityId to cityId else null
-                }
+                .mapNotNull { (activityId, product) -> product?.let { activityId to it } }
                 .toMap()
         }
 
         params.tripItems.forEachIndexed { index, item ->
-            tripCityIds[index] = resolved[lookupKey(item.activityId)]
+            val product = resolved[lookupKey(item.activityId)]
+            tripCityIds[index] = product?.cityId
+            tripDurations[index] = product?.durationMinutes
         }
         params.favouriteItems.forEachIndexed { index, item ->
-            favouriteCityIds[index] = resolved[lookupKey(item.activityId)]
+            val product = resolved[lookupKey(item.activityId)]
+            favouriteCityIds[index] = product?.cityId
+            favouriteDurations[index] = product?.durationMinutes
         }
     }
 
@@ -124,11 +141,16 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
      * Host activity ids arrive bare ("2373"), so the provider is never read off the
      * id — the SDK's own [ActivityIdFormat.DEFAULT_PROVIDER_ID] is authoritative.
      */
-    private suspend fun lookupCityId(productId: String): Int? = runCatching {
-        tourRepository.lookupTourProductAsync(
+    private suspend fun lookupProduct(productId: String): ProductInfo? = runCatching {
+        val product = tourRepository.lookupTourProductAsync(
             providerId = ActivityIdFormat.DEFAULT_PROVIDER_ID,
             productId = productId
-        ).data?.product?.cityId
+        ).data ?: return@runCatching null
+
+        ProductInfo(
+            cityId = product.cityId.takeIf { it > 0 },
+            durationMinutes = product.duration?.takeIf { it > 0 }
+        )
     }.getOrNull()
 
     /**
@@ -211,4 +233,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         val resolved = cityId?.takeIf { it > 0 } ?: return
         cityMap[name.cityNameKey()] = resolved
     }
+
+    /** @param durationMinutes the product's own duration, in minutes. */
+    private data class ProductInfo(val cityId: Int?, val durationMinutes: Double?)
 }

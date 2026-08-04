@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
@@ -21,6 +20,7 @@ import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.dp
+import com.tripian.trpcore.util.widget.SearchBarView
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -119,7 +119,16 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         poiAdapter = AdapterPOIListing(
             getLanguage = { key -> viewModel.getLanguageForKey(key) },
             onAddClicked = { poi -> viewModel.onPOIAddClicked(poi) },
-            onItemClicked = { poi -> startActivity(ACPOIDetail.launch(this, poi)) }
+            onItemClicked = { poi ->
+                startActivity(
+                    ACPOIDetail.launch(
+                        context = this,
+                        poi = poi,
+                        tripStartDate = intent.getStringExtra(EXTRA_TRIP_START_DATE),
+                        tripEndDate = intent.getStringExtra(EXTRA_TRIP_END_DATE)
+                    )
+                )
+            }
         )
         binding.rvPOIs.apply {
             layoutManager = LinearLayoutManager(this@ACPOIListing)
@@ -153,12 +162,8 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
     private fun setupSearchBar() {
         binding.searchBar.setHint(viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
-        binding.searchBar.setOnTextChangedListener { query ->
-            viewModel.updateSearchText(query)
-        }
-        binding.searchBar.setOnSearchActionListener {
-            hideKeyboard()
-            viewModel.submitSearch()
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
+            viewModel.search(query)
         }
     }
 
@@ -270,13 +275,6 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         timeSelectionBottomSheet?.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
     }
 
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
-    }
-
     /**
      * Final step of the add-POI flow: dismisses the time selection sheet, shows a
      * confirmation toast and pre-arms RESULT_OK for back navigation. Does not finish —
@@ -310,16 +308,23 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
         const val EXTRA_LISTING_TYPE = "listing_type"
         const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"
 
+        const val EXTRA_TRIP_START_DATE = "extra_trip_start_date"
+        const val EXTRA_TRIP_END_DATE = "extra_trip_end_date"
+
         fun launch(
             context: Context,
             planData: AddPlanData,
             tripHash: String,
-            listingType: POIListingType
+            listingType: POIListingType,
+            tripStartDate: String? = null,
+            tripEndDate: String? = null
         ): Intent {
             return Intent(context, ACPOIListing::class.java).apply {
                 putExtra(EXTRA_PLAN_DATA, planData)
                 putExtra(EXTRA_TRIP_HASH, tripHash)
                 putExtra(EXTRA_LISTING_TYPE, listingType)
+                putExtra(EXTRA_TRIP_START_DATE, tripStartDate)
+                putExtra(EXTRA_TRIP_END_DATE, tripEndDate)
             }
         }
     }

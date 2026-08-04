@@ -63,7 +63,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var mapBottomListAdapter: MapBottomListAdapter? = null
     private var isBottomListVisible = false
     private var isBottomListCompletelyHidden = true
-    private var lastMapInteractionAtMs = 0L
     private var lastMapEmptyClickAtMs = 0L
     private var navigationBarInsetBottom = 0
     private var bottomListHeight = 0
@@ -172,9 +171,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.mapView.setOnMapEmptyClickListener {
             if (viewModel.mapSteps.value.isNullOrEmpty()) return@setOnMapEmptyClickListener
             val now = System.currentTimeMillis()
-            if (now - lastMapInteractionAtMs < MAP_INTERACTION_CLICK_GUARD_MS) {
-                return@setOnMapEmptyClickListener
-            }
             if (now - lastMapEmptyClickAtMs < MAP_EMPTY_CLICK_DEBOUNCE_MS) {
                 return@setOnMapEmptyClickListener
             }
@@ -190,7 +186,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         binding.mapView.setOnMapInteractionListener {
-            lastMapInteractionAtMs = System.currentTimeMillis()
             hideMapBottomList()
         }
 
@@ -453,7 +448,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onStepClick = { step ->
                 if (step.stepType == "poi") {
                     step.poi?.let { poi ->
-                        startActivity(ACPOIDetail.launch(this, poi))
+                        startActivity(openPoiDetail(poi))
                     }
                 } else {
                     val activityId = step.poi?.additionalData?.productId
@@ -599,7 +594,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                     else -> {
                         findPoiById(item.id)?.let { poi ->
-                            startActivity(ACPOIDetail.launch(this, poi))
+                            startActivity(openPoiDetail(poi))
                         }
                     }
                 }
@@ -1063,7 +1058,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
             is TimelineDisplayItem.ManualPoi -> {
                 item.step.poi?.let { poi ->
-                    startActivity(ACPOIDetail.launch(this, poi))
+                    startActivity(openPoiDetail(poi))
                 }
             }
             else -> {}
@@ -1358,7 +1353,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             favorites = filteredFavorites,
             tripHash = viewModel.tripHash,
             availableDays = availableDays,
-            cityNameToIdMap = cityMap
+            cityNameToIdMap = cityMap,
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
         savedPlansLauncher.launch(intent)
     }
@@ -1366,6 +1362,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     // =====================
     // ADD PLAN
     // =====================
+
+    /** POI detail needs the trip window so it can query that POI's bookable products. */
+    private fun openPoiDetail(poi: com.tripian.one.api.pois.model.Poi): android.content.Intent {
+        val (tripStart, tripEnd) = viewModel.tripDateRange()
+        return ACPOIDetail.launch(this, poi, tripStart, tripEnd)
+    }
 
     private fun showAddPlanSheet() {
         addPlanSheet = AddPlanContainerBottomSheet.newInstance(
@@ -1375,7 +1377,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             selectedCity = viewModel.getSelectedCity(),
             tripHash = viewModel.tripHash,
             bookedActivities = viewModel.getBookedActivities(),
-            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+            tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds()
         )
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->
@@ -1495,7 +1498,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     companion object {
         private const val EXTRA_TRIP_HASH = "tripHash"
-        private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L
         private const val MAP_EMPTY_CLICK_DEBOUNCE_MS = 400L
 
         fun newIntent(context: Context, tripHash: String): Intent {

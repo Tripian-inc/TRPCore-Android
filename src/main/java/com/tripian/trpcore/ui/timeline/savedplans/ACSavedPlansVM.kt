@@ -67,6 +67,8 @@ class ACSavedPlansVM @Inject constructor(
     /** Maps cityName (lowercase) to our system's cityId. */
     private var cityNameToIdMap: Map<String, Int> = emptyMap()
 
+    private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+
     // =====================
     // INITIALIZATION
     // =====================
@@ -79,16 +81,21 @@ class ACSavedPlansVM @Inject constructor(
         favorites: List<SegmentFavoriteItem>,
         tripHash: String,
         availableDays: List<Date>,
-        cityNameToIdMap: Map<String, Int> = emptyMap()
+        cityNameToIdMap: Map<String, Int> = emptyMap(),
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
     ) {
         this.favorites = favorites
         this.tripHash = tripHash
         this.availableDays = availableDays
         this.selectedDate = availableDays.firstOrNull()
         this.cityNameToIdMap = cityNameToIdMap
+        this.plannedActivityIdsByDay = plannedActivityIdsByDay
 
         processAndDisplayItems()
     }
+
+    /** Days that already hold a given activity; blocks them in the time selection sheet. */
+    fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
 
     /**
      * Process favorites and create grouped list items

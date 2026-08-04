@@ -2,10 +2,12 @@ package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.IncludeNoLocationBadgeBinding
+import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 
 /** Resolve a localized string for a language key (falls back to the key itself). */
@@ -22,6 +24,34 @@ internal fun String.languageValue(): String =
  * concrete views instead of a base ViewHolder.
  */
 internal object TimelineCellBinder {
+
+    private const val DEFAULT_CURRENCY = "EUR"
+
+    /**
+     * Single source of truth for the activity price row. The tour API omits the
+     * price field on free products instead of sending zero, so a missing or
+     * non-positive price reads as "free" rather than "unknown".
+     */
+    fun bindPrice(
+        priceRow: View,
+        fromLabel: TextView,
+        priceView: TextView,
+        price: Double?,
+        currency: String?
+    ) {
+        priceRow.visibility = View.VISIBLE
+        if (price == null || price <= 0.0) {
+            fromLabel.visibility = View.GONE
+            priceView.text = LanguageConst.FREE.languageValue()
+            return
+        }
+        fromLabel.visibility = View.VISIBLE
+        fromLabel.text = LanguageConst.FROM.languageValue() + " "
+        priceView.text = FormatUtils.formatPriceWithCurrency(
+            price,
+            currency?.takeIf { it.isNotBlank() } ?: DEFAULT_CURRENCY
+        )
+    }
 
     /** Activity image; the no-image / load-error fallback is the SDK's generic placeholder. */
     fun loadActivityImage(imageView: ImageView, imageUrl: String?) {

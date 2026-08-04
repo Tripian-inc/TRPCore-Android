@@ -134,24 +134,13 @@ class ReservedActivityVH(
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
-        val price = item.price
-        val currency = item.currency ?: "EUR"
-        when {
-            price == null -> {
-                binding.llPriceRow.visibility = View.GONE
-            }
-            price == 0.0 -> {
-                binding.tvFromLabel.visibility = View.GONE
-                binding.tvPrice.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.FREE)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-            else -> {
-                binding.tvFromLabel.visibility = View.VISIBLE
-                binding.tvFromLabel.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.FROM) + " "
-                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-        }
+        TimelineCellBinder.bindPrice(
+            priceRow = binding.llPriceRow,
+            fromLabel = binding.tvFromLabel,
+            priceView = binding.tvPrice,
+            price = item.price,
+            currency = item.currency
+        )
 
         binding.btnReservation.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
 

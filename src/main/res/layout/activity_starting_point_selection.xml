@@ -20,56 +20,22 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp" />
 
-    <!-- Search Bar Container -->
-    <LinearLayout
-        android:id="@+id/searchBarContainer"
+    <com.tripian.trpcore.util.widget.SearchBarView
+        android:id="@+id/searchBar"
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="16dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="12dp"
-        android:background="@drawable/trp_bg_search_bar"
         app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBack"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack">
-
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/trp_ic_search_gray"
-            app:tint="@color/trp_fgWeak"
-            android:contentDescription="Search" />
-
-        <EditText
-            android:id="@+id/etSearch"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp"
-            android:background="@null"
-            tools:hint="Search"
-            android:textColorHint="@color/trp_fgWeak"
-            android:textColor="@color/trp_text_primary"
-            android:textSize="14sp"
-            android:fontFamily="@font/regular"
-            android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:maxLines="1" />
-
-        <ImageView
-            android:id="@+id/ivClearSearch"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:src="@drawable/trp_ic_close"
-            android:visibility="gone"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/trp_fgWeak"
-            android:contentDescription="Clear" />
-
-    </LinearLayout>
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:trpSearchBackground="@drawable/trp_bg_search_bar"
+        app:trpSearchHintColor="@color/trp_fgWeak"
+        app:trpSearchHorizontalPadding="12dp"
+        app:trpSearchIcon="@drawable/trp_ic_search_gray"
+        app:trpSearchIconSize="20dp"
+        app:trpSearchIconTint="@color/trp_fgWeak" />
 
     <!-- Default Content View -->
     <LinearLayout
@@ -77,7 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:orientation="vertical"
-        app:layout_constraintTop_toBottomOf="@id/searchBarContainer"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp">
 
@@ -175,7 +141,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/searchBarContainer"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp"
         tools:listitem="@layout/item_saved_activity" />
@@ -186,7 +152,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/searchBarContainer"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />

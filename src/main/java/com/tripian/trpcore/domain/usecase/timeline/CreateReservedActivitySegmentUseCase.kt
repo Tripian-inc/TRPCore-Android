@@ -73,7 +73,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 providerId = tour.providerId,
                 productId = productId
             )
-            response.data?.product ?: tour
+            response.data ?: tour
         } catch (_: Throwable) {
             tour
         }

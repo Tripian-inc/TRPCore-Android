@@ -935,6 +935,7 @@ class ACTimelineVM @Inject constructor(
      */
     private fun processTimeline(timeline: Timeline) {
         populateCitiesInSegments(timeline)
+        applyCachedAvailabilityPrices(timeline)
 
         _timeline.value = timeline
 
@@ -1029,6 +1030,25 @@ class ACTimelineVM @Inject constructor(
                 updateDisplayItems()
             }
         )
+    }
+
+    /**
+     * Re-applies prices an earlier sweep resolved, so a freshly fetched timeline
+     * does not surface the price stored on the segment while the next sweep runs.
+     */
+    private fun applyCachedAvailabilityPrices(timeline: Timeline) {
+        val currency = TRPCore.core.appConfig.appCurrency
+        availabilityCheckManager.applyCachedPrices(timeline) { segmentIndex, stepId, price, cached ->
+            val segment = timeline.tripProfile?.segments?.getOrNull(segmentIndex)
+            if (stepId == null) {
+                segment?.additionalData?.applyScheduledPrice(price, cached ?: currency)
+            } else {
+                timeline.plans?.getOrNull(segmentIndex)?.steps
+                    ?.firstOrNull { it.id == stepId }
+                    ?.poi
+                    ?.applyScheduledPrice(price, cached ?: currency)
+            }
+        }
     }
 
     /**
@@ -1172,7 +1192,7 @@ class ACTimelineVM @Inject constructor(
             date = selectedDate,
             cities = _cities.value ?: emptyList(),
             collapsedSectionCityIds = collapsedSectionCityIds,
-            emptyStateMessage = getLanguageForKey(LanguageConst.NO_PLANS_FOR_DAY),
+            emptyStateMessage = getLanguageForKey(LanguageConst.NO_PLANS_YET),
             hiddenSegmentIndices = pendingDeletionSegmentIndices
         )
 
@@ -1278,12 +1298,45 @@ class ACTimelineVM @Inject constructor(
      * @param dayKey "yyyy-MM-dd" of the day the new segment covers.
      * @param cityId fallback city for planned activities that carry none.
      */
-    private fun collectExcludedActivityIds(dayKey: String, cityId: Int): List<String> {
-        val timeline = _timeline.value ?: return emptyList()
+    /**
+     * Exclusions that hold for every day of the trip: activities already booked or
+     * reserved anywhere in it, plus favorites the user removed from the timeline.
+     * The AddPlan flow adds the chosen day's own ids on top of these.
+     */
+    /** Trip window as "yyyy-MM-dd"; POI detail scopes its product query to it. */
+    fun tripDateRange(): Pair<String?, String?> {
+        val days = _availableDays.value.orEmpty()
+        return days.firstOrNull()?.toApiDateString() to days.lastOrNull()?.toApiDateString()
+    }
 
-        return timeline.plannedActivities()
-            .filter { it.source == PlannedActivitySource.BOOKING || it.day == dayKey }
-            .map { ActivityIdFormat.make(it.productId, it.providerId, it.cityId ?: cityId) }
+    fun tripWideExcludedActivityIds(): List<String> {
+        val bookings = _timeline.value
+            ?.plannedActivities()
+            ?.filter { it.source == PlannedActivitySource.BOOKING }
+            ?.map { ActivityIdFormat.make(it.productId, it.providerId, it.cityId) }
+            .orEmpty()
+
+        val removedFavorites = com.tripian.trpcore.util.RemovedFavoritesStore
+            .removedBaseIds(preferences, _tripHash)
+            .map { ActivityIdFormat.make(it) }
+
+        return (bookings + removedFavorites)
+            .filter { it.isNotEmpty() }
+            .distinct()
+    }
+
+    private fun collectExcludedActivityIds(dayKey: String, cityId: Int): List<String> {
+        val planned = _timeline.value
+            ?.plannedActivities()
+            ?.filter { it.source == PlannedActivitySource.BOOKING || it.day == dayKey }
+            ?.map { ActivityIdFormat.make(it.productId, it.providerId, it.cityId ?: cityId) }
+            .orEmpty()
+
+        val removedFavorites = com.tripian.trpcore.util.RemovedFavoritesStore
+            .removedBaseIds(preferences, _tripHash)
+            .map { ActivityIdFormat.make(it, cityId = cityId) }
+
+        return (planned + removedFavorites)
             .filter { it.isNotEmpty() }
             .distinct()
     }
@@ -1562,6 +1615,7 @@ class ACTimelineVM @Inject constructor(
         val tl = _timeline.value ?: return false
         tl.plans?.forEach { plan ->
             plan.steps?.firstOrNull { it.id == stepId }?.let { step ->
+                availabilityCheckManager.invalidatePricesFor(step.poi?.additionalData?.productId)
                 newStartTime?.let { step.startDateTimes = replaceHourMinute(step.startDateTimes, it) }
                 newEndTime?.let { step.endDateTimes = replaceHourMinute(step.endDateTimes, it) }
                 return true
@@ -1695,6 +1749,7 @@ class ACTimelineVM @Inject constructor(
     ): Boolean {
         val tl = _timeline.value ?: return false
         val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return false
+        availabilityCheckManager.invalidatePricesFor(segment.additionalData?.activityId)
         segment.startDate = applyDateAndTime(segment.startDate, newDate, newStartTime)
         segment.endDate = applyDateAndTime(segment.endDate, newDate, newEndTime)
         segment.additionalData?.let { add ->
@@ -2094,24 +2149,22 @@ class ACTimelineVM @Inject constructor(
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
         val favourites = itinerary?.favouriteItems ?: return emptyList()
-        val timeline = _timeline.value
 
-        val bookedAndReservedIds = timeline?.tripProfile?.segments
-            ?.filter {
-                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                it.segmentType == SegmentType.RESERVED_ACTIVITY
-            }
-            ?.mapNotNull { it.additionalData?.activityId }
-            ?.toSet() ?: emptySet()
+        val plannedBaseIds = _timeline.value
+            ?.plannedActivities()
+            ?.map { it.productId }
+            ?.toSet()
+            .orEmpty()
 
         val removedBaseIds = com.tripian.trpcore.util.RemovedFavoritesStore
             .removedBaseIds(preferences, _tripHash)
 
         return favourites.filter { favourite ->
-            favourite.activityId !in bookedAndReservedIds &&
-            (favourite.cityId?.takeIf { it > 0 } ?: getResolvedCityId(favourite.cityName)) != null &&
-            com.tripian.trpcore.util.RemovedFavoritesStore
-                .baseActivityId(favourite.activityId) !in removedBaseIds
+            val baseId = ActivityIdFormat.base(favourite.activityId)
+            baseId !in plannedBaseIds &&
+                baseId !in removedBaseIds &&
+                (favourite.cityId?.takeIf { it > 0 }
+                    ?: getResolvedCityId(favourite.cityName)) != null
         }
     }
 

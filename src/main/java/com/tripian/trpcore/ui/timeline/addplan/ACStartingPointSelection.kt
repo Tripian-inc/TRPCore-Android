@@ -7,11 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,6 +24,7 @@ import com.tripian.trpcore.databinding.ActivityStartingPointSelectionBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.widget.SearchBarView
 import java.io.Serializable
 
 /**
@@ -58,7 +55,7 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
      * Set all label texts using language service
      */
     private fun setupLabels() {
-        binding.etSearch.hint = getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI)
+        binding.searchBar.setHint(getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
         binding.tvNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
         binding.tvSectionTitle.text = getLanguageForKey(LanguageConst.ADD_PLAN_SAVED_ACTIVITIES)
     }
@@ -112,36 +109,15 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     private fun setupSearchBar() {
-        binding.etSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString() ?: ""
-                binding.ivClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-
-                if (query.isEmpty()) {
-                    showDefaultContent()
-                    viewModel.clearSearchResults()
-                } else {
-                    showSearchResults()
-                    viewModel.searchAddress(query)
-                }
-            }
-        })
-
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                hideKeyboard()
-                true
-            } else {
-                false
-            }
+        binding.searchBar.setOnTextChangedListener { text ->
+            if (text.isEmpty()) showDefaultContent() else showSearchResults()
         }
-
-        binding.ivClearSearch.setOnClickListener {
-            binding.etSearch.setText("")
-            viewModel.clearSearchResults()
-            showDefaultContent()
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
+            if (query.isEmpty()) {
+                viewModel.clearSearchResults()
+            } else {
+                viewModel.searchAddress(query)
+            }
         }
     }
 
@@ -276,13 +252,6 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
         }
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
-    }
-
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
     }
 
     companion object {

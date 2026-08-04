@@ -63,6 +63,7 @@ class ACPOISelectionVM @Inject constructor(
     }
 
     fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
         fetchPois(useFullScreen = false)
     }

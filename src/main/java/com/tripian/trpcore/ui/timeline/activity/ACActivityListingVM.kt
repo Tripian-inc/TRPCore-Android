@@ -139,6 +139,9 @@ class ACActivityListingVM @Inject constructor(
      */
     private val activityIdsByDay: MutableMap<String, MutableList<String>> = mutableMapOf()
 
+    /** Excluded on every day of the trip: bookings anywhere in it plus removed favorites. */
+    private var tripWideExcludedActivityIds: List<String> = emptyList()
+
     private val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     // =====================
@@ -148,11 +151,13 @@ class ACActivityListingVM @Inject constructor(
     fun initialize(
         planData: AddPlanData,
         tripHash: String,
-        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+        tripWideExcludedActivityIds: List<String> = emptyList()
     ) {
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
+        this.tripWideExcludedActivityIds = tripWideExcludedActivityIds
         activityIdsByDay.clear()
         plannedActivityIdsByDay.forEach { (day, ids) ->
             activityIdsByDay[day] = ids.toMutableList()
@@ -177,20 +182,14 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Cache the latest query without applying the filter. The visible list is
-     * only re-filtered when the user submits via the keyboard's Enter/IME
-     * action (see [submitSearch]) — typing alone does not trigger a refilter.
+     * Title search over the already fetched tours. Runs entirely locally, so it
+     * is applied as the user types.
      */
-    fun updateSearchText(query: String) {
+    fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
-    }
-
-    /**
-     * Triggered by the keyboard's Enter / IME search action. Re-applies the
-     * full local pipeline with a short skeleton flash.
-     */
-    fun submitSearch() {
-        applyAllFiltersWithSkeleton()
+        applyAllFilters()
+        _scrollToTop.value = true
     }
 
     // =====================
@@ -350,7 +349,7 @@ class ACActivityListingVM @Inject constructor(
     /**
      * Runs the local filter pipeline behind a short skeleton flash, then
      * scrolls the list back to the top. Used by every user-triggered list
-     * change (filter / sort / category / search submit).
+     * change (filter / sort / category).
      */
     private fun applyAllFiltersWithSkeleton() {
         skeletonHandler.removeCallbacksAndMessages(null)
@@ -386,8 +385,15 @@ class ACActivityListingVM @Inject constructor(
         return list.filter { it.title?.contains(q, ignoreCase = true) == true }
     }
 
+    /**
+     * The default filter carries the slider's own bounds, not a user choice, so it
+     * must let every tour through — a tour longer than the default 24h ceiling is
+     * still part of an unfiltered list.
+     */
     private fun tourMatchesFilter(tour: TourProduct): Boolean {
         val filter = _currentFilter.value ?: return true
+        if (!filter.hasActiveFilters()) return true
+
         val price = tour.currentPrice ?: tour.price
         val priceOk = price?.let {
             it >= filter.minPrice && it <= filter.maxPrice
@@ -474,7 +480,10 @@ class ACActivityListingVM @Inject constructor(
                         cityId = cityId,
                         slotPrice = slotPrice,
                         isFlexible = isFlexible,
-                        excludedActivityIds = activityIdsByDay[dateString].orEmpty()
+                        excludedActivityIds = (
+                            tripWideExcludedActivityIds +
+                                activityIdsByDay[dateString].orEmpty()
+                            ).distinct()
                     )
                 )
             }

@@ -9,6 +9,7 @@ import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
+import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
@@ -133,6 +134,8 @@ class AddPlanContainerVM @Inject constructor(
 
     private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
 
+    private var tripWideExcludedActivityIds: List<String> = emptyList()
+
     var selectedStartingPointOptionId: Int = StartingPointOption.CITY_CENTER
         private set
 
@@ -155,6 +158,8 @@ class AddPlanContainerVM @Inject constructor(
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
         plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
+        tripWideExcludedActivityIds =
+            args.getStringArrayList(ARG_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
 
         if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
             val todayIndex = days.indexOfFirst { it.isTodayDate() }
@@ -332,6 +337,14 @@ class AddPlanContainerVM @Inject constructor(
 
     /** "yyyy-MM-dd" → activity ids that day already holds, as handed over by the timeline. */
     fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
+
+    /** Activity ids excluded on every day of the trip (bookings + removed favorites). */
+    fun getTripWideExcludedActivityIds(): List<String> = tripWideExcludedActivityIds
+
+    /** Trip window as "yyyy-MM-dd"; POI detail scopes its product query to it. */
+    fun tripStartDate(): String? = _availableDays.value?.firstOrNull()?.toApiDateString()
+
+    fun tripEndDate(): String? = _availableDays.value?.lastOrNull()?.toApiDateString()
 
     fun clearStartingPoint() {
         _startingPointName.value = null
@@ -605,5 +618,6 @@ class AddPlanContainerVM @Inject constructor(
         const val ARG_ACCOMMODATION = "accommodation"
         const val ARG_BOOKED_ACTIVITIES = "bookedActivities"
         const val ARG_PLANNED_ACTIVITY_IDS = "plannedActivityIdsByDay"
+        const val ARG_TRIP_WIDE_EXCLUDED_IDS = "tripWideExcludedActivityIds"
     }
 }

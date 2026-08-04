@@ -244,7 +244,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     context = requireContext(),
                     planData = planData,
                     tripHash = tripHash,
-                    plannedActivityIdsByDay = sharedVM.getPlannedActivityIdsByDay()
+                    plannedActivityIdsByDay = sharedVM.getPlannedActivityIdsByDay(),
+                    tripWideExcludedActivityIds = sharedVM.getTripWideExcludedActivityIds()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -253,7 +254,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     context = requireContext(),
                     planData = planData,
                     tripHash = tripHash,
-                    listingType = POIListingType.PLACES_OF_INTEREST
+                    listingType = POIListingType.PLACES_OF_INTEREST,
+                    tripStartDate = sharedVM.tripStartDate(),
+                    tripEndDate = sharedVM.tripEndDate()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -262,7 +265,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     context = requireContext(),
                     planData = planData,
                     tripHash = tripHash,
-                    listingType = POIListingType.EAT_AND_DRINK
+                    listingType = POIListingType.EAT_AND_DRINK,
+                    tripStartDate = sharedVM.tripStartDate(),
+                    tripEndDate = sharedVM.tripEndDate()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -310,7 +315,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             tripHash: String?,
             accommodation: Accommodation? = null,
             bookedActivities: List<TimelineSegment> = emptyList(),
-            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            tripWideExcludedActivityIds: List<String> = emptyList()
         ): AddPlanContainerBottomSheet {
             return AddPlanContainerBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -324,6 +330,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     putSerializable(
                         AddPlanContainerVM.ARG_PLANNED_ACTIVITY_IDS,
                         plannedActivityIdsByDay.toSerializableIdsByDay()
+                    )
+                    putStringArrayList(
+                        AddPlanContainerVM.ARG_TRIP_WIDE_EXCLUDED_IDS,
+                        ArrayList(tripWideExcludedActivityIds)
                     )
                 }
             }

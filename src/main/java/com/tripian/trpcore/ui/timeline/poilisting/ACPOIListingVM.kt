@@ -147,18 +147,12 @@ class ACPOIListingVM @Inject constructor(
     }
 
     /**
-     * Caches the latest query without firing a request; the search only runs
-     * on the keyboard's Enter/IME action (see [submitSearch]).
+     * Runs the POI search for [query], resetting pagination. Debounced by the
+     * search bar, so every call here is meant to hit the service.
      */
-    fun updateSearchText(query: String) {
+    fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
-    }
-
-    /**
-     * Triggered by the keyboard's Enter / IME search action. Resets pagination
-     * and refetches with the cached query.
-     */
-    fun submitSearch() {
         resetAndSearch()
     }
 

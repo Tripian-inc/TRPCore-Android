@@ -232,6 +232,15 @@ class TimelineDisplayItemBuilder @Inject constructor(
         return if (planId1 < planId2) Pair(range1, range2) else Pair(range2, range1)
     }
 
+    /**
+     * A 24-hour-or-longer span is a validity window (24/48h passes), not a busy
+     * block, so it is kept out of conflict analysis — otherwise it collides with
+     * everything else on the day.
+     */
+    private fun spansFullDay(startTime: Date, endTime: Date): Boolean {
+        return endTime.time - startTime.time >= FULL_DAY_IN_MILLIS
+    }
+
     private fun collectTimeRanges(items: List<TimelineDisplayItem>): List<TimeRange> {
         val timeRanges = mutableListOf<TimeRange>()
 
@@ -240,7 +249,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 is TimelineDisplayItem.BookedActivity -> {
                     val startTime = item.startDateTime?.toDate()
                     val endTime = item.endDateTime?.toDate()
-                    if (startTime != null && endTime != null) {
+                    if (startTime != null && endTime != null && !spansFullDay(startTime, endTime)) {
                         timeRanges.add(
                             TimeRange(
                                 startTime = startTime,
@@ -257,7 +266,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 is TimelineDisplayItem.ManualPoi -> {
                     val startTime = item.startTime
                     val endTime = item.endTime
-                    if (startTime != null && endTime != null) {
+                    if (startTime != null && endTime != null && !spansFullDay(startTime, endTime)) {
                         timeRanges.add(
                             TimeRange(
                                 startTime = startTime,
@@ -275,7 +284,9 @@ class TimelineDisplayItemBuilder @Inject constructor(
                     item.steps.forEach { step ->
                         val startTime = step.startDateTimes?.toDate()
                         val endTime = step.endDateTimes?.toDate()
-                        if (startTime != null && endTime != null && step.id != null) {
+                        if (startTime != null && endTime != null && step.id != null &&
+                            !spansFullDay(startTime, endTime)
+                        ) {
                             timeRanges.add(
                                 TimeRange(
                                     startTime = startTime,
@@ -557,5 +568,9 @@ class TimelineDisplayItemBuilder @Inject constructor(
         }
 
         return result
+    }
+
+    private companion object {
+        const val FULL_DAY_IN_MILLIS = 24L * 60L * 60L * 1000L
     }
 }
