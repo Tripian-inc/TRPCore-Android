@@ -9,7 +9,14 @@ enum class TRPCoreErrorCode {
     GENERIC,
 
     /** Frontend translations could not be fetched after retry; SDK was not opened. */
-    LANGUAGE_LOAD_FAILED
+    LANGUAGE_LOAD_FAILED,
+
+    /**
+     * A booked activity supplied in the itinerary could not be written to the
+     * timeline (e.g. the server rejected its date). The rest of the timeline is
+     * usable; that one activity is missing from it.
+     */
+    BOOKED_ACTIVITY_SYNC_FAILED
 }
 
 /**
