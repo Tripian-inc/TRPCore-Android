@@ -380,6 +380,19 @@ fun String?.toDate(): Date? {
 }
 
 /**
+ * The reservation moment handed to the host, as "yyyy-MM-dd HH:mm". Segment
+ * datetimes reach here in any of the shapes [toDate] accepts, so the host reads one
+ * format whichever field the value came from.
+ *
+ * @param isFlexible a flexible activity holds no real slot — its stored time is a
+ *   placeholder — so it reports the day at 00:00.
+ */
+fun String?.toReservationDateTime(isFlexible: Boolean = false): String? {
+    val date = toDate() ?: return null
+    return if (isFlexible) "${date.toApiDateString()} 00:00" else date.toApiDateTimeString()
+}
+
+/**
  * Extension: Convert Date to API string
  */
 fun Date.toApiDateString(): String {

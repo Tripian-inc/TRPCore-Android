@@ -33,6 +33,7 @@ import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
+import com.tripian.trpcore.domain.model.timeline.toReservationDateTime
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
@@ -549,15 +550,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onReservationClick = { bookedActivity ->
                 if (isPastDayLocked()) return@TimelineAdapter
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = bookedActivity.startDateTime?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = bookedActivity.startDateTime.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
                 if (isPastDayLocked()) return@TimelineAdapter
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = flexibleActivity.segment.startDate
+                        .toReservationDateTime(isFlexible = true)
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onStepChangeTimeClick = { step ->
@@ -569,8 +571,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onStepReservationClick = { step ->
                 val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                 activityId?.let { id ->
-                    val dateString = step.startDateTimes?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(id, dateString)
+                    val dateTime = step.startDateTimes.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(id, dateTime)
                 }
             },
             onRequestRouteCalculation = { recommendations ->

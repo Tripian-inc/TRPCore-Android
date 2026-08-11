@@ -150,7 +150,7 @@ class TRPCore {
          * Triggers activity reservation request callback
          *
          * @param activityId ID of the activity
-         * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
+         * @param date Start of the activity in "yyyy-MM-dd HH:mm" format (null if not available)
          */
         internal fun notifyActivityReservationRequested(activityId: String, date: String? = null) {
             listener?.onRequestActivityReservation(activityId, date)
