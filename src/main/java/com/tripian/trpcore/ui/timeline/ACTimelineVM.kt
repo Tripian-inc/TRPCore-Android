@@ -1577,6 +1577,8 @@ class ACTimelineVM @Inject constructor(
     ) {
         if (startTime == null && endTime == null) return
 
+        val resolvedEndTime = endTime ?: startTime?.let { start -> stepEndTimeFor(stepId, start) }
+
         if (!useInlineLoader) {
             showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
         }
@@ -1587,13 +1589,13 @@ class ACTimelineVM @Inject constructor(
                     UpdateStepTimeUseCase.Params(
                         stepId = stepId,
                         startTime = startTime,
-                        endTime = endTime
+                        endTime = resolvedEndTime
                     )
                 )
             }
                 .onSuccess {
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
-                        applyLocalStepTimeUpdate(stepId, startTime, endTime)
+                        applyLocalStepTimeUpdate(stepId, startTime, resolvedEndTime)
                     }
                     onInlineResult?.invoke(true)
                 }
@@ -1605,6 +1607,39 @@ class ACTimelineVM @Inject constructor(
                     onInlineResult?.invoke(false)
                 }
         }
+    }
+
+    /**
+     * End time for a step moved to [newStartTime], keeping the span it already had.
+     * The step endpoint rejects an update that carries no end time, and the caller
+     * only knows one when the activity reported a duration.
+     */
+    private fun stepEndTimeFor(stepId: Int, newStartTime: String): String {
+        val step = _timeline.value?.plans
+            ?.firstNotNullOfOrNull { plan -> plan.steps?.firstOrNull { it.id == stepId } }
+        val minutes = minutesBetween(step?.startDateTimes, step?.endDateTimes)
+            ?: DEFAULT_STEP_DURATION_MINUTES
+        return addMinutesToHourMinute(newStartTime, minutes)
+    }
+
+    private fun minutesBetween(start: String?, end: String?): Int? {
+        val startMinutes = hourMinuteToMinutes(start) ?: return null
+        val endMinutes = hourMinuteToMinutes(end) ?: return null
+        val diff = endMinutes - startMinutes
+        return diff.takeIf { it > 0 }
+    }
+
+    private fun hourMinuteToMinutes(dateTime: String?): Int? {
+        val time = dateTime?.substringAfter(' ', "")?.takeIf { it.length >= 5 } ?: return null
+        val hour = time.substring(0, 2).toIntOrNull() ?: return null
+        val minute = time.substring(3, 5).toIntOrNull() ?: return null
+        return hour * 60 + minute
+    }
+
+    private fun addMinutesToHourMinute(hourMinute: String, minutes: Int): String {
+        val base = hourMinuteToMinutes("d $hourMinute") ?: return hourMinute
+        val total = (base + minutes) % (24 * 60)
+        return String.format(Locale.US, "%02d:%02d", total / 60, total % 60)
     }
 
     private fun applyLocalStepTimeUpdate(
@@ -2099,14 +2134,50 @@ class ACTimelineVM @Inject constructor(
 
     fun hasSingleCity(): Boolean = (_cities.value?.size ?: 0) <= 1
 
-    fun getSelectedCity(): City? = _cities.value?.firstOrNull()
+    /**
+     * City the AddPlan flow starts on: the one the selected day belongs to, so a
+     * multi-city trip doesn't offer the first city's catalog on another city's day.
+     */
+    fun getSelectedCity(): City? = cityOfSelectedDay() ?: _cities.value?.firstOrNull()
+
+    /**
+     * The host's destination list owns the day → city mapping (a destination
+     * carries the dates spent in it); segments only fill the gap for days the
+     * host didn't describe.
+     */
+    private fun cityOfSelectedDay(): City? {
+        val days = _availableDays.value ?: return null
+        val date = days.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
+        val dateStr = date.toApiDateString()
+
+        val destinationCityId = itinerary?.destinationItems
+            ?.firstOrNull { item -> item.dates?.any { it.take(10) == dateStr } == true }
+            ?.let { item -> item.cityId ?: resolveCityIdForDestination(item) }
+
+        val segmentCityId = _timeline.value?.tripProfile?.segments
+            ?.asSequence()
+            ?.filter { it.startDate?.startsWith(dateStr) == true }
+            ?.mapNotNull { it.cityId?.takeIf { id -> id > 0 } }
+            ?.firstOrNull()
+
+        val cityId = (destinationCityId ?: segmentCityId)?.takeIf { it > 0 } ?: return null
+        return _cities.value?.firstOrNull { it.id == cityId }
+            ?: tripRepository.getCachedCityById(cityId)
+    }
+
+    private fun resolveCityIdForDestination(item: SegmentDestinationItem): Int? {
+        val byCoordinate = item.getCoordinateObject()?.let { coord ->
+            tripRepository.findCityByCoordinate(coord.lat, coord.lng)
+        }
+        return (byCoordinate ?: tripRepository.findCityByName(item.title, item.countryName))?.id
+    }
 
     /**
      * Returns the city coordinate as a Mapbox Point for map centering.
      * Used when map has no items (empty day) to center on city instead of 0,0.
      */
     fun getSelectedDayCityCoordinate(): Point? {
-        val city = _cities.value?.firstOrNull()
+        val city = getSelectedCity()
         val coord = city?.coordinate
         return if (coord != null && coord.lat != 0.0 && coord.lng != 0.0) {
             Point.fromLngLat(coord.lng, coord.lat)
@@ -2664,6 +2735,9 @@ class ACTimelineVM @Inject constructor(
 
     companion object {
         const val ARG_TRIP_HASH = "tripHash"
+
+        /** Span applied to a moved step whose own start/end can't be read. */
+        private const val DEFAULT_STEP_DURATION_MINUTES = 60
 
         // Multi-city zoom thresholds. Lower threshold = the user must zoom out
         // FARTHER before step markers collapse back into city markers.
