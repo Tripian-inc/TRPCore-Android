@@ -95,6 +95,27 @@ class Preferences @Inject constructor(var context: Context) {
         return pref.getBoolean(key, defValue)
     }
 
+    /**
+     * Drops the signed-in session only. Everything the SDK can reuse across
+     * sessions — device id, language and its translation cache, currency,
+     * onboarding state, per-trip removed favorites — is left in place, so a
+     * token failure doesn't reset the whole SDK for the user.
+     *
+     * TRPOne shares this preferences file, so its token keys are cleared here too.
+     */
+    fun clearSessionData() {
+        pref.edit(commit = true) {
+            listOf(
+                Keys.USER_LOGIN,
+                Keys.USER_LOGIN_TIME,
+                Keys.TOKEN_TYPE,
+                Keys.ACCESS_TOKEN,
+                Keys.REFRESH_TOKEN,
+                Keys.SOCIAL_PROVIDER
+            ).forEach { remove(it) }
+        }
+    }
+
     fun clearAllData() {
         pref.edit(commit = true) {
             clear()
