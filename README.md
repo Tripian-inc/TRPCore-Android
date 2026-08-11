@@ -399,8 +399,9 @@ Called when user taps "Reserve" or "Book" button. Start your booking flow.
 override fun onRequestActivityReservation(activityId: String, date: String?) {
     Log.d("SDK", "Reservation requested: $activityId on $date")
 
-    // date: Activity date in "yyyy-MM-dd" format (e.g., "2026-04-17")
-    // Null if date is not available
+    // date: Activity start in "yyyy-MM-dd HH:mm" format (e.g., "2026-04-17 09:00")
+    // A flexible activity has no slot and reports 00:00
+    // Null if the activity carries no usable date
 
     // Start your reservation/booking flow
     val intent = Intent(this, BookingActivity::class.java)
@@ -479,7 +480,7 @@ override fun onActivityAdded(activityId: String) {
 | Method | Required | Description |
 |--------|----------|-------------|
 | `onRequestActivityDetail(activityId)` | Yes | User tapped activity card - open detail screen |
-| `onRequestActivityReservation(activityId, date?)` | Yes | User tapped Reserve - start booking flow (date format: "yyyy-MM-dd", null if not available) |
+| `onRequestActivityReservation(activityId, date?)` | Yes | User tapped Reserve - start booking flow (date format: "yyyy-MM-dd HH:mm", null if not available) |
 | `onTimelineCreated(tripHash)` | Yes | **Save this hash** to load timeline later |
 | `onTimelineLoaded(tripHash)` | No | Timeline loaded successfully |
 | `onError(error)` | No | Error occurred in SDK |
@@ -611,7 +612,7 @@ class MainActivity : AppCompatActivity(), TRPCoreSDKListener {
 
     override fun onRequestActivityReservation(activityId: String, date: String?) {
         // Start your booking flow
-        // date: Activity date in "yyyy-MM-dd" format (e.g., "2026-04-17"), null if not available
+        // date: Activity start in "yyyy-MM-dd HH:mm" format (e.g., "2026-04-17 09:00"), null if not available
         val message = if (date != null) {
             "Start booking for: $activityId on $date"
         } else {
@@ -822,7 +823,7 @@ class MainActivity : ComponentActivity(), TRPCoreSDKListener {
     }
 
     override fun onRequestActivityReservation(activityId: String, date: String?) {
-        // date: Activity date in "yyyy-MM-dd" format, null if not available
+        // date: Activity start in "yyyy-MM-dd HH:mm" format, null if not available
         val route = if (date != null) {
             "booking/$activityId?date=$date"
         } else {
@@ -863,10 +864,11 @@ class MainActivity : ComponentActivity(), TRPCoreSDKListener {
 
 ## Version
 
-Current version: **1.2.18**
+Current version: **civitatis-1.0.3**
 
 ## Changelog
 
+- **civitatis-1.0.3**: `onRequestActivityReservation` now reports the activity's start time as well — its `date` format widens from "yyyy-MM-dd" to "yyyy-MM-dd HH:mm". A host parsing that string must be updated; a flexible activity reports the day at 00:00.
 - **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
 - **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context
 - **1.1.3**: Bottom toast alert, AddPlan UI fixes
