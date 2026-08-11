@@ -204,6 +204,16 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
     }
 
+    /**
+     * Alerts must land on top of whichever bottom sheet is open, otherwise a
+     * failure raised while the sheet is up is drawn behind it.
+     */
+    override fun alertParent(): android.view.ViewGroup? {
+        val openSheet = listOfNotNull(changeTimeSheet, addPlanSheet)
+            .lastOrNull { it.isAdded && it.dialog?.isShowing == true }
+        return openSheet?.dialog?.window?.decorView as? android.view.ViewGroup
+    }
+
     override fun setReceivers() {
         viewModel.languagesReady.observe(this) { ready ->
             if (ready) setupUI()
@@ -231,6 +241,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
+            binding.fabAddPlan.visibility =
+                if (isPastDayLocked()) View.GONE else View.VISIBLE
         }
 
         viewModel.cities.observe(this) { cities ->
@@ -434,12 +446,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.tvEmptySubtitle.text = getLanguageForKey(LanguageConst.NO_PLANS_DESCRIPTION)
     }
 
+    /**
+     * A day already behind the traveller can't be replanned: its cards keep their
+     * affordances but the mutating handlers do nothing.
+     */
+    private fun isPastDayLocked(): Boolean = viewModel.isSelectedDayPast
+
     private fun setupRecyclerView() {
         timelineAdapter = TimelineAdapter(
             onItemClick = { item ->
                 handleItemClick(item)
             },
             onDeleteClick = { item, segmentIndex ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 handleDeleteClick(item, segmentIndex)
             },
             onExpandClick = { item ->
@@ -457,12 +476,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onChangeTimeClick = { manualPoi ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 handleManualPoiChangeTimeClick(manualPoi)
             },
             onAddPlanClick = {
                 showAddPlanSheet()
             },
             onReservedActivityChangeTimeClick = { reservedActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 reservedActivity.segmentIndex?.let { idx ->
                     showActivityChangeTimeSheet(
                         activityId = reservedActivity.segment.additionalData?.activityId,
@@ -494,6 +515,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onFlexibleActivityChangeTimeClick = { flexibleActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 flexibleActivity.segmentIndex?.let { idx ->
                     showActivityChangeTimeSheet(
                         activityId = flexibleActivity.segment.additionalData?.activityId,
@@ -525,12 +547,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onReservationClick = { bookedActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
                     val dateString = bookedActivity.startDateTime?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(activityId, dateString)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
                     val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
                     viewModel.onActivityReservationRequested(activityId, dateString)
@@ -772,13 +796,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
         ViewCompat.requestApplyInsets(binding.root)
 
+        val addPlanVisibility = if (isPastDayLocked()) View.GONE else View.VISIBLE
         if (isMapMode) {
             binding.fabMap.visibility = View.GONE
-            binding.fabAddPlan.visibility = View.VISIBLE
+            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.VISIBLE
         } else {
             binding.fabMap.visibility = View.VISIBLE
-            binding.fabAddPlan.visibility = View.VISIBLE
+            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.GONE
         }
 

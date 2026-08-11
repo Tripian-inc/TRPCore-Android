@@ -3,6 +3,7 @@ package com.tripian.trpcore.base
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -185,9 +186,17 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
             activity = this,
             message = message,
             alertType = type,
-            duration = 3000L
+            duration = 3000L,
+            parent = alertParent()
         )
     }
+
+    /**
+     * Where alerts are attached. The activity's content view sits behind any open
+     * dialog, so a screen holding bottom sheets returns the topmost sheet's decor
+     * view — otherwise its failures are drawn out of sight.
+     */
+    open fun alertParent(): ViewGroup? = null
 
     open fun setToolbarProperties(properties: ToolbarProperties) {}
 
