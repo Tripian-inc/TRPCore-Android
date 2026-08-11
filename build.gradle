@@ -163,7 +163,7 @@ dependencies {
 
     // TRPOne — primary REST client. Exposed via `api` because TRPOne types
     // (TRPRest, City) appear in TRPCore's public SDK surface.
-    api 'com.github.Tripian-inc:TRPOne-Android:1.4.8'
+    api 'com.github.Tripian-inc:TRPOne-Android:1.4.10'
 
     // TRPFoundation — base utilities (extensions, helpers).
     implementation 'com.github.Tripian-inc:TRPFoundation-Android:1.0.0'
