@@ -14,10 +14,12 @@ import com.tripian.trpcore.databinding.ItemMyTripCardBinding
 /**
  * Adapter for the "My Trips" list ([ACMyTrips]). Each card shows the trip's
  * cover image, city title, country subtitle, date range and (for future trips)
- * a "X days until your trip" pill. Tapping a card opens that timeline.
+ * a "X days until your trip" pill. Tapping a card opens that timeline; the
+ * trash button asks [onDeleteClicked] to confirm and delete it.
  */
 class MyTripsAdapter(
-    private val onTripClicked: (Timeline) -> Unit
+    private val onTripClicked: (Timeline) -> Unit,
+    private val onDeleteClicked: (Timeline) -> Unit
 ) : ListAdapter<Timeline, MyTripsAdapter.TripViewHolder>(DiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TripViewHolder {
@@ -67,6 +69,7 @@ class MyTripsAdapter(
             }
 
             binding.cardTrip.setOnClickListener { onTripClicked(trip) }
+            binding.ivDelete.setOnClickListener { onDeleteClicked(trip) }
         }
     }
 

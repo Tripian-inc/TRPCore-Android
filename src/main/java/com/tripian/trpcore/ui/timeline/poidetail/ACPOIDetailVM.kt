@@ -9,6 +9,7 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.manager.POICategoryManager
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.OpeningHours
 import javax.inject.Inject
 
 /**
@@ -115,205 +116,19 @@ class ACPOIDetailVM @Inject constructor() : BaseViewModel() {
     }
 
     /**
-     * Multi-language day name mappings to English abbreviations.
-     * Supports: English, Spanish, German, French, Turkish, Italian, Portuguese
-     */
-    private val dayNameMappings = mapOf(
-        // English
-        "Mon" to "Mon", "Tue" to "Tue", "Wed" to "Wed", "Thu" to "Thu", "Fri" to "Fri", "Sat" to "Sat", "Sun" to "Sun",
-        "Monday" to "Mon", "Tuesday" to "Tue", "Wednesday" to "Wed", "Thursday" to "Thu", "Friday" to "Fri", "Saturday" to "Sat", "Sunday" to "Sun",
-        // Spanish
-        "Lun" to "Mon", "Mar" to "Tue", "Mié" to "Wed", "Mie" to "Wed", "Jue" to "Thu", "Vie" to "Fri", "Sáb" to "Sat", "Sab" to "Sat", "Dom" to "Sun",
-        "Lunes" to "Mon", "Martes" to "Tue", "Miércoles" to "Wed", "Miercoles" to "Wed", "Jueves" to "Thu", "Viernes" to "Fri", "Sábado" to "Sat", "Sabado" to "Sat", "Domingo" to "Sun",
-        // German
-        "Mo" to "Mon", "Di" to "Tue", "Mi" to "Wed", "Do" to "Thu", "Fr" to "Fri", "Sa" to "Sat", "So" to "Sun",
-        "Montag" to "Mon", "Dienstag" to "Tue", "Mittwoch" to "Wed", "Donnerstag" to "Thu", "Freitag" to "Fri", "Samstag" to "Sat", "Sonntag" to "Sun",
-        // French
-        "Lun" to "Mon", "Mar" to "Tue", "Mer" to "Wed", "Jeu" to "Thu", "Ven" to "Fri", "Sam" to "Sat", "Dim" to "Sun",
-        "Lundi" to "Mon", "Mardi" to "Tue", "Mercredi" to "Wed", "Jeudi" to "Thu", "Vendredi" to "Fri", "Samedi" to "Sat", "Dimanche" to "Sun",
-        // Turkish
-        "Pzt" to "Mon", "Sal" to "Tue", "Çar" to "Wed", "Car" to "Wed", "Per" to "Thu", "Cum" to "Fri", "Cmt" to "Sat", "Paz" to "Sun",
-        "Pazartesi" to "Mon", "Salı" to "Tue", "Sali" to "Tue", "Çarşamba" to "Wed", "Carsamba" to "Wed", "Perşembe" to "Thu", "Persembe" to "Thu", "Cuma" to "Fri", "Cumartesi" to "Sat", "Pazar" to "Sun",
-        // Italian
-        "Lun" to "Mon", "Mar" to "Tue", "Mer" to "Wed", "Gio" to "Thu", "Ven" to "Fri", "Sab" to "Sat", "Dom" to "Sun",
-        "Lunedì" to "Mon", "Lunedi" to "Mon", "Martedì" to "Tue", "Martedi" to "Tue", "Mercoledì" to "Wed", "Mercoledi" to "Wed", "Giovedì" to "Thu", "Giovedi" to "Thu", "Venerdì" to "Fri", "Venerdi" to "Fri", "Sabato" to "Sat", "Domenica" to "Sun",
-        // Portuguese
-        "Seg" to "Mon", "Ter" to "Tue", "Qua" to "Wed", "Qui" to "Thu", "Sex" to "Fri", "Sáb" to "Sat", "Sab" to "Sat", "Dom" to "Sun",
-        "Segunda" to "Mon", "Terça" to "Tue", "Terca" to "Tue", "Quarta" to "Wed", "Quinta" to "Thu", "Sexta" to "Fri", "Sábado" to "Sat", "Sabado" to "Sat", "Domingo" to "Sun"
-    )
-
-    /**
-     * All recognized day names, longest first so "Monday" matches before "Mon".
-     */
-    private val allDayNames: List<String> by lazy {
-        dayNameMappings.keys.sortedByDescending { it.length }
-    }
-
-    /**
-     * Parse opening hours string to list of OpeningHourItem
-     * Input format: "Sun, Sat: 9:00 AM - 1:00 AM | Mon-Fri: 8:30 AM - 1:00 AM"
-     * Also supports localized formats: "Lun, Mar: 9:00 - 17:00 | Mié-Vie: 8:30 - 18:00"
-     * Output: List of day-based entries with 24h format
+     * Build the day-by-day display rows from the POI `hours` string; days with no
+     * entry render as closed.
      */
     private fun parseOpeningHours(hoursString: String): List<OpeningHourItem> {
-        val result = mutableListOf<OpeningHourItem>()
-        val dayOrder = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-        val dayHoursMap = mutableMapOf<String, String>()
-
-        val groups = hoursString.split("|").map { it.trim() }
-
-        for (group in groups) {
-            val colonIndex = group.lastIndexOf(":")
-            if (colonIndex < 0) continue
-
-            val daysPart = findDaysPart(group)
-            if (daysPart.isEmpty()) continue
-
-            val timePart = group.substring(daysPart.length).trim().removePrefix(":").trim()
-
-            val days = parseDays(daysPart)
-            val convertedTime = convertTo24HourFormat(timePart)
-
-            for (day in days) {
-                dayHoursMap[day] = convertedTime
-            }
+        val dayTexts = OpeningHours.dayTexts(hoursString)
+        return OpeningHours.DAY_ORDER.map { day ->
+            val hours = dayTexts[day]
+            OpeningHourItem(
+                dayName = getLocalizedDayName(day),
+                hours = hours ?: getLanguageForKey(LanguageConst.CLOSED),
+                isClosed = hours == null
+            )
         }
-
-        for (day in dayOrder) {
-            val localizedDay = getLocalizedDayName(day)
-            val hours = dayHoursMap[day]
-            if (hours != null) {
-                result.add(OpeningHourItem(localizedDay, hours, false))
-            } else {
-                result.add(OpeningHourItem(localizedDay, getLanguageForKey(LanguageConst.CLOSED), true))
-            }
-        }
-
-        return result
-    }
-
-    /**
-     * Find the days part of the group string
-     * e.g., "Sun, Sat: 9:00 AM - 1:00 AM" -> "Sun, Sat"
-     * e.g., "Lun, Mar: 9:00 - 17:00" -> "Lun, Mar"
-     * Supports multiple languages
-     */
-    private fun findDaysPart(group: String): String {
-        var lastDayEnd = 0
-
-        for (i in group.indices) {
-            for (dayName in allDayNames) {
-                if (group.startsWith(dayName, i, ignoreCase = true)) {
-                    val endPos = i + dayName.length
-                    if (endPos > lastDayEnd) {
-                        lastDayEnd = endPos
-                    }
-                }
-            }
-        }
-
-        return group.substring(0, lastDayEnd)
-    }
-
-    /**
-     * Normalize a localized day name to English abbreviation
-     * e.g., "Lun" -> "Mon", "Montag" -> "Mon"
-     */
-    private fun normalizeDayName(localizedDay: String): String? {
-        val trimmed = localizedDay.trim()
-        for ((key, value) in dayNameMappings) {
-            if (key.equals(trimmed, ignoreCase = true)) {
-                return value
-            }
-        }
-        return null
-    }
-
-    /**
-     * Parse days string to list of English day abbreviations.
-     * Handles "Mon-Fri", "Sun, Sat", localized names and wrap-around ranges (Fri-Mon).
-     */
-    private fun parseDays(daysString: String): List<String> {
-        val result = mutableListOf<String>()
-        val dayOrder = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-
-        val parts = daysString.split(",").map { it.trim() }
-
-        for (part in parts) {
-            if (part.contains("-")) {
-                val rangeParts = part.split("-").map { it.trim() }
-                if (rangeParts.size == 2) {
-                    val startDay = normalizeDayName(rangeParts[0])
-                    val endDay = normalizeDayName(rangeParts[1])
-
-                    if (startDay != null && endDay != null) {
-                        val startIdx = dayOrder.indexOf(startDay)
-                        val endIdx = dayOrder.indexOf(endDay)
-                        if (startIdx >= 0 && endIdx >= 0) {
-                            if (startIdx <= endIdx) {
-                                for (i in startIdx..endIdx) {
-                                    result.add(dayOrder[i])
-                                }
-                            } else {
-                                for (i in startIdx until dayOrder.size) {
-                                    result.add(dayOrder[i])
-                                }
-                                for (i in 0..endIdx) {
-                                    result.add(dayOrder[i])
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                val normalizedDay = normalizeDayName(part)
-                if (normalizedDay != null && dayOrder.contains(normalizedDay)) {
-                    result.add(normalizedDay)
-                }
-            }
-        }
-
-        return result
-    }
-
-    /**
-     * Convert 12-hour format to 24-hour format
-     * e.g., "9:00 AM - 1:00 AM" -> "09:00 - 01:00"
-     */
-    private fun convertTo24HourFormat(timeString: String): String {
-        val parts = timeString.split("-").map { it.trim() }
-        if (parts.size != 2) return timeString
-
-        val startTime = convert12To24(parts[0])
-        val endTime = convert12To24(parts[1])
-
-        return "$startTime - $endTime"
-    }
-
-    /**
-     * Convert single time from 12h to 24h format
-     * e.g., "9:00 AM" -> "09:00"
-     */
-    private fun convert12To24(time: String): String {
-        val trimmed = time.trim().uppercase()
-        val isPM = trimmed.contains("PM")
-        val isAM = trimmed.contains("AM")
-
-        val timeOnly = trimmed.replace("AM", "").replace("PM", "").trim()
-        val timeParts = timeOnly.split(":").map { it.trim() }
-
-        if (timeParts.size != 2) return time
-
-        var hour = timeParts[0].toIntOrNull() ?: return time
-        val minute = timeParts[1].toIntOrNull() ?: return time
-
-        if (isPM && hour != 12) {
-            hour += 12
-        } else if (isAM && hour == 12) {
-            hour = 0
-        }
-
-        return String.format("%02d:%02d", hour, minute)
     }
 
     /**

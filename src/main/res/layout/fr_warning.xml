@@ -55,6 +55,11 @@
                     android:layout_weight="1"
                     android:layout_width="0dp"
                     android:layout_marginEnd="@dimen/_4sdp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="11sp"
+                    app:autoSizeMaxTextSize="16sp"
                     tools:text="Negative" />
 
                 <com.google.android.material.button.MaterialButton
@@ -63,6 +68,11 @@
                     android:layout_weight="1"
                     android:layout_width="0dp"
                     android:layout_marginStart="@dimen/_4sdp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    app:autoSizeTextType="uniform"
+                    app:autoSizeMinTextSize="11sp"
+                    app:autoSizeMaxTextSize="16sp"
                     tools:text="Positive" />
             </LinearLayout>
         </LinearLayout>

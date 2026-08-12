@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.repository.TimelineRepository
+import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.LanguageConst
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -26,6 +28,25 @@ class ACMyTripsVM @Inject constructor(
         super.onViewCreated(savedInstanceState)
         // Instant paint from the splash-populated cache.
         timelineRepository.cachedUserTimelines?.let { trips.value = TripDisplay.sortByStart(it) }
+    }
+
+    /**
+     * Deletes the trip and drops it from the list and the cache without a
+     * refetch, so the card disappears immediately.
+     */
+    fun deleteTrip(tripHash: String) {
+        viewModelScope.launch {
+            showFullScreenLoaderNoText()
+            val deleted = runCatching { timelineRepository.deleteTimelineAsync(tripHash) }.isSuccess
+            hideLottieLoading()
+            if (deleted) {
+                val remaining = (trips.value ?: emptyList()).filterNot { it.tripHash == tripHash }
+                timelineRepository.cachedUserTimelines = remaining
+                trips.value = remaining
+            } else {
+                showAlert(AlertType.ERROR, getLanguageForKey(LanguageConst.COMMON_ERROR))
+            }
+        }
     }
 
     /** Fetch + filter not-past + sort; show the loader only when nothing is shown yet. */

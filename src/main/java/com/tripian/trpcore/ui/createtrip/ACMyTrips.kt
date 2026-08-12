@@ -4,10 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ActivityMyTripsBinding
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.observe
 
@@ -33,7 +35,10 @@ class ACMyTrips : BaseActivity<ActivityMyTripsBinding, ACMyTripsVM>() {
         binding.root.consumeSystemBarPadding(top = true, bottom = true)
         binding.tvTitle.text = lang(LanguageConst.MY_PLANS, "My Trips")
 
-        adapter = MyTripsAdapter { trip -> TRPCore.core.startTimeline(this, trip.tripHash) }
+        adapter = MyTripsAdapter(
+            onTripClicked = { trip -> TRPCore.core.startTimeline(this, trip.tripHash) },
+            onDeleteClicked = { trip -> showDeleteConfirmation(trip) }
+        )
         binding.rvTrips.layoutManager = LinearLayoutManager(this)
         binding.rvTrips.adapter = adapter
 
@@ -58,6 +63,25 @@ class ACMyTrips : BaseActivity<ActivityMyTripsBinding, ACMyTripsVM>() {
 
     override fun backPressed() {
         TRPCore.closeSDK()
+    }
+
+    /** Asks for confirmation before the trip is deleted; declining leaves the list untouched. */
+    private fun showDeleteConfirmation(trip: Timeline) {
+        viewModel.showDialog(
+            title = lang(LanguageConst.DELETE_TRIP, "Delete trip"),
+            contentText = lang(
+                LanguageConst.DELETE_TRIP_QUESTION,
+                "Are you sure you want to delete this trip?"
+            ),
+            positiveBtn = lang(LanguageConst.DELETE_TRIP_SUBMIT, "Delete"),
+            negativeBtn = lang(LanguageConst.CANCEL, "Cancel"),
+            positive = object : DGActionListener {
+                override fun onClicked(o: Any?) {
+                    viewModel.deleteTrip(trip.tripHash)
+                }
+            },
+            isCloseEnable = false
+        )
     }
 
     private fun openCreateFlow() {

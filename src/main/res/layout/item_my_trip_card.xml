@@ -62,6 +62,23 @@
             app:layout_constraintStart_toStartOf="@id/ivCover"
             app:layout_constraintTop_toTopOf="@id/ivCover" />
 
+        <!-- Delete button -->
+        <ImageView
+            android:id="@+id/ivDelete"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_margin="12dp"
+            android:background="@drawable/trp_bg_circle_white"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/trp_ic_delete_trip"
+            app:tint="@color/trp_primary"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="@null"
+            app:layout_constraintTop_toTopOf="@id/ivCover"
+            app:layout_constraintEnd_toEndOf="@id/ivCover" />
+
         <!-- Title = city name(s) -->
         <TextView
             android:id="@+id/tvTitle"
