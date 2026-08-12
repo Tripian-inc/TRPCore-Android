@@ -1092,14 +1092,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
     }
 
-    /**
-     * Called when user taps "Reserve" or "Book" button.
-     * Forwards reservation request to host app.
-     */
-    fun handleReservationClick(activityId: String) {
-        viewModel.onActivityReservationRequested(activityId)
-    }
-
     private fun handleDeleteClick(item: TimelineDisplayItem, segmentIndex: Int?) {
         segmentIndex?.let { index ->
             val (title, message) = when (item) {
