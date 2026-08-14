@@ -246,6 +246,35 @@ class TRPCore {
             return core.getSavedCurrency()
         }
 
+        /**
+         * Changes the SDK language after initialization. Screens opened afterwards
+         * render in [language]; the translation set for it is pulled in the
+         * background when it isn't cached yet.
+         *
+         * @param language Language code ("en", "es", "pt-br", …)
+         */
+        fun changeLanguage(language: String) {
+            core.changeLanguage(language)
+        }
+
+        /**
+         * Gets the language the SDK currently renders in.
+         *
+         * @return Active language code
+         */
+        fun getCurrentLanguage(): String {
+            return core.getCurrentLanguage()
+        }
+
+        /**
+         * Gets the language code persisted in preferences.
+         *
+         * @return Saved language code, or an empty string when the host never set one
+         */
+        fun getSavedLanguage(): String {
+            return core.getSavedLanguage()
+        }
+
         // =====================
         // ONBOARDING
         // =====================
@@ -307,6 +336,35 @@ class TRPCore {
      */
     fun getSavedCurrency(): String {
         return miscRepository.getSavedCurrency()
+    }
+
+    /**
+     * Changes the SDK language after initialization: persists it, points the API
+     * client at it and refreshes the city cache so its names match. The
+     * translation set is fetched in the background when it isn't cached.
+     *
+     * @param language Language code ("en", "es", "pt-br", …); regional forms like
+     *                 "es-MX" and "pt_BR" are normalized.
+     */
+    fun changeLanguage(language: String) {
+        if (language.isBlank()) return
+        applyLanguageAndPrefetchCities(language)
+    }
+
+    /**
+     * Gets the language the SDK currently renders in.
+     * @return Active language code
+     */
+    fun getCurrentLanguage(): String {
+        return appConfig.appLanguage
+    }
+
+    /**
+     * Gets the language code persisted in preferences.
+     * @return Saved language code or empty string if not set
+     */
+    fun getSavedLanguage(): String {
+        return miscRepository.getSavedLanguage()
     }
 
     /**

@@ -1,6 +1,8 @@
 package com.tripian.trpcore.repository
 
 import android.app.Application
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.misc.model.ConfigList
 import com.tripian.one.api.misc.model.ConfigListResponse
 import com.tripian.trpcore.base.TRPCore
@@ -51,6 +53,11 @@ class MiscRepository @Inject constructor(
 
     @Volatile
     private var loadedLanguage: String? = null
+
+    private val _appliedLanguage = MutableLiveData<String>()
+
+    /** Emits every time the in-memory key table starts serving a different language. */
+    val appliedLanguage: LiveData<String> = _appliedLanguage
 
     /** Single Deferred coalesces concurrent fetches: subsequent callers await the same in-flight request. */
     private val fetchMutex = Mutex()
@@ -238,8 +245,10 @@ class MiscRepository @Inject constructor(
     private fun setCurrentLanguageKeys(requestedLanguage: String) {
         val values = languageValues ?: return
         val resolvedLang = resolveLanguageCode(values, requestedLanguage)
+        val changed = resolvedLang != _appliedLanguage.value
         TRPCore.core.appConfig.appLanguage = resolvedLang
         currentLanguageValues = values.getJSONObject(resolvedLang).getJSONObject("keys")
+        if (changed) _appliedLanguage.postValue(resolvedLang)
     }
 
     /**
@@ -301,6 +310,10 @@ class MiscRepository @Inject constructor(
 
     fun getCurrentCurrency(): String {
         return TRPCore.core.appConfig.appCurrency
+    }
+
+    fun getSavedLanguage(): String {
+        return preferences.getString(Preferences.Keys.APP_LANGUAGE, "") ?: ""
     }
 
     fun getSavedCurrency(): String {

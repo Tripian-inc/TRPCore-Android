@@ -240,6 +240,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             binding.dayFilterView.setDays(days)
         }
 
+        TRPCore.core.miscRepository.appliedLanguage.observe(this) {
+            setupUI()
+            viewModel.onLanguageApplied()
+        }
+
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
             binding.fabAddPlan.visibility =

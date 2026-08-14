@@ -1033,6 +1033,15 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
+     * Re-renders the timeline in the language that just became active: cards read
+     * their labels at bind time, so re-publishing the model is enough.
+     */
+    fun onLanguageApplied() {
+        if (_timeline.value == null) return
+        republishCurrentTimeline()
+    }
+
+    /**
      * Re-applies prices an earlier sweep resolved, so a freshly fetched timeline
      * does not surface the price stored on the segment while the next sweep runs.
      */
