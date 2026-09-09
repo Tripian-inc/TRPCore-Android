@@ -8,20 +8,22 @@ import java.io.Serializable
  *
  * @param distanceMeters Distance in meters from Mapbox API
  * @param durationSeconds Duration in seconds from Mapbox API
- * @param isWalking Whether walking profile was used (< 1.8km)
+ * @param isWalking True when the leg was routed on foot (walking distance < 1.5km); false when routed by car
  * @param fromStepId Source step ID (null if starting from accommodation/city center)
  * @param toStepId Destination step ID
+ * @param encodedGeometry Leg shape as a precision-6 encoded polyline, for drawing on the map
  */
 data class StepRouteInfo(
     val distanceMeters: Double,
     val durationSeconds: Double,
     val isWalking: Boolean,
     val fromStepId: Int? = null,
-    val toStepId: Int
+    val toStepId: Int,
+    val encodedGeometry: String? = null
 ) : Serializable {
 
     companion object {
-        const val WALKING_THRESHOLD_METERS = 1800.0
+        const val WALKING_THRESHOLD_METERS = 1500.0
 
         /** Walking speed assumption: ~5 km/h = ~12 min/km. */
         private const val WALKING_MINUTES_PER_KM = 12.0

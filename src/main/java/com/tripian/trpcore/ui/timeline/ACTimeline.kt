@@ -1268,7 +1268,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         val timeSelectionSheet = TimeSelectionBottomSheet.newInstance(
             startTime = startTime,
             endTime = endTime,
-            minTime = minTime
+            minTime = minTime,
+            openingHours = step.poi?.hours,
+            selectedDay = stepDay
         )
 
         timeSelectionSheet.setOnTimeSelectedListener { newStartTime, newEndTime ->

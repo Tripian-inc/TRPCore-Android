@@ -2311,7 +2311,7 @@ class ACTimelineVM @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 getTimelineStepRoutesUseCase(
-                    GetTimelineStepRoutesUseCase.Params(
+                    GetTimelineStepRoutesUseCase.Params.forSteps(
                         startingPointCoordinate = recommendations.startingPointCoordinate,
                         steps = recommendations.steps
                     )

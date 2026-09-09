@@ -260,7 +260,9 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
         timeSelectionBottomSheet = TimeSelectionBottomSheet.newInstance(
             minTime = viewModel.minSelectableTimeForSelectedDay(),
-            defaultStartTime = viewModel.defaultStartTimeForSelectedDay()
+            defaultStartTime = viewModel.defaultStartTimeForSelectedDay(),
+            openingHours = poi.hours,
+            selectedDay = viewModel.getSelectedDate()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { startTime, endTime ->
             val currentPoi = selectedPoi ?: return@setOnTimeSelectedListener

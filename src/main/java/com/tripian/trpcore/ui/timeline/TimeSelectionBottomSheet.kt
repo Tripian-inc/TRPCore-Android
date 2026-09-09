@@ -9,6 +9,8 @@ import com.tripian.trpcore.databinding.BottomSheetTimeSelectionBinding
 import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.ui.timeline.addplan.showComposeTimePicker
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.OpeningHours
+import java.util.Date
 
 /**
  * Bottom sheet for time range selection (start + end time)
@@ -25,6 +27,10 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     // Suggested "HH:mm" the start-time picker opens on when [startTime] is null;
     // never a restriction, purely a prefill (see CityTimeZones.defaultStartTime).
     private var defaultStartTime: String? = null
+    // Raw POI `hours` string and the day being planned. Both are needed to warn when
+    // the selection falls outside that day's opening hours; absent = no warning.
+    private var openingHours: String? = null
+    private var selectedDay: Date? = null
 
     private var onTimeSelectedListener: ((startTime: String?, endTime: String?) -> Unit)? = null
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -35,6 +41,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             endTime = args.getString(ARG_END_TIME)
             minTime = args.getString(ARG_MIN_TIME)
             defaultStartTime = args.getString(ARG_DEFAULT_START_TIME)
+            openingHours = args.getString(ARG_OPENING_HOURS)
+            selectedDay = args.getLong(ARG_SELECTED_DAY, 0L).takeIf { it > 0L }?.let { Date(it) }
         }
 
         setupLabels()
@@ -86,7 +94,40 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             startTime != null &&
             endTime != null &&
             MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime)
+
+        updateClosedWarning()
     }
+
+    /**
+     * Shows a non-blocking notice when the picked span falls outside the POI's
+     * opening hours for [selectedDay]. Stays hidden when the hours are unknown or
+     * unparsable, so a missing `hours` string never blocks or nags the user.
+     */
+    private fun updateClosedWarning() {
+        val isOpen = OpeningHours.coversSelection(openingHours, selectedDay, startTime, endTime)
+        if (isOpen != false) {
+            binding.llClosedWarning.visibility = View.GONE
+            return
+        }
+
+        val dayText = OpeningHours.dayText(openingHours, selectedDay)
+        val closedLabel = lang(
+            LanguageConst.ADD_PLAN_CLOSED_WARNING,
+            "This place is closed at the selected time."
+        )
+
+        binding.tvClosedWarning.text = if (dayText != null) {
+            "$closedLabel\n${lang(LanguageConst.ADD_PLAN_OPEN_HOURS, "Open")}: $dayText"
+        } else {
+            closedLabel
+        }
+        binding.llClosedWarning.visibility = View.VISIBLE
+    }
+
+    /** Backend value for [key], or [fallback] when it is missing (blank or echoed back). */
+    private fun lang(key: String, fallback: String): String =
+        TRPCore.core.miscRepository.getLanguageValueForKey(key)
+            .let { if (it.isBlank() || it == key) fallback else it }
 
     private fun setupListeners() {
         binding.ivClose.setOnClickListener { dismiss() }
@@ -163,6 +204,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         private const val ARG_END_TIME = "end_time"
         private const val ARG_MIN_TIME = "min_time"
         private const val ARG_DEFAULT_START_TIME = "default_start_time"
+        private const val ARG_OPENING_HOURS = "opening_hours"
+        private const val ARG_SELECTED_DAY = "selected_day"
 
         fun newInstance(
             startTime: String? = null,
@@ -170,7 +213,10 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             // Earliest selectable "HH:mm" (city-timezone "now" for the item's day).
             minTime: String? = null,
             // Suggested "HH:mm" prefill for the start-time picker when startTime is null.
-            defaultStartTime: String? = null
+            defaultStartTime: String? = null,
+            // Raw POI `hours`; with [selectedDay] it drives the outside-hours warning.
+            openingHours: String? = null,
+            selectedDay: Date? = null
         ): TimeSelectionBottomSheet {
             return TimeSelectionBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -178,6 +224,8 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
                     endTime?.let { putString(ARG_END_TIME, it) }
                     minTime?.let { putString(ARG_MIN_TIME, it) }
                     defaultStartTime?.let { putString(ARG_DEFAULT_START_TIME, it) }
+                    openingHours?.let { putString(ARG_OPENING_HOURS, it) }
+                    selectedDay?.let { putLong(ARG_SELECTED_DAY, it.time) }
                 }
             }
         }

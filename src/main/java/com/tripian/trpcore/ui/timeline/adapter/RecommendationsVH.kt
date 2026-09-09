@@ -100,8 +100,7 @@ class RecommendationsVH(
 
             val startingPointRoute = item.routeInfoList.find { it.fromStepId == null }
             if (item.isExpanded && startingPointRoute != null && item.steps.isNotEmpty()) {
-                binding.startingPointRouteContainer.visibility = View.VISIBLE
-                binding.tvStartingPointRouteInfo.text = startingPointRoute.formatWithTemplate(distanceFormat)
+                bindStartingPointRoute(startingPointRoute)
             } else {
                 binding.startingPointRouteContainer.visibility = View.GONE
             }
@@ -202,6 +201,12 @@ class RecommendationsVH(
         }
     }
 
+    private fun bindStartingPointRoute(routeInfo: StepRouteInfo) {
+        binding.startingPointRouteContainer.visibility = View.VISIBLE
+        binding.ivStartingPointRouteIcon.setImageResource(routeInfo.transportIconRes)
+        binding.tvStartingPointRouteInfo.text = routeInfo.formatWithTemplate(currentDistanceFormat)
+    }
+
     /**
      * Builds an interleaved list of [TimelineStepItem]:
      * [RouteSeparator(start→step1), Step(1), RouteSeparator(step1→step2), Step(2), ...]
@@ -255,8 +260,7 @@ class RecommendationsVH(
 
         val startingPointRoute = newItem.routeInfoList.find { it.fromStepId == null }
         if (newItem.isExpanded && startingPointRoute != null && newItem.steps.isNotEmpty()) {
-            binding.startingPointRouteContainer.visibility = View.VISIBLE
-            binding.tvStartingPointRouteInfo.text = startingPointRoute.formatWithTemplate(currentDistanceFormat)
+            bindStartingPointRoute(startingPointRoute)
         }
 
         if (newItem.steps.isNotEmpty() && newItem.isExpanded) {
