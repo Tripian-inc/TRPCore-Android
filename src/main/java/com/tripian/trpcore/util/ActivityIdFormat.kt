@@ -1,5 +1,7 @@
 package com.tripian.trpcore.util
 
+import com.tripian.trpcore.base.TRPCore
+
 /**
  * Single builder/parser for the API's activity id form. Ids reach the SDK either
  * bare ("15423") or already prefixed ("C_15423_15_28"); [base] reduces any variant
@@ -7,7 +9,9 @@ package com.tripian.trpcore.util
  */
 object ActivityIdFormat {
 
-    const val DEFAULT_PROVIDER_ID = 15
+    /** The host-configured tour-api provider, used when a caller has no better source. */
+    val DEFAULT_PROVIDER_ID: Int
+        get() = TRPCore.provider.id
 
     /**
      * `C_{productId}_{providerId}`, plus `_{cityId}` when known. [activityId] may be

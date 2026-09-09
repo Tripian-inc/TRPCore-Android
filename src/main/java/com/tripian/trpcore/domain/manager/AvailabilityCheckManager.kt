@@ -339,7 +339,7 @@ class AvailabilityCheckManager @Inject constructor(
     )
 
     companion object {
-        const val DEFAULT_PROVIDER_ID: Int = ActivityIdFormat.DEFAULT_PROVIDER_ID
+        val DEFAULT_PROVIDER_ID: Int get() = ActivityIdFormat.DEFAULT_PROVIDER_ID
         private const val FLEXIBLE_SLOT_KEY = "flexible"
     }
 }
