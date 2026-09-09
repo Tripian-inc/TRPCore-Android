@@ -128,6 +128,11 @@
                 android:overScrollMode="never"
                 android:paddingBottom="@dimen/_16sdp" />
 
+            <!-- Shimmering skeleton shown while a search / filter / sort reloads the list. -->
+            <include
+                android:id="@+id/skeletonList"
+                layout="@layout/view_activity_skeleton_list" />
+
             <com.tripian.trpcore.util.widget.TextView
                 android:id="@+id/tvEmpty"
                 style="@style/TrpTextBody1"
