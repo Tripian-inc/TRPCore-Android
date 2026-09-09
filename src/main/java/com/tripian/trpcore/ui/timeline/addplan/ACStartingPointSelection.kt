@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
+
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -58,11 +59,16 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
         binding.searchBar.setHint(getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
         binding.tvNearMe.text = getLanguageForKey(LanguageConst.ADD_PLAN_NEAR_ME)
         binding.tvSectionTitle.text = getLanguageForKey(LanguageConst.ADD_PLAN_SAVED_ACTIVITIES)
+        binding.tvSearchEmpty.text = lang(LanguageConst.DESTINATION_SEARCH_NO_RESULTS, "No destinations found")
     }
+
+    private fun lang(key: String, fallback: String): String =
+        getLanguageForKey(key).let { if (it.isBlank() || it == key) fallback else it }
 
     override fun setReceivers() {
         viewModel.searchResults.observe(this) { results ->
             searchResultsAdapter?.submitList(results)
+            updateSearchEmptyState()
         }
 
         viewModel.filteredSavedItems.observe(this) { items ->
@@ -72,6 +78,7 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
 
         viewModel.isLoading.observe(this) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            updateSearchEmptyState()
         }
 
         viewModel.isUserInCity.observe(this) { isInCity ->
@@ -162,11 +169,21 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     private fun showDefaultContent() {
         binding.defaultContentView.visibility = View.VISIBLE
         binding.rvSearchResults.visibility = View.GONE
+        binding.tvSearchEmpty.visibility = View.GONE
     }
 
     private fun showSearchResults() {
         binding.defaultContentView.visibility = View.GONE
         binding.rvSearchResults.visibility = View.VISIBLE
+    }
+
+    /** Shows the no-results text only for a finished, non-empty search that returned nothing. */
+    private fun updateSearchEmptyState() {
+        val query = binding.searchBar.getText().trim()
+        val showEmpty = query.isNotEmpty() &&
+                viewModel.searchResults.value.isNullOrEmpty() &&
+                viewModel.isLoading.value != true
+        binding.tvSearchEmpty.visibility = if (showEmpty) View.VISIBLE else View.GONE
     }
 
     private fun updateSavedActivitiesSectionVisibility(hasItems: Boolean) {

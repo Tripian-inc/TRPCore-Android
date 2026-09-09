@@ -20,10 +20,11 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp" />
 
+
     <com.tripian.trpcore.util.widget.SearchBarView
         android:id="@+id/searchBar"
         android:layout_width="0dp"
-        android:layout_height="44dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="16dp"
         app:layout_constraintStart_toEndOf="@id/btnBack"
@@ -145,6 +146,23 @@
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginTop="16dp"
         tools:listitem="@layout/item_saved_activity" />
+
+    <!-- Search Empty State -->
+    <TextView
+        android:id="@+id/tvSearchEmpty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:layout_marginHorizontal="32dp"
+        android:gravity="center"
+        android:textSize="15sp"
+        android:textColor="@color/trp_timeline_text_secondary"
+        android:fontFamily="@font/medium"
+        android:visibility="gone"
+        tools:text="No destinations found"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Loading -->
     <ProgressBar

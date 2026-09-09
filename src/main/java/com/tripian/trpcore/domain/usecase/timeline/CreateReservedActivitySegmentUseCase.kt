@@ -3,6 +3,7 @@ package com.tripian.trpcore.domain.usecase.timeline
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
+import com.tripian.one.api.tour.model.TourLocation
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
@@ -79,9 +80,18 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
         }
     }
 
-    private fun hasUsableCoordinate(tour: TourProduct): Boolean {
-        val loc = tour.locations?.firstOrNull() ?: return false
-        return loc.lat != null && loc.lon != null
+    private fun hasUsableCoordinate(tour: TourProduct): Boolean =
+        tour.locations?.firstOrNull()?.toCoordinateOrNull() != null
+
+    /** A location with a missing or (0, 0) lat/lon is treated as no coordinate. */
+    private fun TourLocation.toCoordinateOrNull(): Coordinate? {
+        val latitude = lat ?: return null
+        val longitude = lon ?: return null
+        if (latitude == 0.0 && longitude == 0.0) return null
+        return Coordinate().apply {
+            this.lat = latitude
+            this.lng = longitude
+        }
     }
 
     /**
@@ -105,15 +115,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             effectiveDuration = tour.duration
         }
 
-        val loc = tour.locations?.firstOrNull()
-        val coordinate = if (loc?.lat != null && loc.lon != null) {
-            Coordinate().apply {
-                lat = loc.lat!!
-                lng = loc.lon!!
-            }
-        } else {
-            null
-        }
+        val coordinate = tour.locations?.firstOrNull()?.toCoordinateOrNull()
         val noLocation = coordinate == null
 
         val additionalData = TimelineSegmentAdditionalData().apply {

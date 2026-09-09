@@ -118,7 +118,7 @@ sealed class TimelineDisplayItem : Serializable {
 
         /** Whether the activity has no real-world coordinate. */
         val isNoLocation: Boolean
-            get() = segment.additionalData?.isNoLocation == true
+            get() = segment.hasNoLocation()
     }
 
     /**

@@ -376,6 +376,7 @@ object LanguageConst {
     const val POI_SELECTION_ADD_PLACE = "addPlan.button.addPlace"
     const val ADD_PLAN_SEARCH_PLACES_HINT = "addPlan.placeholder.searchPlaces"
     const val POI_SELECTION_NO_PLACES = "addPlan.emptyState.noPlaces"
+    const val DESTINATION_SEARCH_NO_RESULTS = "destination.search.noResults"
     const val ACTIVITY_LISTING_NO_ACTIVITIES = "addPlan.emptyState.noActivities"
     const val SEARCH_BAR_HINT = "common.placeholder.search"
 

@@ -78,6 +78,10 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             updateEmptyState(pois.isEmpty())
         }
 
+        viewModel.loadingMore.observe(this) { loadingMore ->
+            binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
+        }
+
         viewModel.poiCount.observe(this) { count ->
             val placesText =
                 viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)

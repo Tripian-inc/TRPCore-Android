@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.hasNoLocation
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.repository.TripRepository
@@ -98,7 +99,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 segmentIndex = index,
                                 city = getCityForSegment(segment, timeline, cities),
                                 planId = planId,
-                                isNoLocation = segment.additionalData?.isNoLocation == true,
+                                isNoLocation = segment.hasNoLocation(),
                                 isAvailabilityExpired =
                                     segment.additionalData?.isAvailabilityExpired == true,
                                 priceSnapshot = segment.additionalData?.price

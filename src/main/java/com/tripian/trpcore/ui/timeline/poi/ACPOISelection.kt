@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.View
+
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
@@ -21,6 +23,7 @@ import com.tripian.trpcore.util.widget.SearchBarView
 class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionVM>() {
 
     private var poiAdapter: POISelectionAdapter? = null
+    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
 
     override fun getViewBinding() = ActivityPoiSelectionBinding.inflate(layoutInflater)
 
@@ -44,6 +47,10 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
             updateEmptyState(pois.isEmpty())
         }
 
+        viewModel.loadingMore.observe(this) { loadingMore ->
+            binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
+        }
+
         viewModel.categories.observe(this) { categories ->
             updateCategoryChips(categories)
         }
@@ -60,7 +67,31 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         binding.rvPois.apply {
             layoutManager = LinearLayoutManager(this@ACPOISelection)
             adapter = poiAdapter
+
+            paginationScrollListener = object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return
+                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    val totalItemCount = layoutManager.itemCount
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                    if (lastVisibleItem >= totalItemCount - PAGINATION_PREFETCH_THRESHOLD) {
+                        viewModel.loadMorePois()
+                    }
+                }
+            }
+            addOnScrollListener(paginationScrollListener!!)
         }
+
+        binding.tvEmptyMessage.text = getLanguageForKey(LanguageConst.POI_SELECTION_NO_PLACES)
+            .let { if (it.isBlank() || it == LanguageConst.POI_SELECTION_NO_PLACES) "No places found" else it }
+    }
+
+    override fun onDestroy() {
+        paginationScrollListener?.let { binding.rvPois.removeOnScrollListener(it) }
+        paginationScrollListener = null
+        super.onDestroy()
     }
 
     private fun setupSearchBar() {
@@ -142,6 +173,7 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         const val ARG_CITY = "city"
         const val RESULT_POI = "selected_poi"
         const val REQUEST_CODE = 1001
+        private const val PAGINATION_PREFETCH_THRESHOLD = 5
 
         fun launch(context: Context, city: City): Intent {
             return Intent(context, ACPOISelection::class.java).apply {
