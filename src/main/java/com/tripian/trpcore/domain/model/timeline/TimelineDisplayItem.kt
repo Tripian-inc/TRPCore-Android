@@ -1,6 +1,7 @@
 package com.tripian.trpcore.domain.model.timeline
 
 import com.tripian.one.api.cities.model.City
+import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelinePlan
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.TimelineStep
@@ -325,6 +326,79 @@ sealed class TimelineDisplayItem : Serializable {
         /** Always false; the time-overlap label is suppressed for flexible items. */
         val showTimeOverlapText: Boolean
             get() = false
+    }
+
+    /**
+     * Starting point of the day in the flat timeline: the itinerary segment's
+     * accommodation or the city centre, shown as a single row at the top of its
+     * city group and used as the first waypoint of the city's route chain.
+     */
+    data class StartingPoint(
+        val name: String,
+        val coordinate: Coordinate?,
+        override val city: City? = null,
+        override val segmentIndex: Int? = null,
+        override val planId: String? = null
+    ) : TimelineDisplayItem() {
+        override val startTime: Date? = null
+        override val order: Int = 0
+
+        val isLocated: Boolean
+            get() = !coordinate.isMissingOrZero()
+    }
+
+    /**
+     * One itinerary plan step listed at the top level of the flat timeline.
+     * Activity steps take the reserved-activity look, POI steps the POI look;
+     * time changes and deletion still go through the step endpoints.
+     */
+    data class PlanStep(
+        val step: TimelineStep,
+        val segment: TimelineSegment? = null,
+        override val segmentIndex: Int? = null,
+        override val city: City? = null,
+        override val order: Int = 1,
+        override val planId: String? = null,
+        val hasConflict: Boolean = false,
+        val showTimeOverlapText: Boolean = false,
+        val isAvailabilityExpired: Boolean = false,
+        /**
+         * Snapshots of the step's times and price captured at construction, so
+         * DiffUtil detects in-place mutations of the shared step reference.
+         */
+        val startDateTimeSnapshot: String? = null,
+        val endDateTimeSnapshot: String? = null,
+        val priceSnapshot: Double? = null
+    ) : TimelineDisplayItem() {
+        override val startTime: Date?
+            get() = step.startDateTimes.toDate()
+
+        val endTime: Date?
+            get() = step.endDateTimes.toDate()
+
+        val isActivity: Boolean
+            get() = step.stepType == "activity"
+
+        /** The step's real-world coordinate, or null for the backend's no-location placeholder. */
+        val coordinate: Coordinate?
+            get() = step.poi?.coordinate?.takeUnless { it.isMissingOrZero() }
+
+        val isNoLocation: Boolean
+            get() = coordinate == null
+    }
+
+    /**
+     * Route leg between two consecutive located rows of the flat timeline,
+     * rendered as a distance/duration separator above the leg's destination row.
+     */
+    data class RouteSeparator(
+        val routeInfo: StepRouteInfo,
+        override val city: City? = null
+    ) : TimelineDisplayItem() {
+        override val startTime: Date? = null
+        override val segmentIndex: Int? = null
+        override val order: Int = 0
+        override val planId: String? = null
     }
 
     /**

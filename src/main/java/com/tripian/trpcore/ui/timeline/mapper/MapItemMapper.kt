@@ -84,6 +84,29 @@ class MapItemMapper @Inject constructor() {
                     }
                 }
 
+                is TimelineDisplayItem.PlanStep -> {
+                    val pos = nextPosition()
+                    val poi = item.step.poi
+                    val coord = item.coordinate
+                    if (poi != null && coord != null) {
+                        mapSteps.add(
+                            MapStep().apply {
+                                group = "step"
+                                poiId = poi.id ?: ""
+                                name = poi.name ?: ""
+                                coordinate = Coordinate().apply {
+                                    lat = coord.lat
+                                    lng = coord.lng
+                                }
+                                markerIcon = -1
+                                this.position = pos
+                                isOffer = false
+                                this.cityIndex = currentCityIndex; this.cityId = item.city?.id
+                            }
+                        )
+                    }
+                }
+
                 is TimelineDisplayItem.BookedActivity -> {
                     val pos = nextPosition()
                     if (!item.isNoLocation) {
@@ -226,6 +249,27 @@ class MapItemMapper @Inject constructor() {
                             )
                         )
                     }
+                }
+
+                is TimelineDisplayItem.PlanStep -> {
+                    val step = item.step
+                    val dateTime = step.startDateTimes.toDate()
+
+                    bottomItems.add(
+                        MapBottomItem(
+                            id = step.poi?.id ?: "step_${step.id}",
+                            order = nextPosition(),
+                            title = step.poi?.name ?: "",
+                            imageUrl = step.poi?.image?.url,
+                            time = dateTime?.let { outputTimeFormat.format(it) },
+                            type = "step",
+                            stepType = step.stepType,
+                            cityIndex = currentCityIndex,
+                            cityId = item.city?.id,
+                            cityName = item.city?.name,
+                            isNoLocation = item.isNoLocation
+                        )
+                    )
                 }
 
                 is TimelineDisplayItem.BookedActivity -> {

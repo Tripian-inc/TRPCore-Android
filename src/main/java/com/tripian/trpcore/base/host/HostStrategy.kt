@@ -145,4 +145,11 @@ open class HostStrategy {
      * between its located items. Default: false → markers only.
      */
     open fun drawsRoutesOnMap(): Boolean = false
+
+    /**
+     * Whether the timeline lists every segment and plan step of a day as one flat,
+     * time-ordered sequence with route legs between consecutive rows, instead of a
+     * smart-recommendations card per itinerary segment. Default: false → card layout.
+     */
+    open fun usesFlatTimeline(): Boolean = false
 }

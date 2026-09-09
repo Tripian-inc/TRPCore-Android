@@ -128,4 +128,7 @@ class NexusHostStrategy : HostStrategy() {
 
     /** Draw the day's walking/driving route between reservations and plan steps. */
     override fun drawsRoutesOnMap(): Boolean = true
+
+    /** List the day's reservations and plan steps chronologically, routed end to end. */
+    override fun usesFlatTimeline(): Boolean = true
 }

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="16dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:id="@+id/startingPointContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="36dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="6dp"
+        android:background="@drawable/trp_bg_starting_point">
+
+        <com.tripian.trpcore.util.widget.ImageView
+            android:id="@+id/ivStartingPointPin"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/trp_ic_starting_point_pin" />
+
+        <TextView
+            android:id="@+id/tvStartingPointName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/medium"
+            android:textSize="14sp"
+            android:textColor="@color/trp_text_primary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="Hotel ABC" />
+
+    </LinearLayout>
+
+</LinearLayout>

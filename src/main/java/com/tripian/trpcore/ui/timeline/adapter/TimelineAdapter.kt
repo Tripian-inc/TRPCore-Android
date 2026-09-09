@@ -1,6 +1,7 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -14,12 +15,18 @@ import com.tripian.trpcore.databinding.ItemTimelineRecommendationsBinding
 import com.tripian.trpcore.databinding.ItemTimelineReservedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineSectionFooterBinding
 import com.tripian.trpcore.databinding.ItemTimelineSectionHeaderBinding
+import com.tripian.trpcore.databinding.ItemTimelineStartingPointBinding
+import com.tripian.trpcore.databinding.ItemTimelineStepActivityBinding
+import com.tripian.trpcore.databinding.ItemTimelineStepPoiBinding
+import com.tripian.trpcore.databinding.ItemTimelineStepRouteSeparatorBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.ui.timeline.views.ConflictWarningView
 
 /**
  * TimelineAdapter
- * Shows items on the Timeline screen
+ * Shows items on the Timeline screen. Flat-timeline rows (starting point, plan
+ * steps, route separators) reuse the step view holders of the recommendations
+ * card with a uniform 20dp vertical rhythm.
  */
 class TimelineAdapter(
     private val onItemClick: (TimelineDisplayItem) -> Unit,
@@ -53,6 +60,12 @@ class TimelineAdapter(
         private const val TYPE_RESERVED_ACTIVITY = 7
         private const val TYPE_FLEXIBLE_ACTIVITY = 8
         private const val TYPE_CONFLICT_WARNING = 9
+        private const val TYPE_STARTING_POINT = 10
+        private const val TYPE_PLAN_STEP_POI = 11
+        private const val TYPE_PLAN_STEP_ACTIVITY = 12
+        private const val TYPE_ROUTE_SEPARATOR = 13
+
+        private const val FLAT_ROW_SPACING_DP = 20
 
         const val PAYLOAD_ROUTE_INFO_UPDATE = "route_info_update"
     }
@@ -69,6 +82,11 @@ class TimelineAdapter(
             is TimelineDisplayItem.EmptyState -> TYPE_EMPTY_STATE
             is TimelineDisplayItem.SectionFooter -> TYPE_SECTION_FOOTER
             is TimelineDisplayItem.ConflictWarning -> TYPE_CONFLICT_WARNING
+            is TimelineDisplayItem.StartingPoint -> TYPE_STARTING_POINT
+            is TimelineDisplayItem.PlanStep -> {
+                if (item.isActivity) TYPE_PLAN_STEP_ACTIVITY else TYPE_PLAN_STEP_POI
+            }
+            is TimelineDisplayItem.RouteSeparator -> TYPE_ROUTE_SEPARATOR
         }
     }
 
@@ -107,8 +125,35 @@ class TimelineAdapter(
                 ) as ConflictWarningView
                 ConflictWarningVH(view)
             }
+            TYPE_STARTING_POINT -> StartingPointVH(
+                ItemTimelineStartingPointBinding.inflate(inflater, parent, false)
+            )
+            TYPE_PLAN_STEP_POI -> StepPoiVH(
+                ItemTimelineStepPoiBinding.inflate(inflater, parent, false)
+                    .also { it.root.styleAsFlatRow() }
+            )
+            TYPE_PLAN_STEP_ACTIVITY -> StepActivityVH(
+                ItemTimelineStepActivityBinding.inflate(inflater, parent, false)
+                    .also { it.root.styleAsFlatRow() }
+            )
+            TYPE_ROUTE_SEPARATOR -> StepRouteSeparatorVH(
+                ItemTimelineStepRouteSeparatorBinding.inflate(inflater, parent, false)
+                    .also { it.root.styleAsFlatSeparator() }
+            )
             else -> throw IllegalArgumentException("Unknown view type: $viewType")
         }
+    }
+
+    /** Card step layouts sit on the card's grey ground; at top level they go on white with bottom spacing. */
+    private fun View.styleAsFlatRow() {
+        background = null
+        val bottom = (FLAT_ROW_SPACING_DP * resources.displayMetrics.density).toInt()
+        setPadding(paddingLeft, paddingTop, paddingRight, bottom)
+    }
+
+    private fun View.styleAsFlatSeparator() {
+        background = null
+        (layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin = 0
     }
 
     override fun onBindViewHolder(
@@ -177,6 +222,34 @@ class TimelineAdapter(
                 onTap = onConflictTap ?: {},
                 onDismiss = onConflictDismiss ?: {}
             )
+            is StartingPointVH -> holder.bind(item as TimelineDisplayItem.StartingPoint)
+            is StepPoiVH -> {
+                val planStep = item as TimelineDisplayItem.PlanStep
+                holder.bind(
+                    step = planStep.step,
+                    order = planStep.order,
+                    onStepClick = onStepClick,
+                    onChangeTimeClick = onStepChangeTimeClick,
+                    onDeleteClick = onStepDeleteClick,
+                    hasConflict = planStep.hasConflict,
+                    showTimeOverlapText = planStep.showTimeOverlapText
+                )
+            }
+            is StepActivityVH -> {
+                val planStep = item as TimelineDisplayItem.PlanStep
+                holder.bind(
+                    step = planStep.step,
+                    order = planStep.order,
+                    onStepClick = onStepClick,
+                    onChangeTimeClick = onStepChangeTimeClick,
+                    onDeleteClick = onStepDeleteClick,
+                    onReservationClick = onStepReservationClick,
+                    hasConflict = planStep.hasConflict,
+                    showTimeOverlapText = planStep.showTimeOverlapText,
+                    isAvailabilityExpired = planStep.isAvailabilityExpired
+                )
+            }
+            is StepRouteSeparatorVH -> holder.bind((item as TimelineDisplayItem.RouteSeparator).routeInfo)
         }
     }
 }
@@ -206,6 +279,14 @@ class TimelineDiffCallback : DiffUtil.ItemCallback<TimelineDisplayItem>() {
                 oldItem.city?.id == newItem.city?.id
             oldItem is TimelineDisplayItem.ConflictWarning && newItem is TimelineDisplayItem.ConflictWarning ->
                 true
+            oldItem is TimelineDisplayItem.StartingPoint && newItem is TimelineDisplayItem.StartingPoint ->
+                oldItem.city?.id == newItem.city?.id
+            oldItem is TimelineDisplayItem.PlanStep && newItem is TimelineDisplayItem.PlanStep ->
+                oldItem.step.id == newItem.step.id
+            oldItem is TimelineDisplayItem.RouteSeparator && newItem is TimelineDisplayItem.RouteSeparator ->
+                oldItem.city?.id == newItem.city?.id &&
+                        oldItem.routeInfo.fromStepId == newItem.routeInfo.fromStepId &&
+                        oldItem.routeInfo.toStepId == newItem.routeInfo.toStepId
             else -> false
         }
     }

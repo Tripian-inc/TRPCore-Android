@@ -754,6 +754,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         return item.step.poi
                     }
                 }
+                is TimelineDisplayItem.PlanStep -> {
+                    if (item.step.poi?.id == poiId) {
+                        return item.step.poi
+                    }
+                }
                 else -> {}
             }
         }
@@ -1144,7 +1149,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun scrollToNewSegment(planId: String) {
         val position = timelineAdapter.currentList.indexOfFirst { item ->
-            item is TimelineDisplayItem.Recommendations && item.plan.id == planId
+            val isPlanRow = item is TimelineDisplayItem.Recommendations ||
+                    item is TimelineDisplayItem.StartingPoint ||
+                    item is TimelineDisplayItem.PlanStep
+            isPlanRow && item.planId == planId
         }
         if (position != -1) {
             binding.rvTimeline.smoothScrollToPosition(position)

@@ -24,6 +24,9 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.PlannedActivitySource
 import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
+import com.tripian.trpcore.domain.model.timeline.FlatRouteChain
+import com.tripian.trpcore.domain.model.timeline.generatedWithoutPois
+import com.tripian.trpcore.domain.model.timeline.planFor
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
 import com.tripian.trpcore.domain.model.timeline.generateDateRange
@@ -173,6 +176,16 @@ class ACTimelineVM @Inject constructor(
 
     private val _routeInfoUpdated = MutableLiveData<Int?>()
     val routeInfoUpdated: LiveData<Int?> = _routeInfoUpdated
+
+    /** Flat timeline: route legs per [FlatRouteChain.key], and the requests in flight. */
+    private val flatRouteCache = mutableMapOf<String, List<StepRouteInfo>>()
+    private val flatRouteJobs = mutableMapOf<String, Job>()
+
+    /** Plans already reported as generated without places, so each alerts once. */
+    private val emptyRecommendationPlanIds = mutableSetOf<String>()
+
+    private val usesFlatTimeline: Boolean
+        get() = TRPCore.host.usesFlatTimeline()
 
     // No cities available state - shown when all destinations have invalid cityId
     private val _noCitiesAvailable = MutableLiveData<Boolean>()
@@ -1251,11 +1264,28 @@ class ACTimelineVM @Inject constructor(
      * cached route info so async refreshes don't wipe them off the UI.
      */
     private fun updateDisplayItems() {
-        val timeline = _timeline.value ?: return
-        val days = _availableDays.value ?: return
+        val items = buildDisplayItems() ?: return
+        _displayItems.value = items
+
+        if (usesFlatTimeline) {
+            requestMissingFlatRoutes(items)
+            reportPlanGeneratedWithoutPois()
+        }
+
+        updateMapSteps()
+    }
+
+    /**
+     * Builds the selected day's display items, carrying over the Recommendations
+     * expand state and cached route info, with the conflict banner prepended when due.
+     * Null when the timeline or the selected day is not available.
+     */
+    private fun buildDisplayItems(): List<TimelineDisplayItem>? {
+        val timeline = _timeline.value ?: return null
+        val days = _availableDays.value ?: return null
         val selectedIndex = _selectedDayIndex.value ?: 0
 
-        if (selectedIndex >= days.size) return
+        if (selectedIndex >= days.size) return null
 
         val existingExpandStates = _displayItems.value
             ?.filterIsInstance<TimelineDisplayItem.Recommendations>()
@@ -1269,7 +1299,8 @@ class ACTimelineVM @Inject constructor(
             cities = _cities.value ?: emptyList(),
             collapsedSectionCityIds = collapsedSectionCityIds,
             emptyStateMessage = getLanguageForKey(LanguageConst.NO_PLANS_YET),
-            hiddenSegmentIndices = pendingDeletionSegmentIndices
+            hiddenSegmentIndices = pendingDeletionSegmentIndices,
+            flatRoutes = flatRouteCache
         )
 
         val itemsWithPreservedState = items.map { item ->
@@ -1285,9 +1316,7 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        _displayItems.value = injectConflictBannerIfNeeded(itemsWithPreservedState, selectedIndex)
-
-        updateMapSteps()
+        return injectConflictBannerIfNeeded(itemsWithPreservedState, selectedIndex)
     }
 
     /**
@@ -1302,6 +1331,7 @@ class ACTimelineVM @Inject constructor(
         val hasConflict = items.any {
             (it is TimelineDisplayItem.BookedActivity && it.hasConflict) ||
                     (it is TimelineDisplayItem.ManualPoi && it.hasConflict) ||
+                    (it is TimelineDisplayItem.PlanStep && it.hasConflict) ||
                     (it is TimelineDisplayItem.Recommendations && it.conflictingStepIds.isNotEmpty())
         }
         if (!hasConflict) return items
@@ -2181,7 +2211,11 @@ class ACTimelineVM @Inject constructor(
 
         updateMapBottomItems()
 
-        calculateMapRoutes(result.mapSteps)
+        if (usesFlatTimeline) {
+            publishFlatMapRoutes(items)
+        } else {
+            calculateMapRoutes(result.mapSteps)
+        }
     }
 
     /**
@@ -2210,6 +2244,82 @@ class ACTimelineVM @Inject constructor(
             }
             _mapRoutes.value = legs
         }
+    }
+
+    // =====================
+    // FLAT TIMELINE ROUTES
+    // =====================
+
+    /**
+     * Requests legs for every city chain of [items] with no cached result and no
+     * request in flight. Arrived legs are cached under the chain key and the day is
+     * re-laid out so its separators and map route appear. A chain whose rows only
+     * changed time keeps its key, so no request is repeated for it.
+     */
+    private fun requestMissingFlatRoutes(items: List<TimelineDisplayItem>) {
+        FlatRouteChain.collect(items)
+            .filter { it.isRoutable && it.key !in flatRouteCache && it.key !in flatRouteJobs }
+            .forEach { chain ->
+                flatRouteJobs[chain.key] = viewModelScope.launch {
+                    val legs = runCatching {
+                        getTimelineStepRoutesUseCase(
+                            GetTimelineStepRoutesUseCase.Params(
+                                chain.waypoints.map {
+                                    GetTimelineStepRoutesUseCase.Waypoint(it.coordinate, it.id)
+                                }
+                            )
+                        )
+                    }.getOrNull()
+                    flatRouteJobs.remove(chain.key)
+                    if (legs != null) {
+                        flatRouteCache[chain.key] = legs
+                        relayoutWithFlatRoutes()
+                    }
+                }
+            }
+    }
+
+    /** Re-renders the day with the legs now cached, leaving the map selection state untouched. */
+    private fun relayoutWithFlatRoutes() {
+        val items = buildDisplayItems() ?: return
+        _displayItems.value = items
+        publishFlatMapRoutes(items)
+    }
+
+    /**
+     * Draws the cached legs of the day's chains on the map. The starting point has no
+     * marker, so its leg is shown in the list only.
+     */
+    private fun publishFlatMapRoutes(items: List<TimelineDisplayItem>) {
+        mapRoutesJob?.cancel()
+        if (!TRPCore.host.drawsRoutesOnMap()) {
+            _mapRoutes.value = emptyList()
+            return
+        }
+        _mapRoutes.value = FlatRouteChain.collect(items)
+            .flatMap { chain -> flatRouteCache[chain.key].orEmpty() }
+            .filter { it.fromStepId != null }
+    }
+
+    /**
+     * Alerts once per plan when generation finished without finding any place for
+     * the selected day; the list simply stays without rows for that plan.
+     */
+    private fun reportPlanGeneratedWithoutPois() {
+        val timeline = _timeline.value ?: return
+        val days = _availableDays.value ?: return
+        val dateStr = days.getOrNull(_selectedDayIndex.value ?: 0)?.toApiDateString() ?: return
+        val emptyPlan = timeline.tripProfile?.segments
+            ?.asSequence()
+            ?.filter { it.startDate?.startsWith(dateStr) == true && it.title != "TimelineDate" }
+            ?.filter { it.segmentType == SegmentType.ITINERARY || it.segmentType == SegmentType.GENERATED }
+            ?.mapNotNull { timeline.planFor(it) }
+            ?.firstOrNull { it.generatedWithoutPois && it.id !in emptyRecommendationPlanIds }
+            ?: return
+        emptyRecommendationPlanIds.add(emptyPlan.id)
+        _error.value = getLanguageForKey(LanguageConst.ADD_PLAN_NO_RECOMMENDATIONS)
+            .takeIf { it.isNotBlank() && it != LanguageConst.ADD_PLAN_NO_RECOMMENDATIONS }
+            ?: NO_RECOMMENDATIONS_FALLBACK
     }
 
     /**
@@ -2854,6 +2964,7 @@ class ACTimelineVM @Inject constructor(
 
     companion object {
         const val ARG_TRIP_HASH = "tripHash"
+        private const val NO_RECOMMENDATIONS_FALLBACK = "No recommendations found for this area"
 
         /** Span applied to a moved step whose own start/end can't be read. */
         private const val DEFAULT_STEP_DURATION_MINUTES = 60
