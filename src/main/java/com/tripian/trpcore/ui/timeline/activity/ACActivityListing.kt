@@ -296,7 +296,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
     private fun setupSearchBar() {
         binding.searchBar.setHint(viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_ACTIVITY))
-        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.LOCAL) { query ->
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
             viewModel.search(query)
         }
     }

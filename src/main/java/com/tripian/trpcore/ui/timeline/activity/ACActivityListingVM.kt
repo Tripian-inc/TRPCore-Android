@@ -201,8 +201,8 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Title search as the user types. Runs locally when every product is already
-     * loaded; otherwise the API applies it after a short debounce.
+     * Title search; the search bar debounces typing. Runs locally when every
+     * product is already loaded, otherwise the API applies it.
      */
     fun search(query: String) {
         if (currentSearchQuery == query) return
@@ -211,16 +211,8 @@ class ACActivityListingVM @Inject constructor(
             applyAllFilters()
             _scrollToTop.value = true
         } else {
-            scheduleApiSearch()
+            loadActivities(useSkeleton = true)
         }
-    }
-
-    private val searchHandler = Handler(Looper.getMainLooper())
-    private val searchDebounceMs: Long = 650L
-
-    private fun scheduleApiSearch() {
-        searchHandler.removeCallbacksAndMessages(null)
-        searchHandler.postDelayed({ loadActivities(useSkeleton = true) }, searchDebounceMs)
     }
 
     /**
@@ -687,7 +679,6 @@ class ACActivityListingVM @Inject constructor(
 
     override fun onDestroy() {
         skeletonHandler.removeCallbacksAndMessages(null)
-        searchHandler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }
 }
