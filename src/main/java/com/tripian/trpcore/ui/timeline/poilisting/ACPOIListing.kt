@@ -19,6 +19,7 @@ import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.extensions.dp
 import com.tripian.trpcore.util.widget.SearchBarView
 import java.text.SimpleDateFormat
@@ -146,6 +147,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
                 )
             }
         )
+        binding.rvPOIs.applyBottomSystemBarInsetPadding()
         binding.rvPOIs.apply {
             layoutManager = LinearLayoutManager(this@ACPOIListing)
             adapter = poiAdapter

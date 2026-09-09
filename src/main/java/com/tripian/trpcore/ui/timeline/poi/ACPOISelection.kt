@@ -14,6 +14,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.ActivityPoiSelectionBinding
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.widget.SearchBarView
 
 /**
@@ -76,6 +77,7 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         poiAdapter = POISelectionAdapter { poi ->
             selectPoi(poi)
         }
+        binding.rvPois.applyBottomSystemBarInsetPadding()
         binding.rvPois.apply {
             layoutManager = LinearLayoutManager(this@ACPOISelection)
             adapter = poiAdapter
