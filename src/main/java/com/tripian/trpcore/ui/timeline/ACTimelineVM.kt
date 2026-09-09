@@ -59,6 +59,7 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -151,6 +152,10 @@ class ACTimelineVM @Inject constructor(
 
     private val _cityMarkers = MutableLiveData<List<MapStep>>()
     val cityMarkers: LiveData<List<MapStep>> = _cityMarkers
+
+    private val _mapRoutes = MutableLiveData<List<StepRouteInfo>>(emptyList())
+    val mapRoutes: LiveData<List<StepRouteInfo>> = _mapRoutes
+    private var mapRoutesJob: Job? = null
 
     private val _mapMarkersMode = MutableLiveData(MapMarkersMode.STEP_MARKERS)
     val mapMarkersMode: LiveData<MapMarkersMode> = _mapMarkersMode
@@ -2053,6 +2058,36 @@ class ACTimelineVM @Inject constructor(
         updateCityMarkers()
 
         updateMapBottomItems()
+
+        calculateMapRoutes(result.mapSteps)
+    }
+
+    /**
+     * Routes the day's located, ordered map items city by city so the map can draw
+     * walking/driving legs. Flexible items have no place in the sequence and are skipped.
+     * No-op unless the host draws routes.
+     */
+    private fun calculateMapRoutes(mapSteps: List<MapStep>) {
+        mapRoutesJob?.cancel()
+        _mapRoutes.value = emptyList()
+        if (!TRPCore.host.drawsRoutesOnMap()) return
+
+        val cityGroups = mapSteps
+            .filter { !it.isCityMarker && !it.isFlexible }
+            .groupBy { it.cityIndex }
+            .values
+            .map { group -> group.mapNotNull { it.coordinate } }
+            .filter { it.size > 1 }
+        if (cityGroups.isEmpty()) return
+
+        mapRoutesJob = viewModelScope.launch {
+            val legs = cityGroups.flatMap { coordinates ->
+                runCatching {
+                    getTimelineStepRoutesUseCase(GetTimelineStepRoutesUseCase.Params.forCoordinates(coordinates))
+                }.getOrDefault(emptyList())
+            }
+            _mapRoutes.value = legs
+        }
     }
 
     /**
@@ -2217,7 +2252,7 @@ class ACTimelineVM @Inject constructor(
         viewModelScope.launch {
             runCatching {
                 getTimelineStepRoutesUseCase(
-                    GetTimelineStepRoutesUseCase.Params(
+                    GetTimelineStepRoutesUseCase.Params.forSteps(
                         startingPointCoordinate = recommendations.startingPointCoordinate,
                         steps = recommendations.steps
                     )

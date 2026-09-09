@@ -36,6 +36,7 @@
     <color name="black">#000000</color>
     <color name="transparent">@color/trp_transparent</color>
     <color name="trp_blue">#50a4d7</color>
+    <color name="trp_map_route">#3E93FE</color>
     <color name="trp_blue_soft">#e0f4fd</color>
     <color name="trp_ultra_light_grey_x">#fbfbfb</color>
     <color name="trp_ultra_light_grey">#f0f0f0</color>

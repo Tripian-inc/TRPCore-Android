@@ -2,10 +2,7 @@ package com.tripian.trpcore.ui.createtrip
 
 import android.content.Context
 import android.content.Intent
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
@@ -36,7 +33,7 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
 
     private fun setupTexts() {
         binding.tvTitle.text = lang(LanguageConst.WHERE_YOU_GO, "Where are you travelling?")
-        binding.etSearch.hint = lang(LanguageConst.SEARCH, "Search")
+        binding.searchBar.setHint(lang(LanguageConst.SEARCH, "Search"))
         binding.tvNext.text = lang(LanguageConst.CREATE_TRIP_NEXT, "Next")
         binding.tvPopularLabel.text = lang(LanguageConst.POPULAR_CITIES, "Top Destinations")
         binding.tvAllLabel.text = lang(LanguageConst.EXPERIENCE_DESTINATIONS, "Destinations")
@@ -54,22 +51,8 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
 
         binding.ivBack.setOnClickListener { goBack() }
 
-        binding.etSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val q = s?.toString().orEmpty()
-                binding.ivClearSearch.visibility = if (q.isNotEmpty()) View.VISIBLE else View.GONE
-                viewModel.search(q)
-            }
-        })
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) { hideKeyboard(); true } else false
-        }
-        binding.ivClearSearch.setOnClickListener {
-            binding.etSearch.setText("")
-            viewModel.search("")
-        }
+        binding.searchBar.setOnTextChangedListener { query -> viewModel.search(query) }
+        binding.searchBar.setOnSearchActionListener { hideKeyboard() }
 
         binding.tvNext.setOnClickListener { viewModel.proceed() }
     }

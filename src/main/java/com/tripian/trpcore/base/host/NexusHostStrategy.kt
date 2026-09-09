@@ -125,4 +125,7 @@ class NexusHostStrategy : HostStrategy() {
 
     /** Skip the schedule-bulk availability sweep for now. */
     override fun runsAvailabilitySweep(): Boolean = false
+
+    /** Draw the day's walking/driving route between reservations and plan steps. */
+    override fun drawsRoutesOnMap(): Boolean = true
 }

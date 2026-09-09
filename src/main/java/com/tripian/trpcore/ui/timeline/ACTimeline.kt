@@ -325,6 +325,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
         }
 
+        viewModel.mapRoutes.observe(this) { routes ->
+            binding.mapView.showRouteLegs(routes)
+        }
+
         viewModel.mapBottomItems.observe(this) { items ->
             mapBottomListAdapter?.submitList(items)
             if (viewModel.isMapMode.value == true) {

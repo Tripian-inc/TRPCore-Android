@@ -182,7 +182,7 @@ class ACSplashVM @Inject constructor(
             // of falling back to the city centre.
             val locLat = loc?.lat
             val locLng = loc?.lon
-            val activityCoord = if (locLat != null && locLng != null) {
+            val activityCoord = if (locLat != null && locLng != null && !(locLat == 0.0 && locLng == 0.0)) {
                 ItineraryCoordinate(locLat, locLng)
             } else null
             // The destination (city) still needs a centre coordinate for the timeline.

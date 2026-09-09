@@ -18,7 +18,8 @@ object RouteCache {
     data class CachedRoute(
         val distanceMeters: Double,
         val durationSeconds: Double,
-        val isWalking: Boolean
+        val isWalking: Boolean,
+        val encodedGeometry: String?
     )
 
     private val cache = mutableMapOf<String, CachedRoute>()
@@ -67,7 +68,8 @@ object RouteCache {
         put(from, to, CachedRoute(
             distanceMeters = routeInfo.distanceMeters,
             durationSeconds = routeInfo.durationSeconds,
-            isWalking = routeInfo.isWalking
+            isWalking = routeInfo.isWalking,
+            encodedGeometry = routeInfo.encodedGeometry
         ))
     }
 
@@ -100,7 +102,8 @@ object RouteCache {
             durationSeconds = this.durationSeconds,
             isWalking = this.isWalking,
             fromStepId = fromStepId,
-            toStepId = toStepId
+            toStepId = toStepId,
+            encodedGeometry = this.encodedGeometry
         )
     }
 }

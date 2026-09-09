@@ -2,6 +2,7 @@ package com.tripian.trpcore.util
 
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 /**
  * Parses a POI `hours` string into per-day 24h ranges and answers whether a chosen
@@ -18,6 +19,12 @@ object OpeningHours {
     data class Range(val startMinutes: Int, val endMinutes: Int) {
         val crossesMidnight: Boolean get() = endMinutes <= startMinutes
     }
+
+    /** Localized "closed" markers a day entry may carry instead of a time range. */
+    private val closedMarkers = listOf(
+        "closed", "cerrado", "cerrada", "fermé", "ferme", "geschlossen",
+        "chiuso", "chiusa", "fechado", "fechada", "kapalı", "kapali"
+    )
 
     /**
      * Multi-language day name mappings to English abbreviations.
@@ -89,8 +96,11 @@ object OpeningHours {
 
     /**
      * Whether `[startTime, endTime]` on [date] fits inside that day's opening hours.
-     * Returns null when it cannot be decided — no hours data, an unparsable string,
-     * or an incomplete selection — so callers can stay silent instead of warning.
+     * A day entry without a time range counts as closed only when it carries a known
+     * localized "closed" marker; any other free text (e.g. "Open 24 hours" in any
+     * language) is undecided. Returns null when it cannot be decided — no hours data,
+     * an unparsable entry, or an incomplete selection — so callers can stay silent
+     * instead of warning.
      */
     fun coversSelection(
         hoursString: String?,
@@ -105,13 +115,19 @@ object OpeningHours {
         val dayTexts = dayTexts(hoursString)
         if (dayTexts.isEmpty()) return null
 
-        val range = dayTexts[dayKey]?.let { parseRange(it) } ?: return false
+        val dayEntry = dayTexts[dayKey] ?: return false
+        val range = parseRange(dayEntry) ?: return if (isClosedText(dayEntry)) false else null
 
         return if (range.crossesMidnight) {
             selectionStart >= range.startMinutes || selectionEnd <= range.endMinutes
         } else {
             selectionStart >= range.startMinutes && selectionEnd <= range.endMinutes
         }
+    }
+
+    private fun isClosedText(text: String): Boolean {
+        val normalized = text.lowercase(Locale.ROOT)
+        return closedMarkers.any { normalized.contains(it) }
     }
 
     private fun parseRange(text: String): Range? {

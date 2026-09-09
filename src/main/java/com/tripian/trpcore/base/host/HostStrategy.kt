@@ -139,4 +139,10 @@ open class HostStrategy {
      * Default: true. A host can disable it to avoid the batch availability call.
      */
     open fun runsAvailabilitySweep(): Boolean = true
+
+    /**
+     * Whether the timeline map draws the day's route (walking and driving legs)
+     * between its located items. Default: false → markers only.
+     */
+    open fun drawsRoutesOnMap(): Boolean = false
 }

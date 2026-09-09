@@ -7,6 +7,7 @@ import android.location.Location
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.toColorInt
 import com.google.gson.Gson
 import com.google.gson.JsonElement
@@ -30,6 +31,7 @@ import com.mapbox.maps.TransitionOptions
 import com.mapbox.maps.coroutine.awaitCameraForCoordinates
 import com.mapbox.maps.dsl.cameraOptions
 import com.mapbox.maps.extension.style.expressions.dsl.generated.literal
+import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.addLayerAbove
 import com.mapbox.maps.extension.style.layers.addLayerBelow
@@ -60,8 +62,10 @@ import com.mapbox.maps.plugin.viewport.viewport
 import com.mapbox.maps.toCameraOptions
 import com.mapbox.turf.TurfConstants
 import com.mapbox.turf.TurfMeasurement
+import com.tripian.trpcore.R
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.MarkerView
+import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
 import com.tripian.trpcore.util.extensions.getBitmap
 import java.util.Objects
 
@@ -69,6 +73,8 @@ class MapView : MapView {
 
     private val ROUTE_SOURCE_ID = "route-source-id"
     private val ROUTE_LAYER_ID = "route-layer-id"
+    private val DRIVING_ROUTE_LAYER_ID = "driving-route-layer-id"
+    private val ROUTE_IS_WALKING_PROPERTY = "isWalking"
 
     private val RETURN_ROUTE_SOURCE_ID = "return-route-source-id"
     private val RETURN_ROUTE_LAYER_ID = "return-route-layer-id"
@@ -90,7 +96,10 @@ class MapView : MapView {
     private var selectedMarkerIds = mutableMapOf<Int, String>()
 
     private lateinit var routeLayer: LineLayer
+    private lateinit var drivingRouteLayer: LineLayer
     private lateinit var returnRouteLayer: LineLayer
+
+    private var routeLegs: List<StepRouteInfo> = emptyList()
 
     private var routesLayers: ArrayList<LineLayer> = arrayListOf()
 
@@ -146,14 +155,26 @@ class MapView : MapView {
 
             style.addLayer(returnRouteLayer)
 
+            drivingRouteLayer = LineLayer(DRIVING_ROUTE_LAYER_ID, ROUTE_SOURCE_ID)
+
+            drivingRouteLayer.filter(routeLegFilter(isWalking = false))
+            drivingRouteLayer.lineWidth(4.0)
+            drivingRouteLayer.lineTranslate(listOf(0.0, 4.0))
+            drivingRouteLayer.lineColor(ContextCompat.getColor(context, R.color.trp_map_route))
+
+            style.addLayer(drivingRouteLayer)
+
             routeLayer = LineLayer(ROUTE_LAYER_ID, ROUTE_SOURCE_ID)
 
+            routeLayer.filter(routeLegFilter(isWalking = true))
             routeLayer.lineWidth(4.0)
             routeLayer.lineTranslate(listOf(0.0, 4.0))
             routeLayer.lineDasharray(listOf(1.2, 1.2))
-            routeLayer.lineColor("#07074E".toColorInt())
+            routeLayer.lineColor(ContextCompat.getColor(context, R.color.trp_map_route))
 
             style.addLayer(routeLayer)
+
+            applyRouteLegs()
 
             mapLoadListener?.invoke()
         }
@@ -237,16 +258,16 @@ class MapView : MapView {
 
     fun showMapIcons(items: List<MapStep>) {
         try {
-            if (style?.styleLayerExists(ROUTE_LAYER_ID) == true) {
-                style?.removeStyleLayer(ROUTE_LAYER_ID)
-            }
-            if (style?.styleLayerExists(RETURN_ROUTE_LAYER_ID) == true) {
-                style?.removeStyleLayer(RETURN_ROUTE_LAYER_ID)
+            listOf(ROUTE_LAYER_ID, DRIVING_ROUTE_LAYER_ID, RETURN_ROUTE_LAYER_ID).forEach { layerId ->
+                if (style?.styleLayerExists(layerId) == true) {
+                    style?.removeStyleLayer(layerId)
+                }
             }
 
             mapItems.addAll(items)
 
             if (items.isNotEmpty()) {
+                style?.addLayer(drivingRouteLayer)
                 style?.addLayer(routeLayer)
                 style?.addLayer(returnRouteLayer)
                 style?.moveStyleLayer(
@@ -482,6 +503,7 @@ class MapView : MapView {
 
     fun clearMap() {
         style?.removeStyleLayer(ROUTE_LAYER_ID)
+        style?.removeStyleLayer(DRIVING_ROUTE_LAYER_ID)
         style?.removeStyleLayer(RETURN_ROUTE_LAYER_ID)
 
         mapItems.forEach { item ->
@@ -498,22 +520,29 @@ class MapView : MapView {
         style?.removeStyleImage(uniq)
     }
 
-    fun showRoute(route: DirectionsRoute) {
-        val source = style?.getSourceAs<GeoJsonSource>(ROUTE_SOURCE_ID)
-
-        source?.apply {
-            featureCollection(
-                FeatureCollection.fromFeature(
-                    Feature.fromGeometry(
-                        LineString.fromPolyline(
-                            route.geometry()!!,
-                            Constants.PRECISION_6
-                        )
-                    )
-                )
-            )
-        }
+    /**
+     * Draws the given legs: walking legs on the dashed route layer, driving legs on the
+     * solid one. Legs survive marker clears and are re-applied once the style loads.
+     * Pass an empty list to remove the route.
+     */
+    fun showRouteLegs(legs: List<StepRouteInfo>) {
+        routeLegs = legs
+        applyRouteLegs()
     }
+
+    private fun applyRouteLegs() {
+        val features = routeLegs.mapNotNull { leg ->
+            val geometry = leg.encodedGeometry ?: return@mapNotNull null
+            Feature.fromGeometry(LineString.fromPolyline(geometry, Constants.PRECISION_6)).apply {
+                addBooleanProperty(ROUTE_IS_WALKING_PROPERTY, leg.isWalking)
+            }
+        }
+        style?.getSourceAs<GeoJsonSource>(ROUTE_SOURCE_ID)
+            ?.featureCollection(FeatureCollection.fromFeatures(features))
+    }
+
+    private fun routeLegFilter(isWalking: Boolean): Expression =
+        Expression.eq(Expression.get(ROUTE_IS_WALKING_PROPERTY), Expression.literal(isWalking))
 
     fun setOnMapLoadListener(task: () -> Unit) {
         mapLoadListener = task
