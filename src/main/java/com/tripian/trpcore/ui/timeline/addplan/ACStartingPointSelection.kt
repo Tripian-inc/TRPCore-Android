@@ -24,6 +24,7 @@ import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.databinding.ActivityStartingPointSelectionBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.widget.SearchBarView
 import java.io.Serializable
@@ -101,6 +102,7 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
         savedItemsAdapter = SavedItemsAdapter { savedItem ->
             viewModel.selectSavedItem(savedItem)
         }
+        binding.rvSavedActivities.applyBottomSystemBarInsetPadding()
         binding.rvSavedActivities.apply {
             layoutManager = LinearLayoutManager(this@ACStartingPointSelection)
             adapter = savedItemsAdapter
@@ -109,6 +111,7 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
         searchResultsAdapter = SearchResultsAdapter { place ->
             viewModel.fetchPlaceDetails(place)
         }
+        binding.rvSearchResults.applyBottomSystemBarInsetPadding()
         binding.rvSearchResults.apply {
             layoutManager = LinearLayoutManager(this@ACStartingPointSelection)
             adapter = searchResultsAdapter

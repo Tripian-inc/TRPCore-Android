@@ -11,6 +11,7 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
@@ -117,6 +118,7 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             }
         )
 
+        binding.rvSavedPlans.applyBottomSystemBarInsetPadding()
         binding.rvSavedPlans.apply {
             layoutManager = LinearLayoutManager(this@ACSavedPlans)
             adapter = this@ACSavedPlans.adapter
