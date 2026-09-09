@@ -269,7 +269,7 @@ class SearchBarView @JvmOverloads constructor(
     }
 
     private companion object {
-        const val DEFAULT_DEBOUNCE_MS = 600L
+        const val DEFAULT_DEBOUNCE_MS = 650L
         const val DEFAULT_ICON_SIZE_DP = 24
         const val DEFAULT_HORIZONTAL_PADDING_DP = 18
         const val ICON_GAP_DP = 8
