@@ -3,7 +3,6 @@ package com.tripian.trpcore.ui.createtrip
 import android.content.Context
 import android.content.Intent
 import android.view.View
-import android.view.inputmethod.InputMethodManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
 import com.tripian.one.api.cities.model.City
@@ -12,6 +11,7 @@ import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ActivityCitySelectionBinding
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.SearchBarView
 import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
 import com.tripian.trpcore.util.extensions.observe
 
@@ -51,8 +51,9 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
 
         binding.ivBack.setOnClickListener { goBack() }
 
-        binding.searchBar.setOnTextChangedListener { query -> viewModel.search(query) }
-        binding.searchBar.setOnSearchActionListener { hideKeyboard() }
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
+            viewModel.search(query)
+        }
 
         binding.tvNext.setOnClickListener { viewModel.proceed() }
     }
@@ -152,10 +153,6 @@ class ACCitySelection : BaseActivity<ActivityCitySelectionBinding, ACCitySelecti
         )
     }
 
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let { imm.hideSoftInputFromWindow(it.windowToken, 0) }
-    }
 
     companion object {
         private const val REQ_CREATE_TIMELINE = 4101
