@@ -57,45 +57,11 @@
         android:background="@color/trp_timeline_surface"
         app:layout_constraintTop_toBottomOf="@id/headerContainer">
 
-        <LinearLayout
+        <com.tripian.trpcore.util.widget.SearchBarView
+            android:id="@+id/searchBar"
             android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="12dp"
-            android:background="@drawable/trp_bg_search_bar">
-
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/trp_ic_search_timeline"
-                android:contentDescription="Search"/>
-
-            <EditText
-                android:id="@+id/etSearch"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:background="@null"
-                android:hint="Search places..."
-                android:textColorHint="@color/trp_timeline_text_tertiary"
-                android:textColor="@color/trp_text_primary"
-                android:textSize="14sp"
-                android:inputType="text"
-                android:imeOptions="actionSearch"
-                android:maxLines="1"/>
-
-            <ImageView
-                android:id="@+id/ivClearSearch"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/trp_ic_close"
-                android:visibility="gone"
-                android:contentDescription="Clear"/>
-
-        </LinearLayout>
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
     </LinearLayout>
 
@@ -137,6 +103,17 @@
         app:layout_constraintTop_toBottomOf="@id/divider"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:listitem="@layout/item_poi_selection"/>
+
+    <include
+        android:id="@+id/loadMoreIndicator"
+        layout="@layout/view_load_more_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/rvPois"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- Loading -->
     <ProgressBar

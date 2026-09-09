@@ -41,7 +41,11 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var isSkeletonVisible: Boolean = false
     private var pendingScrollToTop = false
 
+    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
+
     override fun onDestroy() {
+        paginationScrollListener?.let { binding.rvActivities.removeOnScrollListener(it) }
+        paginationScrollListener = null
         binding.skeletonList.root.stopShimmer()
         binding.shimmerResultCount.stopShimmer()
         super.onDestroy()
@@ -125,6 +129,10 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         }
 
         binding.pbSearchProgress.visibility = View.GONE
+
+        viewModel.loadingMore.observe(this) { loadingMore ->
+            binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
+        }
 
         viewModel.activityCount.observe(this) { count ->
             binding.tvResultCount.text = "$count ${viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_ACTIVITIES)}"
@@ -214,6 +222,21 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         binding.rvActivities.apply {
             layoutManager = LinearLayoutManager(this@ACActivityListing)
             adapter = activityAdapter
+
+            paginationScrollListener = object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return
+                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    val totalItemCount = layoutManager.itemCount
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                    if (lastVisibleItem >= totalItemCount - PAGINATION_PREFETCH_THRESHOLD) {
+                        viewModel.loadMoreActivities()
+                    }
+                }
+            }
+            addOnScrollListener(paginationScrollListener!!)
 
             addItemDecoration(ActivitySeparatorDecoration(this@ACActivityListing))
         }
@@ -426,6 +449,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     companion object {
+        private const val PAGINATION_PREFETCH_THRESHOLD = 5
         const val EXTRA_PLAN_DATA = "plan_data"
         const val EXTRA_TRIP_HASH = "trip_hash"
         const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"

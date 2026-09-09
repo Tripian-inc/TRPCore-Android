@@ -99,7 +99,14 @@ class ACPOIListingVM @Inject constructor(
     private var currentPage: Int = 1
     private val pageLimit: Int = 30
     private var allPois: MutableList<Poi> = mutableListOf()
-    private var isLoadingMore: Boolean = false
+    private val _loadingMore = MutableLiveData(false)
+    /** True while a further page is being appended; drives the bottom loading indicator. */
+    val loadingMore: LiveData<Boolean> = _loadingMore
+    private var isLoadingMore: Boolean
+        get() = _loadingMore.value == true
+        set(value) {
+            if (_loadingMore.value != value) _loadingMore.value = value
+        }
     private var totalCount: Int = 0
 
     /** Sets up state and loads POIs. The loader is shown before category prefetch to avoid a blank-screen flash. */

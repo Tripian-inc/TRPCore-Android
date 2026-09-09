@@ -17,6 +17,8 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -200,7 +202,13 @@ class ACStartingPointSelectionVM @Inject constructor(
     // GOOGLE PLACES SEARCH
     // =====================
 
+    /**
+     * Debounced address search; a newer query cancels the pending one so stale
+     * responses never overwrite the latest results.
+     */
     fun searchAddress(text: String) {
+        searchJob?.cancel()
+
         val searchText = text.trim()
         if (searchText.isEmpty()) {
             clearSearchResults()
@@ -211,16 +219,12 @@ class ACStartingPointSelectionVM @Inject constructor(
 
         _isLoading.value = true
 
-        viewModelScope.launch {
-            runCatching { searchAddressUseCase(SearchAddress.Params(currentCity, searchText)) }
-                .onSuccess { results ->
-                    _isLoading.value = false
-                    _searchResults.value = results
-                }
-                .onFailure {
-                    _isLoading.value = false
-                    _searchResults.value = emptyList()
-                }
+        searchJob = viewModelScope.launch {
+            delay(searchDebounceMs)
+            val result = runCatching { searchAddressUseCase(SearchAddress.Params(currentCity, searchText)) }
+            if (!isActive) return@launch
+            _isLoading.value = false
+            _searchResults.value = result.getOrDefault(emptyList())
         }
     }
 
@@ -263,6 +267,8 @@ class ACStartingPointSelectionVM @Inject constructor(
     }
 
     fun clearSearchResults() {
+        searchJob?.cancel()
+        _isLoading.value = false
         _searchResults.value = emptyList()
     }
 

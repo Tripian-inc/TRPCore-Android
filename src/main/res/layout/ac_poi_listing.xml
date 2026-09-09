@@ -151,6 +151,15 @@
                 android:textColor="@color/trp_error"
                 android:visibility="gone"
                 tools:text="An error occurred" />
+
+            <include
+                android:id="@+id/loadMoreIndicator"
+                layout="@layout/view_load_more_indicator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="@dimen/_16sdp"
+                android:visibility="gone" />
         </FrameLayout>
 
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
