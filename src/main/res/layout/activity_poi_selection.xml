@@ -109,6 +109,17 @@
         app:layout_constraintBottom_toBottomOf="parent"
         tools:listitem="@layout/item_poi_selection"/>
 
+    <!-- Shimmering skeleton shown while a search / category reload is in flight. -->
+    <include
+        android:id="@+id/skeletonList"
+        layout="@layout/view_activity_skeleton_list"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="@id/rvPois"
+        app:layout_constraintBottom_toBottomOf="@id/rvPois"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <include
         android:id="@+id/loadMoreIndicator"
         layout="@layout/view_load_more_indicator"

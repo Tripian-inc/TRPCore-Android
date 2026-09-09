@@ -51,6 +51,18 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
             binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
         }
 
+        viewModel.skeletonLoading.observe(this) { loading ->
+            with(binding.skeletonList.root) {
+                if (loading) {
+                    visibility = View.VISIBLE
+                    startShimmer()
+                } else {
+                    stopShimmer()
+                    visibility = View.GONE
+                }
+            }
+        }
+
         viewModel.categories.observe(this) { categories ->
             updateCategoryChips(categories)
         }
@@ -91,6 +103,7 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
     override fun onDestroy() {
         paginationScrollListener?.let { binding.rvPois.removeOnScrollListener(it) }
         paginationScrollListener = null
+        binding.skeletonList.root.stopShimmer()
         super.onDestroy()
     }
 

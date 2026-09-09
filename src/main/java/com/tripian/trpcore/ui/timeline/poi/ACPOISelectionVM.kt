@@ -33,6 +33,10 @@ class ACPOISelectionVM @Inject constructor(
     private val _isLoading = MutableLiveData<Boolean>()
     val isLoading: LiveData<Boolean> = _isLoading
 
+    /** True while a search / category reload is in flight; the list shows its skeleton. */
+    private val _skeletonLoading = MutableLiveData(false)
+    val skeletonLoading: LiveData<Boolean> = _skeletonLoading
+
     private val _categories = MutableLiveData<List<POICategory>>()
     val categories: LiveData<List<POICategory>> = _categories
 
@@ -107,8 +111,8 @@ class ACPOISelectionVM @Inject constructor(
 
     /**
      * @param useFullScreen `true` for the first fetch of the screen (full-screen
-     *   Lottie), `false` for search / category (bottom-sheet Lottie keeps the
-     *   filters and list in view).
+     *   Lottie), `false` for search / category (inline skeleton keeps the screen
+     *   usable).
      */
     private fun fetchFirstPage(useFullScreen: Boolean) {
         if (city == null) return
@@ -117,7 +121,7 @@ class ACPOISelectionVM @Inject constructor(
 
         fetchJob = viewModelScope.launch {
             _isLoading.value = true
-            if (useFullScreen) showFullScreenLoaderNoText() else showBottomSheetLoaderNoText()
+            if (useFullScreen) showFullScreenLoaderNoText() else _skeletonLoading.value = true
             fetchPage(page = 1, isPagination = false)
         }
     }
@@ -142,6 +146,7 @@ class ACPOISelectionVM @Inject constructor(
         isLoadingMore = false
         if (!isPagination) {
             _isLoading.value = false
+            _skeletonLoading.value = false
             hideLottieLoading()
         }
 

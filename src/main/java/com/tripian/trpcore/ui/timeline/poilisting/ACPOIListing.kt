@@ -82,6 +82,18 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
         }
 
+        viewModel.skeletonLoading.observe(this) { loading ->
+            with(binding.skeletonList.root) {
+                if (loading) {
+                    visibility = View.VISIBLE
+                    startShimmer()
+                } else {
+                    stopShimmer()
+                    visibility = View.GONE
+                }
+            }
+        }
+
         viewModel.poiCount.observe(this) { count ->
             val placesText =
                 viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
@@ -161,6 +173,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
     override fun onDestroy() {
         paginationScrollListener?.let { binding.rvPOIs.removeOnScrollListener(it) }
         paginationScrollListener = null
+        binding.skeletonList.root.stopShimmer()
         super.onDestroy()
     }
 
