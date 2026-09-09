@@ -13,6 +13,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
@@ -62,7 +63,11 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         @Suppress("DEPRECATION")
         val poi = intent.getSerializableExtra(EXTRA_POI) as? Poi
         poi?.let {
-            viewModel.initialize(it)
+            viewModel.initialize(
+                poi = it,
+                tripStartDate = intent.getStringExtra(EXTRA_TRIP_START_DATE),
+                tripEndDate = intent.getStringExtra(EXTRA_TRIP_END_DATE)
+            )
         }
     }
 
@@ -86,6 +91,10 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
 
         viewModel.products.observe(this) { products ->
             productAdapter?.submitList(products)
+        }
+
+        viewModel.isLoadingProducts.observe(this) { isLoading ->
+            renderProductsLoading(isLoading)
         }
 
         viewModel.parsedOpeningHours.observe(this) { hours ->
@@ -166,6 +175,36 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         binding.rvProducts.apply {
             layoutManager = LinearLayoutManager(this@ACPOIDetail, LinearLayoutManager.HORIZONTAL, false)
             adapter = productAdapter
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dx <= 0) return
+                    val remaining = recyclerView.computeHorizontalScrollRange() -
+                        recyclerView.computeHorizontalScrollExtent() -
+                        recyclerView.computeHorizontalScrollOffset()
+                    if (remaining <= loadMoreThresholdPx()) {
+                        viewModel.loadMoreProducts()
+                    }
+                }
+            })
+        }
+    }
+
+    /** Next page is requested this far before the list's right edge. */
+    private fun loadMoreThresholdPx(): Int =
+        (PRODUCT_LOAD_MORE_THRESHOLD_DP * resources.displayMetrics.density).toInt()
+
+    /**
+     * The skeleton replaces the list on the first load and trails it while a further
+     * page is on the way, so the section never collapses mid-request.
+     */
+    private fun renderProductsLoading(isLoading: Boolean) {
+        val hasProducts = productAdapter?.itemCount ?: 0 > 0
+        binding.shimmerProductSkeleton.visibility = if (isLoading) View.VISIBLE else View.GONE
+        binding.rvProducts.visibility = if (isLoading && !hasProducts) View.GONE else View.VISIBLE
+        if (isLoading) {
+            binding.shimmerProductSkeleton.startShimmer()
+        } else {
+            binding.shimmerProductSkeleton.stopShimmer()
         }
     }
 
@@ -340,12 +379,27 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
     }
 
     companion object {
-        const val EXTRA_POI = "extra_poi"
+        private const val PRODUCT_LOAD_MORE_THRESHOLD_DP = 100
 
-        /** Create intent to launch POI Detail screen */
-        fun launch(context: Context, poi: Poi): Intent {
+        const val EXTRA_POI = "extra_poi"
+        const val EXTRA_TRIP_START_DATE = "extra_trip_start_date"
+        const val EXTRA_TRIP_END_DATE = "extra_trip_end_date"
+
+        /**
+         * @param tripStartDate / [tripEndDate] "yyyy-MM-dd" — the window the POI's
+         *   bookable products are queried for; without them the products section
+         *   stays hidden.
+         */
+        fun launch(
+            context: Context,
+            poi: Poi,
+            tripStartDate: String? = null,
+            tripEndDate: String? = null
+        ): Intent {
             return Intent(context, ACPOIDetail::class.java).apply {
                 putExtra(EXTRA_POI, poi)
+                putExtra(EXTRA_TRIP_START_DATE, tripStartDate)
+                putExtra(EXTRA_TRIP_END_DATE, tripEndDate)
             }
         }
     }

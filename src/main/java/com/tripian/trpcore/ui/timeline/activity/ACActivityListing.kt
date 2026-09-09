@@ -7,13 +7,14 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
+import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.dp
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
@@ -22,6 +23,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.SearchBarView
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -90,9 +92,18 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             @Suppress("DEPRECATION")
             val planData = intent.getSerializableExtra(EXTRA_PLAN_DATA) as? AddPlanData
             val tripHash = intent.getStringExtra(EXTRA_TRIP_HASH) ?: ""
+            val plannedActivityIdsByDay =
+                intent.getSerializableExtra(EXTRA_PLANNED_ACTIVITY_IDS).asIdsByDay()
+            val tripWideExcludedActivityIds =
+                intent.getStringArrayListExtra(EXTRA_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
 
             planData?.let {
-                viewModel.initialize(it, tripHash)
+                viewModel.initialize(
+                    it,
+                    tripHash,
+                    plannedActivityIdsByDay,
+                    tripWideExcludedActivityIds
+                )
             }
         }
     }
@@ -294,12 +305,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
 
     private fun setupSearchBar() {
         binding.searchBar.setHint(viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_ACTIVITY))
-        binding.searchBar.setOnTextChangedListener { query ->
-            viewModel.updateSearchText(query)
-        }
-        binding.searchBar.setOnSearchActionListener {
-            hideKeyboard()
-            viewModel.submitSearch()
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.LOCAL) { query ->
+            viewModel.search(query)
         }
     }
 
@@ -371,7 +378,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             activity = activity,
             availableDays = viewModel.getAvailableDays(),
             initialSelectedDay = viewModel.getSelectedDate(),
-            cityId = viewModel.getCityId()
+            cityId = viewModel.getCityId(),
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
         timeSelectionBottomSheet?.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
             timeSelectionBottomSheet?.showInSheetLoadingOverlay(
@@ -380,13 +388,6 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)
         }
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
-    }
-
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
     }
 
     /**
@@ -452,12 +453,33 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         private const val PAGINATION_PREFETCH_THRESHOLD = 5
         const val EXTRA_PLAN_DATA = "plan_data"
         const val EXTRA_TRIP_HASH = "trip_hash"
+        const val EXTRA_PLANNED_ACTIVITY_IDS = "planned_activity_ids"
+        const val EXTRA_TRIP_WIDE_EXCLUDED_IDS = "trip_wide_excluded_ids"
         const val RESULT_SELECTED_DAY_INDEX = "result_selected_day_index"
 
-        fun launch(context: Context, planData: AddPlanData, tripHash: String): Intent {
+        /**
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → activity ids that day already
+         *   holds; days already holding the picked activity are unselectable in the
+         *   time selection sheet and the chosen day's ids ship as `excludedActivityIds`.
+         */
+        fun launch(
+            context: Context,
+            planData: AddPlanData,
+            tripHash: String,
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            tripWideExcludedActivityIds: List<String> = emptyList()
+        ): Intent {
             return Intent(context, ACActivityListing::class.java).apply {
                 putExtra(EXTRA_PLAN_DATA, planData)
                 putExtra(EXTRA_TRIP_HASH, tripHash)
+                putExtra(
+                    EXTRA_PLANNED_ACTIVITY_IDS,
+                    plannedActivityIdsByDay.toSerializableIdsByDay()
+                )
+                putStringArrayListExtra(
+                    EXTRA_TRIP_WIDE_EXCLUDED_IDS,
+                    ArrayList(tripWideExcludedActivityIds)
+                )
             }
         }
     }

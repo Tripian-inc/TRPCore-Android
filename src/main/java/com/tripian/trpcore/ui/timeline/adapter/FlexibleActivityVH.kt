@@ -7,6 +7,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineFlexibleActivityBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 import java.text.NumberFormat
 import java.util.Locale
@@ -112,6 +113,14 @@ class FlexibleActivityVH(
             ?: TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellationText
 
+        TimelineCellBinder.bindPrice(
+            priceRow = binding.llPriceRow,
+            fromLabel = binding.tvFromLabel,
+            priceView = binding.tvPrice,
+            price = item.price,
+            currency = item.currency
+        )
+
         binding.btnReservation.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
         binding.btnReservation.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
@@ -120,11 +129,15 @@ class FlexibleActivityVH(
             applyPastDayStyle()
         }
 
-        binding.btnChangeTime.visibility = View.GONE
+        binding.btnChangeTime.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
         binding.root.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
             onItemClick(item)
+        }
+        binding.btnChangeTime.setOnClickListener {
+            if (isPastDayMode) return@setOnClickListener
+            onChangeTimeClick(item)
         }
         binding.btnDelete.setOnClickListener {
             if (isPastDayMode) return@setOnClickListener
@@ -135,6 +148,7 @@ class FlexibleActivityVH(
             onReservationClick(item)
         }
     }
+
 
     private fun applyOrderRowStyle(muted: Boolean) {
         val ctx = binding.root.context

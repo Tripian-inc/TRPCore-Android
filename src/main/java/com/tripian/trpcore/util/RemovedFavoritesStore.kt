@@ -45,13 +45,5 @@ object RemovedFavoritesStore {
      * Strips the "C_" prefix and any provider/city suffixes from an activity ID,
      * leaving the base numeric ID. "C_15423_15_28" and "15423" both → "15423".
      */
-    fun baseActivityId(activityId: String?): String? {
-        if (activityId.isNullOrBlank()) return null
-        val withoutPrefix = if (activityId.startsWith("C_")) {
-            activityId.removePrefix("C_")
-        } else {
-            activityId
-        }
-        return withoutPrefix.split("_").firstOrNull()?.takeIf { it.isNotBlank() }
-    }
+    fun baseActivityId(activityId: String?): String? = ActivityIdFormat.base(activityId)
 }

@@ -8,7 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
-import android.view.inputmethod.InputMethodManager
+
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,6 +25,7 @@ import com.tripian.trpcore.databinding.ActivityStartingPointSelectionBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.widget.SearchBarView
 import java.io.Serializable
 
 /**
@@ -115,18 +116,15 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
     }
 
     private fun setupSearchBar() {
-        binding.searchBar.setOnTextChangedListener { query ->
+        binding.searchBar.setOnTextChangedListener { text ->
+            if (text.isEmpty()) showDefaultContent() else showSearchResults()
+        }
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
             if (query.isEmpty()) {
-                showDefaultContent()
                 viewModel.clearSearchResults()
             } else {
-                showSearchResults()
                 viewModel.searchAddress(query)
             }
-        }
-
-        binding.searchBar.setOnSearchActionListener {
-            hideKeyboard()
         }
     }
 
@@ -271,13 +269,6 @@ class ACStartingPointSelection : BaseActivity<ActivityStartingPointSelectionBind
         }
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
-    }
-
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
     }
 
     companion object {

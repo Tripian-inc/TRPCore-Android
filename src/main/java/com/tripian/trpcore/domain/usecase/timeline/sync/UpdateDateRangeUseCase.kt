@@ -11,15 +11,12 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Keeps the TimelineDate control segment aligned with the host-supplied itinerary range.
- *
- * iOS parity — 3-step optimistic flow:
- *   1. LOCAL: mutate the existing TimelineDate segment in-place
- *   2. UI   : caller re-publishes the timeline + refreshes display
- *   3. API  : fire-and-forget PUT /timeline/{hash} with segmentIndex hint
- *
- * Detection uses BOTH `title == "TimelineDate"` AND `available == false` — the SDK
- * sentinel contract.
+ * Keeps the TimelineDate control segment aligned with the host-supplied itinerary
+ * range: mutates the existing segment in-place (optimistic, caller re-publishes),
+ * then fires a background PUT /timeline/{hash} with a segmentIndex hint so the
+ * server treats it as an update, not an insertion.
+ * Detection uses BOTH `title == "TimelineDate"` AND `available == false` (SDK
+ * sentinel contract). No polling: `available = false` keeps it out of plan generation.
  */
 class UpdateDateRangeUseCase @Inject constructor(
     private val repository: TimelineRepository

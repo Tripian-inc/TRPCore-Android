@@ -17,6 +17,12 @@ class Preferences @Inject constructor(var context: Context) {
         const val APP_LANGUAGE = "app_language"
         const val APP_LANGUAGE_TRANSLATIONS = "app_language_translations"
         const val APP_LANGUAGE_TRANSLATIONS_FETCHED_AT = "app_language_translations_fetched_at"
+
+        /** Translation blobs are language scoped: the API returns a single language per response. */
+        fun translationsForLanguage(lang: String) = "${APP_LANGUAGE_TRANSLATIONS}_$lang"
+
+        fun translationsFetchedAtForLanguage(lang: String) =
+            "${APP_LANGUAGE_TRANSLATIONS_FETCHED_AT}_$lang"
         const val APP_CURRENCY = "app_currency"
         const val CACHED_CITIES = "cached_cities"
 
@@ -91,6 +97,27 @@ class Preferences @Inject constructor(var context: Context) {
 
     fun getBoolean(key: String, defValue: Boolean): Boolean {
         return pref.getBoolean(key, defValue)
+    }
+
+    /**
+     * Drops the signed-in session only. Everything the SDK can reuse across
+     * sessions — device id, language and its translation cache, currency,
+     * onboarding state, per-trip removed favorites — is left in place, so a
+     * token failure doesn't reset the whole SDK for the user.
+     *
+     * TRPOne shares this preferences file, so its token keys are cleared here too.
+     */
+    fun clearSessionData() {
+        pref.edit(commit = true) {
+            listOf(
+                Keys.USER_LOGIN,
+                Keys.USER_LOGIN_TIME,
+                Keys.TOKEN_TYPE,
+                Keys.ACCESS_TOKEN,
+                Keys.REFRESH_TOKEN,
+                Keys.SOCIAL_PROVIDER
+            ).forEach { remove(it) }
+        }
     }
 
     fun clearAllData() {

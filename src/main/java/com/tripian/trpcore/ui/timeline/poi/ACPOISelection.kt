@@ -4,7 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.view.View
-import android.view.inputmethod.InputMethodManager
+
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
@@ -14,6 +14,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.ActivityPoiSelectionBinding
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.widget.SearchBarView
 
 /**
  * ACPOISelection
@@ -94,12 +95,10 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
     }
 
     private fun setupSearchBar() {
-        binding.searchBar.setHint(
-            getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_PLACES_HINT)
-                .let { if (it.isBlank() || it == LanguageConst.ADD_PLAN_SEARCH_PLACES_HINT) "Search places..." else it }
-        )
-        binding.searchBar.setOnTextChangedListener { query -> viewModel.search(query) }
-        binding.searchBar.setOnSearchActionListener { hideKeyboard() }
+        binding.searchBar.setHint(getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
+            viewModel.search(query)
+        }
     }
 
     private fun setupClickListeners() {
@@ -168,13 +167,6 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         resultIntent.putExtra(RESULT_POI, poi)
         setResult(Activity.RESULT_OK, resultIntent)
         finish()
-    }
-
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
     }
 
     companion object {

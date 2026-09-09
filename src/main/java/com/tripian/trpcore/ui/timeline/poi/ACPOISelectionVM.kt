@@ -12,7 +12,6 @@ import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,8 +20,8 @@ import kotlin.coroutines.coroutineContext
 /**
  * ACPOISelectionVM
  * ViewModel for the POI selection screen. Shares the POI listing's search use case:
- * search is debounced, every fresh load (search or category) cancels the in-flight
- * request, and further pages are appended as the list scrolls.
+ * every fresh load (search or category) cancels the in-flight request (the search bar
+ * debounces typing), and further pages are appended as the list scrolls.
  */
 class ACPOISelectionVM @Inject constructor(
     private val searchPOIsUseCase: SearchPOIsUseCase
@@ -82,11 +81,10 @@ class ACPOISelectionVM @Inject constructor(
         fetchFirstPage(useFullScreen = true)
     }
 
-    /** Clearing the query reloads immediately; typing is debounced. */
     fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
-        val debounceMs = if (query.isBlank()) 0L else SEARCH_DEBOUNCE_MS
-        fetchFirstPage(useFullScreen = false, debounceMs = debounceMs)
+        fetchFirstPage(useFullScreen = false)
     }
 
     fun selectCategory(categoryId: String?) {
@@ -111,15 +109,13 @@ class ACPOISelectionVM @Inject constructor(
      * @param useFullScreen `true` for the first fetch of the screen (full-screen
      *   Lottie), `false` for search / category (bottom-sheet Lottie keeps the
      *   filters and list in view).
-     * @param debounceMs Delay before the request; a newer fetch cancels it.
      */
-    private fun fetchFirstPage(useFullScreen: Boolean, debounceMs: Long = 0L) {
+    private fun fetchFirstPage(useFullScreen: Boolean) {
         if (city == null) return
         fetchJob?.cancel()
         isLoadingMore = false
 
         fetchJob = viewModelScope.launch {
-            if (debounceMs > 0) delay(debounceMs)
             _isLoading.value = true
             if (useFullScreen) showFullScreenLoaderNoText() else showBottomSheetLoaderNoText()
             fetchPage(page = 1, isPagination = false)
@@ -172,6 +168,5 @@ class ACPOISelectionVM @Inject constructor(
 
     private companion object {
         const val PAGE_LIMIT = 30
-        const val SEARCH_DEBOUNCE_MS = 650L
     }
 }

@@ -126,9 +126,12 @@ data class ItineraryWithActivities(
 
     /**
      * Creates a booked activity segment from SegmentActivityItem.
-     * Single source of truth — both initial create and sync paths must use this.
-     * cityId is intentionally not set (host cityIds are unreliable; the server resolves
-     * it from the coordinate), and items without datetimes borrow the trip-level range.
+     * Single source of truth — initial create, the add-missing sweep and the
+     * reserved→booked sync all build the payload here, so a booked cell never
+     * renders with half its `additionalData` missing.
+     * cityId is only sent once the SDK resolved it itself (product-lookup, then
+     * coordinate); an unresolved item omits it and leaves the server to infer one
+     * from the coordinate. Items without datetimes borrow the trip-level range.
      */
     internal fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
         val calculatedEndDatetime = calculateEndDatetime(
@@ -142,13 +145,12 @@ data class ItineraryWithActivities(
             startDate = item.startDatetime ?: this@ItineraryWithActivities.startDatetime
             endDate = calculatedEndDatetime ?: this@ItineraryWithActivities.endDatetime
             segmentType = "booked_activity"
-            available = true
-            // City anchoring is a per-host policy: the default leaves cityId unset
-            // (server resolves it from the coordinate); a host that pre-resolves
-            // cityIds overrides this to anchor the segment.
+            available = false
+            distinctPlan = true
             TRPCore.host.anchorBookedActivityCityId(this, item)
             adults = item.adultCount
             children = item.childCount
+            cityId = item.cityId?.takeIf { it > 0 }
             currency = TRPCore.core.getCurrentCurrency()
 
             // Coordinate — only when present. A missing coordinate flags the

@@ -17,7 +17,6 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -63,7 +62,6 @@ class ACStartingPointSelectionVM @Inject constructor(
     private var userLocation: Coordinate? = null
 
     private var searchJob: Job? = null
-    private val searchDebounceMs = 650L
 
     // =====================
     // INITIALIZATION
@@ -203,8 +201,8 @@ class ACStartingPointSelectionVM @Inject constructor(
     // =====================
 
     /**
-     * Debounced address search; a newer query cancels the pending one so stale
-     * responses never overwrite the latest results.
+     * Address search; a newer query cancels the pending one so stale responses
+     * never overwrite the latest results. The search bar debounces typing.
      */
     fun searchAddress(text: String) {
         searchJob?.cancel()
@@ -220,7 +218,6 @@ class ACStartingPointSelectionVM @Inject constructor(
         _isLoading.value = true
 
         searchJob = viewModelScope.launch {
-            delay(searchDebounceMs)
             val result = runCatching { searchAddressUseCase(SearchAddress.Params(currentCity, searchText)) }
             if (!isActive) return@launch
             _isLoading.value = false

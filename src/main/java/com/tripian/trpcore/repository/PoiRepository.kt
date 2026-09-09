@@ -7,17 +7,33 @@ import com.tripian.one.api.pois.model.PoiResponse
 import com.tripian.one.api.pois.model.PoisResponse
 import com.tripian.trpcore.domain.model.PlaceItem
 import com.tripian.trpcore.util.extensions.enableRating
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 class PoiRepository @Inject constructor(val service: ServiceWrapper) {
 
-    private var poiIds = HashMap<String, Poi>()
+    private val poiIds = ConcurrentHashMap<String, Poi>()
+
+    @Volatile
     private var poiCategories: PoiCategoryModel? = null
 
-    fun findPoi(poiId: String?): Poi? = poiIds[poiId]
+    fun findPoi(poiId: String?): Poi? = poiId?.let { poiIds[it] }
 
     fun clearItems() {
         poiIds.clear()
+    }
+
+    /**
+     * Caches POIs by id. Entries without an id are skipped; the backend may omit
+     * it and Gson leaves the field null even though the model declares it non-null.
+     */
+    private fun cachePois(pois: List<Poi>?) {
+        pois?.forEach { poi -> cachePoi(poi) }
+    }
+
+    private fun cachePoi(poi: Poi?) {
+        val id = poi?.id ?: return
+        poiIds[id] = poi
     }
 
     suspend fun searchAsync(
@@ -30,7 +46,7 @@ class PoiRepository @Inject constructor(val service: ServiceWrapper) {
             search = search,
             categoryIds = categoryIds?.toTypedArray()
         )
-        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        cachePois(response.data)
         return response
     }
 
@@ -46,7 +62,7 @@ class PoiRepository @Inject constructor(val service: ServiceWrapper) {
             page = page,
             limit = limit
         )
-        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        cachePois(response.data)
         return response
     }
 
@@ -55,7 +71,7 @@ class PoiRepository @Inject constructor(val service: ServiceWrapper) {
             return PoiResponse().apply { data = cached }
         }
         val response = service.getPoiInfoAsync(poiId)
-        response.data?.let { poiIds[it.id] = it }
+        cachePoi(response.data)
         return response
     }
 
@@ -88,7 +104,7 @@ class PoiRepository @Inject constructor(val service: ServiceWrapper) {
             page = page, limit = limit,
             sort = sort, order = order, price = priceParam
         )
-        response.data?.forEach { poi -> poiIds[poi.id] = poi }
+        cachePois(response.data)
         return response
     }
 }

@@ -12,6 +12,8 @@ import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.dialog.DGActionListener
+import com.tripian.trpcore.util.extensions.asIdsByDay
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -44,7 +46,16 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             @Suppress("UNCHECKED_CAST")
             val cityMap = intent.getSerializableExtra(EXTRA_CITY_MAP) as? HashMap<String, Int> ?: hashMapOf()
 
-            viewModel.initialize(favorites ?: emptyList(), tripHash, availableDays, cityMap)
+            val plannedActivityIds =
+                intent.getSerializableExtra(EXTRA_PLANNED_ACTIVITY_IDS).asIdsByDay()
+
+            viewModel.initialize(
+                favorites ?: emptyList(),
+                tripHash,
+                availableDays,
+                cityMap,
+                plannedActivityIds
+            )
         }
     }
 
@@ -138,16 +149,18 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
     private fun showTimeSelectionBottomSheet(favorite: SegmentFavoriteItem) {
         viewModel.clearTimeSelectionTrigger()
 
-        val resolvedCityId = viewModel.getResolvedCityId(favorite.cityName)
+        val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
+            ?: viewModel.getResolvedCityId(favorite.cityName)
 
         timeSelectionBottomSheet = ActivityTimeSelectionBottomSheet.newInstanceForFavorite(
             favoriteActivityId = favorite.activityId,
-            favoriteCityId = resolvedCityId ?: favorite.cityId,
+            favoriteCityId = resolvedCityId,
             favoriteTitle = favorite.title,
             favoriteDuration = favorite.duration,
             availableDays = viewModel.getAvailableDays(),
             initialSelectedDay = viewModel.getSelectedDate(),
-            showSelectAndRemove = true
+            showSelectAndRemove = true,
+            plannedActivityIdsByDay = viewModel.getPlannedActivityIdsByDay()
         )
 
         timeSelectionBottomSheet?.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible, slotPrice ->
@@ -183,8 +196,7 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
     private fun showRemoveConfirmation(favorite: SegmentFavoriteItem) {
         viewModel.showDialog(
             title = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-            contentText = viewModel.getLanguageForKey(LanguageConst.SAVED_PLANS_REMOVE_CONFIRM)
-                .ifBlank { "Are you sure you want to remove this activity from your saved plans?" },
+            contentText = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
             positiveBtn = viewModel.getLanguageForKey(LanguageConst.REMOVE_BUTTON),
             negativeBtn = viewModel.getLanguageForKey(LanguageConst.CANCEL),
             positive = object : DGActionListener {
@@ -201,24 +213,31 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         const val EXTRA_TRIP_HASH = "extra_trip_hash"
         const val EXTRA_AVAILABLE_DAYS = "extra_available_days"
         const val EXTRA_CITY_MAP = "extra_city_map"
+        const val EXTRA_PLANNED_ACTIVITY_IDS = "extra_planned_activity_ids"
 
         /**
          * Launch SavedPlans screen with pre-filtered favorites
          * @param favorites List of favorites that haven't been added as reserved_activity yet
          * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → activity ids that day already holds
          */
         fun launch(
             context: Context,
             favorites: List<SegmentFavoriteItem>,
             tripHash: String,
             availableDays: List<Date>,
-            cityNameToIdMap: Map<String, Int> = emptyMap()
+            cityNameToIdMap: Map<String, Int> = emptyMap(),
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
         ): Intent {
             return Intent(context, ACSavedPlans::class.java).apply {
                 putParcelableArrayListExtra(EXTRA_FAVORITES, ArrayList(favorites))
                 putExtra(EXTRA_TRIP_HASH, tripHash)
                 putExtra(EXTRA_AVAILABLE_DAYS, availableDays.map { it.time }.toLongArray())
                 putExtra(EXTRA_CITY_MAP, HashMap(cityNameToIdMap))
+                putExtra(
+                    EXTRA_PLANNED_ACTIVITY_IDS,
+                    plannedActivityIdsByDay.toSerializableIdsByDay()
+                )
             }
         }
     }

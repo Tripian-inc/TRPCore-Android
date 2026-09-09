@@ -2,10 +2,12 @@ package com.tripian.trpcore.ui.timeline.adapter
 
 import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import com.bumptech.glide.Glide
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.IncludeNoLocationBadgeBinding
+import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 
 /** Resolve a localized string for a language key (falls back to the key itself). */
@@ -25,11 +27,35 @@ internal fun String.languageValue(): String =
  */
 internal object TimelineCellBinder {
 
+    private const val DEFAULT_CURRENCY = "EUR"
+
     /**
-     * Activity image. The no-image / load-error fallback is a per-host policy
-     * (HostStrategy.activityImageFallback) — default generic placeholder, a
-     * branded host (e.g. Nexus) supplies its own logo.
+     * Single source of truth for the activity price row. The tour API omits the
+     * price field on free products instead of sending zero, so a missing or
+     * non-positive price reads as "free" rather than "unknown".
      */
+    fun bindPrice(
+        priceRow: View,
+        fromLabel: TextView,
+        priceView: TextView,
+        price: Double?,
+        currency: String?
+    ) {
+        priceRow.visibility = View.VISIBLE
+        if (price == null || price <= 0.0) {
+            fromLabel.visibility = View.GONE
+            priceView.text = LanguageConst.FREE.languageValue()
+            return
+        }
+        fromLabel.visibility = View.VISIBLE
+        fromLabel.text = LanguageConst.FROM.languageValue() + " "
+        priceView.text = FormatUtils.formatPriceWithCurrency(
+            price,
+            currency?.takeIf { it.isNotBlank() } ?: DEFAULT_CURRENCY
+        )
+    }
+
+    /** Activity image; the no-image / load-error fallback is the host's (HostStrategy.activityImageFallback). */
     fun loadActivityImage(imageView: ImageView, imageUrl: String?) {
         val fallback = TRPCore.host.activityImageFallback
         if (!imageUrl.isNullOrBlank()) {

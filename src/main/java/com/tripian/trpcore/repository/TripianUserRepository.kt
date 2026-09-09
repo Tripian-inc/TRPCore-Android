@@ -41,12 +41,12 @@ class TripianUserRepository @Inject constructor(
     }
 
     /**
-     * Local-only logout: clears persisted SDK state. Wired up from
-     * [com.tripian.trpcore.base.ApiErrorMapper] on a refresh-token failure so
-     * the host can re-init the SDK and grab a fresh session.
+     * Local-only logout: drops the session so the host can re-init the SDK and
+     * grab a fresh one. Wired up from [com.tripian.trpcore.base.ApiErrorMapper]
+     * on a refresh-token failure; caches the user keeps across sessions survive.
      */
     fun logout() {
-        pref.clearAllData()
+        pref.clearSessionData()
         user = null
     }
 }

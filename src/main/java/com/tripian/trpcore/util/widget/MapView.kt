@@ -8,6 +8,7 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import androidx.core.content.ContextCompat
+import android.view.MotionEvent
 import androidx.core.graphics.toColorInt
 import com.google.gson.Gson
 import com.google.gson.JsonElement
@@ -89,6 +90,8 @@ class MapView : MapView {
     private var mapItemClickListener: ((MapStep) -> Unit)? = null
     private var mapEmptyClickListener: (() -> Unit)? = null
     private var mapInteractionListener: (() -> Unit)? = null
+
+    private var gestureSinceTouchDown = false
 
     private var mapItems = ArrayList<MapStep>()
 
@@ -190,6 +193,7 @@ class MapView : MapView {
     private fun setupGestureListeners() {
         gestures.addOnMoveListener(object : OnMoveListener {
             override fun onMoveBegin(detector: MoveGestureDetector) {
+                gestureSinceTouchDown = true
                 mapInteractionListener?.invoke()
             }
 
@@ -203,6 +207,7 @@ class MapView : MapView {
 
         gestures.addOnScaleListener(object : OnScaleListener {
             override fun onScaleBegin(detector: StandardScaleGestureDetector) {
+                gestureSinceTouchDown = true
                 mapInteractionListener?.invoke()
             }
 
@@ -214,8 +219,21 @@ class MapView : MapView {
         })
     }
 
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            gestureSinceTouchDown = false
+        }
+        return super.dispatchTouchEvent(event)
+    }
+
+    /**
+     * A pan/zoom that ends without leaving the touch slop is still reported as a
+     * map click by Mapbox; [gestureSinceTouchDown] keeps those from reaching
+     * [mapEmptyClickListener], which would otherwise undo the pan's own effect.
+     */
     private fun setOnMapClickListener() {
         gestures.addOnMapClickListener { point ->
+            val followsGesture = gestureSinceTouchDown
             val pixel = map?.pixelForCoordinate(point)
 
             if (pixel != null) {
@@ -245,7 +263,7 @@ class MapView : MapView {
                                 }
                             }
                         }
-                        if (!hitPoi) {
+                        if (!hitPoi && !followsGesture) {
                             mapEmptyClickListener?.invoke()
                         }
                     })

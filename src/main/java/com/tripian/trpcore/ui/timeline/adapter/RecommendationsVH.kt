@@ -246,7 +246,8 @@ class RecommendationsVH(
                     showTimeOverlapText = showTimeOverlap,
                     isAvailabilityExpired = step.isAvailabilityExpired,
                     startDateTimeSnapshot = step.startDateTimes,
-                    endDateTimeSnapshot = step.endDateTimes
+                    endDateTimeSnapshot = step.endDateTimes,
+                    priceSnapshot = step.poi?.additionalData?.price
                 )
             )
         }

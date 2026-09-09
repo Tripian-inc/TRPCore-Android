@@ -1,7 +1,10 @@
 package com.tripian.trpcore.util.extensions
 
+import com.tripian.one.api.pois.model.AdditionalData
+import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.TimelineSegment
+import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 
 /**
  * U+2212 MINUS SIGN (not an ASCII hyphen — keep the unicode codepoint) used for
@@ -26,3 +29,21 @@ val TimelineSegment.isFlexibleActivity: Boolean
         val end = endDate?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() } ?: return false
         return start in FLEXIBLE_TIME_VALUES && end in FLEXIBLE_TIME_VALUES
     }
+
+/**
+ * Writes the price the schedule lookup resolved for the booked slot, together with
+ * the currency it was requested in. A null [price] leaves the stored values alone.
+ */
+fun TimelineSegmentAdditionalData.applyScheduledPrice(price: Double?, currency: String?) {
+    if (price == null) return
+    this.price = price
+    currency?.takeIf { it.isNotEmpty() }?.let { this.currency = it }
+}
+
+/** [applyScheduledPrice] for activity steps, creating the container when the POI lacks one. */
+fun Poi.applyScheduledPrice(price: Double?, currency: String?) {
+    if (price == null) return
+    val data = additionalData ?: AdditionalData().also { additionalData = it }
+    data.price = price
+    currency?.takeIf { it.isNotEmpty() }?.let { data.currency = it }
+}

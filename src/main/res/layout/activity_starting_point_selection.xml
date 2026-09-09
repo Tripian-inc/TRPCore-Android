@@ -20,7 +20,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp" />
 
-    <!-- Search Bar -->
+
     <com.tripian.trpcore.util.widget.SearchBarView
         android:id="@+id/searchBar"
         android:layout_width="0dp"
@@ -30,7 +30,13 @@
         app:layout_constraintStart_toEndOf="@id/btnBack"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBack"
-        app:layout_constraintBottom_toBottomOf="@id/btnBack" />
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:trpSearchBackground="@drawable/trp_bg_search_bar"
+        app:trpSearchHintColor="@color/trp_fgWeak"
+        app:trpSearchHorizontalPadding="12dp"
+        app:trpSearchIcon="@drawable/trp_ic_search_gray"
+        app:trpSearchIconSize="20dp"
+        app:trpSearchIconTint="@color/trp_fgWeak" />
 
     <!-- Default Content View -->
     <LinearLayout

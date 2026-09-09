@@ -92,8 +92,10 @@ class TRPCore {
          * Called from BaseActivity.onCreate()
          */
         internal fun registerActivity(activity: Activity) {
-            activityStack.removeAll { it.get() == null }
-            activityStack.add(WeakReference(activity))
+            synchronized(activityStack) {
+                activityStack.removeAll { it.get() == null }
+                activityStack.add(WeakReference(activity))
+            }
         }
 
         /**
@@ -101,20 +103,34 @@ class TRPCore {
          * Called from BaseActivity.onDestroy()
          */
         internal fun unregisterActivity(activity: Activity) {
-            activityStack.removeAll { it.get() == activity || it.get() == null }
+            synchronized(activityStack) {
+                activityStack.removeAll { it.get() == activity || it.get() == null }
+            }
         }
 
         /**
          * Closes the SDK by finishing all open SDK activities.
-         * Can be called from the host app to dismiss the SDK.
+         * Host apps may call this from any thread; the activities are always
+         * finished on the main thread.
          */
         fun closeSDK() {
-            activityStack.reversed().forEach { ref ->
-                ref.get()?.finish()
+            val openActivities = synchronized(activityStack) {
+                val snapshot = activityStack.mapNotNull { it.get() }.asReversed()
+                activityStack.clear()
+                snapshot
             }
-            activityStack.clear()
+            runOnMainThread {
+                openActivities.forEach { it.finish() }
+                listener?.onSDKDismissed()
+            }
+        }
 
-            listener?.onSDKDismissed()
+        private fun runOnMainThread(action: () -> Unit) {
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                action()
+            } else {
+                Handler(Looper.getMainLooper()).post(action)
+            }
         }
 
         /**
@@ -194,7 +210,7 @@ class TRPCore {
          * Triggers activity reservation request callback
          *
          * @param activityId ID of the activity
-         * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
+         * @param date Start of the activity in "yyyy-MM-dd HH:mm" format (null if not available)
          */
         internal fun notifyActivityReservationRequested(activityId: String, date: String? = null) {
             // Same host id transformation as activity detail (the reserve flow
@@ -292,6 +308,35 @@ class TRPCore {
             return core.getSavedCurrency()
         }
 
+        /**
+         * Changes the SDK language after initialization. Screens opened afterwards
+         * render in [language]; the translation set for it is pulled in the
+         * background when it isn't cached yet.
+         *
+         * @param language Language code ("en", "es", "pt-br", …)
+         */
+        fun changeLanguage(language: String) {
+            core.changeLanguage(language)
+        }
+
+        /**
+         * Gets the language the SDK currently renders in.
+         *
+         * @return Active language code
+         */
+        fun getCurrentLanguage(): String {
+            return core.getCurrentLanguage()
+        }
+
+        /**
+         * Gets the language code persisted in preferences.
+         *
+         * @return Saved language code, or an empty string when the host never set one
+         */
+        fun getSavedLanguage(): String {
+            return core.getSavedLanguage()
+        }
+
         // =====================
         // ONBOARDING
         // =====================
@@ -353,6 +398,35 @@ class TRPCore {
      */
     fun getSavedCurrency(): String {
         return miscRepository.getSavedCurrency()
+    }
+
+    /**
+     * Changes the SDK language after initialization: persists it, points the API
+     * client at it and refreshes the city cache so its names match. The
+     * translation set is fetched in the background when it isn't cached.
+     *
+     * @param language Language code ("en", "es", "pt-br", …); regional forms like
+     *                 "es-MX" and "pt_BR" are normalized.
+     */
+    fun changeLanguage(language: String) {
+        if (language.isBlank()) return
+        applyLanguageAndPrefetchCities(language)
+    }
+
+    /**
+     * Gets the language the SDK currently renders in.
+     * @return Active language code
+     */
+    fun getCurrentLanguage(): String {
+        return appConfig.appLanguage
+    }
+
+    /**
+     * Gets the language code persisted in preferences.
+     * @return Saved language code or empty string if not set
+     */
+    fun getSavedLanguage(): String {
+        return miscRepository.getSavedLanguage()
     }
 
     /**

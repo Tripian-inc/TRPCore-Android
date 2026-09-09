@@ -39,7 +39,12 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
          * Flexible (any-time) activity flag. When true, the segment is created
          * with 00:00–23:59 placeholders and duration = -1, rendered as FlexibleActivity.
          */
-        val isFlexible: Boolean = false
+        val isFlexible: Boolean = false,
+        /**
+         * Activity ids [selectedDate] already holds, so the engine does not suggest
+         * them again for that day.
+         */
+        val excludedActivityIds: List<String> = emptyList()
     )
 
     companion object {
@@ -69,7 +74,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
                 providerId = tour.providerId,
                 productId = productId
             )
-            response.data?.product ?: tour
+            response.data ?: tour
         } catch (_: Throwable) {
             tour
         }
@@ -140,6 +145,7 @@ class CreateReservedActivitySegmentUseCase @Inject constructor(
             this.additionalData = additionalData
             available = false
             distinctPlan = true
+            excludedActivityIds = p.excludedActivityIds.takeIf { it.isNotEmpty() }
             currency = TRPCore.core.getCurrentCurrency()
         }
     }

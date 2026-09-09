@@ -164,7 +164,7 @@ class ACSplashVM @Inject constructor(
                             providerId = TRPCore.provider.id,
                             productId = productId
                         )
-                    ).data?.product
+                    ).data
                 }.getOrNull()
             } else null
 

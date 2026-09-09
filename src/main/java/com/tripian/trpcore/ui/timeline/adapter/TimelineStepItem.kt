@@ -34,7 +34,12 @@ sealed class TimelineStepItem : Serializable {
          * (see `ACTimelineVM.applyLocalStepTimeUpdate`).
          */
         val startDateTimeSnapshot: String? = null,
-        val endDateTimeSnapshot: String? = null
+        val endDateTimeSnapshot: String? = null,
+        /**
+         * Snapshot of the activity price captured at construction, so DiffUtil
+         * detects the schedule sweep rewriting it on the shared `step` reference.
+         */
+        val priceSnapshot: Double? = null
     ) : TimelineStepItem() {
         val id: String get() = "step_${step.id}"
     }

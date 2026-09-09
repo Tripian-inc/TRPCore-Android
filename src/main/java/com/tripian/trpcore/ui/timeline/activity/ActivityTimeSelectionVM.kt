@@ -7,6 +7,7 @@ import com.tripian.one.api.tour.model.TourScheduleSlot
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.usecase.timeline.GetTourScheduleUseCase
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.LanguageConst
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
@@ -88,6 +89,24 @@ class ActivityTimeSelectionVM @Inject constructor(
      */
     private var cachedSchedule: TourSchedule? = null
 
+    /**
+     * Days ("yyyy-MM-dd") that already hold this activity. They stay unselectable
+     * regardless of what the schedule offers, so the same activity can't be added
+     * twice to one day. Empty in edit flows.
+     */
+    private var blockedDateStrings: Set<String> = emptySet()
+
+    /** Trip days in "yyyy-MM-dd" form, captured on [loadSchedule]. */
+    private var tripDayStrings: List<String> = emptyList()
+
+    /**
+     * Day whose slots are currently on screen. The sheet can move off the initially
+     * requested day while the schedule request is still in flight (a blocked day is
+     * skipped immediately), so the response renders this day rather than the one
+     * [loadSchedule] was called with.
+     */
+    private var displayedDate: Date? = null
+
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     /**
@@ -131,6 +150,42 @@ class ActivityTimeSelectionVM @Inject constructor(
         }
 
     /**
+     * Marks the days that already hold this activity as unselectable. Must be called
+     * before [loadSchedule]. Edit flows pass an empty map so the activity's own day
+     * stays selectable and its update doesn't exclude itself.
+     *
+     * @param plannedIdsByDay "yyyy-MM-dd" → ids planned that day, in any id format.
+     * @param activityId the activity the sheet is opened for.
+     */
+    fun applyPlannedActivities(plannedIdsByDay: Map<String, List<String>>, activityId: String?) {
+        val targetId = ActivityIdFormat.base(activityId)
+        blockedDateStrings = if (targetId == null) {
+            emptySet()
+        } else {
+            plannedIdsByDay
+                .filterValues { ids -> ids.any { ActivityIdFormat.base(it) == targetId } }
+                .keys
+                .toSet()
+        }
+    }
+
+    /**
+     * Language key for the "no day can take this" card: distinguishes an activity
+     * that is sold out for the trip from one already planned on every single day.
+     */
+    fun unavailableBannerKey(): String {
+        val addedEveryDay = blockedDateStrings.isNotEmpty() &&
+            tripDayStrings.isNotEmpty() &&
+            tripDayStrings.all { it in blockedDateStrings }
+
+        return if (addedEveryDay) {
+            LanguageConst.ADD_PLAN_ACTIVITY_ALREADY_ADDED_EVERY_DAY
+        } else {
+            LanguageConst.ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS
+        }
+    }
+
+    /**
      * Load schedule for an activity/tour across the trip's full date range and
      * display slots for [selectedDate]. The full range is cached in
      * [cachedSchedule]; subsequent day switches must go through [selectDate]
@@ -150,8 +205,11 @@ class ActivityTimeSelectionVM @Inject constructor(
         showInSheetLoader(LanguageConst.LOADING_TEXT_LOADING_TIME_SLOTS, "Loading available times")
         resetExpansionState()
         cachedSchedule = null
-        _availableDateStrings.value = null
-        _isUnavailableForTrip.value = false
+        displayedDate = selectedDate
+        tripDayStrings = availableDays.map { dateFormatter.format(it) }
+        val selectableDays = tripDayStrings.filterNot { it in blockedDateStrings }.toSet()
+        _availableDateStrings.value = if (blockedDateStrings.isEmpty()) null else selectableDays
+        _isUnavailableForTrip.value = blockedDateStrings.isNotEmpty() && selectableDays.isEmpty()
 
         val formattedId = formatActivityIdForSchedule(activityId, cityId)
         val fromString = dateFormatter.format(availableDays.first())
@@ -171,9 +229,9 @@ class ActivityTimeSelectionVM @Inject constructor(
             }.onSuccess { response ->
                 hideLottieLoading()
                 cachedSchedule = response.data
-                val available = computeAvailableDateStrings(response.data)
+                val available = computeAvailableDateStrings(response.data) - blockedDateStrings
                 _isUnavailableForTrip.value = available.isEmpty()
-                publishSlotsFor(selectedDate)
+                publishSlotsFor(displayedDate ?: selectedDate)
                 _availableDateStrings.value = available
             }.onFailure {
                 hideLottieLoading()
@@ -196,6 +254,7 @@ class ActivityTimeSelectionVM @Inject constructor(
      */
     fun selectDate(date: Date) {
         resetExpansionState()
+        displayedDate = date
         publishSlotsFor(date)
     }
 
@@ -312,6 +371,7 @@ class ActivityTimeSelectionVM @Inject constructor(
      */
     fun clearSchedule() {
         cachedSchedule = null
+        displayedDate = null
         _scheduleSlots.value = null
         _resolvedSchedule.value = null
         _availableDateStrings.value = null
@@ -327,13 +387,6 @@ class ActivityTimeSelectionVM @Inject constructor(
      */
     private fun formatActivityIdForSchedule(activityId: String, cityId: Int?): String {
         if (cityId == null) return activityId
-
-        val rawId = if (activityId.startsWith("C_")) {
-            activityId.removePrefix("C_").split("_").firstOrNull() ?: activityId
-        } else {
-            activityId
-        }
-
-        return "C_${rawId}_15_$cityId"
+        return ActivityIdFormat.make(activityId, cityId = cityId)
     }
 }

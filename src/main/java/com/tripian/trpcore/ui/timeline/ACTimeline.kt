@@ -34,6 +34,7 @@ import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
+import com.tripian.trpcore.domain.model.timeline.toReservationDateTime
 import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
@@ -64,7 +65,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var mapBottomListAdapter: MapBottomListAdapter? = null
     private var isBottomListVisible = false
     private var isBottomListCompletelyHidden = true
-    private var lastMapInteractionAtMs = 0L
     private var lastMapEmptyClickAtMs = 0L
     private var navigationBarInsetBottom = 0
     private var bottomListHeight = 0
@@ -180,9 +180,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.mapView.setOnMapEmptyClickListener {
             if (viewModel.mapSteps.value.isNullOrEmpty()) return@setOnMapEmptyClickListener
             val now = System.currentTimeMillis()
-            if (now - lastMapInteractionAtMs < MAP_INTERACTION_CLICK_GUARD_MS) {
-                return@setOnMapEmptyClickListener
-            }
             if (now - lastMapEmptyClickAtMs < MAP_EMPTY_CLICK_DEBOUNCE_MS) {
                 return@setOnMapEmptyClickListener
             }
@@ -198,7 +195,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         binding.mapView.setOnMapInteractionListener {
-            lastMapInteractionAtMs = System.currentTimeMillis()
             hideMapBottomList()
         }
 
@@ -217,7 +213,21 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
     }
 
+    /**
+     * Alerts must land on top of whichever bottom sheet is open, otherwise a
+     * failure raised while the sheet is up is drawn behind it.
+     */
+    override fun alertParent(): android.view.ViewGroup? {
+        val openSheet = listOfNotNull(changeTimeSheet, addPlanSheet)
+            .lastOrNull { it.isAdded && it.dialog?.isShowing == true }
+        return openSheet?.dialog?.window?.decorView as? android.view.ViewGroup
+    }
+
     override fun setReceivers() {
+        viewModel.languagesReady.observe(this) { ready ->
+            if (ready) setupUI()
+        }
+
         viewModel.showOnboarding.observe(this) { shouldShow ->
             if (shouldShow) {
                 showOnboardingBottomSheet()
@@ -238,8 +248,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             binding.dayFilterView.setDays(days)
         }
 
+        TRPCore.core.miscRepository.appliedLanguage.observe(this) {
+            setupUI()
+            viewModel.onLanguageApplied()
+        }
+
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
+            binding.fabAddPlan.visibility =
+                if (isPastDayLocked()) View.GONE else View.VISIBLE
         }
 
         viewModel.cities.observe(this) { cities ->
@@ -447,12 +464,19 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         binding.tvEmptySubtitle.text = getLanguageForKey(LanguageConst.NO_PLANS_DESCRIPTION)
     }
 
+    /**
+     * A day already behind the traveller can't be replanned: its cards keep their
+     * affordances but the mutating handlers do nothing.
+     */
+    private fun isPastDayLocked(): Boolean = viewModel.isSelectedDayPast
+
     private fun setupRecyclerView() {
         timelineAdapter = TimelineAdapter(
             onItemClick = { item ->
                 handleItemClick(item)
             },
             onDeleteClick = { item, segmentIndex ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 handleDeleteClick(item, segmentIndex)
             },
             onExpandClick = { item ->
@@ -461,7 +485,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onStepClick = { step ->
                 if (step.stepType == "poi") {
                     step.poi?.let { poi ->
-                        startActivity(ACPOIDetail.launch(this, poi))
+                        startActivity(openPoiDetail(poi))
                     }
                 } else {
                     val activityId = step.poi?.additionalData?.productId
@@ -470,12 +494,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onChangeTimeClick = { manualPoi ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 handleManualPoiChangeTimeClick(manualPoi)
             },
             onAddPlanClick = {
                 showAddPlanSheet()
             },
             onReservedActivityChangeTimeClick = { reservedActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 reservedActivity.segmentIndex?.let { idx ->
                     showActivityChangeTimeSheet(
                         activityId = reservedActivity.segment.additionalData?.activityId,
@@ -507,6 +533,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onFlexibleActivityChangeTimeClick = { flexibleActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 flexibleActivity.segmentIndex?.let { idx ->
                     showActivityChangeTimeSheet(
                         activityId = flexibleActivity.segment.additionalData?.activityId,
@@ -538,15 +565,18 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
             },
             onReservationClick = { bookedActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = bookedActivity.startDateTime?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = bookedActivity.startDateTime.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
+                if (isPastDayLocked()) return@TimelineAdapter
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = flexibleActivity.segment.startDate
+                        .toReservationDateTime(isFlexible = true)
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onStepChangeTimeClick = { step ->
@@ -558,8 +588,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             onStepReservationClick = { step ->
                 val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                 activityId?.let { id ->
-                    val dateString = step.startDateTimes?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(id, dateString)
+                    val dateTime = step.startDateTimes.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(id, dateTime)
                 }
             },
             onRequestRouteCalculation = { recommendations ->
@@ -607,7 +637,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                     }
                     else -> {
                         findPoiById(item.id)?.let { poi ->
-                            startActivity(ACPOIDetail.launch(this, poi))
+                            startActivity(openPoiDetail(poi))
                         }
                     }
                 }
@@ -785,13 +815,14 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
         ViewCompat.requestApplyInsets(binding.root)
 
+        val addPlanVisibility = if (isPastDayLocked()) View.GONE else View.VISIBLE
         if (isMapMode) {
             binding.fabMap.visibility = View.GONE
-            binding.fabAddPlan.visibility = View.VISIBLE
+            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.VISIBLE
         } else {
             binding.fabMap.visibility = View.VISIBLE
-            binding.fabAddPlan.visibility = View.VISIBLE
+            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.GONE
         }
 
@@ -1071,19 +1102,11 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             }
             is TimelineDisplayItem.ManualPoi -> {
                 item.step.poi?.let { poi ->
-                    startActivity(ACPOIDetail.launch(this, poi))
+                    startActivity(openPoiDetail(poi))
                 }
             }
             else -> {}
         }
-    }
-
-    /**
-     * Called when user taps "Reserve" or "Book" button.
-     * Forwards reservation request to host app.
-     */
-    fun handleReservationClick(activityId: String) {
-        viewModel.onActivityReservationRequested(activityId)
     }
 
     private fun handleDeleteClick(item: TimelineDisplayItem, segmentIndex: Int?) {
@@ -1368,7 +1391,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             favorites = filteredFavorites,
             tripHash = viewModel.tripHash,
             availableDays = availableDays,
-            cityNameToIdMap = cityMap
+            cityNameToIdMap = cityMap,
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
         savedPlansLauncher.launch(intent)
     }
@@ -1377,6 +1401,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     // ADD PLAN
     // =====================
 
+    /** POI detail needs the trip window so it can query that POI's bookable products. */
+    private fun openPoiDetail(poi: com.tripian.one.api.pois.model.Poi): android.content.Intent {
+        val (tripStart, tripEnd) = viewModel.tripDateRange()
+        return ACPOIDetail.launch(this, poi, tripStart, tripEnd)
+    }
+
     private fun showAddPlanSheet() {
         addPlanSheet = AddPlanContainerBottomSheet.newInstance(
             availableDays = viewModel.availableDays.value ?: emptyList(),
@@ -1384,7 +1414,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             selectedDayIndex = viewModel.selectedDayIndex.value ?: 0,
             selectedCity = viewModel.getSelectedCity(),
             tripHash = viewModel.tripHash,
-            bookedActivities = viewModel.getBookedActivities()
+            bookedActivities = viewModel.getBookedActivities(),
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+            tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds()
         )
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->
@@ -1504,7 +1536,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     companion object {
         private const val EXTRA_TRIP_HASH = "tripHash"
-        private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L
         private const val MAP_EMPTY_CLICK_DEBOUNCE_MS = 400L
 
         fun newIntent(context: Context, tripHash: String): Intent {

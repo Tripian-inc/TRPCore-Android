@@ -1,6 +1,5 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
-import android.graphics.Typeface
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.one.api.timeline.model.TimelineStep
@@ -152,25 +151,13 @@ class StepActivityVH(
             ?: getLanguage(LanguageConst.ADD_PLAN_FREE_CANCELLATION)
         binding.tvCancellation.text = cancellation
 
-        val price = poi?.additionalData?.price ?: poi?.price?.toDouble()
-        val currency = poi?.additionalData?.currency ?: "EUR"
-        when {
-            price == null -> {
-                binding.llPriceRow.visibility = View.GONE
-            }
-            price == 0.0 -> {
-                binding.tvFromLabel.visibility = View.GONE
-                binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                binding.tvPrice.setTypeface(null, Typeface.BOLD)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-            else -> {
-                binding.tvFromLabel.visibility = View.VISIBLE
-                binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
-                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-        }
+        TimelineCellBinder.bindPrice(
+            priceRow = binding.llPriceRow,
+            fromLabel = binding.tvFromLabel,
+            priceView = binding.tvPrice,
+            price = poi?.additionalData?.price ?: poi?.price?.toDouble(),
+            currency = poi?.additionalData?.currency
+        )
 
         binding.btnReservation.text = getLanguage(LanguageConst.RESERVATION)
 

@@ -105,7 +105,8 @@ class TimelineStepsAdapter(
                 step = step,
                 order = startingOrder + index,
                 startDateTimeSnapshot = step.startDateTimes,
-                endDateTimeSnapshot = step.endDateTimes
+                endDateTimeSnapshot = step.endDateTimes,
+                priceSnapshot = step.poi?.additionalData?.price
             )
         }
         submitList(items)
