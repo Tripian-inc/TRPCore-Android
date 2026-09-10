@@ -14,7 +14,8 @@ import java.util.Locale
 /**
  * Inline month calendar with start..end range selection, matching the create-trip
  * "Select a date" mockup (no modal dialog). Monday-first grid, past days disabled,
- * prev/next month paging (cannot page before the current month). Uses
+ * prev/next month paging (cannot page before the current month). While an end day is
+ * being picked, days that would exceed [maxRangeDays] are disabled. Uses
  * [java.util.Calendar] (minSdk 24, so no java.time).
  */
 class MonthCalendarView @JvmOverloads constructor(
@@ -37,6 +38,13 @@ class MonthCalendarView @JvmOverloads constructor(
 
     /** Notified whenever the selected range changes (end may be null). */
     var onRangeChanged: ((start: Long?, end: Long?) -> Unit)? = null
+
+    /** Longest selectable trip, start and end days included. */
+    var maxRangeDays: Int = DEFAULT_MAX_RANGE_DAYS
+        set(value) {
+            field = value.coerceAtLeast(1)
+            render()
+        }
 
     init {
         orientation = VERTICAL
@@ -101,13 +109,23 @@ class MonthCalendarView @JvmOverloads constructor(
                     timeInMillis = m,
                     dayNumber = d,
                     isEmpty = false,
-                    enabled = m >= today.timeInMillis,
+                    enabled = m >= today.timeInMillis && !exceedsRangeLimit(m),
                     state = stateFor(m)
                 )
             )
         }
         while (days.size < totalCells) days.add(emptyCell())
         return days
+    }
+
+    private fun exceedsRangeLimit(m: Long): Boolean {
+        val s = startMillis ?: return false
+        if (endMillis != null) return false
+        val lastAllowed = (Calendar.getInstance().apply { timeInMillis = s })
+            .apply { add(Calendar.DAY_OF_MONTH, maxRangeDays - 1) }
+            .stripTime()
+            .timeInMillis
+        return m > lastAllowed
     }
 
     private fun stateFor(m: Long): DayState {
@@ -133,5 +151,9 @@ class MonthCalendarView @JvmOverloads constructor(
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
+    }
+
+    companion object {
+        const val DEFAULT_MAX_RANGE_DAYS = 30
     }
 }

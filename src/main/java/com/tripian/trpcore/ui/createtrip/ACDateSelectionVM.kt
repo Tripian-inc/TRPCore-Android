@@ -6,7 +6,9 @@ import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
 import com.tripian.trpcore.util.event.SingleLiveEvent
+import com.tripian.trpcore.ui.createtrip.calendar.MonthCalendarView
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
@@ -40,7 +42,7 @@ class ACDateSelectionVM @Inject constructor() : BaseViewModel() {
         val c = city ?: return
         val coord = c.coordinate ?: return
         val start = dateFormat.format(Date(startMillis))
-        val end = dateFormat.format(Date(if (endMillis >= startMillis) endMillis else startMillis))
+        val end = dateFormat.format(Date(clampEnd(startMillis, endMillis)))
 
         val destination = SegmentDestinationItem(
             title = c.name.orEmpty(),
@@ -57,6 +59,14 @@ class ACDateSelectionVM @Inject constructor() : BaseViewModel() {
             destinationItems = listOf(destination),
             tripItems = emptyList()
         )
+    }
+
+    private fun clampEnd(startMillis: Long, endMillis: Long): Long {
+        val lastAllowed = Calendar.getInstance().apply {
+            timeInMillis = startMillis
+            add(Calendar.DAY_OF_MONTH, MonthCalendarView.DEFAULT_MAX_RANGE_DAYS - 1)
+        }.timeInMillis
+        return endMillis.coerceIn(startMillis, lastAllowed)
     }
 
     companion object {
