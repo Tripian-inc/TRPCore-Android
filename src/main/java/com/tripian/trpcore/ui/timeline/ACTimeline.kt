@@ -1424,7 +1424,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             tripHash = viewModel.tripHash,
             bookedActivities = viewModel.getBookedActivities(),
             plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
-            tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds()
+            tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds(),
+            defaultTravelers = viewModel.defaultTravelerCount()
         )
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->

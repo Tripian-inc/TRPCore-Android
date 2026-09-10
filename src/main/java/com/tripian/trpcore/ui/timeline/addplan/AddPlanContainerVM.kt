@@ -125,6 +125,9 @@ class AddPlanContainerVM @Inject constructor(
     private val _travelers = MutableLiveData(1)
     val travelers: LiveData<Int> = _travelers
 
+    /** Party size the flow starts with and falls back to when the step is cleared. */
+    private var defaultTravelers: Int = 1
+
     private val _selectedSmartCategories = MutableLiveData<List<SmartCategory>>(emptyList())
     val selectedSmartCategories: LiveData<List<SmartCategory>> = _selectedSmartCategories
 
@@ -160,6 +163,9 @@ class AddPlanContainerVM @Inject constructor(
         plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
         tripWideExcludedActivityIds =
             args.getStringArrayList(ARG_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
+        defaultTravelers = args.getInt(ARG_DEFAULT_TRAVELERS, 1).coerceAtLeast(1)
+        _travelers.value = defaultTravelers
+        planData.travelers = defaultTravelers
 
         if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
             val todayIndex = days.indexOfFirst { it.isTodayDate() }
@@ -527,8 +533,8 @@ class AddPlanContainerVM @Inject constructor(
         planData.startTime = null
         planData.endTime = null
 
-        _travelers.value = 1
-        planData.travelers = 1
+        _travelers.value = defaultTravelers
+        planData.travelers = defaultTravelers
 
         clearStartingPoint()
     }
@@ -619,5 +625,6 @@ class AddPlanContainerVM @Inject constructor(
         const val ARG_BOOKED_ACTIVITIES = "bookedActivities"
         const val ARG_PLANNED_ACTIVITY_IDS = "plannedActivityIdsByDay"
         const val ARG_TRIP_WIDE_EXCLUDED_IDS = "tripWideExcludedActivityIds"
+        const val ARG_DEFAULT_TRAVELERS = "defaultTravelers"
     }
 }

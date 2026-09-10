@@ -316,7 +316,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             accommodation: Accommodation? = null,
             bookedActivities: List<TimelineSegment> = emptyList(),
             plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
-            tripWideExcludedActivityIds: List<String> = emptyList()
+            tripWideExcludedActivityIds: List<String> = emptyList(),
+            defaultTravelers: Int = 1
         ): AddPlanContainerBottomSheet {
             return AddPlanContainerBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -335,6 +336,7 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                         AddPlanContainerVM.ARG_TRIP_WIDE_EXCLUDED_IDS,
                         ArrayList(tripWideExcludedActivityIds)
                     )
+                    putInt(AddPlanContainerVM.ARG_DEFAULT_TRAVELERS, defaultTravelers)
                 }
             }
         }

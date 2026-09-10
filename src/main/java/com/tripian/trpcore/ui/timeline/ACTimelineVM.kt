@@ -2491,6 +2491,19 @@ class ACTimelineVM @Inject constructor(
             } ?: emptyList()
     }
 
+    /**
+     * Traveler count the add-plan flow starts with: the largest party (adults plus
+     * children) among the host's bookings, read from the itinerary the SDK was opened
+     * with or from the booked-activity segments already on the timeline. 1 without bookings.
+     */
+    fun defaultTravelerCount(): Int {
+        val fromHostBookings = itinerary?.tripItems.orEmpty().maxOfOrNull { it.adultCount + it.childCount }
+        val fromBookedSegments = _timeline.value?.tripProfile?.segments.orEmpty()
+            .filter { it.segmentType == SegmentType.BOOKED_ACTIVITY }
+            .maxOfOrNull { it.adults + it.children }
+        return (fromHostBookings ?: fromBookedSegments ?: 1).coerceAtLeast(1)
+    }
+
     fun isTimelineGenerated(): Boolean {
         return _timeline.value.isGenerated()
     }
