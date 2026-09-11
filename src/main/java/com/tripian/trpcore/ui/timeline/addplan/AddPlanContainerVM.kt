@@ -136,6 +136,7 @@ class AddPlanContainerVM @Inject constructor(
     private var bookedActivities: List<TimelineSegment> = emptyList()
 
     private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+    private var plannedPoiIdsByDay: Map<String, List<String>> = emptyMap()
 
     private var tripWideExcludedActivityIds: List<String> = emptyList()
 
@@ -161,6 +162,7 @@ class AddPlanContainerVM @Inject constructor(
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
         plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
+        plannedPoiIdsByDay = args.getSerializable(ARG_PLANNED_POI_IDS).asIdsByDay()
         tripWideExcludedActivityIds =
             args.getStringArrayList(ARG_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
         defaultTravelers = args.getInt(ARG_DEFAULT_TRAVELERS, 1).coerceAtLeast(1)
@@ -343,6 +345,8 @@ class AddPlanContainerVM @Inject constructor(
 
     /** "yyyy-MM-dd" → activity ids that day already holds, as handed over by the timeline. */
     fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
+
+    fun getPlannedPoiIdsByDay(): Map<String, List<String>> = plannedPoiIdsByDay
 
     /** Activity ids excluded on every day of the trip (bookings + removed favorites). */
     fun getTripWideExcludedActivityIds(): List<String> = tripWideExcludedActivityIds
@@ -624,6 +628,7 @@ class AddPlanContainerVM @Inject constructor(
         const val ARG_ACCOMMODATION = "accommodation"
         const val ARG_BOOKED_ACTIVITIES = "bookedActivities"
         const val ARG_PLANNED_ACTIVITY_IDS = "plannedActivityIdsByDay"
+        const val ARG_PLANNED_POI_IDS = "plannedPoiIdsByDay"
         const val ARG_TRIP_WIDE_EXCLUDED_IDS = "tripWideExcludedActivityIds"
         const val ARG_DEFAULT_TRAVELERS = "defaultTravelers"
     }

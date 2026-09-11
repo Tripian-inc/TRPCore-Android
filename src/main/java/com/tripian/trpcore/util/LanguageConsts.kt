@@ -264,6 +264,7 @@ object LanguageConst {
     const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
     const val ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS = "addPlan.time.activityNotAvailableForTrip"
     const val ADD_PLAN_ACTIVITY_ALREADY_ADDED_EVERY_DAY = "addPlan.time.activityAlreadyAddedEveryDay"
+    const val ADD_PLAN_POI_ALREADY_ADDED_DAY = "addPlan.time.placeAlreadyAddedDay"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
 
     // Categories (Smart Mode)

@@ -256,7 +256,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     tripHash = tripHash,
                     listingType = POIListingType.PLACES_OF_INTEREST,
                     tripStartDate = sharedVM.tripStartDate(),
-                    tripEndDate = sharedVM.tripEndDate()
+                    tripEndDate = sharedVM.tripEndDate(),
+                    plannedPoiIdsByDay = sharedVM.getPlannedPoiIdsByDay()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -267,7 +268,8 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     tripHash = tripHash,
                     listingType = POIListingType.EAT_AND_DRINK,
                     tripStartDate = sharedVM.tripStartDate(),
-                    tripEndDate = sharedVM.tripEndDate()
+                    tripEndDate = sharedVM.tripEndDate(),
+                    plannedPoiIdsByDay = sharedVM.getPlannedPoiIdsByDay()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -316,6 +318,7 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             accommodation: Accommodation? = null,
             bookedActivities: List<TimelineSegment> = emptyList(),
             plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            plannedPoiIdsByDay: Map<String, List<String>> = emptyMap(),
             tripWideExcludedActivityIds: List<String> = emptyList(),
             defaultTravelers: Int = 1
         ): AddPlanContainerBottomSheet {
@@ -331,6 +334,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     putSerializable(
                         AddPlanContainerVM.ARG_PLANNED_ACTIVITY_IDS,
                         plannedActivityIdsByDay.toSerializableIdsByDay()
+                    )
+                    putSerializable(
+                        AddPlanContainerVM.ARG_PLANNED_POI_IDS,
+                        plannedPoiIdsByDay.toSerializableIdsByDay()
                     )
                     putStringArrayList(
                         AddPlanContainerVM.ARG_TRIP_WIDE_EXCLUDED_IDS,

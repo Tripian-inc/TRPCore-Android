@@ -1424,6 +1424,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             tripHash = viewModel.tripHash,
             bookedActivities = viewModel.getBookedActivities(),
             plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+            plannedPoiIdsByDay = viewModel.plannedPoiIdsByDay(),
             tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds(),
             defaultTravelers = viewModel.defaultTravelerCount()
         )

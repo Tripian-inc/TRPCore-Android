@@ -16,6 +16,8 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.FilterData
 import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
+import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
@@ -54,9 +56,10 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             val tripHash = intent.getStringExtra(EXTRA_TRIP_HASH) ?: ""
             val listingType = intent.getSerializableExtra(EXTRA_LISTING_TYPE) as? POIListingType
                 ?: POIListingType.PLACES_OF_INTEREST
+            val plannedPoiIdsByDay = intent.getSerializableExtra(EXTRA_PLANNED_POI_IDS).asIdsByDay()
 
             planData?.let {
-                viewModel.initialize(it, tripHash, listingType)
+                viewModel.initialize(it, tripHash, listingType, plannedPoiIdsByDay)
 
                 val title = when (listingType) {
                     POIListingType.PLACES_OF_INTEREST -> viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TITLE_PLACES_OF_INTEREST)
@@ -113,6 +116,13 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             message?.let {
                 viewModel.clearAddSegmentError()
                 timeSelectionBottomSheet?.hideInSheetLoadingOverlay()
+                showAlert(AlertType.ERROR, it)
+            }
+        }
+
+        viewModel.addBlockedMessage.observe(this) { message ->
+            message?.let {
+                viewModel.clearAddBlockedMessage()
                 showAlert(AlertType.ERROR, it)
             }
         }
@@ -331,14 +341,20 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
 
         const val EXTRA_TRIP_START_DATE = "extra_trip_start_date"
         const val EXTRA_TRIP_END_DATE = "extra_trip_end_date"
+        const val EXTRA_PLANNED_POI_IDS = "extra_planned_poi_ids"
 
+        /**
+         * @param plannedPoiIdsByDay "yyyy-MM-dd" → POI ids that day already holds; a
+         *   place the chosen day already has cannot be added again.
+         */
         fun launch(
             context: Context,
             planData: AddPlanData,
             tripHash: String,
             listingType: POIListingType,
             tripStartDate: String? = null,
-            tripEndDate: String? = null
+            tripEndDate: String? = null,
+            plannedPoiIdsByDay: Map<String, List<String>> = emptyMap()
         ): Intent {
             return Intent(context, ACPOIListing::class.java).apply {
                 putExtra(EXTRA_PLAN_DATA, planData)
@@ -346,6 +362,7 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
                 putExtra(EXTRA_LISTING_TYPE, listingType)
                 putExtra(EXTRA_TRIP_START_DATE, tripStartDate)
                 putExtra(EXTRA_TRIP_END_DATE, tripEndDate)
+                putExtra(EXTRA_PLANNED_POI_IDS, plannedPoiIdsByDay.toSerializableIdsByDay())
             }
         }
     }

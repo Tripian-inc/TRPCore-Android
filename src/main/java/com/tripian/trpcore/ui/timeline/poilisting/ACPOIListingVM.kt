@@ -73,6 +73,20 @@ class ACPOIListingVM @Inject constructor(
     private val _addSegmentError = MutableLiveData<String?>()
     val addSegmentError: LiveData<String?> = _addSegmentError
 
+    /** Message shown when the chosen day already holds the tapped place. */
+    private val _addBlockedMessage = MutableLiveData<String?>()
+    val addBlockedMessage: LiveData<String?> = _addBlockedMessage
+
+    fun clearAddBlockedMessage() {
+        _addBlockedMessage.value = null
+    }
+
+    /**
+     * "yyyy-MM-dd" → POI ids that day already holds. Seeded from the timeline this
+     * screen was opened with and kept up to date locally by [markPoiAdded].
+     */
+    private val poiIdsByDay: MutableMap<String, MutableList<String>> = mutableMapOf()
+
     fun clearAddSegmentError() {
         _addSegmentError.value = null
     }
@@ -114,12 +128,19 @@ class ACPOIListingVM @Inject constructor(
     private var totalCount: Int = 0
 
     /** Sets up state and loads POIs. The loader is shown before category prefetch to avoid a blank-screen flash. */
-    fun initialize(planData: AddPlanData, tripHash: String, listingType: POIListingType) {
+    fun initialize(
+        planData: AddPlanData,
+        tripHash: String,
+        listingType: POIListingType,
+        plannedPoiIdsByDay: Map<String, List<String>> = emptyMap()
+    ) {
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
         this.listingType = listingType
         this.selectedDayIndex = planData.selectedDayIndex
+        poiIdsByDay.clear()
+        plannedPoiIdsByDay.forEach { (day, ids) -> poiIdsByDay[day] = ids.toMutableList() }
 
         showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
 
@@ -258,8 +279,30 @@ class ACPOIListingVM @Inject constructor(
         }
     }
 
+    /** Opens the time picker, or explains that the chosen day already holds the place. */
     fun onPOIAddClicked(poi: Poi) {
+        if (isPlannedOnSelectedDay(poi)) {
+            _addBlockedMessage.value = getLanguageForKey(LanguageConst.ADD_PLAN_POI_ALREADY_ADDED_DAY)
+                .takeIf { it.isNotBlank() && it != LanguageConst.ADD_PLAN_POI_ALREADY_ADDED_DAY }
+                ?: POI_ALREADY_ADDED_FALLBACK
+            return
+        }
         _showTimeSelection.value = poi
+    }
+
+    private fun selectedDayKey(): String? =
+        planData?.selectedDay?.let { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(it) }
+
+    private fun isPlannedOnSelectedDay(poi: Poi): Boolean {
+        val day = selectedDayKey() ?: return false
+        val poiId = poi.id ?: return false
+        return poiId in poiIdsByDay[day].orEmpty()
+    }
+
+    private fun markPoiAdded(poi: Poi) {
+        val day = selectedDayKey() ?: return
+        val poiId = poi.id ?: return
+        poiIdsByDay.getOrPut(day) { mutableListOf() }.let { if (poiId !in it) it += poiId }
     }
 
     fun clearTimeSelection() {
@@ -331,6 +374,7 @@ class ACPOIListingVM @Inject constructor(
             runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(tripHash = tripHash)) }
                 .onSuccess { timeline ->
                     timelineRepository.cacheGeneratedTimeline(tripHash, timeline)
+                    markPoiAdded(poi)
                     _addedToItinerarySuccess.value = AddedToItineraryResult(
                         poiName = poi.name.orEmpty(),
                         selectedDate = selectedDate
@@ -361,6 +405,9 @@ class ACPOIListingVM @Inject constructor(
 
     fun getSelectedDayIndex(): Int = selectedDayIndex
 
+    companion object {
+        private const val POI_ALREADY_ADDED_FALLBACK = "This place is already in your plan on this day."
+    }
 }
 
 /**

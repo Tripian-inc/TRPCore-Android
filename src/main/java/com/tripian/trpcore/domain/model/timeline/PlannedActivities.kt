@@ -95,6 +95,27 @@ fun Timeline.plannedActivityIdsByDay(): Map<String, List<String>> {
     return idsByDay
 }
 
+/**
+ * "yyyy-MM-dd" → the POI ids that day already holds, from every non-activity plan
+ * step (manual places and recommended places alike). The add-place flow blocks a
+ * place the chosen day already has.
+ */
+fun Timeline.plannedPoiIdsByDay(): Map<String, List<String>> {
+    val idsByDay = mutableMapOf<String, MutableList<String>>()
+
+    plans.orEmpty().forEach { plan ->
+        plan.steps.orEmpty().forEach { step ->
+            if (step.stepType == STEP_TYPE_ACTIVITY) return@forEach
+            val poiId = step.poi?.id?.takeIf { it.isNotBlank() } ?: return@forEach
+            val day = dayPartOf(step.startDateTimes) ?: return@forEach
+            val dayIds = idsByDay.getOrPut(day) { mutableListOf() }
+            if (poiId !in dayIds) dayIds += poiId
+        }
+    }
+
+    return idsByDay
+}
+
 private const val STEP_TYPE_ACTIVITY = "activity"
 
 private fun dayPartOf(value: String?): String? {

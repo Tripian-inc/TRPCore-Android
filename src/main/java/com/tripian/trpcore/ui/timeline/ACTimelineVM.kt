@@ -32,6 +32,7 @@ import com.tripian.trpcore.domain.model.timeline.TransitionInfo
 import com.tripian.trpcore.domain.model.timeline.generateDateRange
 import com.tripian.trpcore.domain.model.timeline.plannedActivities
 import com.tripian.trpcore.domain.model.timeline.plannedActivityIdsByDay
+import com.tripian.trpcore.domain.model.timeline.plannedPoiIdsByDay
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.domain.usecase.timeline.CreateSegmentUseCase
@@ -1396,6 +1397,10 @@ class ACTimelineVM @Inject constructor(
      */
     fun plannedActivityIdsByDay(): Map<String, List<String>> =
         _timeline.value?.plannedActivityIdsByDay() ?: emptyMap()
+
+    /** "yyyy-MM-dd" → POI ids that day already holds; the add-place flow blocks repeats. */
+    fun plannedPoiIdsByDay(): Map<String, List<String>> =
+        _timeline.value?.plannedPoiIdsByDay() ?: emptyMap()
 
     /**
      * Activity ids the engine must not suggest for [dayKey]: booked/reserved activities
