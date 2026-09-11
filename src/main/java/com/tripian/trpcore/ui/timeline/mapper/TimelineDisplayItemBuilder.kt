@@ -745,9 +745,10 @@ class TimelineDisplayItemBuilder @Inject constructor(
         city: City?,
         flatRoutes: Map<String, List<StepRouteInfo>>
     ): List<TimelineDisplayItem> {
-        val chain = FlatRouteChain.collect(rows).firstOrNull() ?: return rows
-        val legs = flatRoutes[chain.key] ?: return rows
-        val legByDestination = legs.associateBy { it.toStepId }
+        val legByDestination = FlatRouteChain.collect(rows)
+            .flatMap { chain -> flatRoutes[chain.key].orEmpty() }
+            .associateBy { it.toStepId }
+        if (legByDestination.isEmpty()) return rows
         return rows.flatMap { row ->
             val leg = row.routeWaypoint()?.id?.let { legByDestination[it] }
             listOfNotNull(leg?.let { TimelineDisplayItem.RouteSeparator(it, city) }, row)

@@ -15,10 +15,12 @@ data class RouteWaypoint(
 )
 
 /**
- * The routable rows of one city group of the flat timeline in list order: the
- * starting point when it is located, then every located non-flexible row.
- * [key] identifies the chain by its waypoint ids and coordinates, so rows that only
- * changed time reuse the legs already calculated for the same sequence.
+ * One run of routable rows of a city group of the flat timeline, in list order. A timed
+ * row without a location ends the run: the rows before it and the rows after it are
+ * routed as separate chains, so no leg is drawn across a place that cannot be placed.
+ * The starting point belongs to the first run that has a located row. [key] identifies
+ * the chain by its waypoint ids and coordinates, so rows that only changed time reuse
+ * the legs already calculated for the same sequence.
  */
 data class FlatRouteChain(
     val cityId: Int?,
@@ -42,17 +44,43 @@ data class FlatRouteChain(
         /** Negative, so segment waypoints never collide with step ids. */
         fun segmentWaypointId(segmentIndex: Int): Int = -(segmentIndex + 1)
 
-        /** One chain per city group in list order; rows without a coordinate are skipped. */
+        /**
+         * The chains of every city group in list order. Rows are split into runs at each
+         * timed row without a location; runs with fewer than two waypoints are dropped.
+         */
         fun collect(items: List<TimelineDisplayItem>): List<FlatRouteChain> {
-            val byCity = linkedMapOf<Int?, MutableList<RouteWaypoint>>()
-            items.forEach { item ->
-                val waypoint = item.routeWaypoint() ?: return@forEach
-                byCity.getOrPut(item.city?.id) { mutableListOf() }.add(waypoint)
+            val chains = mutableListOf<FlatRouteChain>()
+            var cityId: Int? = null
+            var run = mutableListOf<RouteWaypoint>()
+
+            fun closeRun() {
+                if (run.size > 1) chains.add(FlatRouteChain(cityId, run.toList()))
+                run = mutableListOf()
             }
-            return byCity.map { (cityId, waypoints) -> FlatRouteChain(cityId, waypoints) }
+
+            items.forEach { item ->
+                if (item.city?.id != cityId && run.isNotEmpty()) {
+                    closeRun()
+                }
+                cityId = item.city?.id
+                val waypoint = item.routeWaypoint()
+                when {
+                    waypoint != null -> run.add(waypoint)
+                    item.breaksRouteChain && run.any { it.id != null } -> closeRun()
+                }
+            }
+            closeRun()
+            return chains
         }
     }
 }
+
+/** A timed row that has no coordinate to route through, so legs must not cross it. */
+private val TimelineDisplayItem.breaksRouteChain: Boolean
+    get() = when (this) {
+        is TimelineDisplayItem.BookedActivity, is TimelineDisplayItem.ManualPoi, is TimelineDisplayItem.PlanStep -> true
+        else -> false
+    }
 
 /** The waypoint this row contributes to its city's route chain, or null when it is not routed. */
 fun TimelineDisplayItem.routeWaypoint(): RouteWaypoint? = when (this) {

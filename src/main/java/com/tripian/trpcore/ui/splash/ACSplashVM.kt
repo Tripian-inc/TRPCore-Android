@@ -39,8 +39,10 @@ private const val TRIP_END_PADDING_DAYS = 5
  * from the reservations → the Activity hands off to the SDK timeline via
  * TRPCore.startWithItinerary.
  *
- * Per reservation the `detailURL` carries `destinationID`, `startDate`, `endDate`
- * and (optionally) `productId`/`providerId`. Destination resolution priority:
+ * Per reservation the trip range comes from the service `Date`; the `detailURL`
+ * carries `destinationID` and `productID`, and its `startDate`/`endDate` are the
+ * host site's search window (they move with today), used only when `Date` is
+ * missing. Destination resolution priority:
  *   1. product-lookup (productId + providerId) → TourProduct (cityId + coordinate)
  *   2. fallback: destinationID → Tripian cityId (juniper) → city centre coordinate
  * Each reservation becomes a booked-activity [SegmentActivityItem] (tripItems) and
@@ -146,8 +148,8 @@ class ACSplashVM @Inject constructor(
             val startDate = uri?.getQueryParameter("startDate")
             val endDate = uri?.getQueryParameter("endDate")
             val serviceDate = r.date?.takeIf { it.length >= 10 }?.take(10)
-            (startDate ?: serviceDate ?: endDate)?.let { startDates.add(it) }
-            (endDate ?: serviceDate ?: startDate)?.let { endDates.add(it) }
+            (serviceDate ?: startDate ?: endDate)?.let { startDates.add(it) }
+            (serviceDate ?: endDate ?: startDate)?.let { endDates.add(it) }
 
             // The destination/activity build below needs a parseable detailURL.
             if (uri == null) return@forEach
@@ -198,7 +200,7 @@ class ACSplashVM @Inject constructor(
                     title = city?.name ?: product?.title.orEmpty(),
                     coordinate = "$centerLat,$centerLng",
                     cityId = cityId,
-                    dates = listOfNotNull(startDate, endDate).distinct().ifEmpty { null },
+                    dates = listOfNotNull(serviceDate ?: startDate, serviceDate ?: endDate).distinct().ifEmpty { null },
                     countryName = city?.country?.name
                 )
             }
