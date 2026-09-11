@@ -16,7 +16,7 @@ if (!kotlinPluginVersion.startsWith('1.')) {
 }
 
 group = "com.github.Tripian-inc"
-version = "nexus-1.0.2"
+version = "nexus-1.0.3"
 
 android {
     namespace 'com.tripian.trpcore'
