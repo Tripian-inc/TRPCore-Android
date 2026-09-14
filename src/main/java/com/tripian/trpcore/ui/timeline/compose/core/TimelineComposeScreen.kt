@@ -27,9 +27,10 @@ fun TimelineComposeScreen(
     content: @Composable BoxScope.() -> Unit
 ) {
     val context = LocalContext.current
+    val overlays = LocalTimelineOverlays.current
     val currentOnExit by rememberUpdatedState(onExit)
-    DisposableEffect(viewModel, context) {
-        val listener = ComposeViewListener(context) { currentOnExit() }
+    DisposableEffect(viewModel, context, overlays) {
+        val listener = ComposeViewListener(context, overlays) { currentOnExit() }
         viewModel.viewListener = listener
         onDispose {
             if (viewModel.viewListener === listener) {

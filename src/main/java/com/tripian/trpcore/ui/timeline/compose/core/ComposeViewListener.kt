@@ -9,21 +9,28 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.ViewListener
+import com.tripian.trpcore.util.WarningDialogRequest
 import com.tripian.trpcore.util.fragment.FragmentFactory
 import com.tripian.trpcore.util.widget.BottomToast
 import kotlin.reflect.KClass
 
 /**
  * [ViewListener] adapter for Compose screens. Alerts surface through
- * [BottomToast]; [startActivity] still launches the View-based Activities so
- * flows not yet migrated keep working; back/finish requests route to [onExit].
+ * [BottomToast], warning dialogs through [TimelineOverlayState]; back/finish
+ * requests route to [onExit].
  */
 internal class ComposeViewListener(
     private val context: Context,
+    private val overlays: TimelineOverlayState,
     private val onExit: () -> Unit
 ) : ViewListener {
 
     override fun showFragment(factory: FragmentFactory) = Unit
+
+    override fun showWarningDialog(request: WarningDialogRequest): Boolean {
+        overlays.showDialog(request)
+        return true
+    }
 
     override fun showAlert(type: AlertType, message: String) {
         context.findActivity()?.let { BottomToast.show(it, message, type) }

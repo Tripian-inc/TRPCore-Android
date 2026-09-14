@@ -17,6 +17,7 @@ import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.OnBackPressListener
 import com.tripian.trpcore.util.Strings
 import com.tripian.trpcore.util.ViewListener
+import com.tripian.trpcore.util.WarningDialogRequest
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.event.SingleLiveEvent
 import com.tripian.trpcore.util.extensions.navigateToFragment
@@ -116,6 +117,16 @@ abstract class BaseViewModel : ViewModel(), OnBackPressListener {
         negative: DGActionListener? = null,
         isCloseEnable: Boolean = true
     ) {
+        val request = WarningDialogRequest(
+            title = title,
+            message = contentText,
+            positiveText = positiveBtn,
+            negativeText = negativeBtn,
+            isCloseEnable = isCloseEnable,
+            onPositive = { positive?.onClicked(null) },
+            onNegative = { negative?.onClicked(null) }
+        )
+        if (viewListener?.showWarningDialog(request) == true) return
         val fragment =
             FRWarning.newInstance(title, contentText, positiveBtn, negativeBtn, isCloseEnable)
         fragment.positiveListener = object : DGActionListener {

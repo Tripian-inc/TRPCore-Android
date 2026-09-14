@@ -2,7 +2,9 @@ package com.tripian.trpcore.ui.timeline.compose
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,7 +13,10 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.ui.timeline.compose.activity.ActivityListingScreen
 import com.tripian.trpcore.ui.timeline.compose.addplan.StartingPointScreen
+import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineOverlays
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineOverlayState
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineWarningDialogHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
 import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
@@ -60,54 +65,59 @@ fun TimelineNexus(
     }
 
     val navigator = rememberTimelineNavigator(navController)
+    val overlays = remember { TimelineOverlayState() }
 
     TimelineTheme {
         CompositionLocalProvider(
             LocalTimelineViewModelFactory provides TRPCore.core.timelineViewModelFactory,
-            LocalTimelineNavigator provides navigator
+            LocalTimelineNavigator provides navigator,
+            LocalTimelineOverlays provides overlays
         ) {
-            NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
-                composable(TimelineRoutes.TIMELINE) { entry ->
-                    TimelineScreen(
-                        itinerary = itinerary,
-                        tripHash = tripHash ?: itinerary.tripianHash,
-                        uniqueId = uniqueId ?: itinerary.uniqueId,
-                        appLanguage = appLanguage,
-                        appCurrency = appCurrency,
-                        onDismiss = onDismiss,
-                        navEntry = entry
-                    )
-                }
-                composable(TimelineRoutes.POI_SELECTION) {
-                    RouteScreen<PoiSelectionArgs>(navigator, TimelineRoutes.POI_SELECTION) {
-                        PoiSelectionScreen(it)
+            Box {
+                NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
+                    composable(TimelineRoutes.TIMELINE) { entry ->
+                        TimelineScreen(
+                            itinerary = itinerary,
+                            tripHash = tripHash ?: itinerary.tripianHash,
+                            uniqueId = uniqueId ?: itinerary.uniqueId,
+                            appLanguage = appLanguage,
+                            appCurrency = appCurrency,
+                            onDismiss = onDismiss,
+                            navEntry = entry
+                        )
+                    }
+                    composable(TimelineRoutes.POI_SELECTION) {
+                        RouteScreen<PoiSelectionArgs>(navigator, TimelineRoutes.POI_SELECTION) {
+                            PoiSelectionScreen(it)
+                        }
+                    }
+                    composable(TimelineRoutes.POI_DETAIL) {
+                        RouteScreen<PoiDetailArgs>(navigator, TimelineRoutes.POI_DETAIL) {
+                            PoiDetailScreen(it)
+                        }
+                    }
+                    composable(TimelineRoutes.POI_LISTING) {
+                        RouteScreen<PoiListingArgs>(navigator, TimelineRoutes.POI_LISTING) {
+                            PoiListingScreen(it)
+                        }
+                    }
+                    composable(TimelineRoutes.ACTIVITY_LISTING) {
+                        RouteScreen<ActivityListingArgs>(navigator, TimelineRoutes.ACTIVITY_LISTING) {
+                            ActivityListingScreen(it)
+                        }
+                    }
+                    composable(TimelineRoutes.SAVED_PLANS) {
+                        RouteScreen<SavedPlansArgs>(navigator, TimelineRoutes.SAVED_PLANS) {
+                            SavedPlansScreen(it)
+                        }
+                    }
+                    composable(TimelineRoutes.STARTING_POINT) {
+                        RouteScreen<StartingPointArgs>(navigator, TimelineRoutes.STARTING_POINT) {
+                            StartingPointScreen(it)
+                        }
                     }
                 }
-                composable(TimelineRoutes.POI_DETAIL) {
-                    RouteScreen<PoiDetailArgs>(navigator, TimelineRoutes.POI_DETAIL) {
-                        PoiDetailScreen(it)
-                    }
-                }
-                composable(TimelineRoutes.POI_LISTING) {
-                    RouteScreen<PoiListingArgs>(navigator, TimelineRoutes.POI_LISTING) {
-                        PoiListingScreen(it)
-                    }
-                }
-                composable(TimelineRoutes.ACTIVITY_LISTING) {
-                    RouteScreen<ActivityListingArgs>(navigator, TimelineRoutes.ACTIVITY_LISTING) {
-                        ActivityListingScreen(it)
-                    }
-                }
-                composable(TimelineRoutes.SAVED_PLANS) {
-                    RouteScreen<SavedPlansArgs>(navigator, TimelineRoutes.SAVED_PLANS) {
-                        SavedPlansScreen(it)
-                    }
-                }
-                composable(TimelineRoutes.STARTING_POINT) {
-                    RouteScreen<StartingPointArgs>(navigator, TimelineRoutes.STARTING_POINT) {
-                        StartingPointScreen(it)
-                    }
-                }
+                TimelineWarningDialogHost(overlays)
             }
         }
     }
