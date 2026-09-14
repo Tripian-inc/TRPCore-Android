@@ -16,6 +16,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +28,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.card.MaterialCardView
@@ -62,7 +66,6 @@ private class SelectDayStepViews(
     val dayAdapter: DayFilterAdapter
 ) {
     var lastDays: List<Date>? = null
-    var lastMode: AddPlanMode? = null
 }
 
 /**
@@ -70,6 +73,22 @@ private class SelectDayStepViews(
  * DayFilterAdapter with the wiring ported from FRSelectDay; city selection
  * opens a Compose sheet instead of the FragmentManager-based one.
  */
+/**
+ * Scrolls a step's View layout from Compose so the sheet's nested-scroll
+ * handling cooperates with it; the layout's own ScrollView gets unbounded
+ * height and never scrolls internally.
+ */
+@Composable
+private fun StepScrollContainer(scrollState: ScrollState, content: @Composable () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(scrollState)
+    ) {
+        content()
+    }
+}
+
 @Composable
 internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
     val availableDays by viewModel.availableDays.observeAsState(emptyList())
@@ -81,106 +100,113 @@ internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
     val selectedManualCategory by viewModel.selectedManualCategory.observeAsState()
     val travelers by viewModel.travelers.observeAsState(1)
     var showCitySheet by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
-    AndroidView(
-        factory = { ctx ->
-            val binding = FrAddPlanSelectDayBinding.inflate(LayoutInflater.from(ctx))
-            binding.tvAddToDay.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
-            binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_DESTINATION)
-            binding.tvHowToAdd.text = getLanguage(LanguageConst.ADD_PLAN_HOW_TO_ADD)
-            binding.tvSmartTitle.text = getLanguage(LanguageConst.ADD_PLAN_SMART_RECOMMENDATIONS)
-            binding.tvSmartDesc.text = getLanguage(LanguageConst.ADD_PLAN_SMART_DESC)
-            binding.tvManualTitle.text = getLanguage(LanguageConst.ADD_PLAN_ADD_MANUALLY)
-            binding.tvManualDesc.text = getLanguage(LanguageConst.ADD_PLAN_MANUAL_DESC)
-            binding.tvSelectCategoriesLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CATEGORIES)
-            binding.tvCatActivities.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES)
-            binding.tvCatPlaces.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_PLACES)
-            binding.tvCatEatDrink.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK)
-            binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
-            binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
+    LaunchedEffect(selectedMode) {
+        if (selectedMode == AddPlanMode.MANUAL) {
+            withFrameNanos { }
+            withFrameNanos { }
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
 
-            val dayAdapter = DayFilterAdapter { position ->
-                viewModel.selectDay(position)
-            }.apply { disablePastDays = true }
-            binding.rvDays.layoutManager =
-                LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
-            binding.rvDays.adapter = dayAdapter
+    StepScrollContainer(scrollState) {
+        AndroidView(
+            factory = { ctx ->
+                val binding = FrAddPlanSelectDayBinding.inflate(LayoutInflater.from(ctx))
+                binding.tvAddToDay.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
+                binding.tvCityLabel.text = getLanguage(LanguageConst.ADD_PLAN_DESTINATION)
+                binding.tvHowToAdd.text = getLanguage(LanguageConst.ADD_PLAN_HOW_TO_ADD)
+                binding.tvSmartTitle.text = getLanguage(LanguageConst.ADD_PLAN_SMART_RECOMMENDATIONS)
+                binding.tvSmartDesc.text = getLanguage(LanguageConst.ADD_PLAN_SMART_DESC)
+                binding.tvManualTitle.text = getLanguage(LanguageConst.ADD_PLAN_ADD_MANUALLY)
+                binding.tvManualDesc.text = getLanguage(LanguageConst.ADD_PLAN_MANUAL_DESC)
+                binding.tvSelectCategoriesLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CATEGORIES)
+                binding.tvCatActivities.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_ACTIVITIES)
+                binding.tvCatPlaces.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_PLACES)
+                binding.tvCatEatDrink.text = getLanguage(LanguageConst.ADD_PLAN_CAT_MANUAL_EAT_DRINK)
+                binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
+                binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
 
-            binding.cardSmartRecommendations.setOnClickListener {
-                viewModel.selectMode(AddPlanMode.SMART_RECOMMENDATIONS)
-            }
-            binding.cardAddManually.setOnClickListener {
-                viewModel.selectMode(AddPlanMode.MANUAL)
-            }
-            binding.cardManualActivities.setOnClickListener {
-                viewModel.selectManualCategory(ManualCategory.ACTIVITIES)
-            }
-            binding.cardManualPlaces.setOnClickListener {
-                viewModel.selectManualCategory(ManualCategory.PLACES_OF_INTEREST)
-            }
-            binding.cardManualEatDrink.setOnClickListener {
-                viewModel.selectManualCategory(ManualCategory.EAT_AND_DRINK)
-            }
-            binding.btnCitySelection.setOnClickListener {
-                showCitySheet = true
-            }
-            binding.btnTravelersMinus.setOnClickListener { viewModel.decrementTravelers() }
-            binding.btnTravelersPlus.setOnClickListener { viewModel.incrementTravelers() }
+                val dayAdapter = DayFilterAdapter { position ->
+                    viewModel.selectDay(position)
+                }.apply { disablePastDays = true }
+                binding.rvDays.layoutManager =
+                    LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
+                binding.rvDays.adapter = dayAdapter
 
-            binding.root.also { it.tag = SelectDayStepViews(binding, dayAdapter) }
-        },
-        update = { root ->
-            val views = root.tag as SelectDayStepViews
-            val b = views.binding
-            if (views.lastDays !== availableDays) {
-                views.lastDays = availableDays
-                views.dayAdapter.setDays(availableDays)
-            }
-            views.dayAdapter.setSelectedPosition(selectedDayIndex)
-            views.dayAdapter.timeZoneId = selectedCity?.timezone
+                binding.cardSmartRecommendations.setOnClickListener {
+                    viewModel.selectMode(AddPlanMode.SMART_RECOMMENDATIONS)
+                }
+                binding.cardAddManually.setOnClickListener {
+                    viewModel.selectMode(AddPlanMode.MANUAL)
+                }
+                binding.cardManualActivities.setOnClickListener {
+                    viewModel.selectManualCategory(ManualCategory.ACTIVITIES)
+                }
+                binding.cardManualPlaces.setOnClickListener {
+                    viewModel.selectManualCategory(ManualCategory.PLACES_OF_INTEREST)
+                }
+                binding.cardManualEatDrink.setOnClickListener {
+                    viewModel.selectManualCategory(ManualCategory.EAT_AND_DRINK)
+                }
+                binding.btnCitySelection.setOnClickListener {
+                    showCitySheet = true
+                }
+                binding.btnTravelersMinus.setOnClickListener { viewModel.decrementTravelers() }
+                binding.btnTravelersPlus.setOnClickListener { viewModel.incrementTravelers() }
 
-            val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
-            b.llCitySelection.visibility = if (shouldShowCity) View.VISIBLE else View.GONE
-            b.btnCitySelection.isEnabled = !isLoadingCities
-            b.tvSelectedCity.text = when {
-                isLoadingCities -> "..."
-                else -> selectedCity?.name ?: getLanguage(LanguageConst.ADD_PLAN_SELECT)
-            }
+                binding.root.also { it.tag = SelectDayStepViews(binding, dayAdapter) }
+            },
+            update = { root ->
+                val views = root.tag as SelectDayStepViews
+                val b = views.binding
+                if (views.lastDays !== availableDays) {
+                    views.lastDays = availableDays
+                    views.dayAdapter.setDays(availableDays)
+                }
+                views.dayAdapter.setSelectedPosition(selectedDayIndex)
+                views.dayAdapter.timeZoneId = selectedCity?.timezone
 
-            val smartSelected = selectedMode == AddPlanMode.SMART_RECOMMENDATIONS
-            val manualSelected = selectedMode == AddPlanMode.MANUAL
-            b.cardSmartRecommendations.isSelected = smartSelected
-            b.cardAddManually.isSelected = manualSelected
-            updateCardSelection(b.cardSmartRecommendations, smartSelected)
-            updateCardSelection(b.cardAddManually, manualSelected)
-            val manualVisibility = if (manualSelected) View.VISIBLE else View.GONE
-            b.llManualCategories.visibility = manualVisibility
-            b.llTravelersSection.visibility = manualVisibility
-            if (manualSelected && views.lastMode != selectedMode) {
-                b.root.post { (b.root as? NestedScrollView)?.fullScroll(View.FOCUS_DOWN) }
-            }
-            views.lastMode = selectedMode
+                val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
+                b.llCitySelection.visibility = if (shouldShowCity) View.VISIBLE else View.GONE
+                b.btnCitySelection.isEnabled = !isLoadingCities
+                b.tvSelectedCity.text = when {
+                    isLoadingCities -> "..."
+                    else -> selectedCity?.name ?: getLanguage(LanguageConst.ADD_PLAN_SELECT)
+                }
 
-            b.cardManualActivities.isSelected = selectedManualCategory == ManualCategory.ACTIVITIES
-            b.cardManualPlaces.isSelected =
-                selectedManualCategory == ManualCategory.PLACES_OF_INTEREST
-            b.cardManualEatDrink.isSelected = selectedManualCategory == ManualCategory.EAT_AND_DRINK
-            updateCardSelection(
-                b.cardManualActivities, selectedManualCategory == ManualCategory.ACTIVITIES
-            )
-            updateCardSelection(
-                b.cardManualPlaces, selectedManualCategory == ManualCategory.PLACES_OF_INTEREST
-            )
-            updateCardSelection(
-                b.cardManualEatDrink, selectedManualCategory == ManualCategory.EAT_AND_DRINK
-            )
+                val smartSelected = selectedMode == AddPlanMode.SMART_RECOMMENDATIONS
+                val manualSelected = selectedMode == AddPlanMode.MANUAL
+                b.cardSmartRecommendations.isSelected = smartSelected
+                b.cardAddManually.isSelected = manualSelected
+                updateCardSelection(b.cardSmartRecommendations, smartSelected)
+                updateCardSelection(b.cardAddManually, manualSelected)
+                val manualVisibility = if (manualSelected) View.VISIBLE else View.GONE
+                b.llManualCategories.visibility = manualVisibility
+                b.llTravelersSection.visibility = manualVisibility
 
-            b.tvTravelersCount.text = travelers.toString()
-            b.btnTravelersMinus.alpha = if (travelers <= 1) 0.5f else 1.0f
-            b.btnTravelersMinus.isEnabled = travelers > 1
-        },
-        modifier = Modifier.fillMaxWidth()
-    )
+                b.cardManualActivities.isSelected = selectedManualCategory == ManualCategory.ACTIVITIES
+                b.cardManualPlaces.isSelected =
+                    selectedManualCategory == ManualCategory.PLACES_OF_INTEREST
+                b.cardManualEatDrink.isSelected = selectedManualCategory == ManualCategory.EAT_AND_DRINK
+                updateCardSelection(
+                    b.cardManualActivities, selectedManualCategory == ManualCategory.ACTIVITIES
+                )
+                updateCardSelection(
+                    b.cardManualPlaces, selectedManualCategory == ManualCategory.PLACES_OF_INTEREST
+                )
+                updateCardSelection(
+                    b.cardManualEatDrink, selectedManualCategory == ManualCategory.EAT_AND_DRINK
+                )
+
+                b.tvTravelersCount.text = travelers.toString()
+                b.btnTravelersMinus.alpha = if (travelers <= 1) 0.5f else 1.0f
+                b.btnTravelersMinus.isEnabled = travelers > 1
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 
     if (showCitySheet) {
         AddPlanCitySheet(
@@ -229,101 +255,103 @@ internal fun AddPlanTimeTravelersStep(
     val travelers by viewModel.travelers.observeAsState(1)
     var pickerRequest by remember { mutableStateOf<AddPlanTimePickerRequest?>(null) }
 
-    AndroidView(
-        factory = { ctx ->
-            val binding = FrAddPlanTimeTravelersBinding.inflate(LayoutInflater.from(ctx))
-            binding.tvAddToDayLabel.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
-            binding.tvSelectStartingPointLabel.text =
-                getLanguage(LanguageConst.ADD_PLAN_SELECT_STARTING_POINT)
-            binding.tvStartTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_START_TIME)
-            binding.tvEndTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_END_TIME)
-            binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
-            binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
+    StepScrollContainer(rememberScrollState()) {
+        AndroidView(
+            factory = { ctx ->
+                val binding = FrAddPlanTimeTravelersBinding.inflate(LayoutInflater.from(ctx))
+                binding.tvAddToDayLabel.text = getLanguage(LanguageConst.ADD_PLAN_ADD_TO_DAY)
+                binding.tvSelectStartingPointLabel.text =
+                    getLanguage(LanguageConst.ADD_PLAN_SELECT_STARTING_POINT)
+                binding.tvStartTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_START_TIME)
+                binding.tvEndTimeLabel.text = getLanguage(LanguageConst.ADD_PLAN_END_TIME)
+                binding.tvSelectTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_TRAVELERS)
+                binding.tvTravelersLabel.text = getLanguage(LanguageConst.ADD_PLAN_TRAVELERS)
 
-            val dayAdapter = DayFilterAdapter { position ->
-                viewModel.selectDay(position)
-            }.apply {
-                disablePastDays = true
-                timeZoneId = viewModel.selectedCityTimeZone()
-            }
-            binding.rvDays.layoutManager =
-                LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
-            binding.rvDays.adapter = dayAdapter
-
-            binding.btnStartingPoint.setOnClickListener { onSelectStartingPoint() }
-            binding.btnStartTime.setOnClickListener {
-                pickerRequest = AddPlanTimePickerRequest(
-                    initialTime = viewModel.startTime.value
-                        ?: viewModel.defaultStartTimeForSelectedDay(),
-                    minTime = viewModel.minSelectableTimeForSelectedDay(),
-                    treatMidnightAsEndOfDay = false,
-                    isEnd = false
-                )
-            }
-            binding.btnEndTime.setOnClickListener {
-                val start = viewModel.startTime.value
-                val current = viewModel.endTime.value
-                val initialTime = when {
-                    current == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
-                    current != null -> current
-                    else -> MaterialTimePickerHelper.addMinutes(start, 60) ?: start
+                val dayAdapter = DayFilterAdapter { position ->
+                    viewModel.selectDay(position)
+                }.apply {
+                    disablePastDays = true
+                    timeZoneId = viewModel.selectedCityTimeZone()
                 }
-                pickerRequest = AddPlanTimePickerRequest(
-                    initialTime = initialTime,
-                    minTime = MaterialTimePickerHelper.laterOf(
-                        start, viewModel.minSelectableTimeForSelectedDay()
-                    ),
-                    treatMidnightAsEndOfDay = true,
-                    isEnd = true
-                )
-            }
-            binding.btnMinus.setOnClickListener { viewModel.decrementTravelers() }
-            binding.btnPlus.setOnClickListener { viewModel.incrementTravelers() }
+                binding.rvDays.layoutManager =
+                    LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
+                binding.rvDays.adapter = dayAdapter
 
-            binding.root.also { it.tag = TimeTravelersStepViews(binding, dayAdapter) }
-        },
-        update = { root ->
-            val views = root.tag as TimeTravelersStepViews
-            val b = views.binding
-            if (views.lastDays !== availableDays) {
-                views.lastDays = availableDays
-                views.dayAdapter.setDays(availableDays)
-            }
-            views.dayAdapter.setSelectedPosition(selectedDayIndex)
-
-            val name = startingPointName
-            val key = startingPointNameKey
-            b.tvStartingPoint.text = when {
-                name != null -> name
-                key != null -> {
-                    val cityCenterLabel = getLanguage(key)
-                    selectedCity?.name?.let { "$it | $cityCenterLabel" } ?: cityCenterLabel
+                binding.btnStartingPoint.setOnClickListener { onSelectStartingPoint() }
+                binding.btnStartTime.setOnClickListener {
+                    pickerRequest = AddPlanTimePickerRequest(
+                        initialTime = viewModel.startTime.value
+                            ?: viewModel.defaultStartTimeForSelectedDay(),
+                        minTime = viewModel.minSelectableTimeForSelectedDay(),
+                        treatMidnightAsEndOfDay = false,
+                        isEnd = false
+                    )
                 }
-                else -> ""
-            }
+                binding.btnEndTime.setOnClickListener {
+                    val start = viewModel.startTime.value
+                    val current = viewModel.endTime.value
+                    val initialTime = when {
+                        current == MaterialTimePickerHelper.END_OF_DAY_24H -> "00:00"
+                        current != null -> current
+                        else -> MaterialTimePickerHelper.addMinutes(start, 60) ?: start
+                    }
+                    pickerRequest = AddPlanTimePickerRequest(
+                        initialTime = initialTime,
+                        minTime = MaterialTimePickerHelper.laterOf(
+                            start, viewModel.minSelectableTimeForSelectedDay()
+                        ),
+                        treatMidnightAsEndOfDay = true,
+                        isEnd = true
+                    )
+                }
+                binding.btnMinus.setOnClickListener { viewModel.decrementTravelers() }
+                binding.btnPlus.setOnClickListener { viewModel.incrementTravelers() }
 
-            val selectText = getLanguage(LanguageConst.ADD_PLAN_SELECT)
-            b.tvStartTime.text =
-                startTime?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
-            b.tvStartTime.setTextColor(
-                b.root.context.getColor(
-                    if (startTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
-                )
-            )
-            b.tvEndTime.text =
-                endTime?.let { MaterialTimePickerHelper.formatEndTimeTo12h(it) } ?: selectText
-            b.tvEndTime.setTextColor(
-                b.root.context.getColor(
-                    if (endTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
-                )
-            )
+                binding.root.also { it.tag = TimeTravelersStepViews(binding, dayAdapter) }
+            },
+            update = { root ->
+                val views = root.tag as TimeTravelersStepViews
+                val b = views.binding
+                if (views.lastDays !== availableDays) {
+                    views.lastDays = availableDays
+                    views.dayAdapter.setDays(availableDays)
+                }
+                views.dayAdapter.setSelectedPosition(selectedDayIndex)
 
-            b.tvTravelerCount.text = travelers.toString()
-            b.btnMinus.alpha = if (travelers <= 1) 0.5f else 1.0f
-            b.btnMinus.isEnabled = travelers > 1
-        },
-        modifier = Modifier.fillMaxWidth()
-    )
+                val name = startingPointName
+                val key = startingPointNameKey
+                b.tvStartingPoint.text = when {
+                    name != null -> name
+                    key != null -> {
+                        val cityCenterLabel = getLanguage(key)
+                        selectedCity?.name?.let { "$it | $cityCenterLabel" } ?: cityCenterLabel
+                    }
+                    else -> ""
+                }
+
+                val selectText = getLanguage(LanguageConst.ADD_PLAN_SELECT)
+                b.tvStartTime.text =
+                    startTime?.let { MaterialTimePickerHelper.formatTo12h(it) } ?: selectText
+                b.tvStartTime.setTextColor(
+                    b.root.context.getColor(
+                        if (startTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
+                    )
+                )
+                b.tvEndTime.text =
+                    endTime?.let { MaterialTimePickerHelper.formatEndTimeTo12h(it) } ?: selectText
+                b.tvEndTime.setTextColor(
+                    b.root.context.getColor(
+                        if (endTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
+                    )
+                )
+
+                b.tvTravelerCount.text = travelers.toString()
+                b.btnMinus.alpha = if (travelers <= 1) 0.5f else 1.0f
+                b.btnMinus.isEnabled = travelers > 1
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 
     pickerRequest?.let { request ->
         val initial = request.initialTime?.let { MaterialTimePickerHelper.parseTime24h(it) }
@@ -370,35 +398,37 @@ private class CategoryStepViews(
 internal fun AddPlanCategorySelectionStep(viewModel: AddPlanContainerVM) {
     val selectedSmartCategories by viewModel.selectedSmartCategories.observeAsState(emptyList())
 
-    AndroidView(
-        factory = { ctx ->
-            val binding = FrAddPlanCategorySelectionBinding.inflate(LayoutInflater.from(ctx))
-            binding.tvTitle.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CATEGORIES)
+    StepScrollContainer(rememberScrollState()) {
+        AndroidView(
+            factory = { ctx ->
+                val binding = FrAddPlanCategorySelectionBinding.inflate(LayoutInflater.from(ctx))
+                binding.tvTitle.text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CATEGORIES)
 
-            val categoryAdapter = SmartCategoryAdapter(
-                getLanguageForKey = { key -> getLanguage(key) },
-                onCategoryClicked = { category -> viewModel.toggleSmartCategory(category) }
-            )
-            val spanCount = 3
-            val gridLayoutManager = GridLayoutManager(ctx, spanCount)
-            gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
-                override fun getSpanSize(position: Int): Int {
-                    val itemCount = categoryAdapter.itemCount
-                    val itemsInLastRow = itemCount % spanCount
-                    return if (itemsInLastRow == 1 && position == itemCount - 1) spanCount else 1
+                val categoryAdapter = SmartCategoryAdapter(
+                    getLanguageForKey = { key -> getLanguage(key) },
+                    onCategoryClicked = { category -> viewModel.toggleSmartCategory(category) }
+                )
+                val spanCount = 3
+                val gridLayoutManager = GridLayoutManager(ctx, spanCount)
+                gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                    override fun getSpanSize(position: Int): Int {
+                        val itemCount = categoryAdapter.itemCount
+                        val itemsInLastRow = itemCount % spanCount
+                        return if (itemsInLastRow == 1 && position == itemCount - 1) spanCount else 1
+                    }
                 }
-            }
-            binding.rvCategories.layoutManager = gridLayoutManager
-            binding.rvCategories.adapter = categoryAdapter
+                binding.rvCategories.layoutManager = gridLayoutManager
+                binding.rvCategories.adapter = categoryAdapter
 
-            binding.root.also { it.tag = CategoryStepViews(binding, categoryAdapter) }
-        },
-        update = { root ->
-            val views = root.tag as CategoryStepViews
-            views.adapter.updateSelectedCategories(selectedSmartCategories)
-        },
-        modifier = Modifier.fillMaxWidth()
-    )
+                binding.root.also { it.tag = CategoryStepViews(binding, categoryAdapter) }
+            },
+            update = { root ->
+                val views = root.tag as CategoryStepViews
+                views.adapter.updateSelectedCategories(selectedSmartCategories)
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }
 
 /**
