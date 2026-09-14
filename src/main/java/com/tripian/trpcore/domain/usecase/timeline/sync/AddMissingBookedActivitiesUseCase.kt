@@ -1,10 +1,13 @@
 package com.tripian.trpcore.domain.usecase.timeline.sync
 
 import com.tripian.one.api.timeline.model.Timeline
+import com.tripian.trpcore.base.ApiErrorMapper
 import com.tripian.trpcore.base.SuspendUseCase
+import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
+import com.tripian.trpcore.sdk.TRPCoreErrorCode
 import javax.inject.Inject
 
 /**
@@ -41,7 +44,11 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
             try {
                 repository.editSegmentAsync(params.tripHash, segment)
             } catch (error: Throwable) {
-                android.util.Log.e("SYNC", "Add booked failed: ${error.message}")
+                val reason = ApiErrorMapper.serverMessage(error) ?: error.message.orEmpty()
+                TRPCore.notifyError(
+                    "${tripItem.title.orEmpty()} ${reason}".trim(),
+                    TRPCoreErrorCode.BOOKED_ACTIVITY_SYNC_FAILED
+                )
             }
         }
         return ResponseModelBase()

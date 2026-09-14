@@ -4,6 +4,16 @@
         <attr name="trpText" format="reference" />
     </declare-styleable>
 
+    <declare-styleable name="SearchBarView">
+        <attr name="trpSearchBackground" format="reference"/>
+        <attr name="trpSearchIcon" format="reference"/>
+        <attr name="trpSearchIconTint" format="color"/>
+        <attr name="trpSearchIconSize" format="dimension"/>
+        <attr name="trpSearchHorizontalPadding" format="dimension"/>
+        <attr name="trpSearchTextColor" format="color"/>
+        <attr name="trpSearchHintColor" format="color"/>
+    </declare-styleable>
+
     <declare-styleable name="TrpPillInputView">
         <attr name="trpLabelText" format="string"/>
         <attr name="trpPlaceholderText" format="string"/>

@@ -139,6 +139,40 @@
             app:tint="@color/trp_fgWeak" />
     </FrameLayout>
 
+    <!-- Outside-opening-hours warning -->
+    <LinearLayout
+        android:id="@+id/llClosedWarning"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="24dp"
+        android:background="@drawable/trp_bg_conflict_warning"
+        android:gravity="top"
+        android:orientation="horizontal"
+        android:padding="@dimen/_12sdp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:contentDescription="@null"
+            android:src="@drawable/trp_ic_warning" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvClosedWarning"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_weight="1"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="This place is closed at the selected time. Open: 12:00 - 23:00" />
+
+    </LinearLayout>
+
     <!-- Confirm Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnConfirm"

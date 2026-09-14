@@ -9,7 +9,14 @@ enum class TRPCoreErrorCode {
     GENERIC,
 
     /** Frontend translations could not be fetched after retry; SDK was not opened. */
-    LANGUAGE_LOAD_FAILED
+    LANGUAGE_LOAD_FAILED,
+
+    /**
+     * A booked activity supplied in the itinerary could not be written to the
+     * timeline (e.g. the server rejected its date). The rest of the timeline is
+     * usable; that one activity is missing from it.
+     */
+    BOOKED_ACTIVITY_SYNC_FAILED
 }
 
 /**
@@ -55,10 +62,12 @@ interface TRPCoreSDKListener {
      * Host app should start reservation/booking flow in this callback.
      *
      * @param activityId ID of the activity to be reserved
-     * @param date Date of the activity in "yyyy-MM-dd" format (e.g., "2026-04-17")
-     *             Null if date is not available.
+     * @param date When the activity starts, in "yyyy-MM-dd HH:mm" format (e.g.
+     *             "2026-04-17 09:00"), so the host can open its flow on the right
+     *             slot. A flexible activity holds no slot and reports 00:00.
+     *             Null when the activity carries no usable date.
      *
-     * iOS equivalent: trpCoreKitDidRequestActivityReservation(activityId:)
+     * iOS equivalent: trpCoreKitDidRequestActivityReservation(activityId:date:)
      */
     fun onRequestActivityReservation(activityId: String, date: String? = null)
 

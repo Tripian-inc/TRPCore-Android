@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Skeleton mirror of item_poi_product_card.xml -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="253dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="253dp"
+        android:layout_height="152dp"
+        android:background="@drawable/trp_bg_skeleton_placeholder" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/trp_bg_skeleton_placeholder" />
+
+    <View
+        android:layout_width="160dp"
+        android:layout_height="14dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/trp_bg_skeleton_placeholder" />
+
+    <View
+        android:layout_width="120dp"
+        android:layout_height="14dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/trp_bg_skeleton_placeholder" />
+
+</LinearLayout>

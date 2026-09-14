@@ -3,12 +3,10 @@ package com.tripian.trpcore.ui.timeline.poi
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
+
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.chip.Chip
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
@@ -16,6 +14,8 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.ActivityPoiSelectionBinding
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
+import com.tripian.trpcore.util.widget.SearchBarView
 
 /**
  * ACPOISelection
@@ -24,6 +24,7 @@ import com.tripian.trpcore.util.LanguageConst
 class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionVM>() {
 
     private var poiAdapter: POISelectionAdapter? = null
+    private var paginationScrollListener: RecyclerView.OnScrollListener? = null
 
     override fun getViewBinding() = ActivityPoiSelectionBinding.inflate(layoutInflater)
 
@@ -47,6 +48,22 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
             updateEmptyState(pois.isEmpty())
         }
 
+        viewModel.loadingMore.observe(this) { loadingMore ->
+            binding.loadMoreIndicator.root.visibility = if (loadingMore) View.VISIBLE else View.GONE
+        }
+
+        viewModel.skeletonLoading.observe(this) { loading ->
+            with(binding.skeletonList.root) {
+                if (loading) {
+                    visibility = View.VISIBLE
+                    startShimmer()
+                } else {
+                    stopShimmer()
+                    visibility = View.GONE
+                }
+            }
+        }
+
         viewModel.categories.observe(this) { categories ->
             updateCategoryChips(categories)
         }
@@ -60,35 +77,42 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         poiAdapter = POISelectionAdapter { poi ->
             selectPoi(poi)
         }
+        binding.rvPois.applyBottomSystemBarInsetPadding()
         binding.rvPois.apply {
             layoutManager = LinearLayoutManager(this@ACPOISelection)
             adapter = poiAdapter
+
+            paginationScrollListener = object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy <= 0) return
+                    val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                    val totalItemCount = layoutManager.itemCount
+                    val lastVisibleItem = layoutManager.findLastVisibleItemPosition()
+
+                    if (lastVisibleItem >= totalItemCount - PAGINATION_PREFETCH_THRESHOLD) {
+                        viewModel.loadMorePois()
+                    }
+                }
+            }
+            addOnScrollListener(paginationScrollListener!!)
         }
+
+        binding.tvEmptyMessage.text = getLanguageForKey(LanguageConst.POI_SELECTION_NO_PLACES)
+            .let { if (it.isBlank() || it == LanguageConst.POI_SELECTION_NO_PLACES) "No places found" else it }
+    }
+
+    override fun onDestroy() {
+        paginationScrollListener?.let { binding.rvPois.removeOnScrollListener(it) }
+        paginationScrollListener = null
+        binding.skeletonList.root.stopShimmer()
+        super.onDestroy()
     }
 
     private fun setupSearchBar() {
-        binding.etSearch.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString() ?: ""
-                binding.ivClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
-                viewModel.search(query)
-            }
-        })
-
-        binding.etSearch.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                hideKeyboard()
-                true
-            } else {
-                false
-            }
-        }
-
-        binding.ivClearSearch.setOnClickListener {
-            binding.etSearch.setText("")
-            viewModel.search("")
+        binding.searchBar.setHint(getLanguageForKey(LanguageConst.ADD_PLAN_SEARCH_POI))
+        binding.searchBar.setOnQueryChangedListener(SearchBarView.Mode.REMOTE) { query ->
+            viewModel.search(query)
         }
     }
 
@@ -160,17 +184,11 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
         finish()
     }
 
-    private fun hideKeyboard() {
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        currentFocus?.let {
-            imm.hideSoftInputFromWindow(it.windowToken, 0)
-        }
-    }
-
     companion object {
         const val ARG_CITY = "city"
         const val RESULT_POI = "selected_poi"
         const val REQUEST_CODE = 1001
+        private const val PAGINATION_PREFETCH_THRESHOLD = 5
 
         fun launch(context: Context, city: City): Intent {
             return Intent(context, ACPOISelection::class.java).apply {

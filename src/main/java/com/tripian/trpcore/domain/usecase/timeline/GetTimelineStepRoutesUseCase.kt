@@ -1,7 +1,10 @@
 package com.tripian.trpcore.domain.usecase.timeline
 
 import com.mapbox.api.directions.v5.models.RouteLeg
+import com.mapbox.core.constants.Constants
+import com.mapbox.geojson.LineString
 import com.mapbox.geojson.Point
+import com.mapbox.geojson.utils.PolylineUtils
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.base.SuspendUseCase
@@ -9,26 +12,54 @@ import com.tripian.trpcore.domain.model.timeline.RouteCache
 import com.tripian.trpcore.domain.model.timeline.RouteCache.toStepRouteInfo
 import com.tripian.trpcore.domain.model.timeline.StepRouteInfo
 import com.tripian.trpcore.util.MapBoxRouteCalculator
+import com.tripian.trpfoundationkit.enums.DirectionProfile
 import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
 /**
  * GetTimelineStepRoutesUseCase
- * Calculates route information between steps using a single batch Mapbox Directions request.
- * Mirrors the iOS TRPRouteCalculator pattern: one waypoint list → one API call → response.legs[i]
- * maps to step pair i. Per-leg `isWalking` flag is derived from leg distance.
+ * Calculates route information between consecutive waypoints with batch Mapbox Directions requests.
+ * Every pair is first routed on foot; pairs whose walking distance reaches
+ * [StepRouteInfo.WALKING_THRESHOLD_METERS] are re-routed by car in a second batch request so
+ * their distance, duration and shape reflect driving. Straight-line estimates fill in for any
+ * pair Mapbox returns no leg for.
  */
 class GetTimelineStepRoutesUseCase @Inject constructor() :
     SuspendUseCase<List<StepRouteInfo>, GetTimelineStepRoutesUseCase.Params>() {
 
-    data class Params(
-        val startingPointCoordinate: Coordinate?,
-        val steps: List<TimelineStep>
+    /**
+     * @param stepId Timeline step id the waypoint stands for; null for a starting point or a plain coordinate.
+     */
+    data class Waypoint(
+        val coordinate: Coordinate,
+        val stepId: Int?
     )
 
+    data class Params(val waypoints: List<Waypoint>) {
+
+        companion object {
+            /** Starting point (when located) followed by every located step, in order. */
+            fun forSteps(startingPointCoordinate: Coordinate?, steps: List<TimelineStep>): Params {
+                val waypoints = mutableListOf<Waypoint>()
+                if (startingPointCoordinate != null &&
+                    startingPointCoordinate.lat != 0.0 && startingPointCoordinate.lng != 0.0
+                ) {
+                    waypoints.add(Waypoint(startingPointCoordinate, stepId = null))
+                }
+                steps.forEach { step ->
+                    step.poi?.coordinate?.let { waypoints.add(Waypoint(it, step.id ?: 0)) }
+                }
+                return Params(waypoints)
+            }
+
+            fun forCoordinates(coordinates: List<Coordinate>): Params =
+                Params(coordinates.map { Waypoint(it, stepId = null) })
+        }
+    }
+
     override suspend fun execute(params: Params): List<StepRouteInfo> {
-        val coordinatePairs = buildCoordinatePairs(params.startingPointCoordinate, params.steps)
+        val coordinatePairs = buildCoordinatePairs(params.waypoints)
         if (coordinatePairs.isEmpty()) return emptyList()
 
         if (coordinatePairs.all { RouteCache.contains(it.from, it.to) }) {
@@ -37,108 +68,99 @@ class GetTimelineStepRoutesUseCase @Inject constructor() :
             }
         }
 
-        val points = mutableListOf<Point>()
-        points.add(Point.fromLngLat(coordinatePairs.first().from.lng, coordinatePairs.first().from.lat))
-        coordinatePairs.forEach { pair ->
-            points.add(Point.fromLngLat(pair.to.lng, pair.to.lat))
+        val points = buildWaypoints(coordinatePairs)
+        val walkingLegs = requestLegs(points, DirectionProfile.WALKING)
+        val walkingRoutes = coordinatePairs.mapIndexed { index, pair ->
+            buildWalkingRouteInfo(pair, walkingLegs?.getOrNull(index))
         }
 
-        return suspendCancellableCoroutine { cont ->
-            MapBoxRouteCalculator().calculateBatch(points) { response, error ->
+        val drivingLegs = if (walkingRoutes.any { !it.isWalking }) {
+            requestLegs(points, DirectionProfile.AUTOMOBILE)
+        } else {
+            null
+        }
+
+        return coordinatePairs.mapIndexed { index, pair ->
+            val walkingRoute = walkingRoutes[index]
+            val routeInfo = if (walkingRoute.isWalking) {
+                walkingRoute
+            } else {
+                buildDrivingRouteInfo(walkingRoute, drivingLegs?.getOrNull(index))
+            }
+            RouteCache.put(pair.from, pair.to, routeInfo)
+            routeInfo
+        }
+    }
+
+    /**
+     * @return One leg per consecutive waypoint pair, or null when the request fails or yields no route.
+     */
+    private suspend fun requestLegs(points: List<Point>, profile: DirectionProfile): List<RouteLeg>? =
+        suspendCancellableCoroutine { cont ->
+            val calculator = MapBoxRouteCalculator()
+            cont.invokeOnCancellation { calculator.cancel() }
+            calculator.calculateBatch(points, profile) { response, error ->
                 if (!cont.isActive) return@calculateBatch
-                if (error != null) {
-                    cont.resume(buildFallbackEstimates(coordinatePairs))
-                    return@calculateBatch
-                }
-                val legs = response?.routes()?.firstOrNull()?.legs()
-                if (legs == null) {
-                    cont.resume(buildFallbackEstimates(coordinatePairs))
-                    return@calculateBatch
-                }
-                cont.resume(mapLegsToRouteInfo(legs, coordinatePairs))
-            }
-        }
-    }
-
-    private fun mapLegsToRouteInfo(
-        legs: List<RouteLeg>,
-        pairs: List<CoordinatePair>
-    ): List<StepRouteInfo> {
-        return pairs.mapIndexed { index, pair ->
-            val leg = legs.getOrNull(index)
-            val straightLineDistance = calculateStraightLineDistance(pair.from, pair.to)
-            val distance = leg?.distance() ?: straightLineDistance
-            val isWalking = distance < StepRouteInfo.WALKING_THRESHOLD_METERS
-            val duration = leg?.duration() ?: estimateDuration(distance, isWalking)
-            val routeInfo = StepRouteInfo(
-                distanceMeters = distance,
-                durationSeconds = duration,
-                isWalking = isWalking,
-                fromStepId = pair.fromStepId,
-                toStepId = pair.toStepId
-            )
-            RouteCache.put(pair.from, pair.to, routeInfo)
-            routeInfo
-        }
-    }
-
-    private fun buildCoordinatePairs(
-        startingPoint: Coordinate?,
-        steps: List<TimelineStep>
-    ): List<CoordinatePair> {
-        val pairs = mutableListOf<CoordinatePair>()
-
-        val stepCoordinates = steps.mapNotNull { step ->
-            step.poi?.coordinate?.let { coord ->
-                StepCoordinate(step.id ?: 0, coord)
+                val legs = if (error == null) response?.routes()?.firstOrNull()?.legs() else null
+                cont.resume(legs)
             }
         }
 
-        if (stepCoordinates.isEmpty()) return pairs
-
-        if (startingPoint != null && startingPoint.lat != 0.0 && startingPoint.lng != 0.0) {
-            pairs.add(
-                CoordinatePair(
-                    from = startingPoint,
-                    to = stepCoordinates.first().coordinate,
-                    fromStepId = null,
-                    toStepId = stepCoordinates.first().stepId
-                )
-            )
+    private fun buildWaypoints(pairs: List<CoordinatePair>): List<Point> {
+        val points = mutableListOf(pairs.first().from.toPoint())
+        pairs.forEach { pair ->
+            points.add(pair.to.toPoint())
         }
-
-        for (i in 0 until stepCoordinates.size - 1) {
-            pairs.add(
-                CoordinatePair(
-                    from = stepCoordinates[i].coordinate,
-                    to = stepCoordinates[i + 1].coordinate,
-                    fromStepId = stepCoordinates[i].stepId,
-                    toStepId = stepCoordinates[i + 1].stepId
-                )
-            )
-        }
-
-        return pairs
+        return points
     }
 
-    private fun buildFallbackEstimates(pairs: List<CoordinatePair>): List<StepRouteInfo> {
-        return pairs.map { pair ->
-            val distance = calculateStraightLineDistance(pair.from, pair.to)
-            val isWalking = distance < StepRouteInfo.WALKING_THRESHOLD_METERS
-            val routeInfo = StepRouteInfo(
-                distanceMeters = distance,
-                durationSeconds = estimateDuration(distance, isWalking),
-                isWalking = isWalking,
-                fromStepId = pair.fromStepId,
-                toStepId = pair.toStepId
-            )
-            RouteCache.put(pair.from, pair.to, routeInfo)
-            routeInfo
-        }
+    private fun buildWalkingRouteInfo(pair: CoordinatePair, leg: RouteLeg?): StepRouteInfo {
+        val distance = leg?.distance() ?: calculateStraightLineDistance(pair.from, pair.to)
+        val isWalking = distance < StepRouteInfo.WALKING_THRESHOLD_METERS
+        return StepRouteInfo(
+            distanceMeters = distance,
+            durationSeconds = leg?.duration() ?: estimateDuration(distance, isWalking),
+            isWalking = isWalking,
+            fromStepId = pair.fromStepId,
+            toStepId = pair.toStepId,
+            encodedGeometry = leg?.encodedGeometry() ?: straightLineGeometry(pair.from, pair.to)
+        )
     }
+
+    private fun buildDrivingRouteInfo(walkingRoute: StepRouteInfo, leg: RouteLeg?): StepRouteInfo {
+        val distance = leg?.distance() ?: walkingRoute.distanceMeters
+        return walkingRoute.copy(
+            distanceMeters = distance,
+            durationSeconds = leg?.duration() ?: estimateDuration(distance, isWalking = false),
+            encodedGeometry = leg?.encodedGeometry() ?: walkingRoute.encodedGeometry
+        )
+    }
+
+    private fun buildCoordinatePairs(waypoints: List<Waypoint>): List<CoordinatePair> =
+        waypoints.zipWithNext { from, to ->
+            CoordinatePair(
+                from = from.coordinate,
+                to = to.coordinate,
+                fromStepId = from.stepId,
+                toStepId = to.stepId ?: 0
+            )
+        }
+
+    private fun RouteLeg.encodedGeometry(): String? {
+        val points = steps()
+            ?.mapNotNull { step -> step.geometry() }
+            ?.flatMap { geometry -> LineString.fromPolyline(geometry, Constants.PRECISION_6).coordinates() }
+            ?: return null
+        return if (points.size > 1) PolylineUtils.encode(points, Constants.PRECISION_6) else null
+    }
+
+    private fun straightLineGeometry(from: Coordinate, to: Coordinate): String =
+        PolylineUtils.encode(listOf(from.toPoint(), to.toPoint()), Constants.PRECISION_6)
+
+    private fun Coordinate.toPoint(): Point = Point.fromLngLat(lng, lat)
 
     private fun calculateStraightLineDistance(from: Coordinate, to: Coordinate): Double {
-        val earthRadius = 6371000.0 // meters
+        val earthRadius = 6371000.0
         val lat1 = Math.toRadians(from.lat)
         val lat2 = Math.toRadians(to.lat)
         val deltaLat = Math.toRadians(to.lat - from.lat)
@@ -155,11 +177,6 @@ class GetTimelineStepRoutesUseCase @Inject constructor() :
         val minutesPerKm = if (isWalking) 12.0 else 1.5
         return (distanceKm * minutesPerKm * 60)
     }
-
-    private data class StepCoordinate(
-        val stepId: Int,
-        val coordinate: Coordinate
-    )
 
     private data class CoordinatePair(
         val from: Coordinate,

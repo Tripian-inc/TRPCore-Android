@@ -1,6 +1,5 @@
 package com.tripian.trpcore.ui.timeline.common
 
-import android.graphics.Typeface
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,6 +9,7 @@ import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.ItemActivityCardBinding
+import com.tripian.trpcore.ui.timeline.adapter.TimelineCellBinder
 import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
 import java.text.NumberFormat
@@ -105,23 +105,13 @@ class ActivityCardViewHolder(
     }
 
     private fun bindPrice(price: Double?, currency: String) {
-        when {
-            price == null -> {
-                binding.llPriceRow.visibility = View.GONE
-            }
-            price == 0.0 -> {
-                binding.tvFromLabel.visibility = View.GONE
-                binding.tvPrice.text = getLanguage(LanguageConst.FREE)
-                binding.tvPrice.setTypeface(null, Typeface.BOLD)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-            else -> {
-                binding.tvFromLabel.visibility = View.VISIBLE
-                binding.tvFromLabel.text = getLanguage(LanguageConst.FROM) + " "
-                binding.tvPrice.text = FormatUtils.formatPriceWithCurrency(price, currency)
-                binding.llPriceRow.visibility = View.VISIBLE
-            }
-        }
+        TimelineCellBinder.bindPrice(
+            priceRow = binding.llPriceRow,
+            fromLabel = binding.tvFromLabel,
+            priceView = binding.tvPrice,
+            price = price,
+            currency = currency
+        )
     }
 
     companion object {

@@ -127,6 +127,7 @@ class MapBoxRouteCalculator {
 
     /**
      * Single batch request with no walking→automobile fallback: exactly one call, one response.
+     * Legs include their steps so callers can rebuild each leg's shape.
      *
      * @param points Full waypoint list (size >= 2). One leg returned per consecutive pair.
      * @param profile Routing profile; defaults to WALKING.
@@ -140,6 +141,7 @@ class MapBoxRouteCalculator {
         val routeOptions = RouteOptions.builder()
             .overview(DirectionsCriteria.OVERVIEW_SIMPLIFIED)
             .profile(getDirectionsCriteria(profile))
+            .steps(true)
             .coordinatesList(points)
             .build()
 

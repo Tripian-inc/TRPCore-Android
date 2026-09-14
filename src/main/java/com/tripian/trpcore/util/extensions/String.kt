@@ -51,6 +51,13 @@ fun String.containsAnyWord(words: List<String>): Boolean {
 }
 
 /**
+ * Normalized key for the cityName → cityId map. Host-supplied names arrive with
+ * arbitrary casing/padding, so every writer and reader of that map must go
+ * through this.
+ */
+fun String.cityNameKey(): String = trim().lowercase()
+
+/**
  * Converts a segment-level "yyyy-MM-dd HH:mm" datetime into the ISO-8601
  * "yyyy-MM-dd'T'HH:mm:ss" shape that `additionalData.startDatetime` /
  * `additionalData.endDatetime` expect. Seconds are always emitted as `:00`

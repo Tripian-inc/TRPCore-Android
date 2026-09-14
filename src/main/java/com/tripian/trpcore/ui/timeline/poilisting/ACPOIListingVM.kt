@@ -48,6 +48,10 @@ class ACPOIListingVM @Inject constructor(
     private val _hasMorePages = MutableLiveData<Boolean>()
     val hasMorePages: LiveData<Boolean> = _hasMorePages
 
+    /** True while a search / filter / sort reload is in flight; the list shows its skeleton. */
+    private val _skeletonLoading = MutableLiveData(false)
+    val skeletonLoading: LiveData<Boolean> = _skeletonLoading
+
     private val _showTimeSelection = MutableLiveData<Poi?>()
     val showTimeSelection: LiveData<Poi?> = _showTimeSelection
 
@@ -99,7 +103,14 @@ class ACPOIListingVM @Inject constructor(
     private var currentPage: Int = 1
     private val pageLimit: Int = 30
     private var allPois: MutableList<Poi> = mutableListOf()
-    private var isLoadingMore: Boolean = false
+    private val _loadingMore = MutableLiveData(false)
+    /** True while a further page is being appended; drives the bottom loading indicator. */
+    val loadingMore: LiveData<Boolean> = _loadingMore
+    private var isLoadingMore: Boolean
+        get() = _loadingMore.value == true
+        set(value) {
+            if (_loadingMore.value != value) _loadingMore.value = value
+        }
     private var totalCount: Int = 0
 
     /** Sets up state and loads POIs. The loader is shown before category prefetch to avoid a blank-screen flash. */
@@ -147,18 +158,12 @@ class ACPOIListingVM @Inject constructor(
     }
 
     /**
-     * Caches the latest query without firing a request; the search only runs
-     * on the keyboard's Enter/IME action (see [submitSearch]).
+     * Runs the POI search for [query], resetting pagination. Debounced by the
+     * search bar, so every call here is meant to hit the service.
      */
-    fun updateSearchText(query: String) {
+    fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
-    }
-
-    /**
-     * Triggered by the keyboard's Enter / IME search action. Resets pagination
-     * and refetches with the cached query.
-     */
-    fun submitSearch() {
         resetAndSearch()
     }
 
@@ -170,8 +175,8 @@ class ACPOIListingVM @Inject constructor(
     /**
      * @param useFullScreen `true` for the very first load (covers the empty-list
      *   flash with the full-screen Lottie). `false` for every subsequent fresh
-     *   load — filter, sort, search — which uses the lighter bottom-sheet Lottie
-     *   so the filter chips and search field remain visible while loading.
+     *   load — filter, sort, search — which shows the inline skeleton so the
+     *   screen stays usable while loading.
      */
     fun loadPOIs(useFullScreen: Boolean = false) {
         if (cityId <= 0) return
@@ -181,7 +186,7 @@ class ACPOIListingVM @Inject constructor(
             if (useFullScreen) {
                 showFullScreenLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
             } else {
-                showBottomSheetLoader(LanguageConst.LOADING_TEXT_GETTING_PLACES, "")
+                _skeletonLoading.value = true
             }
             currentPage = 1
         }
@@ -218,6 +223,7 @@ class ACPOIListingVM @Inject constructor(
             }
                 .onSuccess { response ->
                     hideLottieLoading()
+                    _skeletonLoading.value = false
                     isLoadingMore = false
                     val newPois = response.data ?: emptyList()
                     totalCount = response.pagination?.total ?: newPois.size
@@ -234,6 +240,7 @@ class ACPOIListingVM @Inject constructor(
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
                     hideLottieLoading()
+                    _skeletonLoading.value = false
                     isLoadingMore = false
                     showAlert(AlertType.ERROR, msg)
                     if (!isPagination) {

@@ -12,6 +12,7 @@ import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.RemovedFavoritesStore
+import com.tripian.trpcore.util.extensions.cityNameKey
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -66,6 +67,8 @@ class ACSavedPlansVM @Inject constructor(
     /** Maps cityName (lowercase) to our system's cityId. */
     private var cityNameToIdMap: Map<String, Int> = emptyMap()
 
+    private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+
     // =====================
     // INITIALIZATION
     // =====================
@@ -78,16 +81,21 @@ class ACSavedPlansVM @Inject constructor(
         favorites: List<SegmentFavoriteItem>,
         tripHash: String,
         availableDays: List<Date>,
-        cityNameToIdMap: Map<String, Int> = emptyMap()
+        cityNameToIdMap: Map<String, Int> = emptyMap(),
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
     ) {
         this.favorites = favorites
         this.tripHash = tripHash
         this.availableDays = availableDays
         this.selectedDate = availableDays.firstOrNull()
         this.cityNameToIdMap = cityNameToIdMap
+        this.plannedActivityIdsByDay = plannedActivityIdsByDay
 
         processAndDisplayItems()
     }
+
+    /** Days that already hold a given activity; blocks them in the time selection sheet. */
+    fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
 
     /**
      * Process favorites and create grouped list items
@@ -153,7 +161,8 @@ class ACSavedPlansVM @Inject constructor(
         }
         val resolvedStartTime = if (isFlexible) null else startTime
 
-        val resolvedCityId = getResolvedCityId(favorite.cityName)
+        val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
+            ?: getResolvedCityId(favorite.cityName)
 
         viewModelScope.launch {
             runCatching {
@@ -281,6 +290,6 @@ class ACSavedPlansVM @Inject constructor(
      */
     fun getResolvedCityId(cityName: String?): Int? {
         if (cityName.isNullOrBlank()) return null
-        return cityNameToIdMap[cityName.lowercase().trim()]
+        return cityNameToIdMap[cityName.cityNameKey()]
     }
 }

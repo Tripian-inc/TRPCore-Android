@@ -24,6 +24,7 @@ import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.trpcore.util.widget.BottomToast
 import java.util.Date
 
@@ -242,7 +243,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                 val intent = ACActivityListing.launch(
                     context = requireContext(),
                     planData = planData,
-                    tripHash = tripHash
+                    tripHash = tripHash,
+                    plannedActivityIdsByDay = sharedVM.getPlannedActivityIdsByDay(),
+                    tripWideExcludedActivityIds = sharedVM.getTripWideExcludedActivityIds()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -251,7 +254,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     context = requireContext(),
                     planData = planData,
                     tripHash = tripHash,
-                    listingType = POIListingType.PLACES_OF_INTEREST
+                    listingType = POIListingType.PLACES_OF_INTEREST,
+                    tripStartDate = sharedVM.tripStartDate(),
+                    tripEndDate = sharedVM.tripEndDate()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -260,7 +265,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     context = requireContext(),
                     planData = planData,
                     tripHash = tripHash,
-                    listingType = POIListingType.EAT_AND_DRINK
+                    listingType = POIListingType.EAT_AND_DRINK,
+                    tripStartDate = sharedVM.tripStartDate(),
+                    tripEndDate = sharedVM.tripEndDate()
                 )
                 manualListingLauncher.launch(intent)
             }
@@ -295,6 +302,11 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
     companion object {
         const val TAG = "AddPlanContainerBottomSheet"
 
+        /**
+         * @param plannedActivityIdsByDay "yyyy-MM-dd" → activity ids that day already
+         *   holds; forwarded to the activity listing so the time selection sheet can
+         *   block those days and exclude their ids from the created segment.
+         */
         fun newInstance(
             availableDays: List<Date>,
             cities: List<City>,
@@ -302,7 +314,9 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
             selectedCity: City?,
             tripHash: String?,
             accommodation: Accommodation? = null,
-            bookedActivities: List<TimelineSegment> = emptyList()
+            bookedActivities: List<TimelineSegment> = emptyList(),
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            tripWideExcludedActivityIds: List<String> = emptyList()
         ): AddPlanContainerBottomSheet {
             return AddPlanContainerBottomSheet().apply {
                 arguments = Bundle().apply {
@@ -313,6 +327,14 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
                     tripHash?.let { putString(AddPlanContainerVM.ARG_TRIP_HASH, it) }
                     accommodation?.let { putSerializable(AddPlanContainerVM.ARG_ACCOMMODATION, it) }
                     putSerializable(AddPlanContainerVM.ARG_BOOKED_ACTIVITIES, ArrayList(bookedActivities))
+                    putSerializable(
+                        AddPlanContainerVM.ARG_PLANNED_ACTIVITY_IDS,
+                        plannedActivityIdsByDay.toSerializableIdsByDay()
+                    )
+                    putStringArrayList(
+                        AddPlanContainerVM.ARG_TRIP_WIDE_EXCLUDED_IDS,
+                        ArrayList(tripWideExcludedActivityIds)
+                    )
                 }
             }
         }

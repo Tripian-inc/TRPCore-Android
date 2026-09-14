@@ -74,7 +74,7 @@ object LanguageConst {
     const val LOCATION_PERMISSION = "location_permission"
     const val ENABLE_LOCATION_PERMISSION = "enable_location"
     const val ERROR_LOCATION_PERMISSION = "location_permission_denied"
-    const val SETTINGS = "common.button.settings"
+    const val SETTINGS = "go_to_settings"
     const val BACK = "common.button.back"
     const val NOT_IN_CITY = "your_current_location_is_not_in_city"
     const val ENTER_TWO_CHARS = "trips.myTrips.exploreMore.placeholder"
@@ -137,6 +137,7 @@ object LanguageConst {
     const val REGISTER_NOW = "auth.login.registerNow"
     const val EDIT_TRIP = "trips.editTrip.title"
     const val DELETE_TRIP = "trips.deleteTrip.title"
+    const val DELETE_TRIP_SUBMIT = "trips.deleteTrip.submit"
     const val COMPANION_SUBTITLE = "trips.createNewTrip.form.travelerInfo.companion.description"
     const val TITLE = "user.travelCompanions.companionTitle"
     const val NAME = "user.travelCompanions.companionName"
@@ -184,7 +185,6 @@ object LanguageConst {
 
     // Timeline
     const val RECOMMENDATIONS = "timeline.label.recommendations"
-    const val NO_PLANS_FOR_DAY = "no_plans_for_day"
     const val CONFIRMED = "timeline.bookedActivity.confirmed"
     const val RESERVATION = "timeline.bookedActivity.reservation"
     const val VIEW_DETAILS = "view_details"
@@ -198,7 +198,6 @@ object LanguageConst {
     const val REMOVE_STEP = "timeline.removeStep.title"
     const val REMOVE_STEP_MESSAGE = "timeline.removeStep.message"
     const val REMOVE_BUTTON = "timeline.removeActivity.remove"
-    const val SAVED_PLANS_REMOVE_CONFIRM = "savedPlans.removeActivity.message"
     const val REMOVE_RECOMMENDATIONS = "timeline.removeRecommendations.title"
     const val REMOVE_RECOMMENDATIONS_MESSAGE = "timeline.removeRecommendations.message"
     const val NO_PLANS_YET = "timeline.emptyState.noPlansYet"
@@ -249,12 +248,15 @@ object LanguageConst {
     const val ADD_PLAN_START_TIME = "addPlan.label.startTime"
     const val ADD_PLAN_END_TIME = "addPlan.label.endTime"
     const val ADD_PLAN_TIME = "addPlan.title.time"
+    const val ADD_PLAN_CLOSED_WARNING = "addPlan.message.closedAtSelectedTime"
+    const val ADD_PLAN_OPEN_HOURS = "addPlan.label.openHours"
     const val ADD_PLAN_SELECT_STARTING_POINT = "addPlan.label.selectStartingPoint"
     const val ADD_PLAN_SELECT_DATE_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_TIME = "addPlan.label.selectDateAndTime"
     const val ADD_PLAN_SELECT_A_TIME = "addPlan.label.selectATime"
     const val ADD_PLAN_NO_TIME_SLOTS = "addPlan.emptyState.noAvailableTimes"
     const val ADD_PLAN_ACTIVITY_NOT_AVAILABLE_TRIP_DAYS = "addPlan.time.activityNotAvailableForTrip"
+    const val ADD_PLAN_ACTIVITY_ALREADY_ADDED_EVERY_DAY = "addPlan.time.activityAlreadyAddedEveryDay"
     const val ADD_PLAN_CONFIRM_ADD_ACTIVITY = "addPlan.message.confirmAddActivity"
 
     // Categories (Smart Mode)
@@ -350,7 +352,7 @@ object LanguageConst {
     // Legacy keys (still in use)
     const val TIME_AND_TRAVELERS = "time_and_travelers"
     const val STARTING_POINT = "starting_point"
-    const val ACCOMMODATION_POINT = "accommodation"
+    const val ACCOMMODATION_POINT = "trips.createNewTrip.form.travelerInfo.accommodation.label"
     const val CUSTOM_LOCATION = "custom_location"
     const val GENERATE_RECOMMENDATIONS = "generate_recommendations"
     const val SELECT_POI = "select_poi"
@@ -377,6 +379,7 @@ object LanguageConst {
     const val POI_SELECTION_ADD_PLACE = "addPlan.button.addPlace"
     const val ADD_PLAN_SEARCH_PLACES_HINT = "addPlan.placeholder.searchPlaces"
     const val POI_SELECTION_NO_PLACES = "addPlan.emptyState.noPlaces"
+    const val DESTINATION_SEARCH_NO_RESULTS = "destination.search.noResults"
     const val ACTIVITY_LISTING_NO_ACTIVITIES = "addPlan.emptyState.noActivities"
     const val SEARCH_BAR_HINT = "common.placeholder.search"
 

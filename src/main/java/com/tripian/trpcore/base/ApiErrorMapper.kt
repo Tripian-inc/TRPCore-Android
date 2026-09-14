@@ -60,13 +60,20 @@ internal object ApiErrorMapper {
             return ErrorModel(miscRepository.getLanguageValueForKey(LanguageConst.COMMON_ERROR))
         }
 
-        val parsedMessage = runCatching {
-            gson.fromJson(e.response()?.errorBody()?.string(), BaseResponse::class.java)?.message
-        }.getOrNull()
-
         return ErrorModel(
-            parsedMessage?.takeIf { it.isNotEmpty() }
-                ?: miscRepository.getLanguageValueForKey(LanguageConst.COMMON_ERROR)
+            serverMessage(e) ?: miscRepository.getLanguageValueForKey(LanguageConst.COMMON_ERROR)
         )
+    }
+
+    /**
+     * The `message` the API put in an error body — the only text that says *why*
+     * a call was rejected. Null when the throwable carries no parsable body.
+     */
+    fun serverMessage(throwable: Throwable): String? {
+        (throwable as? ErrorModel)?.errorDesc?.takeIf { it.isNotEmpty() }?.let { return it }
+        val http = throwable as? HttpException ?: return null
+        return runCatching {
+            gson.fromJson(http.response()?.errorBody()?.string(), BaseResponse::class.java)?.message
+        }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
 }

@@ -222,6 +222,34 @@
                 android:textSize="14sp"
                 tools:text="Free cancellation" />
 
+            <!-- Price Row - Bottom Right -->
+            <LinearLayout
+                android:id="@+id/llPriceRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvFromLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/regular"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="14sp"
+                    tools:text="From " />
+
+                <com.tripian.trpcore.util.widget.TextView
+                    android:id="@+id/tvPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/bold"
+                    android:textColor="@color/trp_text_primary"
+                    android:textSize="16sp"
+                    tools:text="$49" />
+            </LinearLayout>
+
             <!-- Reservation CTA -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnReservation"

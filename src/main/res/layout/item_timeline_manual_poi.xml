@@ -152,7 +152,7 @@
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="6dp"
                 android:textColor="@color/trp_grayFg"
-                android:textSize="12sp"
+                android:textSize="10sp"
                 android:visibility="gone"
                 tools:text="Restaurant"
                 tools:visibility="visible" />

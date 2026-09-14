@@ -16,13 +16,17 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TourCategoryIconMapper
 import com.tripian.trpcore.util.extensions.appLanguage
 import androidx.lifecycle.viewModelScope
 import com.tripian.trpcore.repository.base.ErrorModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -124,20 +128,59 @@ class ACActivityListingVM @Inject constructor(
     private var currentSearchQuery: String = ""
     private var allActivities: MutableList<TourProduct> = mutableListOf()
 
-    /** Total result count reported by the API for the last request; shown when no local narrowing is active. */
+    /** Total result count reported by the API for the current query; shown when no local narrowing is active. */
     private var apiTotal: Int = 0
 
     /** Backend returns at most this many tours per call. */
     private val fetchLimit: Int = 10
 
+    /**
+     * "yyyy-MM-dd" → activity ids that day already holds. Seeded from the timeline
+     * snapshot this screen was opened with and kept up to date locally by
+     * [markActivityAdded], so re-opening the time selection sheet reflects an add
+     * without a timeline round-trip.
+     */
+    private val activityIdsByDay: MutableMap<String, MutableList<String>> = mutableMapOf()
+
+    /** Excluded on every day of the trip: bookings anywhere in it plus removed favorites. */
+    private var tripWideExcludedActivityIds: List<String> = emptyList()
+
+    private val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+    /** Offset of the next page to request for the current query. */
+    private var nextOffset: Int = 0
+    private var hasMorePages: Boolean = false
+    private val _loadingMore = MutableLiveData(false)
+    /** True while a further page is being appended; drives the bottom loading indicator. */
+    val loadingMore: LiveData<Boolean> = _loadingMore
+    private var isLoadingMore: Boolean
+        get() = _loadingMore.value == true
+        set(value) {
+            if (_loadingMore.value != value) _loadingMore.value = value
+        }
+    private var fetchJob: Job? = null
+
+    /** True when the loaded list was fetched with search / filter / sort applied by the API. */
+    private var serverNarrowingActive: Boolean = false
+
     // =====================
     // INITIALIZATION
     // =====================
 
-    fun initialize(planData: AddPlanData, tripHash: String) {
+    fun initialize(
+        planData: AddPlanData,
+        tripHash: String,
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+        tripWideExcludedActivityIds: List<String> = emptyList()
+    ) {
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
+        this.tripWideExcludedActivityIds = tripWideExcludedActivityIds
+        activityIdsByDay.clear()
+        plannedActivityIdsByDay.forEach { (day, ids) ->
+            activityIdsByDay[day] = ids.toMutableList()
+        }
         com.tripian.trpcore.util.CityTimeZones.register(listOfNotNull(planData.selectedCity))
         this.selectedDayIndex = planData.selectedDayIndex
 
@@ -158,21 +201,40 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Cache the latest query without applying the filter. The visible list is
-     * only re-filtered when the user submits via the keyboard's Enter/IME
-     * action (see [submitSearch]) — typing alone does not trigger a refilter.
+     * Title search; the search bar debounces typing. Runs locally when every
+     * product is already loaded, otherwise the API applies it.
      */
-    fun updateSearchText(query: String) {
+    fun search(query: String) {
+        if (currentSearchQuery == query) return
         currentSearchQuery = query
+        if (canNarrowLocally()) {
+            applyAllFilters()
+            _scrollToTop.value = true
+        } else {
+            loadActivities(useSkeleton = true)
+        }
     }
 
     /**
-     * Triggered by the keyboard's Enter / IME search action. Re-applies the
-     * full local pipeline with a short skeleton flash.
+     * Search, price/duration filter and sort run locally only when every product of
+     * the unfiltered query is already loaded; otherwise the API applies them and
+     * pagination continues on that query.
      */
-    fun submitSearch() {
-        applyAllFiltersWithSkeleton()
+    private fun applyNarrowingChange() {
+        if (canNarrowLocally()) {
+            applyAllFiltersWithSkeleton()
+        } else {
+            loadActivities(useSkeleton = true)
+        }
     }
+
+    private fun canNarrowLocally(): Boolean =
+        !serverNarrowingActive && apiTotal > 0 && allActivities.size >= apiTotal
+
+    private fun hasServerNarrowing(): Boolean =
+        currentSearchQuery.isNotBlank() ||
+            (_currentFilter.value?.hasActiveFilters() == true) ||
+            (_currentSort.value ?: SortOption.DEFAULT) != SortOption.POPULARITY
 
     // =====================
     // CATEGORY SELECTION
@@ -230,7 +292,7 @@ class ACActivityListingVM @Inject constructor(
 
     fun applyFilter(filter: ActivityFilterData) {
         _currentFilter.value = filter
-        applyAllFiltersWithSkeleton()
+        applyNarrowingChange()
     }
 
     fun getCurrentFilter(): ActivityFilterData =
@@ -246,7 +308,7 @@ class ACActivityListingVM @Inject constructor(
 
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
-        applyAllFiltersWithSkeleton()
+        applyNarrowingChange()
     }
 
     fun getCurrentSort(): SortOption = _currentSort.value ?: SortOption.DEFAULT
@@ -256,9 +318,11 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Fetches the tour list for the city. Category chips are forwarded to the API
-     * as categoryIds; price / duration / title search / sort run locally on
-     * [allActivities] after the response arrives. minPrice=1 excludes free tours.
+     * Fetches the first page of tours for the city and resets pagination. Category
+     * chips always go to the API; search, price / duration and sort go to the API as
+     * well whenever any of them is active at fetch time (see [serverNarrowingActive]).
+     * Further pages are appended by [loadMoreActivities] until every product the API
+     * counts has been loaded. minPrice=1 excludes free tours.
      *
      * @param useSkeleton when true, the reload renders as the inline shimmer
      *        skeleton instead of the full-screen Lottie.
@@ -266,58 +330,95 @@ class ACActivityListingVM @Inject constructor(
     fun loadActivities(useSkeleton: Boolean = false) {
         if (cityId <= 0) return
 
+        fetchJob?.cancel()
+        isLoadingMore = false
+        serverNarrowingActive = hasServerNarrowing()
+
         if (useSkeleton) {
             useSkeletonForNextLoad = true
             suppressNextIsLoadingLoader = true
         }
         _isLoading.value = true
 
-        viewModelScope.launch {
-            runCatching {
-                searchToursUseCase(
-                    SearchToursUseCase.Params(
-                        cityId = cityId,
-                        lat = cityLat,
-                        lng = cityLng,
-                        keywords = null,
-                        tagIds = null,
-                        categoryIds = buildCategoryIds(),
-                        providerId = 15,
-                        date = selectedDateString,
-                        to = selectedDateString,
-                        currency = getCurrency(),
-                        minPrice = 1,
-                        maxPrice = null,
-                        minDuration = null,
-                        maxDuration = null,
-                        adults = (planData?.travelers ?: 1).coerceAtLeast(1),
-                        sortingBy = "score",
-                        sortingType = "desc",
-                        offset = 0,
-                        limit = fetchLimit
-                    )
+        fetchJob = viewModelScope.launch {
+            fetchPage(offset = 0, isPagination = false, scrollToTop = useSkeleton)
+        }
+    }
+
+    /** Appends the next page when the API reports more products than are loaded. */
+    fun loadMoreActivities() {
+        if (!hasMorePages || isLoadingMore || _isLoading.value == true) return
+        isLoadingMore = true
+        fetchJob = viewModelScope.launch {
+            fetchPage(offset = nextOffset, isPagination = true, scrollToTop = false)
+        }
+    }
+
+    private suspend fun fetchPage(offset: Int, isPagination: Boolean, scrollToTop: Boolean) {
+        val filter = _currentFilter.value ?: ActivityFilterData.default()
+        val sort = _currentSort.value ?: SortOption.DEFAULT
+        val useServerNarrowing = serverNarrowingActive
+
+        val result = runCatching {
+            searchToursUseCase(
+                SearchToursUseCase.Params(
+                    cityId = cityId,
+                    lat = cityLat,
+                    lng = cityLng,
+                    keywords = currentSearchQuery.trim().ifBlank { null }.takeIf { useServerNarrowing },
+                    tagIds = null,
+                    categoryIds = buildCategoryIds(),
+                    providerId = 15,
+                    date = selectedDateString,
+                    to = selectedDateString,
+                    currency = getCurrency(),
+                    minPrice = if (useServerNarrowing) filter.minPrice.toInt().coerceAtLeast(1) else 1,
+                    maxPrice = filter.maxPrice.toInt()
+                        .takeIf { useServerNarrowing && filter.maxPrice != ActivityFilterData.DEFAULT_MAX_PRICE },
+                    minDuration = filter.minDuration.toInt()
+                        .takeIf { useServerNarrowing && filter.minDuration != ActivityFilterData.DEFAULT_MIN_DURATION },
+                    maxDuration = filter.maxDuration.toInt()
+                        .takeIf { useServerNarrowing && filter.maxDuration != ActivityFilterData.DEFAULT_MAX_DURATION },
+                    adults = (planData?.travelers ?: 1).coerceAtLeast(1),
+                    sortingBy = if (useServerNarrowing) sort.sortingBy else SortOption.POPULARITY.sortingBy,
+                    sortingType = if (useServerNarrowing) sort.sortingType else SortOption.POPULARITY.sortingType,
+                    offset = offset,
+                    limit = fetchLimit
                 )
-            }.onSuccess { response ->
-                _isLoading.value = false
+            )
+        }
+        coroutineContext.ensureActive()
+
+        isLoadingMore = false
+        if (!isPagination) _isLoading.value = false
+
+        result
+            .onSuccess { response ->
                 val products = response.data?.products ?: emptyList()
-                allActivities.clear()
-                allActivities.addAll(products)
-                apiTotal = response.data?.total ?: products.size
+                if (!isPagination) allActivities.clear()
+                val loadedIds = allActivities.map { it.productId }.toHashSet()
+                val newProducts = products.filter { loadedIds.add(it.productId) }
+                allActivities.addAll(newProducts)
+                apiTotal = response.data?.total ?: allActivities.size
+                nextOffset = offset + products.size
+                hasMorePages = newProducts.isNotEmpty() && allActivities.size < apiTotal
                 updateFacetsFromResponse(response.data?.facets)
                 applyAllFilters()
-                if (useSkeleton) _scrollToTop.value = true
-            }.onFailure { error ->
-                _isLoading.value = false
+                if (scrollToTop) _scrollToTop.value = true
+            }
+            .onFailure { error ->
                 val message = (error as? ErrorModel)?.errorDesc
                     ?: error.message
                     ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
                 showAlert(AlertType.ERROR, message)
-                allActivities.clear()
-                apiTotal = 0
-                _activities.value = emptyList()
-                _activityCount.value = 0
+                if (!isPagination) {
+                    allActivities.clear()
+                    apiTotal = 0
+                    hasMorePages = false
+                    _activities.value = emptyList()
+                    _activityCount.value = 0
+                }
             }
-        }
     }
 
     // =====================
@@ -331,7 +432,7 @@ class ACActivityListingVM @Inject constructor(
     /**
      * Runs the local filter pipeline behind a short skeleton flash, then
      * scrolls the list back to the top. Used by every user-triggered list
-     * change (filter / sort / category / search submit).
+     * change (filter / sort / category).
      */
     private fun applyAllFiltersWithSkeleton() {
         skeletonHandler.removeCallbacksAndMessages(null)
@@ -346,12 +447,18 @@ class ACActivityListingVM @Inject constructor(
     }
 
     /**
-     * Apply the local filter pipeline (price → duration → title search → sort)
-     * to [allActivities] and publish the result. Category is applied server-side
-     * via categoryIds (see [loadActivities]). Publishes the API total as the count
-     * when no local narrowing is active, otherwise the visible size.
+     * Publishes the list. When the API already applied search / filter / sort the
+     * loaded pages are shown as they are with the API total as the count. Otherwise
+     * the local pipeline (price → duration → title search → sort) runs on
+     * [allActivities], and the count is the API total unless a local narrowing
+     * reduced the visible list.
      */
     private fun applyAllFilters() {
+        if (serverNarrowingActive) {
+            _activities.value = allActivities.toList()
+            _activityCount.value = apiTotal
+            return
+        }
         val byPriceDuration = allActivities.filter { tourMatchesFilter(it) }
         val bySearch = applyTitleSearch(byPriceDuration)
         val sorted = sortActivities(bySearch)
@@ -367,8 +474,15 @@ class ACActivityListingVM @Inject constructor(
         return list.filter { it.title?.contains(q, ignoreCase = true) == true }
     }
 
+    /**
+     * The default filter carries the slider's own bounds, not a user choice, so it
+     * must let every tour through — a tour longer than the default 24h ceiling is
+     * still part of an unfiltered list.
+     */
     private fun tourMatchesFilter(tour: TourProduct): Boolean {
         val filter = _currentFilter.value ?: return true
+        if (!filter.hasActiveFilters()) return true
+
         val price = tour.currentPrice ?: tour.price
         val priceOk = price?.let {
             it >= filter.minPrice && it <= filter.maxPrice
@@ -403,6 +517,26 @@ class ACActivityListingVM @Inject constructor(
         _showTimeSelection.value = null
     }
 
+    /**
+     * What each day already holds; the time selection sheet blocks the days holding
+     * the picked activity and the chosen day's ids ship as `excludedActivityIds`.
+     */
+    fun plannedActivityIdsByDay(): Map<String, List<String>> =
+        activityIdsByDay.mapValues { it.value.toList() }
+
+    /** Records a day just taken by [tour] so re-opening the sheet reflects it right away. */
+    private fun markActivityAdded(tour: TourProduct, day: Date) {
+        val id = ActivityIdFormat.make(
+            activityId = tour.productId,
+            providerId = tour.providerId,
+            cityId = tour.cityId.takeIf { it > 0 } ?: cityId.takeIf { it > 0 }
+        )
+        if (id.isEmpty()) return
+
+        val dayIds = activityIdsByDay.getOrPut(dayKeyFormat.format(day)) { mutableListOf() }
+        if (id !in dayIds) dayIds += id
+    }
+
     // =====================
     // CREATE SEGMENT
     // =====================
@@ -421,8 +555,7 @@ class ACActivityListingVM @Inject constructor(
         slotPrice: Double?,
         isFlexible: Boolean = false
     ) {
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val dateString = dateFormat.format(selectedDate)
+        val dateString = dayKeyFormat.format(selectedDate)
 
         viewModelScope.launch {
             runCatching {
@@ -435,11 +568,16 @@ class ACActivityListingVM @Inject constructor(
                         adults = planData?.travelers ?: 1,
                         cityId = cityId,
                         slotPrice = slotPrice,
-                        isFlexible = isFlexible
+                        isFlexible = isFlexible,
+                        excludedActivityIds = (
+                            tripWideExcludedActivityIds +
+                                activityIdsByDay[dateString].orEmpty()
+                            ).distinct()
                     )
                 )
             }
                 .onSuccess {
+                    markActivityAdded(tour, selectedDate)
                     tour.productId?.let { TRPCore.notifyActivityAdded(it) }
                     refreshTimelineAfterSegment(tour, selectedDate)
                 }
