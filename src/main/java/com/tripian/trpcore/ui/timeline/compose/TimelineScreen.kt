@@ -41,6 +41,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -63,6 +64,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -117,6 +119,7 @@ import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.addplan.AddPlanSheet
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineFontFamily
 import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
@@ -1300,22 +1303,34 @@ private fun SavedPlansCard(text: String, badgeCount: Int, onClick: () -> Unit) {
                     .background(colorResource(R.color.trp_bgPink), CircleShape)
                     .padding(10.dp)
             )
-            Text(
-                text = badgeCount.toString(),
-                color = colorResource(R.color.trp_white),
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
+            Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(16.dp)
                     .align(Alignment.BottomEnd)
                     .background(colorResource(R.color.trp_primary), CircleShape)
-            )
+            ) {
+                Text(
+                    text = badgeCount.toString(),
+                    color = colorResource(R.color.trp_white),
+                    fontFamily = TimelineFontFamily,
+                    fontSize = 11.sp,
+                    lineHeight = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    softWrap = false,
+                    style = LocalTextStyle.current.copy(
+                        platformStyle = PlatformTextStyle(includeFontPadding = false)
+                    )
+                )
+            }
         }
         Spacer(Modifier.width(11.dp))
         Text(
             text = text,
             color = colorResource(R.color.trp_text_primary),
+            fontFamily = TimelineFontFamily,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f)
