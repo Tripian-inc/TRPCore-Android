@@ -1,14 +1,11 @@
 package com.tripian.trpcore.ui.timeline.compose
 
-import android.app.Activity
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -74,8 +71,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -121,9 +119,13 @@ import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactor
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
 import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
-import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
-import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
-import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
+import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
+import com.tripian.trpcore.ui.timeline.compose.nav.ResultEffect
+import com.tripian.trpcore.ui.timeline.compose.nav.StartingPointResult
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineResults
+import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
+import com.tripian.trpcore.domain.model.timeline.ManualCategory
+import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.trpcore.ui.timeline.views.ConflictWarningView
 import com.tripian.trpcore.ui.timeline.views.NoCityView
 import com.tripian.trpcore.ui.timeline.views.TimelineDayFilterView
@@ -150,6 +152,7 @@ fun TimelineScreen(
     appLanguage: String?,
     appCurrency: String?,
     onDismiss: () -> Unit,
+    navEntry: NavBackStackEntry,
     viewModel: ACTimelineVM = timelineViewModel()
 ) {
     val context = LocalContext.current
@@ -158,10 +161,8 @@ fun TimelineScreen(
     val sheets = remember { TimelineSheetHolder() }
     val mapUi = remember { MapModeUiState() }
     val vmFactory = LocalTimelineViewModelFactory.current
-    val addPlanState = remember { AddPlanHostState() }
-    DisposableEffect(Unit) {
-        onDispose { addPlanState.store.clear() }
-    }
+    val navigator = LocalTimelineNavigator.current
+    val flowState: TimelineFlowState = viewModel(navEntry)
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
@@ -188,28 +189,71 @@ fun TimelineScreen(
         }
     }
 
-    val poiSelectionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            @Suppress("DEPRECATION")
-            val selectedPoi = result.data?.getSerializableExtra(ACPOISelection.RESULT_POI) as? Poi
-            selectedPoi?.let { poi ->
-                sheets.pendingAddPlanData?.let { data ->
-                    data.selectedPoi = poi
-                    viewModel.onAddPlanComplete(data)
-                    sheets.pendingAddPlanData = null
-                }
-            }
+    ResultEffect<Poi>(navEntry, TimelineResults.SELECTED_POI) { poi ->
+        flowState.pendingAddPlanData?.let { data ->
+            data.selectedPoi = poi
+            viewModel.onAddPlanComplete(data)
+            flowState.pendingAddPlanData = null
         }
     }
 
-    val savedPlansLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.onReturnFromSavedPlans()
+    ResultEffect<Boolean>(navEntry, TimelineResults.SAVED_PLANS_CHANGED) {
+        viewModel.onReturnFromSavedPlans()
+    }
+
+    ResultEffect<Int>(navEntry, TimelineResults.SEGMENT_CREATED_DAY_INDEX) { selectedDayIndex ->
+        viewModel.onReturnFromAddPlan()
+        viewModel.selectDay(selectedDayIndex)
+        flowState.addPlanVisible = false
+    }
+
+    ResultEffect<StartingPointResult>(navEntry, TimelineResults.STARTING_POINT) { result ->
+        val coordinate = Coordinate().apply {
+            lat = result.lat
+            lng = result.lng
         }
+        flowState.addPlanViewModel?.setStartingPoint(result.name, coordinate, result.accommodation)
+    }
+
+    fun openPoiDetail(poi: Poi) {
+        val (tripStart, tripEnd) = viewModel.tripDateRange()
+        navigator.openPoiDetail(poi, tripStart, tripEnd)
+    }
+
+    fun openPoiSelection(data: AddPlanData) {
+        flowState.pendingAddPlanData = data
+        data.selectedCity?.let { city -> navigator.openPoiSelection(city) }
+    }
+
+    fun openManualListing(category: ManualCategory) {
+        val sheetVm = flowState.addPlanViewModel ?: return
+        val planData = sheetVm.getValidPlanData() ?: return
+        val tripHash = sheetVm.getTripHash() ?: return
+        val (tripStart, tripEnd) = viewModel.tripDateRange()
+        when (category) {
+            ManualCategory.ACTIVITIES -> navigator.openActivityListing(
+                planData = planData,
+                tripHash = tripHash,
+                plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+                tripWideExcludedActivityIds = viewModel.tripWideExcludedActivityIds()
+            )
+            ManualCategory.PLACES_OF_INTEREST -> navigator.openPoiListing(
+                planData, tripHash, POIListingType.PLACES_OF_INTEREST, tripStart, tripEnd
+            )
+            ManualCategory.EAT_AND_DRINK -> navigator.openPoiListing(
+                planData, tripHash, POIListingType.EAT_AND_DRINK, tripStart, tripEnd
+            )
+        }
+    }
+
+    fun openStartingPoint() {
+        val sheetVm = flowState.addPlanViewModel ?: return
+        navigator.openStartingPoint(
+            city = sheetVm.selectedCity.value,
+            bookedActivities = sheetVm.getBookedActivities(),
+            favouriteItems = emptyList(),
+            userLocation = sheetVm.getUserLocation()
+        )
     }
 
     fun showDeleteConfirmation(title: String, message: String, onConfirm: () -> Unit) {
@@ -228,9 +272,9 @@ fun TimelineScreen(
     }
 
     fun showAddPlanSheet() {
-        addPlanState.store.clear()
+        flowState.addPlanStore.clear()
         val owner = object : ViewModelStoreOwner {
-            override val viewModelStore: ViewModelStore = addPlanState.store
+            override val viewModelStore = flowState.addPlanStore
         }
         val sheetVm = ViewModelProvider(owner, vmFactory)[AddPlanContainerVM::class.java]
         sheetVm.initializeFromArgs(Bundle().apply {
@@ -252,22 +296,21 @@ fun TimelineScreen(
                 ArrayList(viewModel.getBookedActivities())
             )
         })
-        addPlanState.error = null
-        addPlanState.viewModel = sheetVm
-        addPlanState.visible = true
+        flowState.addPlanError = null
+        flowState.addPlanViewModel = sheetVm
+        flowState.addPlanVisible = true
     }
 
     fun openSavedPlans() {
         val filteredFavorites = viewModel.getFilteredFavorites()
         if (filteredFavorites.isEmpty()) return
-        val intent = ACSavedPlans.launch(
-            context = context,
+        navigator.openSavedPlans(
             favorites = filteredFavorites,
             tripHash = viewModel.tripHash,
             availableDays = viewModel.availableDays.value ?: emptyList(),
-            cityNameToIdMap = viewModel.getCityNameToIdMap()
+            cityNameToIdMap = viewModel.getCityNameToIdMap(),
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
         )
-        savedPlansLauncher.launch(intent)
     }
 
     fun handleStepChangeTimeClick(step: TimelineStep) {
@@ -443,9 +486,7 @@ fun TimelineScreen(
                         }
                     }
                     is TimelineDisplayItem.ManualPoi -> {
-                        item.step.poi?.let { poi ->
-                            context.startActivity(ACPOIDetail.launch(context, poi))
-                        }
+                        item.step.poi?.let { poi -> openPoiDetail(poi) }
                     }
                     else -> {}
                 }
@@ -471,9 +512,7 @@ fun TimelineScreen(
             },
             onStepClick = { step ->
                 if (step.stepType == "poi") {
-                    step.poi?.let { poi ->
-                        context.startActivity(ACPOIDetail.launch(context, poi))
-                    }
+                    step.poi?.let { poi -> openPoiDetail(poi) }
                 } else {
                     val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                     activityId?.let { viewModel.onActivityDetailRequested(it) }
@@ -614,10 +653,7 @@ fun TimelineScreen(
     val launchPoiSelection by viewModel.launchPoiSelection.observeAsState()
     LaunchedEffect(launchPoiSelection) {
         launchPoiSelection?.let { data ->
-            sheets.pendingAddPlanData = data
-            data.selectedCity?.let { city ->
-                poiSelectionLauncher.launch(ACPOISelection.launch(context, city))
-            }
+            openPoiSelection(data)
             viewModel.clearPoiSelectionTrigger()
         }
     }
@@ -625,7 +661,7 @@ fun TimelineScreen(
     val smartSegmentCreated by viewModel.smartSegmentCreated.observeAsState()
     LaunchedEffect(smartSegmentCreated) {
         smartSegmentCreated?.let { dayIndex ->
-            addPlanState.visible = false
+            flowState.addPlanVisible = false
             viewModel.selectDay(dayIndex)
             viewModel.clearSmartSegmentCreated()
         }
@@ -634,14 +670,14 @@ fun TimelineScreen(
     val smartCreateError by viewModel.smartCreateError.observeAsState()
     LaunchedEffect(smartCreateError) {
         smartCreateError?.let {
-            addPlanState.error = it
+            flowState.addPlanError = it
             viewModel.clearSmartCreateError()
         }
     }
 
     val smartCreateInProgress by viewModel.smartCreateInProgress.observeAsState()
     LaunchedEffect(smartCreateInProgress) {
-        val sheetVm = addPlanState.viewModel ?: return@LaunchedEffect
+        val sheetVm = flowState.addPlanViewModel ?: return@LaunchedEffect
         if (smartCreateInProgress == true) {
             sheetVm.showInSheetLoaderNoText()
         } else {
@@ -883,9 +919,7 @@ fun TimelineScreen(
                                             viewModel.onActivityDetailRequested(activityId)
                                         }
                                     else ->
-                                        findPoiById(item.id)?.let { poi ->
-                                            context.startActivity(ACPOIDetail.launch(context, poi))
-                                        }
+                                        findPoiById(item.id)?.let { poi -> openPoiDetail(poi) }
                                 }
                             } else {
                                 val mapStep = viewModel.mapSteps.value?.find { it.poiId == item.id }
@@ -1013,27 +1047,26 @@ fun TimelineScreen(
             )
         }
 
-        if (addPlanState.visible) {
-            addPlanState.viewModel?.let { addPlanVm ->
+        if (flowState.addPlanVisible) {
+            flowState.addPlanViewModel?.let { addPlanVm ->
                 AddPlanSheet(
                     viewModel = addPlanVm,
-                    errorMessage = addPlanState.error,
-                    onErrorDismiss = { addPlanState.error = null },
-                    onDismissRequest = { addPlanState.visible = false },
+                    errorMessage = flowState.addPlanError,
+                    onErrorDismiss = { flowState.addPlanError = null },
+                    onDismissRequest = { flowState.addPlanVisible = false },
+                    onOpenManualListing = { category -> openManualListing(category) },
+                    onSelectStartingPoint = { openStartingPoint() },
                     onAddPlanComplete = { data ->
                         when {
                             data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
-                                sheets.pendingAddPlanData = data
-                                data.selectedCity?.let { city ->
-                                    poiSelectionLauncher.launch(ACPOISelection.launch(context, city))
-                                }
+                                openPoiSelection(data)
                             }
                             data.mode == AddPlanMode.SMART ||
                                 data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
                                 viewModel.onAddPlanComplete(data)
                             }
                             else -> {
-                                addPlanState.visible = false
+                                flowState.addPlanVisible = false
                                 scope.launch {
                                     delay(300)
                                     viewModel.onAddPlanComplete(data)
@@ -1041,11 +1074,6 @@ fun TimelineScreen(
                                 }
                             }
                         }
-                    },
-                    onSegmentCreated = { selectedDayIndex ->
-                        viewModel.onReturnFromAddPlan()
-                        viewModel.selectDay(selectedDayIndex)
-                        addPlanState.visible = false
                     }
                 )
             }
@@ -1055,14 +1083,6 @@ fun TimelineScreen(
 
 private class TimelineSheetHolder {
     var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
-    var pendingAddPlanData: AddPlanData? = null
-}
-
-private class AddPlanHostState {
-    val store = ViewModelStore()
-    var visible by mutableStateOf(false)
-    var viewModel by mutableStateOf<AddPlanContainerVM?>(null)
-    var error by mutableStateOf<String?>(null)
 }
 
 private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L

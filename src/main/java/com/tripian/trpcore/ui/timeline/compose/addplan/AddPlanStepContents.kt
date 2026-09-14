@@ -1,10 +1,7 @@
 package com.tripian.trpcore.ui.timeline.compose.addplan
 
-import android.app.Activity
 import android.view.LayoutInflater
 import android.view.View
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,8 +28,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.card.MaterialCardView
 import com.tripian.one.api.cities.model.City
-import com.tripian.one.api.pois.model.Coordinate
-import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.FrAddPlanCategorySelectionBinding
@@ -40,7 +35,6 @@ import com.tripian.trpcore.databinding.FrAddPlanSelectDayBinding
 import com.tripian.trpcore.databinding.FrAddPlanTimeTravelersBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
-import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelection
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.ui.timeline.addplan.SmartCategoryAdapter
@@ -217,11 +211,14 @@ private data class AddPlanTimePickerRequest(
 
 /**
  * Step 2 of the Compose AddPlan wizard. Reuses fr_add_plan_time_travelers.xml
- * with the wiring ported from FRTimeAndTravelers; the starting point Activity
- * keeps its result contract and the time pickers reuse TimePickerDialogContent.
+ * with the wiring ported from FRTimeAndTravelers; the starting point picker is
+ * opened by the owner and the time pickers reuse TimePickerDialogContent.
  */
 @Composable
-internal fun AddPlanTimeTravelersStep(viewModel: AddPlanContainerVM) {
+internal fun AddPlanTimeTravelersStep(
+    viewModel: AddPlanContainerVM,
+    onSelectStartingPoint: () -> Unit
+) {
     val availableDays by viewModel.availableDays.observeAsState(emptyList())
     val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(0)
     val selectedCity by viewModel.selectedCity.observeAsState()
@@ -231,29 +228,6 @@ internal fun AddPlanTimeTravelersStep(viewModel: AddPlanContainerVM) {
     val endTime by viewModel.endTime.observeAsState()
     val travelers by viewModel.travelers.observeAsState(1)
     var pickerRequest by remember { mutableStateOf<AddPlanTimePickerRequest?>(null) }
-
-    val startingPointLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.let { data ->
-                val lat = data.getDoubleExtra(ACStartingPointSelection.RESULT_COORDINATE_LAT, Double.NaN)
-                val lng = data.getDoubleExtra(ACStartingPointSelection.RESULT_COORDINATE_LNG, Double.NaN)
-                val name = data.getStringExtra(ACStartingPointSelection.RESULT_NAME) ?: ""
-                @Suppress("DEPRECATION")
-                val accommodation = data.getSerializableExtra(
-                    ACStartingPointSelection.RESULT_ACCOMMODATION
-                ) as? Accommodation
-                if (!lat.isNaN() && !lng.isNaN()) {
-                    val coordinate = Coordinate().apply {
-                        this.lat = lat
-                        this.lng = lng
-                    }
-                    viewModel.setStartingPoint(name, coordinate, accommodation)
-                }
-            }
-        }
-    }
 
     AndroidView(
         factory = { ctx ->
@@ -276,16 +250,7 @@ internal fun AddPlanTimeTravelersStep(viewModel: AddPlanContainerVM) {
                 LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)
             binding.rvDays.adapter = dayAdapter
 
-            binding.btnStartingPoint.setOnClickListener {
-                val intent = ACStartingPointSelection.launch(
-                    context = ctx,
-                    city = viewModel.selectedCity.value,
-                    bookedActivities = viewModel.getBookedActivities(),
-                    favouriteItems = emptyList(),
-                    userLocation = viewModel.getUserLocation()
-                )
-                startingPointLauncher.launch(intent)
-            }
+            binding.btnStartingPoint.setOnClickListener { onSelectStartingPoint() }
             binding.btnStartTime.setOnClickListener {
                 pickerRequest = AddPlanTimePickerRequest(
                     initialTime = viewModel.startTime.value

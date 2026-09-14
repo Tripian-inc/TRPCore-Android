@@ -9,23 +9,30 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.ui.timeline.compose.activity.ActivityListingScreen
+import com.tripian.trpcore.ui.timeline.compose.addplan.StartingPointScreen
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
-
-object TimelineRoutes {
-    const val TIMELINE = "timeline"
-    const val ADD_PLAN = "add_plan"
-    const val STARTING_POINT = "starting_point"
-    const val POI_SELECTION = "poi_selection"
-    const val POI_LISTING = "poi_listing"
-    const val POI_DETAIL = "poi_detail"
-    const val ACTIVITY_LISTING = "activity_listing"
-    const val SAVED_PLANS = "saved_plans"
-}
+import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
+import com.tripian.trpcore.ui.timeline.compose.nav.PoiDetailArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.PoiListingArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.PoiSelectionArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.SavedPlansArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.StartingPointArgs
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineNavigator
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineRoutes
+import com.tripian.trpcore.ui.timeline.compose.nav.rememberTimelineNavigator
+import com.tripian.trpcore.ui.timeline.compose.poi.PoiSelectionScreen
+import com.tripian.trpcore.ui.timeline.compose.poidetail.PoiDetailScreen
+import com.tripian.trpcore.ui.timeline.compose.poilisting.PoiListingScreen
+import com.tripian.trpcore.ui.timeline.compose.savedplans.SavedPlansScreen
 
 /**
- * Compose twin of [TRPCore.startWithItinerary]: embeds the Timeline flow in
- * the host's own Compose hierarchy instead of launching SDK Activities.
+ * Compose twin of [TRPCore.startWithItinerary]: embeds the whole Timeline flow
+ * in the host's own Compose hierarchy instead of launching SDK Activities.
+ * Every SDK screen is a destination of the flow's nested NavHost, so pushing a
+ * host screen on top and popping it returns to the exact SDK screen and state.
  * Parameters mirror the Activity entry point and SDK events keep flowing
  * through [com.tripian.trpcore.sdk.TRPCoreSDKListener].
  *
@@ -52,23 +59,75 @@ fun TimelineNexus(
         TRPCore.core.applyLanguageAndPrefetchCities(appLanguage)
     }
 
+    val navigator = rememberTimelineNavigator(navController)
+
     TimelineTheme {
         CompositionLocalProvider(
-            LocalTimelineViewModelFactory provides TRPCore.core.timelineViewModelFactory
+            LocalTimelineViewModelFactory provides TRPCore.core.timelineViewModelFactory,
+            LocalTimelineNavigator provides navigator
         ) {
             NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
-                composable(TimelineRoutes.TIMELINE) {
+                composable(TimelineRoutes.TIMELINE) { entry ->
                     TimelineScreen(
                         itinerary = itinerary,
                         tripHash = tripHash ?: itinerary.tripianHash,
                         uniqueId = uniqueId ?: itinerary.uniqueId,
                         appLanguage = appLanguage,
                         appCurrency = appCurrency,
-                        onDismiss = onDismiss
+                        onDismiss = onDismiss,
+                        navEntry = entry
                     )
+                }
+                composable(TimelineRoutes.POI_SELECTION) {
+                    RouteScreen<PoiSelectionArgs>(navigator, TimelineRoutes.POI_SELECTION) {
+                        PoiSelectionScreen(it)
+                    }
+                }
+                composable(TimelineRoutes.POI_DETAIL) {
+                    RouteScreen<PoiDetailArgs>(navigator, TimelineRoutes.POI_DETAIL) {
+                        PoiDetailScreen(it)
+                    }
+                }
+                composable(TimelineRoutes.POI_LISTING) {
+                    RouteScreen<PoiListingArgs>(navigator, TimelineRoutes.POI_LISTING) {
+                        PoiListingScreen(it)
+                    }
+                }
+                composable(TimelineRoutes.ACTIVITY_LISTING) {
+                    RouteScreen<ActivityListingArgs>(navigator, TimelineRoutes.ACTIVITY_LISTING) {
+                        ActivityListingScreen(it)
+                    }
+                }
+                composable(TimelineRoutes.SAVED_PLANS) {
+                    RouteScreen<SavedPlansArgs>(navigator, TimelineRoutes.SAVED_PLANS) {
+                        SavedPlansScreen(it)
+                    }
+                }
+                composable(TimelineRoutes.STARTING_POINT) {
+                    RouteScreen<StartingPointArgs>(navigator, TimelineRoutes.STARTING_POINT) {
+                        StartingPointScreen(it)
+                    }
                 }
             }
         }
     }
 }
 
+/**
+ * Renders [content] with the launch arguments stored for [route]. Arguments
+ * live in memory only, so after process death the destination has nothing to
+ * show and pops itself.
+ */
+@Composable
+private inline fun <reified A : Any> RouteScreen(
+    navigator: TimelineNavigator,
+    route: String,
+    content: @Composable (A) -> Unit
+) {
+    val args = navigator.argsFor<A>(route)
+    if (args == null) {
+        LaunchedEffect(Unit) { navigator.back() }
+        return
+    }
+    content(args)
+}

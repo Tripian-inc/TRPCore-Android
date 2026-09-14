@@ -1,10 +1,5 @@
 package com.tripian.trpcore.ui.timeline.compose.addplan
 
-import android.app.Activity
-import android.content.Context
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -36,31 +31,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.content.Intent
 import com.tripian.trpcore.R
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
-import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
-import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
-import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
 import com.tripian.trpcore.util.LanguageConst
 
 /**
  * Compose AddPlan wizard container — replaces AddPlanContainerBottomSheet for
  * Compose hosts, sharing AddPlanContainerVM. Steps are driven by the VM's
- * currentStep; the footer Continue/Clear behavior, manual listing launches and
- * the in-sheet Lottie loader mirror the Fragment-based sheet.
+ * currentStep; the footer Continue/Clear behavior and the in-sheet Lottie
+ * loader mirror the Fragment-based sheet.
  *
  * @param errorMessage segment-create error surfaced over the sheet; cleared via [onErrorDismiss]
+ * @param onOpenManualListing asks the owner to open the listing of a manual category
+ * @param onSelectStartingPoint asks the owner to open the starting point picker
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,10 +61,10 @@ fun AddPlanSheet(
     errorMessage: String?,
     onErrorDismiss: () -> Unit,
     onDismissRequest: () -> Unit,
-    onAddPlanComplete: (AddPlanData) -> Unit,
-    onSegmentCreated: (Int) -> Unit
+    onOpenManualListing: (ManualCategory) -> Unit,
+    onSelectStartingPoint: () -> Unit,
+    onAddPlanComplete: (AddPlanData) -> Unit
 ) {
-    val context = LocalContext.current
     val currentStep by viewModel.currentStep.observeAsState(AddPlanStep.SELECT_DAY_AND_CITY)
     val titleKey by viewModel.titleKey.observeAsState()
     val continueEnabled by viewModel.continueButtonEnabled.observeAsState(false)
@@ -80,23 +72,11 @@ fun AddPlanSheet(
     val showClearSelection by viewModel.showClearSelection.observeAsState(false)
     val loaderEvent by viewModel.lottieLoadingEvent.observeAsState()
 
-    val manualListingLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val selectedDayIndex = result.data?.getIntExtra(
-                ACActivityListing.RESULT_SELECTED_DAY_INDEX,
-                viewModel.planData.selectedDayIndex
-            ) ?: 0
-            onSegmentCreated(selectedDayIndex)
-        }
-    }
-
     val openManualListing by viewModel.openManualListing.observeAsState()
     LaunchedEffect(openManualListing) {
         openManualListing?.let { category ->
-            launchManualListing(context, viewModel, category, manualListingLauncher)
             viewModel.clearOpenManualListing()
+            onOpenManualListing(category)
         }
     }
 
@@ -195,7 +175,7 @@ fun AddPlanSheet(
                     ) { step ->
                         when (step) {
                             AddPlanStep.SELECT_DAY_AND_CITY -> AddPlanSelectDayStep(viewModel)
-                            AddPlanStep.TIME_AND_TRAVELERS -> AddPlanTimeTravelersStep(viewModel)
+                            AddPlanStep.TIME_AND_TRAVELERS -> AddPlanTimeTravelersStep(viewModel, onSelectStartingPoint)
                             AddPlanStep.CATEGORY_SELECTION -> AddPlanCategorySelectionStep(viewModel)
                         }
                     }
@@ -294,34 +274,4 @@ private fun AddPlanErrorToast(
                 .clickable { onDismiss() }
         )
     }
-}
-
-private fun launchManualListing(
-    context: Context,
-    viewModel: AddPlanContainerVM,
-    category: ManualCategory,
-    launcher: ActivityResultLauncher<Intent>
-) {
-    val planData = viewModel.getValidPlanData() ?: return
-    val tripHash = viewModel.getTripHash() ?: return
-    val intent = when (category) {
-        ManualCategory.ACTIVITIES -> ACActivityListing.launch(
-            context = context,
-            planData = planData,
-            tripHash = tripHash
-        )
-        ManualCategory.PLACES_OF_INTEREST -> ACPOIListing.launch(
-            context = context,
-            planData = planData,
-            tripHash = tripHash,
-            listingType = POIListingType.PLACES_OF_INTEREST
-        )
-        ManualCategory.EAT_AND_DRINK -> ACPOIListing.launch(
-            context = context,
-            planData = planData,
-            tripHash = tripHash,
-            listingType = POIListingType.EAT_AND_DRINK
-        )
-    }
-    launcher.launch(intent)
 }
