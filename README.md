@@ -726,126 +726,82 @@ TRPCore.core.startTripianWithUniqueId(
 
 ## Jetpack Compose Integration
 
-TRPCore SDK supports integration with Jetpack Compose Single-Activity architecture. For proper back navigation between SDK screens and your Compose screens, follow these guidelines:
+TRPCore ships a native Compose entry point for Single-Activity hosts: `TimelineNexus`. It renders the whole Timeline flow (timeline, add-plan wizard, POI/activity listings, POI detail, saved plans, starting point picker) as composables inside **your** `NavHost`, so the SDK never launches an Activity and your back stack stays intact.
 
-### Recommended Integration
-
-When using Jetpack Compose, **always pass Activity context** (not Application context) to SDK methods:
+### Composable entry point
 
 ```kotlin
-@Composable
-fun MyScreen() {
-    val context = LocalContext.current
-    val activity = context as? Activity ?: (context as ContextWrapper).baseContext as Activity
+import com.tripian.trpcore.ui.timeline.compose.TimelineNexus
 
-    Button(onClick = {
-        TRPCore.core.startWithItinerary(
-            context = activity,  // Pass Activity context for proper back navigation
-            itinerary = itinerary,
-            tripHash = null,
-            canBack = true,
-            appLanguage = "en"
+NavHost(navController, startDestination = "home") {
+    composable("home") { HomeScreen(onOpenTimeline = { navController.navigate("timeline") }) }
+
+    composable("timeline") {
+        TimelineNexus(
+            itinerary = itinerary,          // same ItineraryWithActivities as startWithItinerary
+            tripHash = tripHash,            // null creates a new timeline
+            uniqueId = uniqueId,
+            appLanguage = "en",
+            appCurrency = "EUR",
+            onDismiss = { navController.popBackStack() }
         )
-    }) {
-        Text("Open Tripian")
+    }
+
+    composable("activity/{id}") { entry ->
+        ActivityDetailScreen(entry.arguments?.getString("id"), onBack = { navController.popBackStack() })
     }
 }
 ```
 
-### Using ActivityResultLauncher (Recommended)
+Requirements:
 
-For better control over the SDK lifecycle, use `ActivityResultLauncher`:
+- `TRPCore().init(...)` must have run (Application class) and `TRPCore.setListener(...)` must be set.
+- The host Activity must be a `FragmentActivity` (`AppCompatActivity` works): the SDK's time pickers and bottom sheets are dialog fragments.
 
-```kotlin
-class MainActivity : ComponentActivity() {
+### How navigation works
 
-    private val tripianLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        // Called when SDK is dismissed
-        // You can refresh your UI or handle the result here
-    }
+`TimelineNexus` owns a nested `NavHost`. Every SDK screen is a destination of that nested graph, and the SDK screen state lives in the ViewModel store of your `"timeline"` back-stack entry. When an SDK callback (`onRequestActivityDetail`, `onRequestBookingDetail`, `onRequestActivityReservation`) makes you push one of **your** destinations on top, the `"timeline"` entry stays on your back stack. Popping your screen brings the user back to the exact SDK screen they left — for example the activity listing at the same scroll position, or the add-plan sheet on the same step.
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+Rules of thumb:
 
-        setContent {
-            MyApp(
-                onOpenTripian = { itinerary ->
-                    // Using Activity context ensures proper back navigation
-                    TRPCore.core.startWithItinerary(
-                        context = this@MainActivity,
-                        itinerary = itinerary,
-                        canBack = true,
-                        appLanguage = "en"
-                    )
-                }
-            )
-        }
-    }
-}
-```
+- Navigate to your screens with a plain `navController.navigate(route)`; do not `popUpTo` the timeline entry.
+- Use `launchSingleTop` / `restoreState` when the timeline is a bottom-navigation tab so its state is restored on tab switches.
+- To open a *different* itinerary, clear the entry first (`navController.clearBackStack("timeline")`) and navigate again; the flow initializes once per back-stack entry.
+- System back inside the SDK pops the SDK's own screens first and calls `onDismiss` only from the timeline root.
 
-### Handling SDK Callbacks in Compose
-
-When using `onRequestActivityDetail` callback to navigate to your Compose detail screen:
+### Handling SDK callbacks
 
 ```kotlin
-class MainActivity : ComponentActivity(), TRPCoreSDKListener {
+object HostSdkListener : TRPCoreSDKListener {
+    val requests = MutableSharedFlow<String>(extraBufferCapacity = 8)
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        TRPCore.setListener(this)
-
-        setContent {
-            val navController = rememberNavController()
-
-            // Store navController reference for callbacks
-            remember { navControllerRef = navController }
-
-            NavHost(navController, startDestination = "home") {
-                composable("home") { HomeScreen() }
-                composable("activity/{id}") { backStackEntry ->
-                    ActivityDetailScreen(
-                        activityId = backStackEntry.arguments?.getString("id")
-                    )
-                }
-            }
-        }
-    }
-
-    private var navControllerRef: NavController? = null
-
-    override fun onRequestActivityDetail(activityId: String) {
-        // Navigate to your Compose detail screen
-        // Back press will return to SDK (same task)
-        navControllerRef?.navigate("activity/$activityId")
-    }
-
+    override fun onRequestActivityDetail(activityId: String) { requests.tryEmit("activity/$activityId") }
     override fun onRequestActivityReservation(activityId: String, date: String?) {
-        // date: Activity start in "yyyy-MM-dd HH:mm" format, null if not available
-        val route = if (date != null) {
-            "booking/$activityId?date=$date"
-        } else {
-            "booking/$activityId"
-        }
-        navControllerRef?.navigate(route)
+        requests.tryEmit("booking/$activityId?date=${date.orEmpty()}")
     }
+    override fun onTimelineCreated(tripHash: String) { /* persist tripHash */ }
+}
 
-    override fun onTimelineCreated(tripHash: String) {
-        // Save the trip hash
+@Composable
+fun App() {
+    val navController = rememberNavController()
+    LaunchedEffect(navController) {
+        HostSdkListener.requests.collect { route -> navController.navigate(route) }
     }
+    NavHost(navController, startDestination = "home") { /* ... */ }
 }
 ```
 
-### Context Behavior Summary
+### Activity entry point from Compose
+
+`startWithItinerary()` still works from a Compose host. Pass the **Activity** context (not `applicationContext`) so the SDK Activities join your task and back navigation returns to your app:
 
 | Context Type | Behavior | Use Case |
 |--------------|----------|----------|
-| **Activity** (`this`) | SDK runs in same task, back navigation works | Compose apps, normal Activity launches |
+| **Activity** (`this`) | SDK runs in same task, back navigation works | Hosts that prefer the Activity flow |
 | **Application** | SDK runs in new task, separate back stack | Service, BroadcastReceiver, background launches |
 
-> **Note:** Prior to version 1.1.4, SDK always used `FLAG_ACTIVITY_NEW_TASK` which caused back navigation issues in Compose apps. This has been fixed with conditional flag behavior.
+With the Activity flow, a host detail screen opened from an SDK callback must be an Activity of its own; a Compose destination in the host's `NavHost` would sit underneath the SDK Activity. Use `TimelineNexus` when the host is a Single-Activity Compose app.
 
 ---
 
@@ -857,8 +813,9 @@ class MainActivity : ComponentActivity(), TRPCoreSDKListener {
 | "destinationItems or tripItems required" | Provide at least one destination or activity |
 | City not found | Provide correct `cityName` and `countryName` |
 | Callbacks not received | Ensure `TRPCore.setListener(this)` is called |
-| Back button doesn't return to SDK from Compose screen | Pass Activity context instead of Application context to `startWithItinerary()` |
+| Back button doesn't return to SDK from Compose screen | Use `TimelineNexus`, or pass Activity context instead of Application context to `startWithItinerary()` |
 | SDK opens in separate task (Compose apps) | Use `this` (Activity) instead of `applicationContext` when calling SDK methods |
+| "LocalTimelineNavigator is not provided" | SDK composables must run inside `TimelineNexus`; do not call the screen composables directly |
 
 ---
 
@@ -868,6 +825,7 @@ Current version: **civitatis-1.0.3**
 
 ## Changelog
 
+- **compose-migration**: `TimelineNexus` composable entry point. The whole Timeline flow runs as destinations of a nested `NavHost` inside the host's Compose graph; host screens pushed on top return to the exact SDK screen and state.
 - **civitatis-1.0.3**: `onRequestActivityReservation` now reports the activity's start time as well — its `date` format widens from "yyyy-MM-dd" to "yyyy-MM-dd HH:mm". A host parsing that string must be updated; a flexible activity reports the day at 00:00.
 - **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
 - **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context
