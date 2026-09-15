@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<font-family xmlns:app="http://schemas.android.com/apk/res-auto">
+<font-family xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <!--    100    Extra Light or Ultra Light-->
     <!--    200    Light or Thin-->
@@ -12,6 +13,9 @@
     <!--    900    Extra Black, Fat, Poster or Ultra Black-->
 
     <font
+        android:font="@font/montserrat_bold"
+        android:fontStyle="normal"
+        android:fontWeight="700"
         app:font="@font/montserrat_bold"
         app:fontStyle="normal"
         app:fontWeight="700" />
