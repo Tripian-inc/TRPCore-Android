@@ -44,7 +44,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -70,8 +69,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -83,7 +80,6 @@ import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.R
-import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
 import com.tripian.trpcore.databinding.ItemTimelineEmptyStateBinding
@@ -101,10 +97,7 @@ import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
-import com.tripian.trpcore.ui.onboarding.OnboardingBottomSheet
 import com.tripian.trpcore.ui.timeline.ACTimelineVM
-import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
-import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.BookedActivityVH
 import com.tripian.trpcore.ui.timeline.adapter.ConflictWarningVH
 import com.tripian.trpcore.ui.timeline.adapter.EmptyStateVH
@@ -120,12 +113,18 @@ import com.tripian.trpcore.ui.timeline.compose.addplan.AddPlanSheet
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineFontFamily
-import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.ResultEffect
 import com.tripian.trpcore.ui.timeline.compose.nav.StartingPointResult
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineResults
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelection
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionMode
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionRequest
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.OnboardingSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiTimeSelectionRequest
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiTimeSelectionSheet
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.one.api.pois.model.Coordinate
@@ -144,8 +143,7 @@ import kotlinx.coroutines.launch
  * Compose twin of the ACTimeline main screen (list mode). Shares ACTimelineVM
  * with the Activity flow; list items reuse the existing ViewHolder bind logic
  * through AndroidView interop so behavior and visuals stay identical. Bottom
- * sheets and dialogs require a FragmentActivity host until their Compose
- * counterparts land in a later phase; map mode arrives in Phase 1b.
+ * sheets and dialogs are Compose, so any ComponentActivity can host the screen.
  */
 @Composable
 fun TimelineScreen(
@@ -159,8 +157,6 @@ fun TimelineScreen(
     viewModel: ACTimelineVM = timelineViewModel()
 ) {
     val context = LocalContext.current
-    val fragmentActivity = remember(context) { context.findActivity() as? FragmentActivity }
-    val fragmentManager = fragmentActivity?.supportFragmentManager
     val sheets = remember { TimelineSheetHolder() }
     val mapUi = remember { MapModeUiState() }
     val vmFactory = LocalTimelineViewModelFactory.current
@@ -169,15 +165,6 @@ fun TimelineScreen(
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
-
-    DisposableEffect(viewModel, fragmentManager) {
-        viewModel.fragmentManager = fragmentManager
-        onDispose {
-            if (viewModel.fragmentManager === fragmentManager) {
-                viewModel.fragmentManager = null
-            }
-        }
-    }
 
     LaunchedEffect(Unit) {
         if (viewModel.arguments == null) {
@@ -320,7 +307,6 @@ fun TimelineScreen(
         if (step.stepType == "activity") {
             val poi = step.poi ?: return
             showActivityChangeTimeSheet(
-                fragmentManager = fragmentManager,
                 sheets = sheets,
                 viewModel = viewModel,
                 activityId = poi.additionalData?.productId ?: poi.id,
@@ -336,8 +322,7 @@ fun TimelineScreen(
                         title = viewModel.getLanguageForKey(LanguageConst.REMOVE_STEP),
                         message = viewModel.getLanguageForKey(LanguageConst.REMOVE_STEP_MESSAGE),
                         onConfirm = {
-                            sheets.changeTimeSheet?.dismiss()
-                            sheets.changeTimeSheet = null
+                            sheets.dismissChangeTime()
                             viewModel.deleteStep(step)
                         }
                     )
@@ -359,7 +344,6 @@ fun TimelineScreen(
         seedInitialTimeSlot: Boolean
     ) {
         showActivityChangeTimeSheet(
-            fragmentManager = fragmentManager,
             sheets = sheets,
             viewModel = viewModel,
             activityId = segment.additionalData?.activityId,
@@ -374,8 +358,7 @@ fun TimelineScreen(
                     title = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
                     message = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
                     onConfirm = {
-                        sheets.changeTimeSheet?.dismiss()
-                        sheets.changeTimeSheet = null
+                        sheets.dismissChangeTime()
                         viewModel.deleteSegment(segmentIndex)
                     }
                 )
@@ -476,7 +459,7 @@ fun TimelineScreen(
         viewModel.mapSteps.value?.let { map.showMapIcons(it) }
     }
 
-    val actions = remember(viewModel, fragmentManager) {
+    val actions = remember(viewModel) {
         TimelineItemActions(
             onItemClick = { item ->
                 when (item) {
@@ -640,12 +623,7 @@ fun TimelineScreen(
 
     val showOnboarding by viewModel.showOnboarding.observeAsState()
     LaunchedEffect(showOnboarding) {
-        if (showOnboarding == true) {
-            val fm = fragmentManager ?: return@LaunchedEffect
-            val bottomSheet = OnboardingBottomSheet.newInstance()
-            bottomSheet.setOnCompleteListener { viewModel.onOnboardingComplete() }
-            bottomSheet.show(fm, "onboarding")
-        }
+        if (showOnboarding == true) sheets.onboardingVisible = true
     }
 
     val showAddPlanEvent by viewModel.showAddPlanSheet.observeAsState()
@@ -702,7 +680,7 @@ fun TimelineScreen(
     val showChangeTimePickerStep by viewModel.showChangeTimePickerStep.observeAsState()
     LaunchedEffect(showChangeTimePickerStep) {
         showChangeTimePickerStep?.let { step ->
-            showStepTimeSelectionSheet(fragmentManager, viewModel, step)
+            showStepTimeSelectionSheet(sheets, viewModel, step)
             viewModel.clearChangeTimePickerStep()
         }
     }
@@ -710,7 +688,7 @@ fun TimelineScreen(
     val showChangeTimePickerSegment by viewModel.showChangeTimePickerSegment.observeAsState()
     LaunchedEffect(showChangeTimePickerSegment) {
         showChangeTimePickerSegment?.let { request ->
-            showSegmentTimeSelectionSheet(fragmentManager, viewModel, request.segment, request.segmentIndex)
+            showSegmentTimeSelectionSheet(sheets, viewModel, request.segment, request.segmentIndex)
             viewModel.clearChangeTimePickerSegment()
         }
     }
@@ -720,10 +698,9 @@ fun TimelineScreen(
         changeTimeFinished?.let { success ->
             viewModel.resetChangeTimeFinished()
             if (success) {
-                sheets.changeTimeSheet?.dismiss()
-                sheets.changeTimeSheet = null
+                sheets.dismissChangeTime()
             } else {
-                sheets.changeTimeSheet?.hideInSheetLoadingOverlay()
+                sheets.changeTimeLoadingText = null
             }
         }
     }
@@ -731,7 +708,7 @@ fun TimelineScreen(
     val partialUnavailable by viewModel.showPartialUnavailableAlert.observeAsState()
     LaunchedEffect(partialUnavailable) {
         partialUnavailable?.let { cityNames ->
-            showPartialUnavailableAlert(fragmentManager, viewModel, cityNames)
+            showPartialUnavailableAlert(viewModel, cityNames)
             viewModel.clearPartialUnavailableAlert()
         }
     }
@@ -1054,6 +1031,40 @@ fun TimelineScreen(
             )
         }
 
+        if (sheets.onboardingVisible) {
+            OnboardingSheet(
+                onComplete = { viewModel.onOnboardingComplete() },
+                onDismiss = { sheets.onboardingVisible = false }
+            )
+        }
+
+        sheets.changeTimeRequest?.let { request ->
+            ActivityTimeSelectionSheet(
+                request = request.request,
+                inSheetLoadingText = sheets.changeTimeLoadingText,
+                onDismiss = { sheets.dismissChangeTime() },
+                onTimeSelected = { selection ->
+                    sheets.changeTimeLoadingText =
+                        viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_CHANGING_TIME)
+                    request.onConfirm(selection)
+                },
+                onRemove = request.onRemove
+            )
+        }
+
+        sheets.poiTimeRequest?.let { request ->
+            PoiTimeSelectionSheet(
+                request = request.request,
+                inSheetLoadingText = sheets.poiTimeLoadingText,
+                onDismiss = { sheets.dismissPoiTime() },
+                onConfirm = { startTime, endTime ->
+                    sheets.poiTimeLoadingText =
+                        viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_CHANGING_TIME)
+                    request.onConfirm(startTime, endTime)
+                }
+            )
+        }
+
         if (flowState.addPlanVisible) {
             flowState.addPlanViewModel?.let { addPlanVm ->
                 AddPlanSheet(
@@ -1088,8 +1099,34 @@ fun TimelineScreen(
     }
 }
 
+private class ChangeTimeSheetRequest(
+    val request: ActivityTimeSelectionRequest,
+    val onRemove: () -> Unit,
+    val onConfirm: (ActivityTimeSelection) -> Unit
+)
+
+private class PoiTimeSheetRequest(
+    val request: PoiTimeSelectionRequest,
+    val onConfirm: (startTime: String?, endTime: String?) -> Unit
+)
+
+/** Which Timeline sheets are up and what they are showing. */
 private class TimelineSheetHolder {
-    var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
+    var onboardingVisible by mutableStateOf(false)
+    var changeTimeRequest by mutableStateOf<ChangeTimeSheetRequest?>(null)
+    var changeTimeLoadingText by mutableStateOf<String?>(null)
+    var poiTimeRequest by mutableStateOf<PoiTimeSheetRequest?>(null)
+    var poiTimeLoadingText by mutableStateOf<String?>(null)
+
+    fun dismissChangeTime() {
+        changeTimeRequest = null
+        changeTimeLoadingText = null
+    }
+
+    fun dismissPoiTime() {
+        poiTimeRequest = null
+        poiTimeLoadingText = null
+    }
 }
 
 private const val MAP_INTERACTION_CLICK_GUARD_MS = 250L
@@ -1414,7 +1451,6 @@ private fun NoCityContent(viewModel: ACTimelineVM, onGoToMyTrip: () -> Unit) {
 }
 
 private fun showActivityChangeTimeSheet(
-    fragmentManager: FragmentManager?,
     sheets: TimelineSheetHolder,
     viewModel: ACTimelineVM,
     activityId: String?,
@@ -1428,7 +1464,6 @@ private fun showActivityChangeTimeSheet(
     onRemove: () -> Unit,
     onConfirm: (selectedDate: Date, startTime: String, endTime: String?, slotPrice: Double?) -> Unit
 ) {
-    val fm = fragmentManager ?: return
     if (activityId.isNullOrEmpty()) return
     val initialDay = initialDateTime.toDate()
     val availableDays = if (restrictToInitialDay && initialDay != null) {
@@ -1442,69 +1477,63 @@ private fun showActivityChangeTimeSheet(
         initialDateTime?.takeIf { it.length >= 16 }?.substring(11, 16)
     } else null
 
-    val sheet = ActivityTimeSelectionBottomSheet.newInstanceForStepEdit(
-        activityId = activityId,
-        cityId = cityId,
-        title = title,
-        duration = duration,
-        availableDays = availableDays,
-        initialSelectedDay = initialDay,
-        initialTimeSlot = initialTimeSlot,
-        isNotAvailable = isNotAvailable,
-        hideDaySelector = restrictToInitialDay
+    sheets.changeTimeLoadingText = null
+    sheets.changeTimeRequest = ChangeTimeSheetRequest(
+        request = ActivityTimeSelectionRequest(
+            mode = ActivityTimeSelectionMode.StepEdit(
+                activityId = activityId,
+                cityId = cityId,
+                title = title,
+                duration = duration,
+                initialTimeSlot = initialTimeSlot,
+                isNotAvailable = isNotAvailable,
+                hideDaySelector = restrictToInitialDay
+            ),
+            availableDays = availableDays,
+            initialSelectedDay = initialDay
+        ),
+        onRemove = onRemove,
+        onConfirm = { selection ->
+            onConfirm(selection.selectedDate, selection.startTime, selection.endTime, selection.slotPrice)
+        }
     )
-    sheet.setOnStepTimeSelectedListener { date, startTime, endTime, slotPrice ->
-        sheets.changeTimeSheet?.showInSheetLoadingOverlay(
-            LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time"
-        )
-        onConfirm(date, startTime, endTime, slotPrice)
-    }
-    sheet.setOnRemoveListener(onRemove)
-    sheets.changeTimeSheet = sheet
-    sheet.show(fm, ActivityTimeSelectionBottomSheet.TAG)
 }
 
 private fun showStepTimeSelectionSheet(
-    fragmentManager: FragmentManager?,
+    sheets: TimelineSheetHolder,
     viewModel: ACTimelineVM,
     step: TimelineStep
 ) {
-    val fm = fragmentManager ?: return
     val startTime = step.startDateTimes?.takeIf { it.length >= 16 }?.substring(11, 16)
     val endTime = step.endDateTimes?.takeIf { it.length >= 16 }?.substring(11, 16)
     val stepDay = step.startDateTimes.toDate()
     val minTime = stepDay?.let { CityTimeZones.minSelectableTime(it, step.poi?.cityId) }
 
-    val sheet = TimeSelectionBottomSheet.newInstance(
-        startTime = startTime,
-        endTime = endTime,
-        minTime = minTime
-    )
-    sheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
-        sheet.showInSheetLoadingOverlay(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
-        viewModel.updateStepTime(
-            step.id, newStartTime, newEndTime,
-            useInlineLoader = true,
-            onInlineResult = { success ->
-                if (success) {
-                    sheet.dismiss()
-                } else {
-                    sheet.hideInSheetLoadingOverlay()
+    sheets.poiTimeLoadingText = null
+    sheets.poiTimeRequest = PoiTimeSheetRequest(
+        request = PoiTimeSelectionRequest(startTime = startTime, endTime = endTime, minTime = minTime),
+        onConfirm = { newStartTime, newEndTime ->
+            viewModel.updateStepTime(
+                step.id, newStartTime, newEndTime,
+                useInlineLoader = true,
+                onInlineResult = { success ->
+                    if (success) {
+                        sheets.dismissPoiTime()
+                    } else {
+                        sheets.poiTimeLoadingText = null
+                    }
                 }
-            }
-        )
-    }
-    sheet.show(fm, TimeSelectionBottomSheet.TAG)
+            )
+        }
+    )
 }
 
 private fun showSegmentTimeSelectionSheet(
-    fragmentManager: FragmentManager?,
+    sheets: TimelineSheetHolder,
     viewModel: ACTimelineVM,
     segment: TimelineSegment,
     segmentIndex: Int
 ) {
-    val fm = fragmentManager ?: return
-
     fun timePart(dt: String?): String? =
         if (dt != null && dt.length >= 16) dt.substring(11, 16) else null
 
@@ -1515,53 +1544,35 @@ private fun showSegmentTimeSelectionSheet(
         CityTimeZones.minSelectableTime(it, segment.cityId?.takeIf { c -> c > 0 })
     }
 
-    val sheet = TimeSelectionBottomSheet.newInstance(
-        startTime = startTime,
-        endTime = endTime,
-        minTime = minTime
-    )
-    sheet.setOnTimeSelectedListener { newStartTime, newEndTime ->
-        sheet.showInSheetLoadingOverlay(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
-        viewModel.updateSegmentTime(
-            segment, segmentIndex, newStartTime, newEndTime,
-            useInlineLoader = true,
-            onInlineResult = { success ->
-                if (success) {
-                    sheet.dismiss()
-                } else {
-                    sheet.hideInSheetLoadingOverlay()
+    sheets.poiTimeLoadingText = null
+    sheets.poiTimeRequest = PoiTimeSheetRequest(
+        request = PoiTimeSelectionRequest(startTime = startTime, endTime = endTime, minTime = minTime),
+        onConfirm = { newStartTime, newEndTime ->
+            viewModel.updateSegmentTime(
+                segment, segmentIndex, newStartTime, newEndTime,
+                useInlineLoader = true,
+                onInlineResult = { success ->
+                    if (success) {
+                        sheets.dismissPoiTime()
+                    } else {
+                        sheets.poiTimeLoadingText = null
+                    }
                 }
-            }
-        )
-    }
-    sheet.show(fm, TimeSelectionBottomSheet.TAG)
+            )
+        }
+    )
 }
 
-private fun showPartialUnavailableAlert(
-    fragmentManager: FragmentManager?,
-    viewModel: ACTimelineVM,
-    cityNames: List<String>
-) {
-    val fm = fragmentManager ?: return
+private fun showPartialUnavailableAlert(viewModel: ACTimelineVM, cityNames: List<String>) {
     val cityList = cityNames.joinToString(", ")
     if (cityList.isEmpty()) return
 
-    val title = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_TITLE)
-        .replace("%@", cityList)
-    val description = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_DESCRIPTION)
-    val buttonText = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_BUTTON)
-
-    val dialog = FRWarning.newInstance(
-        title = title,
-        contentText = description,
-        positiveBtn = buttonText,
+    viewModel.showDialog(
+        title = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_TITLE)
+            .replace("%@", cityList),
+        contentText = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_DESCRIPTION),
+        positiveBtn = viewModel.getLanguageForKey(LanguageConst.TIMELINE_PARTIAL_UNAVAILABLE_BUTTON),
         negativeBtn = null,
         isCloseEnable = false
     )
-    dialog.positiveListener = object : DGActionListener {
-        override fun onClicked(o: Any?) {
-            dialog.dismiss()
-        }
-    }
-    dialog.show(fm, "PartialUnavailableAlert")
 }
