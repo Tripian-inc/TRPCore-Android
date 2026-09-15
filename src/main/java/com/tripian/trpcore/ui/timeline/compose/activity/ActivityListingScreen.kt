@@ -9,12 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -25,20 +26,21 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.AcActivityListingBinding
 import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
 import com.tripian.trpcore.ui.timeline.activity.ACActivityListingVM
-import com.tripian.trpcore.ui.timeline.activity.ActivityFilterBottomSheet
 import com.tripian.trpcore.ui.timeline.activity.ActivityFilterData
-import com.tripian.trpcore.ui.timeline.activity.ActivitySortBottomSheet
-import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.activity.AdapterActivityCategory
 import com.tripian.trpcore.ui.timeline.activity.AdapterActivityListing
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
-import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineResults
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityFilterSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivitySortSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionMode
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionRequest
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionSheet
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
@@ -62,7 +64,7 @@ internal fun ActivityListingScreen(
 ) {
     val navigator = LocalTimelineNavigator.current
     val context = LocalContext.current
-    val sheets = remember { ActivityListingSheets() }
+    val sheets = remember { ActivityListingSheetState() }
 
     LaunchedEffect(Unit) {
         if (viewModel.arguments == null) {
@@ -93,19 +95,70 @@ internal fun ActivityListingScreen(
                 binding.shimmerResultCount.stopShimmer()
             }
         ) { binding, owner, viewState ->
-            val fragmentManager =
-                (binding.root.context.findActivity() as? FragmentActivity)?.supportFragmentManager
-            val ui = ActivityListingUi(binding, viewModel, navigator, sheets, fragmentManager)
+            val ui = ActivityListingUi(binding, viewModel, navigator, sheets)
             ui.setupViews()
             ui.observe(owner, viewState)
         }
+        ActivityListingSheets(sheets, viewModel)
     }
 }
 
-private class ActivityListingSheets {
-    var timeSelection: ActivityTimeSelectionBottomSheet? = null
-    var filter: ActivityFilterBottomSheet? = null
-    var sort: ActivitySortBottomSheet? = null
+/** Which of the listing's sheets is open, kept as Compose state so the sheets survive recomposition. */
+private class ActivityListingSheetState {
+    var timeRequest by mutableStateOf<ActivityTimeSelectionRequest?>(null)
+    var timeLoadingText by mutableStateOf<String?>(null)
+    var filterOpen by mutableStateOf(false)
+    var sortOpen by mutableStateOf(false)
+}
+
+@Composable
+private fun ActivityListingSheets(sheets: ActivityListingSheetState, viewModel: ACActivityListingVM) {
+    sheets.timeRequest?.let { request ->
+        ActivityTimeSelectionSheet(
+            request = request,
+            inSheetLoadingText = sheets.timeLoadingText,
+            onDismiss = {
+                sheets.timeRequest = null
+                sheets.timeLoadingText = null
+            },
+            onTimeSelected = { selection ->
+                val tour = (request.mode as? ActivityTimeSelectionMode.Tour)?.activity
+                    ?: return@ActivityTimeSelectionSheet
+                sheets.timeLoadingText =
+                    viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY)
+                viewModel.createReservedActivitySegment(
+                    tour,
+                    selection.selectedDate,
+                    selection.startTime,
+                    selection.slotPrice,
+                    selection.isFlexible
+                )
+            }
+        )
+    }
+    if (sheets.filterOpen) {
+        val priceFacet = viewModel.priceRangeFacet.value
+        val durationFacet = viewModel.durationRangeFacet.value
+        ActivityFilterSheet(
+            currentFilter = viewModel.getCurrentFilter(),
+            currency = viewModel.getCurrency(),
+            minPriceBound = priceFacet?.minimum?.amount?.let { it / 100f },
+            maxPriceBound = priceFacet?.maximum?.amount?.let { it / 100f },
+            minDurationBound = durationFacet?.minimumMinutes?.toFloat(),
+            maxDurationBound = durationFacet?.maximumMinutes?.toFloat(),
+            getLanguage = { key -> viewModel.getLanguageForKey(key) },
+            onFilterConfirmed = { filter -> viewModel.applyFilter(filter) },
+            onDismiss = { sheets.filterOpen = false }
+        )
+    }
+    if (sheets.sortOpen) {
+        ActivitySortSheet(
+            currentSort = viewModel.getCurrentSort(),
+            getLanguage = { key -> viewModel.getLanguageForKey(key) },
+            onSortSelected = { sort -> viewModel.applySort(sort) },
+            onDismiss = { sheets.sortOpen = false }
+        )
+    }
 }
 
 /** Binds one inflated listing layout to the ViewModel, mirroring the Activity's setup. */
@@ -113,8 +166,7 @@ private class ActivityListingUi(
     private val binding: AcActivityListingBinding,
     private val viewModel: ACActivityListingVM,
     private val navigator: TimelineNavigator,
-    private val sheets: ActivityListingSheets,
-    private val fragmentManager: FragmentManager?
+    private val sheets: ActivityListingSheetState
 ) {
     private val activityAdapter = AdapterActivityListing(
         getLanguage = { key -> viewModel.getLanguageForKey(key) },
@@ -187,13 +239,8 @@ private class ActivityListingUi(
         viewModel.addSegmentError.observe(owner) { message ->
             message?.let {
                 viewModel.clearAddSegmentError()
-                val sheet = sheets.timeSelection
-                if (sheet != null && sheet.isAdded) {
-                    sheet.hideInSheetLoadingOverlay()
-                    sheet.showError(it)
-                } else {
-                    viewModel.showAlert(AlertType.ERROR, it)
-                }
+                sheets.timeLoadingText = null
+                viewModel.showAlert(AlertType.ERROR, it)
             }
         }
         viewModel.currentFilter.observe(owner) { filter -> updateFilterButton(filter) }
@@ -305,35 +352,8 @@ private class ActivityListingUi(
 
     private fun setupClickListeners() {
         binding.imBack.setOnClickListener { navigator.back() }
-        binding.btnFilters.setOnClickListener { showFilterBottomSheet() }
-        binding.btnSortBy.setOnClickListener { showSortBottomSheet() }
-    }
-
-    private fun showFilterBottomSheet() {
-        val fm = fragmentManager ?: return
-        val priceFacet = viewModel.priceRangeFacet.value
-        val durationFacet = viewModel.durationRangeFacet.value
-        val sheet = ActivityFilterBottomSheet.newInstance(
-            currentFilter = viewModel.getCurrentFilter(),
-            currency = viewModel.getCurrency(),
-            minPriceBound = priceFacet?.minimum?.amount?.let { it / 100f },
-            maxPriceBound = priceFacet?.maximum?.amount?.let { it / 100f },
-            minDurationBound = durationFacet?.minimumMinutes?.toFloat(),
-            maxDurationBound = durationFacet?.maximumMinutes?.toFloat()
-        )
-        sheet.setLanguageProvider { key -> viewModel.getLanguageForKey(key) }
-        sheet.setOnFilterConfirmedListener { filter -> viewModel.applyFilter(filter) }
-        sheets.filter = sheet
-        sheet.show(fm, ActivityFilterBottomSheet.TAG)
-    }
-
-    private fun showSortBottomSheet() {
-        val fm = fragmentManager ?: return
-        val sheet = ActivitySortBottomSheet.newInstance(currentSort = viewModel.getCurrentSort())
-        sheet.setLanguageProvider { key -> viewModel.getLanguageForKey(key) }
-        sheet.setOnSortSelectedListener { sort -> viewModel.applySort(sort) }
-        sheets.sort = sheet
-        sheet.show(fm, ActivitySortBottomSheet.TAG)
+        binding.btnFilters.setOnClickListener { sheets.filterOpen = true }
+        binding.btnSortBy.setOnClickListener { sheets.sortOpen = true }
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
@@ -343,26 +363,22 @@ private class ActivityListingUi(
     }
 
     private fun showTimeSelectionBottomSheet(activity: TourProduct) {
-        val fm = fragmentManager ?: return
-        val sheet = ActivityTimeSelectionBottomSheet.newInstance(
-            activity = activity,
+        sheets.timeLoadingText = null
+        sheets.timeRequest = ActivityTimeSelectionRequest(
+            mode = ActivityTimeSelectionMode.Tour(
+                activity = activity,
+                cityId = viewModel.getCityId(),
+                plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
+            ),
             availableDays = viewModel.getAvailableDays(),
-            initialSelectedDay = viewModel.getSelectedDate(),
-            cityId = viewModel.getCityId(),
-            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
+            initialSelectedDay = viewModel.getSelectedDate()
         )
-        sheet.setOnTimeSelectedListener { tour, selectedDate, timeSlot, slotPrice, isFlexible ->
-            sheets.timeSelection?.showInSheetLoadingOverlay(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "")
-            viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)
-        }
-        sheets.timeSelection = sheet
-        sheet.show(fm, ActivityTimeSelectionBottomSheet.TAG)
     }
 
     private fun handleAddedToItinerarySuccess(result: ACActivityListingVM.AddedToItineraryResult) {
         viewModel.clearAddedToItinerarySuccess()
-        sheets.timeSelection?.dismiss()
-        sheets.timeSelection = null
+        sheets.timeRequest = null
+        sheets.timeLoadingText = null
 
         val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault()).format(result.selectedDate)
         val message = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
