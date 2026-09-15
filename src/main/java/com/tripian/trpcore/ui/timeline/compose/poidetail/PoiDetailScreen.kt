@@ -9,14 +9,22 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
 import androidx.core.os.BundleCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -72,9 +80,16 @@ internal fun PoiDetailScreen(
         }
     }
 
+    val density = LocalDensity.current
+    var consumedInsets by remember { mutableStateOf(WindowInsets(0, 0, 0, 0)) }
+    val statusBarTopPx =
+        (WindowInsets.statusBars.getTop(density) - consumedInsets.getTop(density)).coerceAtLeast(0)
+
     TimelineComposeScreen(viewModel = viewModel, onExit = { navigator.back() }) {
+        Box(Modifier.matchParentSize().onConsumedWindowInsetsChanged { consumedInsets = it })
         BindingHost(
             inflate = AcPoiDetailBinding::inflate,
+            update = { binding -> binding.applyBackButtonInset(statusBarTopPx) },
             onSaveViewState = { binding, state ->
                 state.putInt(STATE_SCROLL_Y, binding.nsvContent.scrollY)
                 state.putInt(STATE_GALLERY_PAGE, binding.vpGallery.currentItem)
@@ -99,15 +114,15 @@ internal fun PoiDetailScreen(
 }
 
 private fun AcPoiDetailBinding.setupBackButton(onBack: () -> Unit) {
-    val marginPx = (BACK_BUTTON_MARGIN_DP * root.resources.displayMetrics.density).toInt()
-    ViewCompat.setOnApplyWindowInsetsListener(btnBack) { view, windowInsets ->
-        val statusBarInsets = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars())
-        view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-            topMargin = statusBarInsets.top + marginPx
-        }
-        windowInsets
-    }
     btnBack.setOnClickListener { onBack() }
+}
+
+/** Keeps the floating back button below the status bar the host has not already padded for. */
+private fun AcPoiDetailBinding.applyBackButtonInset(statusBarTopPx: Int) {
+    val marginPx = (BACK_BUTTON_MARGIN_DP * root.resources.displayMetrics.density).toInt()
+    btnBack.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+        topMargin = statusBarTopPx + marginPx
+    }
 }
 
 private fun AcPoiDetailBinding.setupGallery(galleryAdapter: POIImageGalleryAdapter) {

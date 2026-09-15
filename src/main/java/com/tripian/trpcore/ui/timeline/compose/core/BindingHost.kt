@@ -27,12 +27,14 @@ import com.tripian.trpcore.R
  * LiveData observers registered through it never outlive their views.
  * [viewState] survives the route leaving and re-entering composition (a host
  * screen pushed on top of the SDK); [onSaveViewState] fills it on dispose.
+ * [update] re-runs whenever the Compose state it reads changes.
  */
 @Composable
 internal fun <VB : ViewBinding> BindingHost(
     inflate: (LayoutInflater) -> VB,
     modifier: Modifier = Modifier.fillMaxSize(),
     onSaveViewState: (binding: VB, viewState: Bundle) -> Unit = { _, _ -> },
+    update: (binding: VB) -> Unit = {},
     bind: (binding: VB, lifecycleOwner: LifecycleOwner, viewState: Bundle) -> Unit
 ) {
     val parentOwner = LocalLifecycleOwner.current
@@ -60,6 +62,7 @@ internal fun <VB : ViewBinding> BindingHost(
             bind(binding, owner, viewState)
             binding.root
         },
+        update = { holder.binding?.let(update) },
         modifier = modifier
     )
 }
