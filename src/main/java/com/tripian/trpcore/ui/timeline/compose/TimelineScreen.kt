@@ -23,12 +23,12 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -879,8 +879,12 @@ fun TimelineScreen(
         }
 
         val density = LocalDensity.current
-        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val fabSafeBottom = maxOf(32.dp, navBottom + 16.dp)
+        var consumedInsets by remember { mutableStateOf(WindowInsets(0, 0, 0, 0)) }
+        Box(Modifier.matchParentSize().onConsumedWindowInsetsChanged { consumedInsets = it })
+        val rawNavBottom = WindowInsets.navigationBars.getBottom(density)
+        val consumedBottom = consumedInsets.getBottom(density)
+        val navBottom = with(density) { (rawNavBottom - consumedBottom).coerceAtLeast(0).toDp() }
+        val fabSafeBottom = if (consumedBottom > 0) 16.dp else maxOf(32.dp, navBottom + 16.dp)
         val listHeightDp = with(density) { mapUi.bottomListHeightPx.toDp() }
         val listExtra = when {
             !isMapMode || mapUi.bottomListCompletelyHidden -> 0.dp
