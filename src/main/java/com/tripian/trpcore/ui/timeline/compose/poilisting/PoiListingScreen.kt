@@ -6,11 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.BundleCompat
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,21 +21,21 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.databinding.AcPoiListingBinding
 import com.tripian.trpcore.domain.model.timeline.FilterData
 import com.tripian.trpcore.domain.model.timeline.SortOption
-import com.tripian.trpcore.ui.timeline.TimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
-import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.PoiListingArgs
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineResults
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiFilterSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiSortSheet
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiTimeSelectionRequest
+import com.tripian.trpcore.ui.timeline.compose.sheets.PoiTimeSelectionSheet
 import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
 import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListingVM
 import com.tripian.trpcore.ui.timeline.poilisting.AdapterPOIListing
-import com.tripian.trpcore.ui.timeline.poilisting.FilterBottomSheet
 import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
-import com.tripian.trpcore.ui.timeline.poilisting.SortBottomSheet
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
@@ -82,8 +83,6 @@ internal fun PoiListingScreen(
                 binding.rvPOIs.layoutManager?.onSaveInstanceState()?.let { state.putParcelable(STATE_LIST, it) }
             }
         ) { binding, owner, viewState ->
-            val fragmentManager =
-                (binding.root.context.findActivity() as? FragmentActivity)?.supportFragmentManager
             val adapter = AdapterPOIListing(
                 getLanguage = { key -> viewModel.getLanguageForKey(key) },
                 onAddClicked = { poi -> viewModel.onPOIAddClicked(poi) },
@@ -97,19 +96,54 @@ internal fun PoiListingScreen(
             }
             binding.btnFilters.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_FILTERS)
             binding.btnSortBy.text = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SORT_BY)
-            binding.btnFilters.setOnClickListener { showFilterBottomSheet(fragmentManager, viewModel) }
-            binding.btnSortBy.setOnClickListener { showSortBottomSheet(fragmentManager, viewModel) }
+            binding.btnFilters.setOnClickListener { sheets.filterOpen = true }
+            binding.btnSortBy.setOnClickListener { sheets.sortOpen = true }
             binding.imBack.setOnClickListener { navigator.back() }
             binding.setupCollapseGap()
-            binding.observe(adapter, viewModel, navigator, sheets, fragmentManager, owner, viewState)
+            binding.observe(adapter, viewModel, navigator, sheets, owner, viewState)
+        }
+
+        sheets.timeRequest?.let { request ->
+            PoiTimeSelectionSheet(
+                request = request,
+                inSheetLoadingText = sheets.inSheetLoadingText,
+                onDismiss = { sheets.closeTimeSheet() },
+                onConfirm = { startTime, endTime ->
+                    confirmTimeSelection(viewModel, sheets, startTime, endTime)
+                }
+            )
+        }
+        if (sheets.sortOpen) {
+            PoiSortSheet(
+                current = viewModel.currentSort.value ?: SortOption.DEFAULT,
+                onSelect = { sort -> viewModel.applySort(sort) },
+                onDismiss = { sheets.sortOpen = false }
+            )
+        }
+        if (sheets.filterOpen) {
+            PoiFilterSheet(
+                currentFilter = viewModel.currentFilter.value ?: FilterData(),
+                categoryGroups = viewModel.categoryGroups.value ?: emptyList(),
+                onApply = { filter -> viewModel.applyFilter(filter) },
+                onDismiss = { sheets.filterOpen = false }
+            )
         }
     }
 }
 
 private class PoiListingSheets {
-    var timeSelectionBottomSheet: TimeSelectionBottomSheet? = null
+    var timeRequest by mutableStateOf<PoiTimeSelectionRequest?>(null)
     var selectedPoi: Poi? = null
+    var inSheetLoadingText by mutableStateOf<String?>(null)
+    var sortOpen by mutableStateOf(false)
+    var filterOpen by mutableStateOf(false)
     var pendingScrollToTop = false
+
+    fun closeTimeSheet() {
+        timeRequest = null
+        selectedPoi = null
+        inSheetLoadingText = null
+    }
 }
 
 private fun titleFor(listingType: POIListingType, viewModel: ACPOIListingVM): String = when (listingType) {
@@ -159,7 +193,6 @@ private fun AcPoiListingBinding.observe(
     viewModel: ACPOIListingVM,
     navigator: TimelineNavigator,
     sheets: PoiListingSheets,
-    fragmentManager: FragmentManager?,
     owner: LifecycleOwner,
     viewState: Bundle
 ) {
@@ -194,7 +227,7 @@ private fun AcPoiListingBinding.observe(
         tvResultCount.text = "$count $placesText"
     }
     viewModel.showTimeSelection.observe(owner) { poi ->
-        poi?.let { showTimeRangeBottomSheet(it, viewModel, sheets, fragmentManager) }
+        poi?.let { openTimeSheet(it, viewModel, sheets) }
     }
     viewModel.addedToItinerarySuccess.observe(owner) { result ->
         result?.let { handleAddedToItinerarySuccess(it, viewModel, navigator, sheets) }
@@ -202,7 +235,7 @@ private fun AcPoiListingBinding.observe(
     viewModel.addSegmentError.observe(owner) { message ->
         message?.let {
             viewModel.clearAddSegmentError()
-            sheets.timeSelectionBottomSheet?.hideInSheetLoadingOverlay()
+            sheets.inSheetLoadingText = null
             viewModel.showAlert(AlertType.ERROR, it)
         }
     }
@@ -229,56 +262,38 @@ private fun AcPoiListingBinding.updateFilterButtonState(filter: FilterData, view
     )
 }
 
-private fun showFilterBottomSheet(fragmentManager: FragmentManager?, viewModel: ACPOIListingVM) {
-    val fm = fragmentManager ?: return
-    val sheet = FilterBottomSheet.newInstance(
-        viewModel.currentFilter.value ?: FilterData(),
-        viewModel.categoryGroups.value ?: emptyList()
-    )
-    sheet.setLanguageProvider { key -> viewModel.getLanguageForKey(key) }
-    sheet.setOnFilterAppliedListener { filter -> viewModel.applyFilter(filter) }
-    sheet.show(fm, FilterBottomSheet.TAG)
-}
-
-private fun showSortBottomSheet(fragmentManager: FragmentManager?, viewModel: ACPOIListingVM) {
-    val fm = fragmentManager ?: return
-    val sheet = SortBottomSheet.newInstance(viewModel.currentSort.value ?: SortOption.DEFAULT)
-    sheet.setLanguageProvider { key -> viewModel.getLanguageForKey(key) }
-    sheet.setOnSortSelectedListener { sort -> viewModel.applySort(sort) }
-    sheet.show(fm, SortBottomSheet.TAG)
-}
-
-private fun showTimeRangeBottomSheet(
-    poi: Poi,
-    viewModel: ACPOIListingVM,
-    sheets: PoiListingSheets,
-    fragmentManager: FragmentManager?
-) {
-    val fm = fragmentManager ?: return
+private fun openTimeSheet(poi: Poi, viewModel: ACPOIListingVM, sheets: PoiListingSheets) {
     sheets.selectedPoi = poi
-    val sheet = TimeSelectionBottomSheet.newInstance(
+    sheets.inSheetLoadingText = null
+    sheets.timeRequest = PoiTimeSelectionRequest(
         minTime = viewModel.minSelectableTimeForSelectedDay(),
         defaultStartTime = viewModel.defaultStartTimeForSelectedDay(),
         openingHours = poi.hours,
         selectedDay = viewModel.getSelectedDate()
     )
-    sheet.setOnTimeSelectedListener { startTime, endTime ->
-        val currentPoi = sheets.selectedPoi ?: return@setOnTimeSelectedListener
-        val selectedDate = viewModel.getSelectedDate() ?: return@setOnTimeSelectedListener
-        if (startTime != null && endTime != null) {
-            val loadingText = viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY)
-            sheet.showInSheetLoadingOverlay(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, loadingText)
-            viewModel.createManualPoiSegment(currentPoi, selectedDate, startTime, endTime)
-        }
-        sheets.selectedPoi = null
-        viewModel.clearTimeSelection()
-    }
-    sheets.timeSelectionBottomSheet = sheet
-    sheet.show(fm, TimeSelectionBottomSheet.TAG)
 }
 
 /**
- * Final step of the add-POI flow: dismisses the time selection sheet, shows a
+ * Confirm keeps the sheet up under the in-sheet loader while the segment is
+ * created; success closes it and an error only hides the loader.
+ */
+private fun confirmTimeSelection(
+    viewModel: ACPOIListingVM,
+    sheets: PoiListingSheets,
+    startTime: String?,
+    endTime: String?
+) {
+    val poi = sheets.selectedPoi
+    val selectedDate = viewModel.getSelectedDate()
+    if (poi != null && selectedDate != null && startTime != null && endTime != null) {
+        sheets.inSheetLoadingText = viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY)
+        viewModel.createManualPoiSegment(poi, selectedDate, startTime, endTime)
+    }
+    viewModel.clearTimeSelection()
+}
+
+/**
+ * Final step of the add-POI flow: closes the time selection sheet, shows a
  * confirmation toast and reports the day to the Timeline. Does not leave the
  * screen so the user can keep adding places in the same session.
  */
@@ -289,8 +304,7 @@ private fun handleAddedToItinerarySuccess(
     sheets: PoiListingSheets
 ) {
     viewModel.clearAddedToItinerarySuccess()
-    sheets.timeSelectionBottomSheet?.dismiss()
-    sheets.timeSelectionBottomSheet = null
+    sheets.closeTimeSheet()
 
     val dayLabel = SimpleDateFormat("EEEE dd/MM", Locale.getDefault()).format(result.selectedDate)
     val message = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_TOAST_ACTIVITY_ADDED)
