@@ -796,7 +796,7 @@ NavHost(navController, startDestination = "home") {
 Requirements:
 
 - `TRPCore().init(...)` must have run (Application class) and `TRPCore.setListener(...)` must be set.
-- The host Activity must be a `FragmentActivity` (`AppCompatActivity` works): the SDK's time pickers and bottom sheets are dialog fragments.
+- Any `ComponentActivity` can host the flow: the SDK's sheets, pickers and dialogs are Compose, so no Fragment or AppCompat base class is required.
 - The SDK pads its own screens for the status and navigation bars, so it works both full screen in an edge-to-edge host and inside a `Scaffold` whose content padding the host has consumed (`consumeWindowInsets`); nothing is applied twice.
 
 ### How navigation works
@@ -856,7 +856,7 @@ With the Activity flow, a host detail screen opened from an SDK callback must be
 | Callbacks not received | Ensure `TRPCore.setListener(this)` is called |
 | Back button doesn't return to SDK from Compose screen | Use `TimelineNexus`, or pass Activity context instead of Application context to `startWithItinerary()` |
 | SDK opens in separate task (Compose apps) | Use `this` (Activity) instead of `applicationContext` when calling SDK methods |
-| "LocalTimelineNavigator is not provided" | SDK composables must run inside `TimelineNexus`; do not call the screen composables directly |
+| "LocalTimelineNavigator is not provided" | SDK composables must run inside `tripianTimeline` / `TimelineNexus`; do not call the screen composables directly |
 
 ---
 
