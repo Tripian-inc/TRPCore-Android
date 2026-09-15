@@ -3,8 +3,14 @@ package com.tripian.trpcore.ui.timeline.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -76,19 +82,21 @@ fun TimelineNexus(
             Box {
                 NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
                     composable(TimelineRoutes.TIMELINE) { entry ->
-                        TimelineScreen(
-                            itinerary = itinerary,
-                            tripHash = tripHash ?: itinerary.tripianHash,
-                            uniqueId = uniqueId ?: itinerary.uniqueId,
-                            appLanguage = appLanguage,
-                            appCurrency = appCurrency,
-                            onDismiss = onDismiss,
-                            navEntry = entry
-                        )
+                        BelowStatusBar {
+                            TimelineScreen(
+                                itinerary = itinerary,
+                                tripHash = tripHash ?: itinerary.tripianHash,
+                                uniqueId = uniqueId ?: itinerary.uniqueId,
+                                appLanguage = appLanguage,
+                                appCurrency = appCurrency,
+                                onDismiss = onDismiss,
+                                navEntry = entry
+                            )
+                        }
                     }
                     composable(TimelineRoutes.POI_SELECTION) {
                         RouteScreen<PoiSelectionArgs>(navigator, TimelineRoutes.POI_SELECTION) {
-                            PoiSelectionScreen(it)
+                            BelowStatusBar { PoiSelectionScreen(it) }
                         }
                     }
                     composable(TimelineRoutes.POI_DETAIL) {
@@ -98,28 +106,45 @@ fun TimelineNexus(
                     }
                     composable(TimelineRoutes.POI_LISTING) {
                         RouteScreen<PoiListingArgs>(navigator, TimelineRoutes.POI_LISTING) {
-                            PoiListingScreen(it)
+                            BelowStatusBar { PoiListingScreen(it) }
                         }
                     }
                     composable(TimelineRoutes.ACTIVITY_LISTING) {
                         RouteScreen<ActivityListingArgs>(navigator, TimelineRoutes.ACTIVITY_LISTING) {
-                            ActivityListingScreen(it)
+                            BelowStatusBar { ActivityListingScreen(it) }
                         }
                     }
                     composable(TimelineRoutes.SAVED_PLANS) {
                         RouteScreen<SavedPlansArgs>(navigator, TimelineRoutes.SAVED_PLANS) {
-                            SavedPlansScreen(it)
+                            BelowStatusBar { SavedPlansScreen(it) }
                         }
                     }
                     composable(TimelineRoutes.STARTING_POINT) {
                         RouteScreen<StartingPointArgs>(navigator, TimelineRoutes.STARTING_POINT) {
-                            StartingPointScreen(it)
+                            BelowStatusBar { StartingPointScreen(it) }
                         }
                     }
                 }
                 TimelineWarningDialogHost(overlays)
             }
         }
+    }
+}
+
+/**
+ * Keeps a screen below the status bar in an edge-to-edge host. A host that
+ * already reserves that space (a Scaffold with its content padding consumed)
+ * adds nothing here. POI detail draws under the status bar on purpose.
+ */
+@Composable
+private fun BelowStatusBar(content: @Composable () -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .consumeWindowInsets(WindowInsets.statusBars)
+    ) {
+        content()
     }
 }
 

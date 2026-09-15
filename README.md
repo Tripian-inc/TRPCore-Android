@@ -757,6 +757,7 @@ Requirements:
 
 - `TRPCore().init(...)` must have run (Application class) and `TRPCore.setListener(...)` must be set.
 - The host Activity must be a `FragmentActivity` (`AppCompatActivity` works): the SDK's time pickers and bottom sheets are dialog fragments.
+- The SDK pads its own screens for the status and navigation bars, so it works both full screen in an edge-to-edge host and inside a `Scaffold` whose content padding the host has consumed (`consumeWindowInsets`); nothing is applied twice.
 
 ### How navigation works
 
