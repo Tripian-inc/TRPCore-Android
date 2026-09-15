@@ -12,13 +12,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,12 +34,9 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tripian.trpcore.R
@@ -51,27 +45,9 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
+import com.tripian.trpcore.ui.timeline.compose.core.rememberMaxSheetContentHeight
 import com.tripian.trpcore.util.LanguageConst
 
-/** Drag handle plus the gap that keeps the sheet below the status bar, like the View-based sheet. */
-private val SHEET_TOP_CLEARANCE = 48.dp
-
-/**
- * Screen height minus system bars and the drag handle, measured in the host
- * window: the sheet's own popup window reports no usable insets.
- */
-@Composable
-private fun rememberMaxSheetContentHeight(): Dp {
-    val density = LocalDensity.current
-    val view = LocalView.current
-    val topInset = WindowInsets.statusBars.getTop(density)
-    val bottomInset = WindowInsets.navigationBars.getBottom(density)
-    return remember(view, topInset, bottomInset) {
-        val windowHeight = view.rootView.height.takeIf { it > 0 }
-            ?: view.resources.displayMetrics.heightPixels
-        with(density) { (windowHeight - topInset - bottomInset).toDp() } - SHEET_TOP_CLEARANCE
-    }
-}
 
 /**
  * Compose AddPlan wizard container — replaces AddPlanContainerBottomSheet for

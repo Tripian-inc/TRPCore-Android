@@ -6,12 +6,9 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import com.tripian.trpcore.base.BaseViewModel
 
 /**
@@ -26,18 +23,7 @@ fun TimelineComposeScreen(
     onExit: () -> Unit = {},
     content: @Composable BoxScope.() -> Unit
 ) {
-    val context = LocalContext.current
-    val overlays = LocalTimelineOverlays.current
-    val currentOnExit by rememberUpdatedState(onExit)
-    DisposableEffect(viewModel, context, overlays) {
-        val listener = ComposeViewListener(context, overlays) { currentOnExit() }
-        viewModel.viewListener = listener
-        onDispose {
-            if (viewModel.viewListener === listener) {
-                viewModel.viewListener = null
-            }
-        }
-    }
+    BindViewListener(viewModel, onExit)
     val loaderEvent by viewModel.lottieLoadingEvent.observeAsState()
     Box(
         Modifier

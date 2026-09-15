@@ -17,14 +17,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.tripian.one.api.pois.model.Coordinate
-import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.databinding.ActivityStartingPointSelectionBinding
 import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelection
 import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelectionVM
@@ -32,7 +30,6 @@ import com.tripian.trpcore.ui.timeline.addplan.SavedItemsAdapter
 import com.tripian.trpcore.ui.timeline.addplan.SearchResultsAdapter
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
-import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.StartingPointArgs
@@ -46,7 +43,6 @@ import com.tripian.trpcore.util.widget.SearchBarView
 private const val STATE_SAVED_LIST = "state_saved_list"
 private const val STATE_SEARCH_LIST = "state_search_list"
 private const val STATE_QUERY = "state_query"
-private const val LOCATION_PERMISSION_DIALOG_TAG = "LocationPermissionDialog"
 
 /**
  * Compose route of [ACStartingPointSelection]: picks the starting point of a
@@ -223,27 +219,19 @@ private fun FusedLocationProviderClient.selectCurrentLocation(viewModel: ACStart
 }
 
 private fun showLocationPermissionDialog(context: Context, viewModel: ACStartingPointSelectionVM) {
-    val fragmentManager = (context.findActivity() as? FragmentActivity)?.supportFragmentManager ?: return
-    val dialog = FRWarning.newInstance(
+    viewModel.showDialog(
         title = viewModel.getLanguageForKey(LanguageConst.ENABLE_LOCATION_PERMISSION),
         contentText = viewModel.getLanguageForKey(LanguageConst.ERROR_LOCATION_PERMISSION),
         positiveBtn = viewModel.getLanguageForKey(LanguageConst.SETTINGS),
         negativeBtn = viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_CANCEL),
+        positive = object : DGActionListener {
+            override fun onClicked(o: Any?) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            }
+        },
         isCloseEnable = true
     )
-    dialog.positiveListener = object : DGActionListener {
-        override fun onClicked(o: Any?) {
-            dialog.dismiss()
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", context.packageName, null)
-            }
-            context.startActivity(intent)
-        }
-    }
-    dialog.negativeListener = object : DGActionListener {
-        override fun onClicked(o: Any?) {
-            dialog.dismiss()
-        }
-    }
-    dialog.show(fragmentManager, LOCATION_PERMISSION_DIALOG_TAG)
 }
