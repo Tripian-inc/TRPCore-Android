@@ -728,7 +728,47 @@ TRPCore.core.startTripianWithUniqueId(
 
 TRPCore ships a native Compose entry point for Single-Activity hosts: `TimelineNexus`. It renders the whole Timeline flow (timeline, add-plan wizard, POI/activity listings, POI detail, saved plans, starting point picker) as composables inside **your** `NavHost`, so the SDK never launches an Activity and your back stack stays intact.
 
-### Composable entry point
+### SDK screens inside your NavHost (full navigation control)
+
+`NavGraphBuilder.tripianTimeline(...)` adds the Timeline flow to **your** graph as a nested graph with route `TimelineRoutes.GRAPH` (`"tripian"`). Every SDK screen is then a destination of your own `NavController`: you open the flow with a plain `navigate`, push your screens on top from the SDK callbacks, and system back pops SDK screens one by one until the Timeline root asks to close through `onDismiss`.
+
+```kotlin
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineRequest
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineRoutes
+import com.tripian.trpcore.ui.timeline.compose.nav.tripianTimeline
+
+NavHost(navController, startDestination = "home") {
+    composable("home") {
+        HomeScreen(onOpenTimeline = { navController.navigate(TimelineRoutes.GRAPH) })
+    }
+
+    tripianTimeline(
+        navController = navController,
+        request = {
+            tripStore.itinerary?.let { itinerary ->   // same ItineraryWithActivities as startWithItinerary
+                TimelineRequest(
+                    itinerary = itinerary,
+                    tripHash = tripStore.tripHash,       // null creates a new timeline
+                    uniqueId = tripStore.uniqueId,
+                    appLanguage = "en",
+                    appCurrency = "EUR"
+                )
+            }
+        },
+        onDismiss = { navController.popBackStack(TimelineRoutes.GRAPH, inclusive = true) }
+    )
+
+    composable("activity/{id}") { entry ->
+        ActivityDetailScreen(entry.arguments?.getString("id"), onBack = { navController.popBackStack() })
+    }
+}
+```
+
+The graph is added once; `request` is read when the Timeline destination opens, so the trip can be filled in later (a null request pops the flow). To open a different itinerary later, pop the graph first (`popBackStack(TimelineRoutes.GRAPH, inclusive = true)`) and navigate again; the flow initializes once per graph entry. SDK routes are namespaced under `tripian/` and never clash with yours.
+
+### Single composable entry point
+
+`TimelineNexus` wraps the same graph in a NavHost of its own, for hosts that prefer one composable destination:
 
 ```kotlin
 import com.tripian.trpcore.ui.timeline.compose.TimelineNexus
@@ -761,7 +801,7 @@ Requirements:
 
 ### How navigation works
 
-`TimelineNexus` owns a nested `NavHost`. Every SDK screen is a destination of that nested graph, and the SDK screen state lives in the ViewModel store of your `"timeline"` back-stack entry. When an SDK callback (`onRequestActivityDetail`, `onRequestBookingDetail`, `onRequestActivityReservation`) makes you push one of **your** destinations on top, the `"timeline"` entry stays on your back stack. Popping your screen brings the user back to the exact SDK screen they left — for example the activity listing at the same scroll position, or the add-plan sheet on the same step.
+With `tripianTimeline` the SDK screens are entries of your back stack; with `TimelineNexus` they live in a nested `NavHost` whose state is kept by your `"timeline"` back-stack entry. In both cases the SDK screen state lives in ViewModels scoped to those entries. When an SDK callback (`onRequestActivityDetail`, `onRequestBookingDetail`, `onRequestActivityReservation`) makes you push one of **your** destinations on top, the `"timeline"` entry stays on your back stack. Popping your screen brings the user back to the exact SDK screen they left — for example the activity listing at the same scroll position, or the add-plan sheet on the same step.
 
 Rules of thumb:
 
@@ -826,7 +866,7 @@ Current version: **civitatis-1.0.3**
 
 ## Changelog
 
-- **compose-migration**: `TimelineNexus` composable entry point. The whole Timeline flow runs as destinations of a nested `NavHost` inside the host's Compose graph; host screens pushed on top return to the exact SDK screen and state.
+- **compose-migration**: Native Compose integration. `NavGraphBuilder.tripianTimeline` adds the SDK screens to the host's own Navigation Compose graph; `TimelineNexus` offers the same flow as a single composable. Host screens pushed on top return to the exact SDK screen and state.
 - **civitatis-1.0.3**: `onRequestActivityReservation` now reports the activity's start time as well — its `date` format widens from "yyyy-MM-dd" to "yyyy-MM-dd HH:mm". A host parsing that string must be updated; a flexible activity reports the day at 00:00.
 - **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
 - **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context

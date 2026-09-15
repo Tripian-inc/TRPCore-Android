@@ -7,10 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavHostController
+import androidx.navigation.NavController
 import com.tripian.one.api.cities.model.City
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineOverlayState
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.one.api.pois.model.Coordinate
@@ -21,15 +21,16 @@ import com.tripian.trpcore.ui.timeline.poilisting.POIListingType
 import java.io.Serializable
 import java.util.Date
 
-/** Routes of the Timeline flow's own NavHost inside [com.tripian.trpcore.ui.timeline.compose.TimelineNexus]. */
+/** Route of the Tripian Timeline graph and of the destinations it contains. */
 object TimelineRoutes {
-    const val TIMELINE = "timeline"
-    const val POI_SELECTION = "poi_selection"
-    const val POI_LISTING = "poi_listing"
-    const val POI_DETAIL = "poi_detail"
-    const val ACTIVITY_LISTING = "activity_listing"
-    const val SAVED_PLANS = "saved_plans"
-    const val STARTING_POINT = "starting_point"
+    const val GRAPH = "tripian"
+    const val TIMELINE = "tripian/timeline"
+    const val POI_SELECTION = "tripian/poi_selection"
+    const val POI_LISTING = "tripian/poi_listing"
+    const val POI_DETAIL = "tripian/poi_detail"
+    const val ACTIVITY_LISTING = "tripian/activity_listing"
+    const val SAVED_PLANS = "tripian/saved_plans"
+    const val STARTING_POINT = "tripian/starting_point"
 }
 
 /** Keys under which sub-screens hand their result back to the screen that opened them. */
@@ -86,23 +87,22 @@ data class StartingPointResult(
 ) : Serializable
 
 /**
- * In-memory launch arguments of the Timeline sub-screens, keyed by route. Lives
- * in the ViewModel store of the host's Timeline destination so the arguments
- * outlive the host pushing its own screens on top of the SDK and coming back.
+ * State shared by every destination of one Timeline graph: the in-memory
+ * launch arguments of the sub-screens, keyed by route, and the overlay state.
+ * Scoped to the graph's back stack entry, so it outlives the host pushing its
+ * own screens on top of the SDK and coming back.
  */
-class TimelineNavArgs : ViewModel() {
+class TimelineFlowScope : ViewModel() {
     private val args = mutableMapOf<String, Any>()
 
-    fun put(route: String, value: Any) {
+    val overlays = TimelineOverlayState()
+
+    fun putArgs(route: String, value: Any) {
         args[route] = value
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T> get(route: String): T? = args[route] as? T
-
-    fun remove(route: String) {
-        args.remove(route)
-    }
+    fun <T> argsFor(route: String): T? = args[route] as? T
 }
 
 /**
@@ -112,11 +112,11 @@ class TimelineNavArgs : ViewModel() {
  * Results travel back through the opener's [NavBackStackEntry.savedStateHandle].
  */
 class TimelineNavigator internal constructor(
-    val navController: NavHostController,
-    private val args: TimelineNavArgs
+    val navController: NavController,
+    private val scope: TimelineFlowScope
 ) {
 
-    fun <T> argsFor(route: String): T? = args.get(route)
+    fun <T> argsFor(route: String): T? = scope.argsFor(route)
 
     fun openPoiSelection(city: City) = open(TimelineRoutes.POI_SELECTION, PoiSelectionArgs(city))
 
@@ -181,7 +181,7 @@ class TimelineNavigator internal constructor(
     }
 
     private fun open(route: String, routeArgs: Any) {
-        args.put(route, routeArgs)
+        scope.putArgs(route, routeArgs)
         navController.navigate(route) { launchSingleTop = true }
     }
 }
@@ -191,10 +191,10 @@ val LocalTimelineNavigator = staticCompositionLocalOf<TimelineNavigator> {
 }
 
 @Composable
-internal fun rememberTimelineNavigator(navController: NavHostController): TimelineNavigator {
-    val args: TimelineNavArgs = viewModel()
-    return remember(navController, args) { TimelineNavigator(navController, args) }
-}
+internal fun rememberTimelineNavigator(
+    navController: NavController,
+    scope: TimelineFlowScope
+): TimelineNavigator = remember(navController, scope) { TimelineNavigator(navController, scope) }
 
 /**
  * Delivers a result stored under [key] on [entry] once, then clears it so a

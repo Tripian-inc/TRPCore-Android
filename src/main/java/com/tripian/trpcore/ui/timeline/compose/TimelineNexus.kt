@@ -1,51 +1,22 @@
 package com.tripian.trpcore.ui.timeline.compose
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
-import com.tripian.trpcore.ui.timeline.compose.activity.ActivityListingScreen
-import com.tripian.trpcore.ui.timeline.compose.addplan.StartingPointScreen
-import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineOverlays
-import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
-import com.tripian.trpcore.ui.timeline.compose.core.TimelineOverlayState
-import com.tripian.trpcore.ui.timeline.compose.core.TimelineWarningDialogHost
-import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
-import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
-import com.tripian.trpcore.ui.timeline.compose.nav.PoiDetailArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.PoiListingArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.PoiSelectionArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.SavedPlansArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.StartingPointArgs
-import com.tripian.trpcore.ui.timeline.compose.nav.TimelineNavigator
+import com.tripian.trpcore.ui.timeline.compose.nav.TimelineRequest
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineRoutes
-import com.tripian.trpcore.ui.timeline.compose.nav.rememberTimelineNavigator
-import com.tripian.trpcore.ui.timeline.compose.poi.PoiSelectionScreen
-import com.tripian.trpcore.ui.timeline.compose.poidetail.PoiDetailScreen
-import com.tripian.trpcore.ui.timeline.compose.poilisting.PoiListingScreen
-import com.tripian.trpcore.ui.timeline.compose.savedplans.SavedPlansScreen
+import com.tripian.trpcore.ui.timeline.compose.nav.tripianTimeline
 
 /**
- * Compose twin of [TRPCore.startWithItinerary]: embeds the whole Timeline flow
- * in the host's own Compose hierarchy instead of launching SDK Activities.
- * Every SDK screen is a destination of the flow's nested NavHost, so pushing a
- * host screen on top and popping it returns to the exact SDK screen and state.
- * Parameters mirror the Activity entry point and SDK events keep flowing
- * through [com.tripian.trpcore.sdk.TRPCoreSDKListener].
+ * Drop-in Compose twin of [TRPCore.startWithItinerary]: hosts the Timeline
+ * graph in a NavHost of its own, for hosts that want a single composable
+ * rather than SDK destinations in their graph. The host's back stack keeps
+ * this composable's entry while host screens are pushed on top, so popping
+ * them returns to the exact SDK screen. Hosts that want full control of
+ * navigation add [tripianTimeline] to their own graph instead.
  *
  * @param onDismiss invoked when the flow requests to close (back from the root screen)
  */
@@ -66,103 +37,11 @@ fun TimelineNexus(
         "Either destinationItems or tripItems must contain at least one item with location data."
     }
 
-    LaunchedEffect(appLanguage) {
-        TRPCore.core.applyLanguageAndPrefetchCities(appLanguage)
+    NavHost(navController = navController, startDestination = TimelineRoutes.GRAPH) {
+        tripianTimeline(
+            navController = navController,
+            request = { TimelineRequest(itinerary, tripHash, uniqueId, appLanguage, appCurrency) },
+            onDismiss = onDismiss
+        )
     }
-
-    val navigator = rememberTimelineNavigator(navController)
-    val overlays = remember { TimelineOverlayState() }
-
-    TimelineTheme {
-        CompositionLocalProvider(
-            LocalTimelineViewModelFactory provides TRPCore.core.timelineViewModelFactory,
-            LocalTimelineNavigator provides navigator,
-            LocalTimelineOverlays provides overlays
-        ) {
-            Box {
-                NavHost(navController = navController, startDestination = TimelineRoutes.TIMELINE) {
-                    composable(TimelineRoutes.TIMELINE) { entry ->
-                        BelowStatusBar {
-                            TimelineScreen(
-                                itinerary = itinerary,
-                                tripHash = tripHash ?: itinerary.tripianHash,
-                                uniqueId = uniqueId ?: itinerary.uniqueId,
-                                appLanguage = appLanguage,
-                                appCurrency = appCurrency,
-                                onDismiss = onDismiss,
-                                navEntry = entry
-                            )
-                        }
-                    }
-                    composable(TimelineRoutes.POI_SELECTION) {
-                        RouteScreen<PoiSelectionArgs>(navigator, TimelineRoutes.POI_SELECTION) {
-                            BelowStatusBar { PoiSelectionScreen(it) }
-                        }
-                    }
-                    composable(TimelineRoutes.POI_DETAIL) {
-                        RouteScreen<PoiDetailArgs>(navigator, TimelineRoutes.POI_DETAIL) {
-                            PoiDetailScreen(it)
-                        }
-                    }
-                    composable(TimelineRoutes.POI_LISTING) {
-                        RouteScreen<PoiListingArgs>(navigator, TimelineRoutes.POI_LISTING) {
-                            BelowStatusBar { PoiListingScreen(it) }
-                        }
-                    }
-                    composable(TimelineRoutes.ACTIVITY_LISTING) {
-                        RouteScreen<ActivityListingArgs>(navigator, TimelineRoutes.ACTIVITY_LISTING) {
-                            BelowStatusBar { ActivityListingScreen(it) }
-                        }
-                    }
-                    composable(TimelineRoutes.SAVED_PLANS) {
-                        RouteScreen<SavedPlansArgs>(navigator, TimelineRoutes.SAVED_PLANS) {
-                            BelowStatusBar { SavedPlansScreen(it) }
-                        }
-                    }
-                    composable(TimelineRoutes.STARTING_POINT) {
-                        RouteScreen<StartingPointArgs>(navigator, TimelineRoutes.STARTING_POINT) {
-                            BelowStatusBar { StartingPointScreen(it) }
-                        }
-                    }
-                }
-                TimelineWarningDialogHost(overlays)
-            }
-        }
-    }
-}
-
-/**
- * Keeps a screen below the status bar in an edge-to-edge host. A host that
- * already reserves that space (a Scaffold with its content padding consumed)
- * adds nothing here. POI detail draws under the status bar on purpose.
- */
-@Composable
-private fun BelowStatusBar(content: @Composable () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .consumeWindowInsets(WindowInsets.statusBars)
-    ) {
-        content()
-    }
-}
-
-/**
- * Renders [content] with the launch arguments stored for [route]. Arguments
- * live in memory only, so after process death the destination has nothing to
- * show and pops itself.
- */
-@Composable
-private inline fun <reified A : Any> RouteScreen(
-    navigator: TimelineNavigator,
-    route: String,
-    content: @Composable (A) -> Unit
-) {
-    val args = navigator.argsFor<A>(route)
-    if (args == null) {
-        LaunchedEffect(Unit) { navigator.back() }
-        return
-    }
-    content(args)
 }
