@@ -4,27 +4,28 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.view.View
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.BundleCompat
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.AcSavedPlansBinding
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
-import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineComposeScreen
-import com.tripian.trpcore.ui.timeline.compose.core.findActivity
 import com.tripian.trpcore.ui.timeline.compose.core.timelineViewModel
 import com.tripian.trpcore.ui.timeline.compose.nav.LocalTimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.SavedPlansArgs
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineNavigator
 import com.tripian.trpcore.ui.timeline.compose.nav.TimelineResults
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionMode
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionRequest
+import com.tripian.trpcore.ui.timeline.compose.sheets.ActivityTimeSelectionSheet
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlansVM
 import com.tripian.trpcore.ui.timeline.savedplans.AdapterSavedPlans
@@ -51,19 +52,8 @@ internal fun SavedPlansScreen(
 ) {
     val navigator = LocalTimelineNavigator.current
     val context = LocalContext.current
-    val fragmentManager = remember(context) {
-        (context.findActivity() as? FragmentActivity)?.supportFragmentManager
-    }
     val pendingAdd = remember { PendingAddedFavorite() }
-
-    DisposableEffect(viewModel, fragmentManager) {
-        viewModel.fragmentManager = fragmentManager
-        onDispose {
-            if (viewModel.fragmentManager === fragmentManager) {
-                viewModel.fragmentManager = null
-            }
-        }
-    }
+    val sheet = remember { SavedPlansSheetState() }
 
     LaunchedEffect(Unit) {
         if (viewModel.arguments == null) {
@@ -109,14 +99,56 @@ internal fun SavedPlansScreen(
             binding.btnViewItinerary.setOnClickListener {
                 navigator.finishWithResult(TimelineResults.SAVED_PLANS_CHANGED, true)
             }
-            binding.observe(adapter, viewModel, owner, viewState, navigator, fragmentManager, pendingAdd)
+            binding.observe(adapter, viewModel, owner, viewState, navigator, sheet, pendingAdd)
         }
+    }
+
+    val request = sheet.request
+    val favorite = sheet.favorite
+    if (request != null && favorite != null) {
+        ActivityTimeSelectionSheet(
+            request = request,
+            inSheetLoadingText = sheet.loadingText,
+            onDismiss = { sheet.close() },
+            onTimeSelected = { selection ->
+                pendingAdd.name = favorite.title
+                pendingAdd.date = selection.selectedDate
+                sheet.loadingText = viewModel.getLanguageForKey(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY)
+                viewModel.createReservedActivitySegment(
+                    selection.selectedDate,
+                    selection.startTime,
+                    selection.endTime,
+                    selection.isFlexible,
+                    selection.slotPrice
+                )
+            },
+            onRemove = { showRemoveConfirmation(favorite, viewModel) }
+        )
     }
 }
 
 private class PendingAddedFavorite {
     var name: String? = null
     var date: Date? = null
+}
+
+/** The time selection sheet currently shown for a favorite, if any, and its in-sheet loader. */
+private class SavedPlansSheetState {
+    var request by mutableStateOf<ActivityTimeSelectionRequest?>(null)
+    var favorite by mutableStateOf<SegmentFavoriteItem?>(null)
+    var loadingText by mutableStateOf<String?>(null)
+
+    fun open(favorite: SegmentFavoriteItem, request: ActivityTimeSelectionRequest) {
+        this.favorite = favorite
+        this.request = request
+        loadingText = null
+    }
+
+    fun close() {
+        request = null
+        favorite = null
+        loadingText = null
+    }
 }
 
 private fun AcSavedPlansBinding.applyTexts(viewModel: ACSavedPlansVM) {
@@ -132,7 +164,7 @@ private fun AcSavedPlansBinding.observe(
     owner: LifecycleOwner,
     viewState: Bundle,
     navigator: TimelineNavigator,
-    fragmentManager: FragmentManager?,
+    sheet: SavedPlansSheetState,
     pendingAdd: PendingAddedFavorite
 ) {
     viewModel.listItems.observe(owner) { items ->
@@ -142,12 +174,12 @@ private fun AcSavedPlansBinding.observe(
         rvSavedPlans.visibility = if (isEmpty) View.GONE else View.VISIBLE
     }
     viewModel.showTimeSelection.observe(owner) { favorite ->
-        favorite?.let { showTimeSelectionSheet(it, viewModel, fragmentManager, pendingAdd) }
+        favorite?.let { showTimeSelectionSheet(it, viewModel, sheet) }
     }
     viewModel.segmentCreated.observe(owner) { created ->
         if (created) {
             viewModel.resetSegmentCreated()
-            fragmentManager.timeSelectionSheet()?.dismiss()
+            sheet.close()
             showAddedToItinerarySuccess(viewModel, pendingAdd)
             navigator.setResult(TimelineResults.SAVED_PLANS_CHANGED, true)
         }
@@ -155,13 +187,13 @@ private fun AcSavedPlansBinding.observe(
     viewModel.segmentCreationFailed.observe(owner) { failed ->
         failed?.let {
             viewModel.resetSegmentCreationFailed()
-            fragmentManager.timeSelectionSheet()?.hideInSheetLoadingOverlay()
+            sheet.loadingText = null
         }
     }
     viewModel.favoriteRemoved.observe(owner) { removed ->
         removed?.let {
             viewModel.resetFavoriteRemoved()
-            fragmentManager.timeSelectionSheet()?.dismiss()
+            sheet.close()
             navigator.setResult(TimelineResults.SAVED_PLANS_CHANGED, true)
         }
     }
@@ -173,43 +205,33 @@ private fun AcSavedPlansBinding.restoreListState(viewState: Bundle) {
     rvSavedPlans.layoutManager?.onRestoreInstanceState(state)
 }
 
-private fun FragmentManager?.timeSelectionSheet(): ActivityTimeSelectionBottomSheet? =
-    this?.findFragmentByTag(ActivityTimeSelectionBottomSheet.TAG) as? ActivityTimeSelectionBottomSheet
-
 /**
- * Shows the time selection sheet for [favorite]; schedule loading happens in
+ * Opens the time selection sheet for [favorite]; schedule loading happens in
  * the sheet's own ViewModel.
  */
 private fun showTimeSelectionSheet(
     favorite: SegmentFavoriteItem,
     viewModel: ACSavedPlansVM,
-    fragmentManager: FragmentManager?,
-    pendingAdd: PendingAddedFavorite
+    sheet: SavedPlansSheetState
 ) {
     viewModel.clearTimeSelectionTrigger()
-    val fm = fragmentManager ?: return
-
     val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
         ?: viewModel.getResolvedCityId(favorite.cityName)
-
-    val sheet = ActivityTimeSelectionBottomSheet.newInstanceForFavorite(
-        favoriteActivityId = favorite.activityId,
-        favoriteCityId = resolvedCityId,
-        favoriteTitle = favorite.title,
-        favoriteDuration = favorite.duration,
-        availableDays = viewModel.getAvailableDays(),
-        initialSelectedDay = viewModel.getSelectedDate(),
-        showSelectAndRemove = true,
-        plannedActivityIdsByDay = viewModel.getPlannedActivityIdsByDay()
+    sheet.open(
+        favorite = favorite,
+        request = ActivityTimeSelectionRequest(
+            mode = ActivityTimeSelectionMode.Favorite(
+                activityId = favorite.activityId,
+                cityId = resolvedCityId,
+                title = favorite.title,
+                duration = favorite.duration,
+                showSelectAndRemove = true,
+                plannedActivityIdsByDay = viewModel.getPlannedActivityIdsByDay()
+            ),
+            availableDays = viewModel.getAvailableDays(),
+            initialSelectedDay = viewModel.getSelectedDate()
+        )
     )
-    sheet.setOnFavoriteTimeSelectedListener { selectedDate, startTime, endTime, isFlexible, slotPrice ->
-        pendingAdd.name = favorite.title
-        pendingAdd.date = selectedDate
-        sheet.showInSheetLoadingOverlay(LanguageConst.LOADING_TEXT_ADDING_TO_ITINERARY, "")
-        viewModel.createReservedActivitySegment(selectedDate, startTime, endTime, isFlexible, slotPrice)
-    }
-    sheet.setOnRemoveListener { showRemoveConfirmation(favorite, viewModel) }
-    sheet.show(fm, ActivityTimeSelectionBottomSheet.TAG)
 }
 
 private fun showAddedToItinerarySuccess(viewModel: ACSavedPlansVM, pendingAdd: PendingAddedFavorite) {
