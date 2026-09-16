@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -42,12 +43,15 @@ private val SHEET_TOP_CLEARANCE = 48.dp
  * step's own scrolling takes over instead of the sheet overflowing.
  *
  * @param dismissible false keeps the sheet up until [onDismissRequest] is called by content
+ * @param drawsOwnBackground true for layouts that paint their own rounded surface: the sheet
+ *   container turns transparent and shows no drag handle, as the View-based dialogs did
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TimelineSheet(
     onDismissRequest: () -> Unit,
     dismissible: Boolean = true,
+    drawsOwnBackground: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 ) {
     val maxContentHeight = rememberMaxSheetContentHeight()
@@ -57,15 +61,18 @@ internal fun TimelineSheet(
             skipPartiallyExpanded = true,
             confirmValueChange = { dismissible || it != SheetValue.Hidden }
         ),
-        containerColor = colorResource(R.color.trp_white),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        dragHandle = {
-            Box(
-                Modifier
-                    .padding(top = 8.dp)
-                    .size(width = 32.dp, height = 4.dp)
-                    .background(colorResource(R.color.trp_bgDisabled), RoundedCornerShape(2.dp))
-            )
+        containerColor = if (drawsOwnBackground) Color.Transparent else colorResource(R.color.trp_white),
+        tonalElevation = 0.dp,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        dragHandle = if (drawsOwnBackground) null else {
+            {
+                Box(
+                    Modifier
+                        .padding(top = 8.dp)
+                        .size(width = 32.dp, height = 4.dp)
+                        .background(colorResource(R.color.trp_bgDisabled), RoundedCornerShape(2.dp))
+                )
+            }
         }
     ) {
         Box(Modifier.heightIn(max = maxContentHeight), content = content)

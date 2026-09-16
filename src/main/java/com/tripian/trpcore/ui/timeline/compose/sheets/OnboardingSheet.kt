@@ -38,7 +38,11 @@ internal fun OnboardingSheet(
     BindViewListener(viewModel)
     val completion = remember { OnboardingCompletion(onComplete, onDismiss) }
 
-    TimelineSheet(onDismissRequest = { completion.finish() }, dismissible = false) {
+    TimelineSheet(
+        onDismissRequest = { completion.finish() },
+        dismissible = false,
+        drawsOwnBackground = true
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
