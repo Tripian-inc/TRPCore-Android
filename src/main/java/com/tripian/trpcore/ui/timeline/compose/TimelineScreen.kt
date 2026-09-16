@@ -623,7 +623,7 @@ fun TimelineScreen(
 
     val showOnboarding by viewModel.showOnboarding.observeAsState()
     LaunchedEffect(showOnboarding) {
-        if (showOnboarding == true) sheets.onboardingVisible = true
+        if (showOnboarding == true && viewModel.shouldShowOnboarding()) sheets.onboardingVisible = true
     }
 
     val showAddPlanEvent by viewModel.showAddPlanSheet.observeAsState()
