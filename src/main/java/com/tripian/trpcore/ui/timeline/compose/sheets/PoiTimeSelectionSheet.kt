@@ -54,6 +54,7 @@ private class PoiTimeSelectionState(request: PoiTimeSelectionRequest) {
  * [com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet].
  *
  * @param inSheetLoadingText non-null shows the in-sheet loader with that text ("" for no text)
+ *   and locks the sheet until the host clears it
  */
 @Composable
 internal fun PoiTimeSelectionSheet(
@@ -66,7 +67,7 @@ internal fun PoiTimeSelectionSheet(
     val startTime = state.startTime
     val endTime = state.endTime
 
-    TimelineSheet(onDismissRequest = onDismiss) {
+    TimelineSheet(onDismissRequest = onDismiss, dismissible = inSheetLoadingText == null) {
         BindingHost(
             inflate = BottomSheetTimeSelectionBinding::inflate,
             modifier = Modifier.fillMaxWidth(),

@@ -99,6 +99,7 @@ private const val FLEXIBLE_END = "23:59"
  * [com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet].
  *
  * @param inSheetLoadingText non-null shows the in-sheet loader with that text ("" for no text)
+ *   and locks the sheet until the host clears it
  * @param onRemove non-null shows the Remove action (favorites and step edits)
  */
 @Composable
@@ -115,8 +116,10 @@ internal fun ActivityTimeSelectionSheet(
     val currentOnTimeSelected by rememberUpdatedState(onTimeSelected)
     val currentOnRemove by rememberUpdatedState(onRemove)
     val loaderEvent by viewModel.lottieLoadingEvent.observeAsState()
+    val vmLoader = loaderEvent?.takeIf { it.show }
+    val busy = inSheetLoadingText != null || vmLoader != null
 
-    TimelineSheet(onDismissRequest = onDismiss) {
+    TimelineSheet(onDismissRequest = onDismiss, dismissible = !busy) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -141,7 +144,6 @@ internal fun ActivityTimeSelectionSheet(
                 ).bind(owner)
             }
         }
-        val vmLoader = loaderEvent?.takeIf { it.show }
         when {
             inSheetLoadingText != null ->
                 TimelineLoaderOverlay(LottieLoadingText.Single(inSheetLoadingText), Modifier.matchParentSize())
