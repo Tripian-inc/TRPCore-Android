@@ -355,8 +355,8 @@ fun TimelineScreen(
             isNotAvailable = isAvailabilityExpired,
             onRemove = {
                 showDeleteConfirmation(
-                    title = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-                    message = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                    title = viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+                    message = viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE),
                     onConfirm = {
                         sheets.dismissChangeTime()
                         viewModel.deleteSegment(segmentIndex)
@@ -483,8 +483,8 @@ fun TimelineScreen(
                         viewModel.getLanguageForKey(LanguageConst.REMOVE_RECOMMENDATIONS) to
                             viewModel.getLanguageForKey(LanguageConst.REMOVE_RECOMMENDATIONS_MESSAGE)
                     } else {
-                        viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY) to
-                            viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE)
+                        viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY) to
+                            viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE)
                     }
                     showDeleteConfirmation(title, message) {
                         viewModel.deleteSegment(index)
@@ -547,8 +547,8 @@ fun TimelineScreen(
             onStepChangeTimeClick = { step -> handleStepChangeTimeClick(step) },
             onStepDeleteClick = { step ->
                 showDeleteConfirmation(
-                    title = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-                    message = viewModel.getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                    title = viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+                    message = viewModel.getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE),
                     onConfirm = { viewModel.deleteStep(step) }
                 )
             },

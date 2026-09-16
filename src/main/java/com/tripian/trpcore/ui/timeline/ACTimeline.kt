@@ -501,8 +501,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         isNotAvailable = reservedActivity.isAvailabilityExpired,
                         onRemove = {
                             showDeleteConfirmationDialog(
-                                title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-                                message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                                title = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+                                message = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE),
                                 onConfirm = {
                                     changeTimeSheet?.dismiss()
                                     changeTimeSheet = null
@@ -533,8 +533,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                         isNotAvailable = flexibleActivity.isAvailabilityExpired,
                         onRemove = {
                             showDeleteConfirmationDialog(
-                                title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-                                message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+                                title = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+                                message = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE),
                                 onConfirm = {
                                     changeTimeSheet?.dismiss()
                                     changeTimeSheet = null
@@ -1108,8 +1108,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 }
                 else -> {
                     Pair(
-                        getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-                        getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE)
+                        getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+                        getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE)
                     )
                 }
             }
@@ -1239,8 +1239,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private fun handleStepDeleteClick(step: com.tripian.one.api.timeline.model.TimelineStep) {
         showDeleteConfirmationDialog(
-            title = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY),
-            message = getLanguageForKey(LanguageConst.REMOVE_ACTIVITY_MESSAGE),
+            title = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY),
+            message = getLanguageForKey(LanguageConst.REMOVE_FROM_ITINERARY_MESSAGE),
             onConfirm = {
                 viewModel.deleteStep(step)
             }

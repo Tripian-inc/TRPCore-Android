@@ -195,6 +195,8 @@ object LanguageConst {
     const val LIST_VIEW = "list_view"
     const val REMOVE_ACTIVITY = "timeline.removeActivity.title"
     const val REMOVE_ACTIVITY_MESSAGE = "timeline.removeActivity.message"
+    const val REMOVE_FROM_ITINERARY = "timeline.removeFromItinerary.title"
+    const val REMOVE_FROM_ITINERARY_MESSAGE = "timeline.removeFromItinerary.message"
     const val REMOVE_STEP = "timeline.removeStep.title"
     const val REMOVE_STEP_MESSAGE = "timeline.removeStep.message"
     const val REMOVE_BUTTON = "timeline.removeActivity.remove"
