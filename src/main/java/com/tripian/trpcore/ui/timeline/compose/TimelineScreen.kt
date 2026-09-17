@@ -96,6 +96,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
+import com.tripian.trpcore.domain.model.timeline.toReservationDateTime
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.ui.timeline.ACTimelineVM
 import com.tripian.trpcore.ui.timeline.adapter.BookedActivityVH
@@ -133,6 +134,7 @@ import com.tripian.trpcore.ui.timeline.views.NoCityView
 import com.tripian.trpcore.ui.timeline.views.TimelineDayFilterView
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.trpcore.util.dialog.DGActionListener
 import com.tripian.trpcore.util.widget.MapView as TrpMapView
 import java.util.Date
@@ -284,6 +286,14 @@ fun TimelineScreen(
             putSerializable(
                 AddPlanContainerVM.ARG_BOOKED_ACTIVITIES,
                 ArrayList(viewModel.getBookedActivities())
+            )
+            putSerializable(
+                AddPlanContainerVM.ARG_PLANNED_ACTIVITY_IDS,
+                viewModel.plannedActivityIdsByDay().toSerializableIdsByDay()
+            )
+            putStringArrayList(
+                AddPlanContainerVM.ARG_TRIP_WIDE_EXCLUDED_IDS,
+                ArrayList(viewModel.tripWideExcludedActivityIds())
             )
         })
         flowState.addPlanError = null
@@ -533,14 +543,15 @@ fun TimelineScreen(
             },
             onReservationClick = { bookedActivity ->
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = bookedActivity.startDateTime?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = bookedActivity.startDateTime.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
-                    val dateString = flexibleActivity.segment.startDate?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(activityId, dateString)
+                    val dateTime = flexibleActivity.segment.startDate
+                        .toReservationDateTime(isFlexible = true)
+                    viewModel.onActivityReservationRequested(activityId, dateTime)
                 }
             },
             onAddPlanClick = { showAddPlanSheet() },
@@ -555,8 +566,8 @@ fun TimelineScreen(
             onStepReservationClick = { step ->
                 val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                 activityId?.let { id ->
-                    val dateString = step.startDateTimes?.substringBefore(" ")
-                    viewModel.onActivityReservationRequested(id, dateString)
+                    val dateTime = step.startDateTimes.toReservationDateTime()
+                    viewModel.onActivityReservationRequested(id, dateTime)
                 }
             },
             onRequestRouteCalculation = { recommendations ->
@@ -572,6 +583,7 @@ fun TimelineScreen(
     val displayItems by viewModel.displayItems.observeAsState(emptyList())
     val availableDays by viewModel.availableDays.observeAsState(emptyList())
     val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(0)
+    val pastDayLocked = remember(selectedDayIndex, availableDays) { viewModel.isSelectedDayPast }
     val cities by viewModel.cities.observeAsState(emptyList())
     val isMapMode by viewModel.isMapMode.observeAsState(false)
     val savedPlansCount by viewModel.savedPlansCount.observeAsState(0)
@@ -848,7 +860,7 @@ fun TimelineScreen(
                         count = displayItems.size,
                         contentType = { index -> displayItems[index]::class }
                     ) { index ->
-                        TimelineListItem(displayItems[index], actions)
+                        TimelineListItem(displayItems[index], actions, pastDayLocked)
                     }
                 }
             }
@@ -1022,12 +1034,14 @@ fun TimelineScreen(
                 containerColor = colorResource(R.color.trp_text_primary),
                 onClick = { viewModel.toggleMapMode() }
             )
-            Spacer(Modifier.height(16.dp))
-            TimelineFab(
-                iconRes = R.drawable.trp_ic_plus_bold,
-                containerColor = colorResource(R.color.trp_timeline_fab_color),
-                onClick = { showAddPlanSheet() }
-            )
+            if (!pastDayLocked) {
+                Spacer(Modifier.height(16.dp))
+                TimelineFab(
+                    iconRes = R.drawable.trp_ic_plus_bold,
+                    containerColor = colorResource(R.color.trp_timeline_fab_color),
+                    onClick = { showAddPlanSheet() }
+                )
+            }
         }
 
         if (sheets.onboardingVisible) {
@@ -1190,7 +1204,11 @@ private fun <VH : RecyclerView.ViewHolder> TimelineVHItem(
 }
 
 @Composable
-private fun TimelineListItem(item: TimelineDisplayItem, actions: TimelineItemActions) {
+private fun TimelineListItem(
+    item: TimelineDisplayItem,
+    actions: TimelineItemActions,
+    pastDayLocked: Boolean
+) {
     when (item) {
         is TimelineDisplayItem.SectionHeader -> TimelineVHItem(
             create = { inflater, parent ->
@@ -1212,7 +1230,8 @@ private fun TimelineListItem(item: TimelineDisplayItem, actions: TimelineItemAct
                         actions.onItemClick,
                         actions.onReservedActivityChangeTimeClick,
                         actions.onDeleteClick,
-                        actions.onReservationClick
+                        actions.onReservationClick,
+                        pastDayLocked
                     )
                 }
             )
@@ -1234,7 +1253,8 @@ private fun TimelineListItem(item: TimelineDisplayItem, actions: TimelineItemAct
                     actions.onItemClick,
                     actions.onFlexibleActivityChangeTimeClick,
                     actions.onDeleteClick,
-                    actions.onFlexibleReservationClick
+                    actions.onFlexibleReservationClick,
+                    pastDayLocked
                 )
             }
         )
@@ -1252,7 +1272,8 @@ private fun TimelineListItem(item: TimelineDisplayItem, actions: TimelineItemAct
                     onStepChangeTimeClick = actions.onStepChangeTimeClick,
                     onStepDeleteClick = actions.onStepDeleteClick,
                     onStepReservationClick = actions.onStepReservationClick,
-                    onRequestRouteCalculation = actions.onRequestRouteCalculation
+                    onRequestRouteCalculation = actions.onRequestRouteCalculation,
+                    pastDayLocked = pastDayLocked
                 )
             }
         )
@@ -1261,7 +1282,13 @@ private fun TimelineListItem(item: TimelineDisplayItem, actions: TimelineItemAct
                 ManualPoiVH(ItemTimelineManualPoiBinding.inflate(inflater, parent, false))
             },
             bind = { vh ->
-                vh.bind(item, actions.onItemClick, actions.onChangeTimeClick, actions.onDeleteClick)
+                vh.bind(
+                    item,
+                    actions.onItemClick,
+                    actions.onChangeTimeClick,
+                    actions.onDeleteClick,
+                    pastDayLocked
+                )
             }
         )
         is TimelineDisplayItem.EmptyState -> TimelineVHItem(

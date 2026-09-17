@@ -33,6 +33,14 @@ class TimelineStepsAdapter(
     var onReservationClick: ((TimelineStep) -> Unit)? = null
 ) : ListAdapter<TimelineStepItem, RecyclerView.ViewHolder>(StepItemDiffCallback()) {
 
+    /** Hides change-time and reservation on every step while the shown day is in the past. */
+    var pastDayLocked: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
+
     companion object {
         private const val TYPE_ROUTE_SEPARATOR = 0
         private const val TYPE_POI = 1
@@ -77,7 +85,8 @@ class TimelineStepsAdapter(
                         onChangeTimeClick = onChangeTimeClick,
                         onDeleteClick = onDeleteClick,
                         hasConflict = item.hasConflict,
-                        showTimeOverlapText = item.showTimeOverlapText
+                        showTimeOverlapText = item.showTimeOverlapText,
+                        pastDayLocked = pastDayLocked
                     )
                     is StepActivityVH -> holder.bind(
                         step = item.step,
@@ -88,7 +97,8 @@ class TimelineStepsAdapter(
                         onReservationClick = onReservationClick,
                         hasConflict = item.hasConflict,
                         showTimeOverlapText = item.showTimeOverlapText,
-                        isAvailabilityExpired = item.isAvailabilityExpired
+                        isAvailabilityExpired = item.isAvailabilityExpired,
+                        pastDayLocked = pastDayLocked
                     )
                 }
             }

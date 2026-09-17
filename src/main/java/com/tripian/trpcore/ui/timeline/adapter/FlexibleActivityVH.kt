@@ -23,7 +23,7 @@ class FlexibleActivityVH(
     private val binding: ItemTimelineFlexibleActivityBinding
 ) : RecyclerView.ViewHolder(binding.root) {
 
-    /** When true, click handlers no-op and styles mute. */
+    /** When true, change-time and reservation are hidden and styles mute; delete stays available. */
     var isPastDayMode: Boolean = false
 
     private val numberFormat = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -43,8 +43,10 @@ class FlexibleActivityVH(
         onItemClick: (TimelineDisplayItem) -> Unit,
         onChangeTimeClick: (TimelineDisplayItem.FlexibleActivity) -> Unit,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
-        onReservationClick: (TimelineDisplayItem.FlexibleActivity) -> Unit
+        onReservationClick: (TimelineDisplayItem.FlexibleActivity) -> Unit,
+        pastDayLocked: Boolean = false
     ) {
+        isPastDayMode = pastDayLocked
         if (item.isAvailabilityExpired) {
             val flexibleLabel = getLanguage(LanguageConst.TIMELINE_FLEXIBLE_TITLE)
                 .ifBlank { "Flexible entry" }
@@ -132,7 +134,6 @@ class FlexibleActivityVH(
         binding.btnChangeTime.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
         binding.root.setOnClickListener {
-            if (isPastDayMode) return@setOnClickListener
             onItemClick(item)
         }
         binding.btnChangeTime.setOnClickListener {
@@ -140,7 +141,6 @@ class FlexibleActivityVH(
             onChangeTimeClick(item)
         }
         binding.btnDelete.setOnClickListener {
-            if (isPastDayMode) return@setOnClickListener
             onDeleteClick(item, item.segmentIndex)
         }
         binding.btnReservation.setOnClickListener {

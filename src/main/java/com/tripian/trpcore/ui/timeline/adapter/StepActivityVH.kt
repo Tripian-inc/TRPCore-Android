@@ -53,7 +53,8 @@ class StepActivityVH(
         onReservationClick: ((TimelineStep) -> Unit)?,
         hasConflict: Boolean = false,
         showTimeOverlapText: Boolean = false,
-        isAvailabilityExpired: Boolean = false
+        isAvailabilityExpired: Boolean = false,
+        pastDayLocked: Boolean = false
     ) {
         val poi = step.poi
 
@@ -160,6 +161,9 @@ class StepActivityVH(
         )
 
         binding.btnReservation.text = getLanguage(LanguageConst.RESERVATION)
+        val actionVisibility = if (pastDayLocked) View.GONE else View.VISIBLE
+        binding.btnReservation.visibility = actionVisibility
+        binding.btnChangeTime.visibility = actionVisibility
 
         binding.root.setOnClickListener {
             onStepClick?.invoke(step)

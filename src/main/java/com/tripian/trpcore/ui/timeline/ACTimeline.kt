@@ -232,6 +232,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
 
         viewModel.displayItems.observe(this) { items ->
+            timelineAdapter.pastDayLocked = isPastDayLocked()
             timelineAdapter.submitList(items)
             updateEmptyState(items.isEmpty() || items.all { it is TimelineDisplayItem.EmptyState })
         }
@@ -247,6 +248,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
+            timelineAdapter.pastDayLocked = isPastDayLocked()
             binding.fabAddPlan.visibility =
                 if (isPastDayLocked()) View.GONE else View.VISIBLE
         }
@@ -449,8 +451,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     }
 
     /**
-     * A day already behind the traveller can't be replanned: its cards keep their
-     * affordances but the mutating handlers do nothing.
+     * A day already behind the traveller can't be replanned: change-time and
+     * reservation are hidden on its cards, while delete stays available.
      */
     private fun isPastDayLocked(): Boolean = viewModel.isSelectedDayPast
 
@@ -460,7 +462,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 handleItemClick(item)
             },
             onDeleteClick = { item, segmentIndex ->
-                if (isPastDayLocked()) return@TimelineAdapter
                 handleDeleteClick(item, segmentIndex)
             },
             onExpandClick = { item ->

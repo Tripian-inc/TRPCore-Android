@@ -43,6 +43,14 @@ class TimelineAdapter(
     private val onConflictDismiss: (() -> Unit)? = null
 ) : ListAdapter<TimelineDisplayItem, RecyclerView.ViewHolder>(TimelineDiffCallback()) {
 
+    /** Hides change-time and reservation on every row while the shown day is in the past. */
+    var pastDayLocked: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyDataSetChanged()
+        }
+
     companion object {
         private const val TYPE_SECTION_HEADER = 0
         private const val TYPE_BOOKED_ACTIVITY = 1
@@ -145,14 +153,16 @@ class TimelineAdapter(
                 onItemClick,
                 onReservedActivityChangeTimeClick ?: {},
                 onDeleteClick,
-                onReservationClick ?: {}
+                onReservationClick ?: {},
+                pastDayLocked
             )
             is FlexibleActivityVH -> holder.bind(
                 item as TimelineDisplayItem.FlexibleActivity,
                 onItemClick,
                 onFlexibleActivityChangeTimeClick ?: {},
                 onDeleteClick,
-                onFlexibleReservationClick ?: {}
+                onFlexibleReservationClick ?: {},
+                pastDayLocked
             )
             is RecommendationsVH -> holder.bind(
                 item = item as TimelineDisplayItem.Recommendations,
@@ -163,13 +173,15 @@ class TimelineAdapter(
                 onStepChangeTimeClick = onStepChangeTimeClick,
                 onStepDeleteClick = onStepDeleteClick,
                 onStepReservationClick = onStepReservationClick,
-                onRequestRouteCalculation = onRequestRouteCalculation
+                onRequestRouteCalculation = onRequestRouteCalculation,
+                pastDayLocked = pastDayLocked
             )
             is ManualPoiVH -> holder.bind(
                 item as TimelineDisplayItem.ManualPoi,
                 onItemClick,
                 onChangeTimeClick,
-                onDeleteClick
+                onDeleteClick,
+                pastDayLocked
             )
             is EmptyStateVH -> holder.bind(item as TimelineDisplayItem.EmptyState, onAddPlanClick)
             is SectionFooterVH -> { }

@@ -42,7 +42,8 @@ class ReservedActivityVH(
         onItemClick: (TimelineDisplayItem) -> Unit,
         onChangeTimeClick: (TimelineDisplayItem.BookedActivity) -> Unit,
         onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
-        onReservationClick: (TimelineDisplayItem.BookedActivity) -> Unit
+        onReservationClick: (TimelineDisplayItem.BookedActivity) -> Unit,
+        pastDayLocked: Boolean = false
     ) {
         binding.tvOrder.text = if (item.order <= 0)
             com.tripian.trpcore.util.extensions.MINUS_SIGN
@@ -143,6 +144,9 @@ class ReservedActivityVH(
         )
 
         binding.btnReservation.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
+        val actionVisibility = if (pastDayLocked) View.GONE else View.VISIBLE
+        binding.btnReservation.visibility = actionVisibility
+        binding.btnChangeTime.visibility = actionVisibility
 
         binding.root.setOnClickListener {
             onItemClick(item)
