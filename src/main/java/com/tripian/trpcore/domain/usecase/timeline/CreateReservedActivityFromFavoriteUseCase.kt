@@ -100,7 +100,7 @@ class CreateReservedActivityFromFavoriteUseCase @Inject constructor(
 
         val segment = TimelineSegmentSettings().apply {
             title = p.favorite.title
-            cityId = p.resolvedCityId ?: p.favorite.cityId
+            cityId = p.resolvedCityId
             startDate = startDatetime
             endDate = endDatetime
             adults = p.adults
