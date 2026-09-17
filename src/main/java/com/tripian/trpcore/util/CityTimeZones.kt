@@ -67,13 +67,6 @@ object CityTimeZones {
     fun minSelectableMinutes(day: Date, cityId: Int?): Int =
         minSelectableMinutes(day, timezoneFor(cityId))
 
-    /** True when [day] is strictly before the city's current calendar day. */
-    fun isDayInPast(day: Date, timeZoneId: String?): Boolean =
-        dayKeyOf(day) < dayKey(nowInZone(timeZoneId))
-
-    fun isDayInPast(day: Date, cityId: Int?): Boolean =
-        isDayInPast(day, timezoneFor(cityId))
-
     /**
      * Picker floor as "HH:mm"; null when the whole day is open, "23:59" when fully past.
      * Pickers validate with a strict "> min", so this returns one minute BEFORE the

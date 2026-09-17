@@ -227,7 +227,7 @@ fun String.formatDateDayShortName(): String? {
 }
 
 fun today(): String {
-    val format: DateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.forLanguageTag(appLanguage))
+    val format: DateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     return format.format(Date())
 }

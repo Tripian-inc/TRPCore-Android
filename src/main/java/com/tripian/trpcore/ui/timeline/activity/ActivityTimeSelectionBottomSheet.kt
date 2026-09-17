@@ -136,11 +136,13 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
 
             val initialDay = args.getSerializable(ARG_INITIAL_SELECTED_DAY) as? Date
             initialDayKey = initialDay?.let { dayKeyFormatter.format(it) }
-            selectedDayIndex = if (initialDay != null) {
-                availableDays.indexOfFirst { isSameDay(it, initialDay) }.coerceAtLeast(0)
-            } else {
-                0
+            if (initialDay != null && availableDays.none { isSameDay(it, initialDay) }) {
+                availableDays = (availableDays + initialDay).sortedBy { it.time }
             }
+            selectedDayIndex = initialDay
+                ?.let { day -> availableDays.indexOfFirst { isSameDay(it, day) } }
+                ?.coerceAtLeast(0)
+                ?: 0
         }
 
         setupUI()
@@ -259,7 +261,6 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
-        dayAdapter?.timeZoneId = com.tripian.trpcore.util.CityTimeZones.timezoneFor(favoriteCityId)
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
     }

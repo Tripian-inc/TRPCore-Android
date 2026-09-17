@@ -804,7 +804,6 @@ fun TimelineScreen(
                     }
                 },
                 update = { view ->
-                    view.timeZoneId = cities.firstOrNull()?.timezone
                     if (view.tag != availableDays) {
                         view.tag = availableDays
                         view.setDays(availableDays)

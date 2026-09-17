@@ -180,7 +180,6 @@ class FRSelectDay : Fragment() {
 
         sharedVM.selectedCity.observe(viewLifecycleOwner) { city ->
             binding.tvSelectedCity.text = city?.name ?: ""
-            dayFilterAdapter?.timeZoneId = city?.timezone
         }
 
         sharedVM.selectedMode.observe(viewLifecycleOwner) { mode ->

@@ -1173,6 +1173,8 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun selectDay(index: Int) {
+        val days = _availableDays.value ?: return
+        if (index !in days.indices) return
         _selectedDayIndex.value = index
         selectedStepId = null
         collapsedSectionCityIds.clear()
@@ -1188,7 +1190,7 @@ class ACTimelineVM @Inject constructor(
         val days = _availableDays.value ?: return
         val selectedIndex = _selectedDayIndex.value ?: 0
 
-        if (selectedIndex >= days.size) return
+        if (selectedIndex !in days.indices) return
 
         val existingExpandStates = _displayItems.value
             ?.filterIsInstance<TimelineDisplayItem.Recommendations>()

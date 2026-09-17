@@ -199,7 +199,10 @@ private class ActivityTimeSelectionUi(
     private val context = binding.root.context
     private val dayKeyFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
-    private val availableDays: List<Date> = request.availableDays
+    private val availableDays: List<Date> = request.initialSelectedDay
+        ?.takeIf { initial -> request.availableDays.none { isSameDay(it, initial) } }
+        ?.let { initial -> (request.availableDays + initial).sortedBy { it.time } }
+        ?: request.availableDays
     private val mode = request.mode
     private val activity: TourProduct? = (mode as? ActivityTimeSelectionMode.Tour)?.activity
     private val isFavoriteMode = mode is ActivityTimeSelectionMode.Favorite
@@ -351,7 +354,6 @@ private class ActivityTimeSelectionUi(
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
-        dayAdapter?.timeZoneId = CityTimeZones.timezoneFor(favoriteCityId)
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
     }

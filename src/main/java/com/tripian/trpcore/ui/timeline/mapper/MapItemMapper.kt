@@ -193,7 +193,7 @@ class MapItemMapper @Inject constructor() {
             return globalPosition
         }
 
-        val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        val outputTimeFormat = SimpleDateFormat("HH:mm", Locale.US)
 
         items.forEach { item ->
             val cityId = item.city?.id ?: 0

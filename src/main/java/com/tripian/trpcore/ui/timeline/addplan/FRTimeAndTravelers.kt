@@ -99,7 +99,6 @@ class FRTimeAndTravelers : Fragment() {
             sharedVM.selectDay(position)
         }.apply {
             disablePastDays = true
-            timeZoneId = sharedVM.selectedCityTimeZone()
         }
         binding.rvDays.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)

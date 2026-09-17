@@ -166,7 +166,6 @@ internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
                     views.dayAdapter.setDays(availableDays)
                 }
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
-                views.dayAdapter.timeZoneId = selectedCity?.timezone
 
                 val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
                 b.llCitySelection.visibility = if (shouldShowCity) View.VISIBLE else View.GONE
@@ -271,7 +270,6 @@ internal fun AddPlanTimeTravelersStep(
                     viewModel.selectDay(position)
                 }.apply {
                     disablePastDays = true
-                    timeZoneId = viewModel.selectedCityTimeZone()
                 }
                 binding.rvDays.layoutManager =
                     LinearLayoutManager(ctx, LinearLayoutManager.HORIZONTAL, false)

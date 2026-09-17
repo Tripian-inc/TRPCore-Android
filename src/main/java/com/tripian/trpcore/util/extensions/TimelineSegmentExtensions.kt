@@ -25,10 +25,17 @@ val TimelineSegment.isFlexibleActivity: Boolean
     get() {
         if (segmentType != SegmentType.RESERVED_ACTIVITY) return false
         if (additionalData?.duration != -1.0) return false
-        val start = startDate?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() } ?: return false
-        val end = endDate?.substringAfter(' ', "")?.takeIf { it.isNotEmpty() } ?: return false
+        val start = startDate?.wallClockTime() ?: return false
+        val end = endDate?.wallClockTime() ?: return false
         return start in FLEXIBLE_TIME_VALUES && end in FLEXIBLE_TIME_VALUES
     }
+
+/** "HH:mm" of a "yyyy-MM-dd HH:mm" or ISO "yyyy-MM-dd'T'HH:mm:ss" string; null when absent. */
+private fun String.wallClockTime(): String? {
+    val separator = indexOfFirst { it == ' ' || it == 'T' }
+    if (separator < 0) return null
+    return substring(separator + 1).take(5).takeIf { it.length == 5 }
+}
 
 /**
  * Writes the price the schedule lookup resolved for the booked slot, together with

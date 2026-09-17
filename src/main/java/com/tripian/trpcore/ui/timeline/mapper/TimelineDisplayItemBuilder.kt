@@ -10,6 +10,7 @@ import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.extensions.isFlexibleActivity
+import java.util.Calendar
 import java.util.Date
 import javax.inject.Inject
 
@@ -239,7 +240,11 @@ class TimelineDisplayItemBuilder @Inject constructor(
      * everything else on the day.
      */
     private fun spansFullDay(startTime: Date, endTime: Date): Boolean {
-        return endTime.time - startTime.time >= FULL_DAY_IN_MILLIS
+        val oneDayLater = Calendar.getInstance().apply {
+            time = startTime
+            add(Calendar.DAY_OF_MONTH, 1)
+        }.time
+        return !endTime.before(oneDayLater)
     }
 
     private fun collectTimeRanges(items: List<TimelineDisplayItem>): List<TimeRange> {
@@ -572,6 +577,5 @@ class TimelineDisplayItemBuilder @Inject constructor(
     }
 
     private companion object {
-        const val FULL_DAY_IN_MILLIS = 24L * 60L * 60L * 1000L
     }
 }

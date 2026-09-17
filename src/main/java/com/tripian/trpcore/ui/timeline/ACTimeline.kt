@@ -251,10 +251,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 if (isPastDayLocked()) View.GONE else View.VISIBLE
         }
 
-        viewModel.cities.observe(this) { cities ->
-            binding.dayFilterView.timeZoneId = cities.firstOrNull()?.timezone
-        }
-
         viewModel.isMapMode.observe(this) { isMapMode ->
             updateMapMode(isMapMode)
         }

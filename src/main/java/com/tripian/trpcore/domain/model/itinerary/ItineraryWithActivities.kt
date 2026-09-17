@@ -38,15 +38,11 @@ data class ItineraryWithActivities(
         destinationItems.firstOrNull()?.getCoordinateObject()
             ?: tripItems?.firstOrNull()?.coordinate
 
-    /**
-     * Gets adult count from tripItems (from first item or default 1)
-     */
-    fun getAdultCount(): Int = tripItems?.firstOrNull()?.adultCount ?: 1
+    /** Largest adult count among the host's reservations, or 1 without any. */
+    fun getAdultCount(): Int = tripItems?.maxOfOrNull { it.adultCount } ?: 1
 
-    /**
-     * Gets child count from tripItems (from first item or default 0)
-     */
-    fun getChildCount(): Int = tripItems?.firstOrNull()?.childCount ?: 0
+    /** Largest child count among the host's reservations, or 0 without any. */
+    fun getChildCount(): Int = tripItems?.maxOfOrNull { it.childCount } ?: 0
 
     /**
      * Checks if itinerary has any location data (from destinationItems or tripItems)
