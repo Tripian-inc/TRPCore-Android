@@ -36,7 +36,8 @@ class ManualPoiVH(
         item: TimelineDisplayItem.ManualPoi,
         onItemClick: (TimelineDisplayItem) -> Unit,
         onChangeTimeClick: ((TimelineDisplayItem.ManualPoi) -> Unit)? = null,
-        onDeleteClick: (TimelineDisplayItem, Int?) -> Unit
+        onDeleteClick: (TimelineDisplayItem, Int?) -> Unit,
+        pastDayLocked: Boolean = false
     ) {
         binding.tvOrder.text = if (item.order <= 0)
             com.tripian.trpcore.util.extensions.MINUS_SIGN
@@ -85,6 +86,7 @@ class ManualPoiVH(
             onItemClick(item)
         }
 
+        binding.btnChangeTime.visibility = if (pastDayLocked) View.GONE else View.VISIBLE
         binding.btnChangeTime.setOnClickListener {
             onChangeTimeClick?.invoke(item)
         }

@@ -35,6 +35,7 @@ class RecommendationsVH(
     private var currentDeleteClickListener: ((TimelineStep) -> Unit)? = null
     private var currentReservationClickListener: ((TimelineStep) -> Unit)? = null
     private var currentStartingOrder: Int = 1
+    private var currentPastDayLocked: Boolean = false
 
     // For partial updates (route info) without full rebind
     private var currentItem: TimelineDisplayItem.Recommendations? = null
@@ -54,8 +55,10 @@ class RecommendationsVH(
         onStepDeleteClick: ((TimelineStep) -> Unit)? = null,
         onStepReservationClick: ((TimelineStep) -> Unit)? = null,
         onRequestRouteCalculation: ((TimelineDisplayItem.Recommendations) -> Unit)? = null,
-        distanceFormat: String = "%d min (%@ km)"
+        distanceFormat: String = "%d min (%@ km)",
+        pastDayLocked: Boolean = false
     ) {
+        currentPastDayLocked = pastDayLocked
         currentStepClickListener = onStepClick
         currentChangeTimeClickListener = onStepChangeTimeClick
         currentDeleteClickListener = onStepDeleteClick
@@ -162,7 +165,7 @@ class RecommendationsVH(
                 onChangeTimeClick = currentChangeTimeClickListener,
                 onDeleteClick = currentDeleteClickListener,
                 onReservationClick = currentReservationClickListener
-            )
+            ).apply { pastDayLocked = currentPastDayLocked }
             stepsAdapter = newAdapter
             binding.rvSteps.apply {
                 layoutManager = LinearLayoutManager(context)
@@ -176,6 +179,7 @@ class RecommendationsVH(
             existing.onChangeTimeClick = currentChangeTimeClickListener
             existing.onDeleteClick = currentDeleteClickListener
             existing.onReservationClick = currentReservationClickListener
+            existing.pastDayLocked = currentPastDayLocked
         }
     }
 

@@ -50,7 +50,8 @@ class StepPoiVH(
         onChangeTimeClick: ((TimelineStep) -> Unit)?,
         onDeleteClick: ((TimelineStep) -> Unit)?,
         hasConflict: Boolean = false,
-        showTimeOverlapText: Boolean = false
+        showTimeOverlapText: Boolean = false,
+        pastDayLocked: Boolean = false
     ) {
         val poi = step.poi
 
@@ -105,6 +106,7 @@ class StepPoiVH(
             onStepClick?.invoke(step)
         }
 
+        binding.btnChangeTime.visibility = if (pastDayLocked) View.GONE else View.VISIBLE
         binding.btnChangeTime.setOnClickListener {
             onChangeTimeClick?.invoke(step)
         }
