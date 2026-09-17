@@ -13,6 +13,7 @@ import com.tripian.one.api.timeline.model.TimelineStepCreateRequest
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.base.awaitCallback
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -34,10 +35,21 @@ class TimelineRepository @Inject constructor(
     @Volatile
     private var pendingTimelineHash: String? = null
 
+    private val lastTimelines = ConcurrentHashMap<String, Timeline>()
+
     /** Stores [timeline] so the timeline screen can consume it without a GET. */
     fun cacheGeneratedTimeline(tripHash: String, timeline: Timeline) {
         pendingTimelineHash = tripHash
         pendingTimeline = timeline
+        rememberTimeline(tripHash, timeline)
+    }
+
+    /** The most recent timeline this repository saw for [tripHash], from any call. */
+    fun lastTimeline(tripHash: String): Timeline? = lastTimelines[tripHash]
+
+    private fun rememberTimeline(tripHash: String?, timeline: Timeline) {
+        val hash = tripHash?.takeIf { it.isNotBlank() } ?: return
+        lastTimelines[hash] = timeline
     }
 
     /**
@@ -52,7 +64,7 @@ class TimelineRepository @Inject constructor(
         }
     }
 
-    suspend fun fetchTimelineAsync(tripHash: String): Timeline = awaitCallback { ok, fail ->
+    suspend fun fetchTimelineAsync(tripHash: String): Timeline = awaitCallback<Timeline> { ok, fail ->
         trpRest.getTimeline(
             hash = tripHash,
             currency = TRPCore.core.getCurrentCurrency(),
@@ -62,9 +74,9 @@ class TimelineRepository @Inject constructor(
             },
             error = { throwable -> fail(throwable ?: Exception("Unknown error")) }
         )
-    }
+    }.also { rememberTimeline(tripHash, it) }
 
-    suspend fun createTimelineAsync(settings: TimelineSettings): Timeline = awaitCallback { ok, fail ->
+    suspend fun createTimelineAsync(settings: TimelineSettings): Timeline = awaitCallback<Timeline> { ok, fail ->
         trpRest.createTimeline(
             settings = settings,
             success = { response ->
@@ -73,7 +85,7 @@ class TimelineRepository @Inject constructor(
             },
             error = { throwable -> fail(throwable ?: Exception("Unknown error")) }
         )
-    }
+    }.also { rememberTimeline(it.tripHash, it) }
 
     suspend fun editSegmentAsync(
         tripHash: String,

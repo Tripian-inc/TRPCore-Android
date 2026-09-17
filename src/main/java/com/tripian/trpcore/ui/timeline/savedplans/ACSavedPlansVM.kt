@@ -8,6 +8,7 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
+import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
@@ -15,13 +16,16 @@ import com.tripian.trpcore.util.RemovedFavoritesStore
 import com.tripian.trpcore.util.extensions.cityNameKey
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 /**
  * ViewModel for Saved Plans screen.
- * Groups favorite items by city and handles adding them to the timeline.
- * Receives pre-filtered favorites from ACTimeline (already excludes reserved activities).
+ * Groups favorite items by their SDK-resolved city and handles adding them to the
+ * timeline. Receives pre-filtered favorites from the timeline (already excludes
+ * booked activities and favourites without a resolved trip city).
  */
 class ACSavedPlansVM @Inject constructor(
     private val createReservedActivityFromFavoriteUseCase: CreateReservedActivityFromFavoriteUseCase,
@@ -63,11 +67,13 @@ class ACSavedPlansVM @Inject constructor(
     private var availableDays: List<Date> = emptyList()
     private var selectedDate: Date? = null
     private var pendingFavorite: SegmentFavoriteItem? = null
+    private var pendingAddDate: Date? = null
+    private val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     /** Maps cityName (lowercase) to our system's cityId. */
     private var cityNameToIdMap: Map<String, Int> = emptyMap()
 
-    private var plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+    private val plannedActivityIdsByDay = mutableMapOf<String, MutableList<String>>()
 
     // =====================
     // INITIALIZATION
@@ -89,30 +95,31 @@ class ACSavedPlansVM @Inject constructor(
         this.availableDays = availableDays
         this.selectedDate = availableDays.firstOrNull()
         this.cityNameToIdMap = cityNameToIdMap
-        this.plannedActivityIdsByDay = plannedActivityIdsByDay
+        this.plannedActivityIdsByDay.clear()
+        plannedActivityIdsByDay.forEach { (day, ids) ->
+            this.plannedActivityIdsByDay[day] = ids.toMutableList()
+        }
 
         processAndDisplayItems()
     }
 
     /** Days that already hold a given activity; blocks them in the time selection sheet. */
-    fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
+    fun getPlannedActivityIdsByDay(): Map<String, List<String>> =
+        plannedActivityIdsByDay.mapValues { it.value.toList() }
 
     /**
-     * Process favorites and create grouped list items
+     * Groups the favourites by their resolved city, in first-seen order. A favourite
+     * without a resolved city is not shown.
      */
     private fun processAndDisplayItems() {
-        if (favorites.isEmpty()) {
-            _listItems.value = emptyList()
-            return
-        }
-
-        val groupedByCity = favorites.groupBy { it.cityName }
+        val groupedByCity = favorites
+            .filter { resolvedCityIdOf(it) != null }
+            .groupBy { resolvedCityIdOf(it)!! }
 
         val items = mutableListOf<SavedPlansListItem>()
 
-        groupedByCity.forEach { (cityName, cityFavorites) ->
-            val cityId = cityFavorites.firstOrNull()?.cityId
-            items.add(SavedPlansListItem.SectionHeader(cityName, cityId))
+        groupedByCity.forEach { (cityId, cityFavorites) ->
+            items.add(SavedPlansListItem.SectionHeader(cityNameFor(cityId, cityFavorites), cityId))
 
             cityFavorites.forEach { favorite ->
                 items.add(SavedPlansListItem.ActivityItem(favorite))
@@ -121,6 +128,13 @@ class ACSavedPlansVM @Inject constructor(
 
         _listItems.value = items
     }
+
+    private fun resolvedCityIdOf(favorite: SegmentFavoriteItem): Int? =
+        favorite.cityId?.takeIf { it > 0 }
+
+    private fun cityNameFor(cityId: Int, cityFavorites: List<SegmentFavoriteItem>): String =
+        TRPCore.core.getCachedCityById(cityId)?.name?.takeIf { it.isNotBlank() }
+            ?: cityFavorites.first().cityName
 
     // =====================
     // USER ACTIONS
@@ -144,6 +158,7 @@ class ACSavedPlansVM @Inject constructor(
     /**
      * Creates a reserved activity segment when the user selects a time in the bottom sheet.
      * For flexible favorites the time window is resolved by the use case, so start/end are sent as null.
+     * A favourite without a resolved city is refused with an error instead of being booked anywhere.
      */
     fun createReservedActivitySegment(
         selectedDate: Date,
@@ -154,15 +169,20 @@ class ACSavedPlansVM @Inject constructor(
     ) {
         val favorite = pendingFavorite ?: return
 
+        val resolvedCityId = resolvedCityIdOf(favorite)
+        if (resolvedCityId == null) {
+            _segmentCreationFailed.value = true
+            showAlert(AlertType.ERROR, getLanguageForKey(LanguageConst.COMMON_ERROR))
+            return
+        }
+
         val resolvedEndTime = if (isFlexible) {
             null
         } else {
             endTime ?: calculateEndTime(startTime, favorite.duration)
         }
         val resolvedStartTime = if (isFlexible) null else startTime
-
-        val resolvedCityId = favorite.cityId?.takeIf { it > 0 }
-            ?: getResolvedCityId(favorite.cityName)
+        pendingAddDate = selectedDate
 
         viewModelScope.launch {
             runCatching {
@@ -199,16 +219,36 @@ class ACSavedPlansVM @Inject constructor(
                 waitForGenerationUseCase(WaitForGenerationUseCase.Params(tripHash))
             }.getOrNull()
             timeline?.let { timelineRepository.cacheGeneratedTimeline(tripHash, it) }
+            markActivityAdded()
             dropAddedFavorite()
             _segmentCreated.value = true
         }
     }
 
+    /** Records the day just taken by the added favourite so re-opening the sheet blocks it right away. */
+    private fun markActivityAdded() {
+        val added = pendingFavorite ?: return
+        val day = pendingAddDate ?: return
+        val id = ActivityIdFormat.make(
+            activityId = added.activityId,
+            cityId = resolvedCityIdOf(added)
+        )
+        if (id.isEmpty()) return
+
+        val dayIds = plannedActivityIdsByDay.getOrPut(dayKeyFormat.format(day)) { mutableListOf() }
+        if (id !in dayIds) dayIds += id
+    }
+
     /** Removes the just-added favorite from the in-memory list and re-renders. */
     private fun dropAddedFavorite() {
         val added = pendingFavorite ?: return
-        favorites = favorites.filterNot { it.activityId == added.activityId }
+        favorites = favorites.filterNot { sameActivity(it, added) }
         processAndDisplayItems()
+    }
+
+    private fun sameActivity(a: SegmentFavoriteItem, b: SegmentFavoriteItem): Boolean {
+        val baseA = ActivityIdFormat.base(a.activityId) ?: return a.activityId == b.activityId
+        return baseA == ActivityIdFormat.base(b.activityId)
     }
 
     /**
@@ -238,6 +278,7 @@ class ACSavedPlansVM @Inject constructor(
     fun resetSegmentCreated() {
         _segmentCreated.value = false
         pendingFavorite = null
+        pendingAddDate = null
     }
 
     /**
@@ -252,7 +293,7 @@ class ACSavedPlansVM @Inject constructor(
             TRPCore.notifyActivityRemovedFromSavedPlans(baseId)
         }
 
-        favorites = favorites.filterNot { it.activityId == favorite.activityId }
+        favorites = favorites.filterNot { sameActivity(it, favorite) }
         pendingFavorite = null
         processAndDisplayItems()
 

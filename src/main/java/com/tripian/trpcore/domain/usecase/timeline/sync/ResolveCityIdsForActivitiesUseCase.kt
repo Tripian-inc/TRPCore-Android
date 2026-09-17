@@ -28,8 +28,11 @@ import javax.inject.Inject
  *  3. The cityName → cityId map built from the trip's destinations, which relies
  *     on the host's city naming.
  *
- * Whatever survives all three keeps the incoming value. Blocking operation — the
- * other sync operations wait on its result.
+ * A booked item that survives all three keeps the incoming value. A favourite is
+ * resolved by the first two tiers only: the host's city id and city name are never
+ * used for it, and one that stays unresolved is handed back with no city so it is
+ * neither listed nor booked. Blocking operation — the other sync operations wait on
+ * its result.
  *
  * The activity duration is normalized in the same pass: hosts express it in their
  * own unit, so the product lookup's value (minutes) replaces the incoming one and
@@ -43,9 +46,9 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 ) : SuspendUseCase<ResolveCityIdsForActivitiesUseCase.Result, ResolveCityIdsForActivitiesUseCase.Params>() {
 
     /**
-     * @param knownActivityIds base ids the timeline already holds; those items are
-     *   skipped by the lookup tier because their segment already carries a city.
-     *   Empty when the timeline is about to be created.
+     * @param knownActivityIds base ids the timeline already holds; booked items among
+     *   them are skipped by the lookup tier because their segment already carries a
+     *   city. Favourites are always looked up. Empty when the timeline is about to be created.
      */
     data class Params(
         val tripItems: List<SegmentActivityItem>,
@@ -75,7 +78,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 
         applyLookupTier(params, tripCityIds, favouriteCityIds, tripDurations, favouriteDurations)
         applyCoordinateTier(params, tripCityIds, favouriteCityIds)
-        applyCityNameTier(params, tripCityIds, favouriteCityIds, cityMap)
+        applyCityNameTier(params, tripCityIds, cityMap)
 
         val tripItems = params.tripItems.mapIndexed { index, item ->
             item.copy(
@@ -85,13 +88,12 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         }
         val favouriteItems = params.favouriteItems.mapIndexed { index, item ->
             item.copy(
-                cityId = favouriteCityIds[index] ?: item.cityId,
+                cityId = favouriteCityIds[index],
                 duration = favouriteDurations[index] ?: item.duration
             )
         }
 
         tripItems.forEach { item -> rememberCity(item.cityName, item.cityId, cityMap) }
-        favouriteItems.forEach { item -> rememberCity(item.cityName, item.cityId, cityMap) }
 
         return Result(tripItems, favouriteItems, cityMap)
     }
@@ -108,12 +110,11 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         tripDurations: Array<Double?>,
         favouriteDurations: Array<Double?>
     ) {
-        val activityIds = (
-            params.tripItems.map { it.activityId } + params.favouriteItems.map { it.activityId }
-            )
-            .mapNotNull { id -> lookupKey(id) }
+        val tripIds = params.tripItems
+            .mapNotNull { item -> lookupKey(item.activityId) }
             .filterNot { id -> id in params.knownActivityIds }
-            .distinct()
+        val favouriteIds = params.favouriteItems.mapNotNull { item -> lookupKey(item.activityId) }
+        val activityIds = (tripIds + favouriteIds).distinct()
 
         if (activityIds.isEmpty()) return
 
@@ -142,7 +143,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
      * id — the SDK's own [ActivityIdFormat.DEFAULT_PROVIDER_ID] is authoritative.
      */
     private suspend fun lookupProduct(productId: String): ProductInfo? = runCatching {
-        val product = tourRepository.lookupTourProductAsync(
+        val product = tourRepository.lookupTourProductCachedAsync(
             providerId = ActivityIdFormat.DEFAULT_PROVIDER_ID,
             productId = productId
         ).data ?: return@runCatching null
@@ -195,20 +196,14 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         }
     }
 
-    /** Tier 3. Falls back to the destination-derived cityName map. */
+    /** Tier 3, booked items only. Falls back to the destination-derived cityName map. */
     private fun applyCityNameTier(
         params: Params,
         tripCityIds: Array<Int?>,
-        favouriteCityIds: Array<Int?>,
         cityMap: Map<String, Int>
     ) {
         params.tripItems.forEachIndexed { index, item ->
             if (tripCityIds[index] == null) tripCityIds[index] = mappedCityId(item.cityName, cityMap)
-        }
-        params.favouriteItems.forEachIndexed { index, item ->
-            if (favouriteCityIds[index] == null) {
-                favouriteCityIds[index] = mappedCityId(item.cityName, cityMap)
-            }
         }
     }
 

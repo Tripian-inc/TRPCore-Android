@@ -6,6 +6,7 @@ import com.tripian.one.api.tour.model.TourScheduleAvailabilityResponse
 import com.tripian.one.api.tour.model.TourScheduleResponse
 import com.tripian.one.api.tour.model.TourSearchResponse
 import com.tripian.trpcore.base.awaitCallback
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 
 /**
@@ -14,6 +15,8 @@ import javax.inject.Inject
 class TourRepository @Inject constructor(
     private val trpRest: TRPRest
 ) {
+
+    private val productLookups = ConcurrentHashMap<String, TourProductLookupResponse>()
 
     suspend fun searchToursAsync(
         cityId: Int,
@@ -91,6 +94,22 @@ class TourRepository @Inject constructor(
             success = ok,
             error = { throwable -> fail(throwable ?: Exception("Tour product lookup failed")) }
         )
+    }
+
+    /**
+     * [lookupTourProductAsync] memoised for the session: a product's city and
+     * duration never change, so every ViewModel that resolves the same activity
+     * shares one lookup.
+     */
+    suspend fun lookupTourProductCachedAsync(
+        providerId: Int,
+        productId: String
+    ): TourProductLookupResponse {
+        val key = "$providerId:$productId"
+        productLookups[key]?.let { return it }
+        return lookupTourProductAsync(providerId, productId).also { response ->
+            if (response.data != null) productLookups[key] = response
+        }
     }
 
     suspend fun getTourScheduleAvailabilityAsync(

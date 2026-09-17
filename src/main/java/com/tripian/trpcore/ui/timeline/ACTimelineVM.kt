@@ -2225,15 +2225,18 @@ class ACTimelineVM @Inject constructor(
     fun getItinerary(): ItineraryWithActivities? = itinerary
 
     /**
-     * Returns favorites that haven't been added as booked_activity or reserved_activity,
-     * have a valid city mapping (cityName matches a resolved destination), and haven't
-     * been locally removed from saved plans. Used when opening SavedPlans screen.
+     * Favourites the user can still add: not booked or reserved anywhere in the trip,
+     * not removed locally, and resolved to one of the trip's destination cities. Empty
+     * until [resolveActivityCityIds] has run, so a host-supplied city is never shown
+     * or counted.
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
+        if (!favouriteCitiesResolved) return emptyList()
         val favourites = itinerary?.favouriteItems ?: return emptyList()
 
-        val plannedBaseIds = _timeline.value
+        val bookedBaseIds = _timeline.value
             ?.plannedActivities()
+            ?.filter { it.source == PlannedActivitySource.BOOKING }
             ?.map { it.productId }
             ?.toSet()
             .orEmpty()
@@ -2241,13 +2244,22 @@ class ACTimelineVM @Inject constructor(
         val removedBaseIds = com.tripian.trpcore.util.RemovedFavoritesStore
             .removedBaseIds(preferences, _tripHash)
 
+        val tripCityIds = tripDestinationCityIds()
+
         return favourites.filter { favourite ->
             val baseId = ActivityIdFormat.base(favourite.activityId)
-            baseId !in plannedBaseIds &&
+            val cityId = favourite.cityId?.takeIf { it > 0 }
+            baseId !in bookedBaseIds &&
                 baseId !in removedBaseIds &&
-                (favourite.cityId?.takeIf { it > 0 }
-                    ?: getResolvedCityId(favourite.cityName)) != null
+                cityId != null &&
+                cityId in tripCityIds
         }
+    }
+
+    private fun tripDestinationCityIds(): Set<Int> {
+        val resolvedCities = _cities.value.orEmpty().map { it.id }
+        val destinationCities = itinerary?.destinationItems.orEmpty().mapNotNull { it.cityId }
+        return (resolvedCities + destinationCities).filter { it > 0 }.toSet()
     }
 
     /**
@@ -2484,7 +2496,10 @@ class ACTimelineVM @Inject constructor(
     ) {
         val tripItems = itineraryData.tripItems ?: emptyList()
         val favouriteItems = itineraryData.favouriteItems ?: emptyList()
-        if (tripItems.isEmpty() && favouriteItems.isEmpty()) return
+        if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
+            favouriteCitiesResolved = true
+            return
+        }
 
         runCatching {
             resolveCityIdsForActivitiesUseCase(
@@ -2503,8 +2518,12 @@ class ACTimelineVM @Inject constructor(
                 tripItems = itineraryData.tripItems?.let { result.tripItems },
                 favouriteItems = itineraryData.favouriteItems?.let { result.favouriteItems }
             )
+            favouriteCitiesResolved = true
         }
     }
+
+    /** Set once the favourites carry SDK-resolved cities; host cities are never read before. */
+    private var favouriteCitiesResolved = false
 
     /** Base activity ids already present on the timeline as booked/reserved segments. */
     private fun timelineActivityIds(timeline: Timeline): Set<String> =

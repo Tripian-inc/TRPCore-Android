@@ -112,6 +112,7 @@ class ACPOIListingVM @Inject constructor(
             if (_loadingMore.value != value) _loadingMore.value = value
         }
     private var totalCount: Int = 0
+    private val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     /** Sets up state and loads POIs. The loader is shown before category prefetch to avoid a blank-screen flash. */
     fun initialize(planData: AddPlanData, tripHash: String, listingType: POIListingType) {
@@ -258,8 +259,26 @@ class ACPOIListingVM @Inject constructor(
         }
     }
 
+    /** Opens the time sheet, unless the selected day already holds [poi]. */
     fun onPOIAddClicked(poi: Poi) {
+        if (isPoiPlannedOnSelectedDay(poi)) {
+            showAlert(AlertType.ERROR, getLanguageForKey(LanguageConst.ADD_PLAN_POI_ALREADY_ADDED))
+            return
+        }
         _showTimeSelection.value = poi
+    }
+
+    private fun isPoiPlannedOnSelectedDay(poi: Poi): Boolean {
+        val poiId = poi.id ?: return false
+        val day = planData?.selectedDay?.let { dayKeyFormat.format(it) } ?: return false
+        val timeline = timelineRepository.lastTimeline(tripHash) ?: return false
+        return timeline.plans.orEmpty().any { plan ->
+            plan.steps.orEmpty().any { step ->
+                step.stepType == STEP_TYPE_POI &&
+                    step.poi?.id == poiId &&
+                    step.startDateTimes?.startsWith(day) == true
+            }
+        }
     }
 
     fun clearTimeSelection() {
@@ -362,6 +381,8 @@ class ACPOIListingVM @Inject constructor(
     fun getSelectedDayIndex(): Int = selectedDayIndex
 
 }
+
+private const val STEP_TYPE_POI = "poi"
 
 /**
  * POI Listing Type
