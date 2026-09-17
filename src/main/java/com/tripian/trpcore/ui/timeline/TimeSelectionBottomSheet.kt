@@ -10,6 +10,8 @@ import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.ui.timeline.addplan.showComposeTimePicker
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.OpeningHours
+import com.tripian.trpcore.util.TimeSelectionValidation
+import com.tripian.trpcore.util.extensions.applyTimeFieldError
 import java.util.Date
 
 /**
@@ -21,8 +23,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
 ) {
     private var startTime: String? = null  // Format: "HH:mm"
     private var endTime: String? = null    // Format: "HH:mm"
-    // Earliest selectable "HH:mm" for the edited item's day in its city timezone
-    // (null = no floor / future day). Blocks moving an activity into the past.
     private var minTime: String? = null
     // Suggested "HH:mm" the start-time picker opens on when [startTime] is null;
     // never a restriction, purely a prefill (see CityTimeZones.defaultStartTime).
@@ -90,10 +90,10 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             )
         )
 
-        binding.btnConfirm.isEnabled =
-            startTime != null &&
-            endTime != null &&
-            MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime)
+        val errors = TimeSelectionValidation.validate(startTime, endTime, minTime)
+        binding.llStartTime.applyTimeFieldError(binding.tvStartTimeError, errors.start)
+        binding.llEndTime.applyTimeFieldError(binding.tvEndTimeError, errors.end)
+        binding.btnConfirm.isEnabled = startTime != null && endTime != null && errors.isValid
 
         updateClosedWarning()
     }
@@ -146,29 +146,23 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
     }
 
     /**
-     * Opens the start-time picker floored at [minTime] (exclusive) so a past
-     * start can't be chosen; defaults to the earliest selectable slot.
+     * Opens the unbounded start-time picker; a start at or before [minTime] is
+     * flagged under the field afterwards. Defaults to the suggested slot.
      */
     private fun showStartTimePicker() {
         showComposeTimePicker(
             initialTime = startTime ?: defaultStartTime,
-            minTime = minTime,
             onTimeSelected = { hour, minute ->
-                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
-                startTime = time24h
-
-                if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
-                    endTime = null
-                }
-
+                startTime = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 updateTimeDisplays()
             }
         )
     }
 
     /**
-     * Opens the end-time picker (min = later of start and [minTime]). A stored
-     * "23:59" end is the midnight sentinel, so the clock seeds at 00:00.
+     * Opens the unbounded end-time picker; an end at or before the start is
+     * flagged under the field afterwards. A stored "23:59" end is the midnight
+     * sentinel, so the clock seeds at 00:00.
      */
     private fun showEndTimePicker() {
         val initialTime = when {
@@ -178,7 +172,6 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         }
         showComposeTimePicker(
             initialTime = initialTime,
-            minTime = MaterialTimePickerHelper.laterOf(startTime, minTime),
             treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
                 val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
@@ -210,7 +203,7 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
         fun newInstance(
             startTime: String? = null,
             endTime: String? = null,
-            // Earliest selectable "HH:mm" (city-timezone "now" for the item's day).
+            // Exclusive "HH:mm" floor in the city's clock; a start at or before it is flagged as passed.
             minTime: String? = null,
             // Suggested "HH:mm" prefill for the start-time picker when startTime is null.
             defaultStartTime: String? = null,

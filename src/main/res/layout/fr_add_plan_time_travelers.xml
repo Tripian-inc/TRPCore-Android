@@ -154,6 +154,18 @@
                         app:tint="@color/trp_fgWeak"/>
 
                 </FrameLayout>
+                <TextView
+                    android:id="@+id/tvStartTimeError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/medium"
+                    android:textColor="@color/trp_error_fg"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:text="That time has already passed at the destination"
+                    tools:visibility="visible"/>
+
 
             </LinearLayout>
 
@@ -204,6 +216,18 @@
                         app:tint="@color/trp_fgWeak"/>
 
                 </FrameLayout>
+                <TextView
+                    android:id="@+id/tvEndTimeError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:fontFamily="@font/medium"
+                    android:textColor="@color/trp_error_fg"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:text="That time has already passed at the destination"
+                    tools:visibility="visible"/>
+
 
             </LinearLayout>
 

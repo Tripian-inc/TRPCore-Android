@@ -19,12 +19,15 @@ import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.OpeningHours
+import com.tripian.trpcore.util.TimeSelectionValidation
+import com.tripian.trpcore.util.extensions.applyTimeFieldError
 import java.util.Date
 
 /**
- * Mirrors TimeSelectionBottomSheet.newInstance: [minTime] is the earliest
- * selectable "HH:mm", [defaultStartTime] prefills the start picker, and
- * [openingHours] with [selectedDay] drive the outside-hours warning.
+ * Mirrors TimeSelectionBottomSheet.newInstance: [minTime] is the exclusive
+ * "HH:mm" floor in the city's clock (a start at or before it is flagged as
+ * passed), [defaultStartTime] prefills the start picker, and [openingHours]
+ * with [selectedDay] drive the outside-hours warning.
  */
 data class PoiTimeSelectionRequest(
     val startTime: String? = null,
@@ -37,7 +40,6 @@ data class PoiTimeSelectionRequest(
 
 private data class TimePickerRequest(
     val initialTime: String?,
-    val minTime: String?,
     val treatMidnightAsEndOfDay: Boolean,
     val isEnd: Boolean
 )
@@ -78,7 +80,6 @@ internal fun PoiTimeSelectionSheet(
             binding.llStartTime.setOnClickListener {
                 state.picker = TimePickerRequest(
                     initialTime = state.startTime ?: request.defaultStartTime,
-                    minTime = request.minTime,
                     treatMidnightAsEndOfDay = false,
                     isEnd = false
                 )
@@ -86,7 +87,6 @@ internal fun PoiTimeSelectionSheet(
             binding.llEndTime.setOnClickListener {
                 state.picker = TimePickerRequest(
                     initialTime = endPickerInitialTime(state.startTime, state.endTime),
-                    minTime = MaterialTimePickerHelper.laterOf(state.startTime, request.minTime),
                     treatMidnightAsEndOfDay = true,
                     isEnd = true
                 )
@@ -100,12 +100,11 @@ internal fun PoiTimeSelectionSheet(
 
     state.picker?.let { picker ->
         val initial = picker.initialTime?.let { MaterialTimePickerHelper.parseTime24h(it) }
-        val min = picker.minTime?.let { MaterialTimePickerHelper.parseTime24h(it) }
         TimePickerDialogContent(
             initialHour = initial?.first ?: 10,
             initialMinute = initial?.second ?: 0,
-            minHour = min?.first,
-            minMinute = min?.second,
+            minHour = null,
+            minMinute = null,
             treatMidnightAsEndOfDay = picker.treatMidnightAsEndOfDay,
             cancelText = language(LanguageConst.ADD_PLAN_CANCEL),
             selectText = language(LanguageConst.ADD_PLAN_SELECT),
@@ -113,11 +112,7 @@ internal fun PoiTimeSelectionSheet(
                 if (picker.isEnd) {
                     state.endTime = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
                 } else {
-                    val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
-                    state.startTime = time24h
-                    if (!MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, state.endTime)) {
-                        state.endTime = null
-                    }
+                    state.startTime = MaterialTimePickerHelper.formatTo24h(hour, minute)
                 }
                 state.picker = null
             },
@@ -157,8 +152,10 @@ private fun BottomSheetTimeSelectionBinding.render(
     tvEndTime.setTextColor(
         context.getColor(if (endTime != null) R.color.trp_text_primary else R.color.trp_fgWeak)
     )
-    btnConfirm.isEnabled = startTime != null && endTime != null &&
-        MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime)
+    val errors = TimeSelectionValidation.validate(startTime, endTime, request.minTime)
+    llStartTime.applyTimeFieldError(tvStartTimeError, errors.start)
+    llEndTime.applyTimeFieldError(tvEndTimeError, errors.end)
+    btnConfirm.isEnabled = startTime != null && endTime != null && errors.isValid
     renderClosedWarning(request, startTime, endTime)
 }
 
