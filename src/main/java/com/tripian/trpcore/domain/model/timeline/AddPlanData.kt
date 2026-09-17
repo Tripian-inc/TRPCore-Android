@@ -6,6 +6,7 @@ import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.TimeSelectionValidation
 import java.io.Serializable
 import java.util.Calendar
 import java.util.Date
@@ -98,13 +99,16 @@ data class AddPlanData(
     }
 
     /**
-     * Check if continue button should be enabled on TimeAndTravelers screen
+     * Whether the TimeAndTravelers step is complete: both times picked, neither
+     * already passed at the destination ([earliestStart], exclusive "HH:mm"
+     * floor) nor ending before the start.
      */
-    fun canContinueFromTimeAndTravelers(): Boolean {
+    fun canContinueFromTimeAndTravelers(earliestStart: String?): Boolean {
         return startingPointLocation != null &&
                 startTime != null &&
                 endTime != null &&
-                travelers >= 1
+                travelers >= 1 &&
+                TimeSelectionValidation.validate(startTime, endTime, earliestStart).isValid
     }
 
     /**

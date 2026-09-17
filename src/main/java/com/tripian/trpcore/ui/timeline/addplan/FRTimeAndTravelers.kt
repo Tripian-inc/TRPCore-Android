@@ -16,6 +16,7 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.FrAddPlanTimeTravelersBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyTimeFieldError
 
 /**
  * FRTimeAndTravelers
@@ -140,36 +141,24 @@ class FRTimeAndTravelers : Fragment() {
     }
 
     /**
-     * Show Compose TimePicker Dialog for start time selection. On the city's
-     * "today" the picker floors at the next half-hour slot so a past time can't
-     * be chosen; on a future day any time is selectable. With no start chosen,
-     * it opens on the suggested default slot (09:00 for a future day).
+     * Opens the unbounded start-time picker; a past pick is flagged under the
+     * field afterwards. With no start chosen, it opens on the suggested default
+     * slot (09:00 for a future day).
      */
     private fun showStartTimePicker() {
-        val currentTime = sharedVM.startTime.value
-        val minTime = sharedVM.minSelectableTimeForSelectedDay()
-
         showComposeTimePicker(
-            initialTime = currentTime ?: sharedVM.defaultStartTimeForSelectedDay(),
-            minTime = minTime,
+            initialTime = sharedVM.startTime.value ?: sharedVM.defaultStartTimeForSelectedDay(),
             onTimeSelected = { hour, minute ->
-                val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
-                sharedVM.setStartTime(time24h)
-
-                val endTime = sharedVM.endTime.value
-                if (endTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, endTime)) {
-                    sharedVM.setEndTime(null)
-                }
+                sharedVM.setStartTime(MaterialTimePickerHelper.formatTo24h(hour, minute))
             }
         )
     }
 
     /**
-     * Show Compose TimePicker Dialog for end time selection.
-     * End time can be picked first — when start is set, enforce end > start
-     * via the picker's minTime; when start is null, allow any time.
-     * A stored [MaterialTimePickerHelper.END_OF_DAY_24H] end (midnight sentinel)
-     * reopens the clock at 00:00.
+     * Opens the unbounded end-time picker; an end at or before the start is
+     * flagged under the field afterwards. A stored
+     * [MaterialTimePickerHelper.END_OF_DAY_24H] end (midnight sentinel) reopens
+     * the clock at 00:00.
      */
     private fun showEndTimePicker() {
         val startTime = sharedVM.startTime.value
@@ -183,11 +172,9 @@ class FRTimeAndTravelers : Fragment() {
 
         showComposeTimePicker(
             initialTime = initialTime,
-            minTime = MaterialTimePickerHelper.laterOf(startTime, sharedVM.minSelectableTimeForSelectedDay()),
             treatMidnightAsEndOfDay = true,
             onTimeSelected = { hour, minute ->
-                val time24h = MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute)
-                sharedVM.setEndTime(time24h)
+                sharedVM.setEndTime(MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute))
             }
         )
     }
@@ -264,6 +251,14 @@ class FRTimeAndTravelers : Fragment() {
                     else R.color.trp_fgWeak
                 )
             )
+        }
+
+        sharedVM.startTimeError.observe(viewLifecycleOwner) { error ->
+            binding.btnStartTime.applyTimeFieldError(binding.tvStartTimeError, error)
+        }
+
+        sharedVM.endTimeError.observe(viewLifecycleOwner) { error ->
+            binding.btnEndTime.applyTimeFieldError(binding.tvEndTimeError, error)
         }
 
         sharedVM.travelers.observe(viewLifecycleOwner) { count ->

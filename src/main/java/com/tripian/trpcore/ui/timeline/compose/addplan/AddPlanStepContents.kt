@@ -45,6 +45,7 @@ import com.tripian.trpcore.ui.timeline.addplan.SmartCategoryAdapter
 import com.tripian.trpcore.ui.timeline.addplan.TimePickerDialogContent
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.applyTimeFieldError
 import java.util.Date
 
 private fun getLanguage(key: String): String {
@@ -230,7 +231,6 @@ private class TimeTravelersStepViews(
 
 private data class AddPlanTimePickerRequest(
     val initialTime: String?,
-    val minTime: String?,
     val treatMidnightAsEndOfDay: Boolean,
     val isEnd: Boolean
 )
@@ -238,7 +238,8 @@ private data class AddPlanTimePickerRequest(
 /**
  * Step 2 of the Compose AddPlan wizard. Reuses fr_add_plan_time_travelers.xml
  * with the wiring ported from FRTimeAndTravelers; the starting point picker is
- * opened by the owner and the time pickers reuse TimePickerDialogContent.
+ * opened by the owner, the time pickers reuse TimePickerDialogContent and a
+ * past or inverted pick is flagged under its field.
  */
 @Composable
 internal fun AddPlanTimeTravelersStep(
@@ -253,6 +254,8 @@ internal fun AddPlanTimeTravelersStep(
     val startTime by viewModel.startTime.observeAsState()
     val endTime by viewModel.endTime.observeAsState()
     val travelers by viewModel.travelers.observeAsState(1)
+    val startTimeError by viewModel.startTimeError.observeAsState()
+    val endTimeError by viewModel.endTimeError.observeAsState()
     var pickerRequest by remember { mutableStateOf<AddPlanTimePickerRequest?>(null) }
 
     StepScrollContainer(rememberScrollState()) {
@@ -282,7 +285,6 @@ internal fun AddPlanTimeTravelersStep(
                     pickerRequest = AddPlanTimePickerRequest(
                         initialTime = viewModel.startTime.value
                             ?: viewModel.defaultStartTimeForSelectedDay(),
-                        minTime = viewModel.minSelectableTimeForSelectedDay(),
                         treatMidnightAsEndOfDay = false,
                         isEnd = false
                     )
@@ -297,9 +299,6 @@ internal fun AddPlanTimeTravelersStep(
                     }
                     pickerRequest = AddPlanTimePickerRequest(
                         initialTime = initialTime,
-                        minTime = MaterialTimePickerHelper.laterOf(
-                            start, viewModel.minSelectableTimeForSelectedDay()
-                        ),
                         treatMidnightAsEndOfDay = true,
                         isEnd = true
                     )
@@ -344,6 +343,8 @@ internal fun AddPlanTimeTravelersStep(
                         if (endTime != null) R.color.trp_text_primary else R.color.trp_fgWeak
                     )
                 )
+                b.btnStartTime.applyTimeFieldError(b.tvStartTimeError, startTimeError)
+                b.btnEndTime.applyTimeFieldError(b.tvEndTimeError, endTimeError)
 
                 b.tvTravelerCount.text = travelers.toString()
                 b.btnMinus.alpha = if (travelers <= 1) 0.5f else 1.0f
@@ -355,12 +356,11 @@ internal fun AddPlanTimeTravelersStep(
 
     pickerRequest?.let { request ->
         val initial = request.initialTime?.let { MaterialTimePickerHelper.parseTime24h(it) }
-        val min = request.minTime?.let { MaterialTimePickerHelper.parseTime24h(it) }
         TimePickerDialogContent(
             initialHour = initial?.first ?: 10,
             initialMinute = initial?.second ?: 0,
-            minHour = min?.first,
-            minMinute = min?.second,
+            minHour = null,
+            minMinute = null,
             treatMidnightAsEndOfDay = request.treatMidnightAsEndOfDay,
             cancelText = getLanguage(LanguageConst.ADD_PLAN_CANCEL),
             selectText = getLanguage(LanguageConst.ADD_PLAN_SELECT),
@@ -368,14 +368,7 @@ internal fun AddPlanTimeTravelersStep(
                 if (request.isEnd) {
                     viewModel.setEndTime(MaterialTimePickerHelper.formatEndTimeTo24h(hour, minute))
                 } else {
-                    val time24h = MaterialTimePickerHelper.formatTo24h(hour, minute)
-                    viewModel.setStartTime(time24h)
-                    val currentEnd = viewModel.endTime.value
-                    if (currentEnd != null &&
-                        !MaterialTimePickerHelper.isEndTimeAfterStartTime(time24h, currentEnd)
-                    ) {
-                        viewModel.setEndTime(null)
-                    }
+                    viewModel.setStartTime(MaterialTimePickerHelper.formatTo24h(hour, minute))
                 }
                 pickerRequest = null
             },

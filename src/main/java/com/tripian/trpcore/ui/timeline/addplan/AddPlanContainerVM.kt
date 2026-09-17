@@ -15,12 +15,13 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.domain.model.timeline.SmartCategory
 import com.tripian.trpcore.repository.TripRepository
-import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.isPastDay
 import com.tripian.trpcore.util.extensions.isTodayDate
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.TimeFieldError
+import com.tripian.trpcore.util.TimeSelectionValidation
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -125,6 +126,14 @@ class AddPlanContainerVM @Inject constructor(
     private val _travelers = MutableLiveData(1)
     val travelers: LiveData<Int> = _travelers
 
+    private val _startTimeError = MutableLiveData<TimeFieldError?>(null)
+    val startTimeError: LiveData<TimeFieldError?> = _startTimeError
+
+    private val _endTimeError = MutableLiveData<TimeFieldError?>(null)
+    val endTimeError: LiveData<TimeFieldError?> = _endTimeError
+
+    private var defaultTravelers: Int = 1
+
     private val _selectedSmartCategories = MutableLiveData<List<SmartCategory>>(emptyList())
     val selectedSmartCategories: LiveData<List<SmartCategory>> = _selectedSmartCategories
 
@@ -157,6 +166,11 @@ class AddPlanContainerVM @Inject constructor(
         val tripHash = args.getString(ARG_TRIP_HASH)
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
         bookedActivities = args.getSerializable(ARG_BOOKED_ACTIVITIES) as? ArrayList<TimelineSegment> ?: arrayListOf()
+        defaultTravelers = bookedActivities
+            .maxOfOrNull { it.adults + it.children }
+            ?.takeIf { it > 0 } ?: 1
+        _travelers.value = defaultTravelers
+        planData.travelers = defaultTravelers
         plannedActivityIdsByDay = args.getSerializable(ARG_PLANNED_ACTIVITY_IDS).asIdsByDay()
         tripWideExcludedActivityIds =
             args.getStringArrayList(ARG_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
@@ -238,12 +252,14 @@ class AddPlanContainerVM @Inject constructor(
     fun shouldAlwaysShowCitySelection(): Boolean = isUsingAllCities
 
     /**
-     * Earliest selectable "HH:mm" for the selected day's start/end time pickers
-     * (see [CityTimeZones.minSelectableTimeRounded]).
+     * Exclusive "HH:mm" floor for the selected day in the selected city's clock
+     * (see [CityTimeZones.minSelectableTime]); null when the whole day is open.
+     * Used to flag a picked start time as already passed, never to bound the picker.
      */
     fun minSelectableTimeForSelectedDay(): String? {
         val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
-        return CityTimeZones.minSelectableTimeRounded(day, _selectedCity.value)
+        val city = _selectedCity.value
+        return CityTimeZones.minSelectableTime(day, CityTimeZones.timezoneFor(city?.id) ?: city?.timezone)
     }
 
     /**
@@ -267,6 +283,7 @@ class AddPlanContainerVM @Inject constructor(
             _selectedDayIndex.value = index
             planData.selectedDay = days[index]
             planData.selectedDayIndex = index
+            updateContinueButtonState()
         }
     }
 
@@ -396,16 +413,17 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     fun setEndTime(time: String?) {
-        if (time != null) {
-            val startTime = _startTime.value
-            if (startTime != null && !MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, time)) {
-                return
-            }
-        }
-
         _endTime.value = time
         planData.endTime = time
         updateContinueButtonState()
+    }
+
+    private fun revalidateTimes() {
+        val errors = TimeSelectionValidation.validate(
+            _startTime.value, _endTime.value, minSelectableTimeForSelectedDay()
+        )
+        if (_startTimeError.value != errors.start) _startTimeError.value = errors.start
+        if (_endTimeError.value != errors.end) _endTimeError.value = errors.end
     }
 
     // =====================
@@ -527,8 +545,8 @@ class AddPlanContainerVM @Inject constructor(
         planData.startTime = null
         planData.endTime = null
 
-        _travelers.value = 1
-        planData.travelers = 1
+        _travelers.value = defaultTravelers
+        planData.travelers = defaultTravelers
 
         clearStartingPoint()
     }
@@ -601,10 +619,12 @@ class AddPlanContainerVM @Inject constructor(
 
     private fun updateContinueButtonState() {
         val step = _currentStep.value ?: AddPlanStep.SELECT_DAY_AND_CITY
+        revalidateTimes()
 
         _continueButtonEnabled.value = when (step) {
             AddPlanStep.SELECT_DAY_AND_CITY -> planData.canContinueFromSelectDay()
-            AddPlanStep.TIME_AND_TRAVELERS -> planData.canContinueFromTimeAndTravelers()
+            AddPlanStep.TIME_AND_TRAVELERS ->
+                planData.canContinueFromTimeAndTravelers(minSelectableTimeForSelectedDay())
             AddPlanStep.CATEGORY_SELECTION -> planData.canContinueFromCategorySelection()
         }
     }

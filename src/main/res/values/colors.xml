@@ -155,6 +155,7 @@
     <color name="trp_advantage">#00825B</color>
     <color name="trp_error_icon">#E74A41</color>
     <color name="trp_error_bg">#FFF6F7</color>
+    <color name="trp_error_fg">#C53F37</color>
 
     <!-- No-Location Badge (Theme 6) -->
     <color name="trp_no_location_bg">#D4EEF8</color>
