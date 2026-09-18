@@ -757,7 +757,7 @@ class ACTimelineVM @Inject constructor(
         _error.value = null
 
         viewModelScope.launch {
-            resolveActivityCityIds(itineraryData, knownActivityIds = emptySet())
+            resolveActivityCityIds(itineraryData)
             val resolvedItinerary = itinerary ?: itineraryData
             runCatching { createTimelineUseCase(CreateTimelineUseCase.Params(resolvedItinerary)) }
                 .onSuccess { timeline ->
@@ -2479,7 +2479,7 @@ class ACTimelineVM @Inject constructor(
         viewModelScope.launch {
             val itineraryData = itinerary
             if (itineraryData != null) {
-                resolveActivityCityIds(itineraryData, timelineActivityIds(initialTimeline))
+                resolveActivityCityIds(itineraryData)
             }
             runParallelSyncForInitial(
                 initialTimeline,
@@ -2495,13 +2495,8 @@ class ACTimelineVM @Inject constructor(
      * result back on [itinerary]. Runs while the loader is still up — a city that
      * lands after the days are drawn would pop a new activity onto the user's screen.
      *
-     * @param knownActivityIds activities the timeline already holds; they keep the
-     *   city their segment was created with instead of being looked up again.
      */
-    private suspend fun resolveActivityCityIds(
-        itineraryData: ItineraryWithActivities,
-        knownActivityIds: Set<String>
-    ) {
+    private suspend fun resolveActivityCityIds(itineraryData: ItineraryWithActivities) {
         val tripItems = itineraryData.tripItems ?: emptyList()
         val favouriteItems = itineraryData.favouriteItems ?: emptyList()
         if (tripItems.isEmpty() && favouriteItems.isEmpty()) {
@@ -2514,8 +2509,7 @@ class ACTimelineVM @Inject constructor(
                 ResolveCityIdsForActivitiesUseCase.Params(
                     tripItems = tripItems,
                     favouriteItems = favouriteItems,
-                    existingCityMap = cityNameToIdMap.toMap(),
-                    knownActivityIds = knownActivityIds
+                    existingCityMap = cityNameToIdMap.toMap()
                 )
             )
         }.onSuccess { result ->
@@ -2534,13 +2528,6 @@ class ACTimelineVM @Inject constructor(
 
     /** Set once city resolution finished, successfully or not, so the list can render. */
     private var favouriteCitiesResolved = false
-
-    /** Base activity ids already present on the timeline as booked/reserved segments. */
-    private fun timelineActivityIds(timeline: Timeline): Set<String> =
-        timeline.tripProfile?.segments
-            ?.mapNotNull { segment -> ActivityIdFormat.base(segment.additionalData?.activityId) }
-            ?.toSet()
-            .orEmpty()
 
     /**
      * STEP 2: 3 parallel ops — transition detection, AddMissing, UpdateDateRange.

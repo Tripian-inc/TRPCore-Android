@@ -45,16 +45,10 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
     private val tourRepository: TourRepository
 ) : SuspendUseCase<ResolveCityIdsForActivitiesUseCase.Result, ResolveCityIdsForActivitiesUseCase.Params>() {
 
-    /**
-     * @param knownActivityIds base ids the timeline already holds; booked items among
-     *   them are skipped by the lookup tier because their segment already carries a
-     *   city. Favourites are always looked up. Empty when the timeline is about to be created.
-     */
     data class Params(
         val tripItems: List<SegmentActivityItem>,
         val favouriteItems: List<SegmentFavoriteItem>,
-        val existingCityMap: Map<String, Int>,
-        val knownActivityIds: Set<String> = emptySet()
+        val existingCityMap: Map<String, Int>
     )
 
     /**
@@ -99,9 +93,10 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
     }
 
     /**
-     * Tier 1. Every distinct activity id the timeline doesn't already hold is looked
-     * up once, concurrently; a failed or city-less lookup leaves the item to the
-     * next tier. The product's duration is taken from the same response.
+     * Tier 1. Every distinct activity id is looked up once, concurrently; a failed
+     * or city-less lookup leaves the item to the next tier. Lookups are cached for
+     * the session, so re-resolving the same trip costs nothing. The product's
+     * duration is taken from the same response.
      */
     private suspend fun applyLookupTier(
         params: Params,
@@ -110,9 +105,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         tripDurations: Array<Double?>,
         favouriteDurations: Array<Double?>
     ) {
-        val tripIds = params.tripItems
-            .mapNotNull { item -> lookupKey(item.activityId) }
-            .filterNot { id -> id in params.knownActivityIds }
+        val tripIds = params.tripItems.mapNotNull { item -> lookupKey(item.activityId) }
         val favouriteIds = params.favouriteItems.mapNotNull { item -> lookupKey(item.activityId) }
         val activityIds = (tripIds + favouriteIds).distinct()
 
@@ -215,7 +208,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         }
     }
 
-    /** Bare product id — the form both the lookup request and [Params.knownActivityIds] use. */
+    /** Bare product id — the form the lookup request uses. */
     private fun lookupKey(activityId: String?): String? = ActivityIdFormat.base(activityId)
 
     private fun mappedCityId(cityName: String?, cityMap: Map<String, Int>): Int? {
