@@ -14,6 +14,7 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.ui.timeline.poilisting.CategoryFilterAdapter
+import com.tripian.trpcore.util.extensions.hideSheetDragHandle
 import com.tripian.trpcore.util.LanguageConst
 
 private fun language(key: String): String = TRPCore.core.miscRepository.getLanguageValueForKey(key)
@@ -33,6 +34,7 @@ internal fun PoiSortSheet(
             inflate = BottomSheetPoiSortBinding::inflate,
             modifier = Modifier.fillMaxWidth()
         ) { binding, _, _ ->
+            binding.root.hideSheetDragHandle()
             binding.tvTitle.text = language(LanguageConst.ADD_PLAN_SORT_BY)
             binding.rbPopularity.text = language(SortOption.POPULARITY.languageKey)
             binding.rbRating.text = language(SortOption.RATING.languageKey)
@@ -72,6 +74,7 @@ internal fun PoiFilterSheet(
             inflate = BottomSheetPoiFilterBinding::inflate,
             modifier = Modifier.fillMaxWidth()
         ) { binding, _, _ ->
+            binding.root.hideSheetDragHandle()
             val selectedCategoryIds = currentFilter.selectedCategoryIds.toMutableSet()
             val adapter = CategoryFilterAdapter(
                 categoryGroups = categoryGroups,

@@ -1,6 +1,7 @@
 package com.tripian.trpcore.util.extensions
 
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import com.tripian.trpcore.R
 import com.tripian.trpcore.base.TRPCore
@@ -16,4 +17,12 @@ fun View.applyTimeFieldError(label: TextView, error: TimeFieldError?) {
     )
     label.text = error?.let { TRPCore.core.miscRepository.getLanguageValueForKey(it.languageKey) }.orEmpty()
     label.visibility = if (error != null) View.VISIBLE else View.GONE
+}
+
+/**
+ * Hides the drag handle a bottom sheet layout draws as its first child, for
+ * layouts shown inside Compose sheet chrome that already draws one.
+ */
+fun View.hideSheetDragHandle() {
+    (this as? ViewGroup)?.getChildAt(0)?.visibility = View.GONE
 }

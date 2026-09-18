@@ -18,6 +18,7 @@ import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.hideSheetDragHandle
 import com.tripian.trpcore.util.OpeningHours
 import com.tripian.trpcore.util.TimeSelectionValidation
 import com.tripian.trpcore.util.extensions.applyTimeFieldError
@@ -75,6 +76,7 @@ internal fun PoiTimeSelectionSheet(
             modifier = Modifier.fillMaxWidth(),
             update = { binding -> binding.render(request, startTime, endTime) }
         ) { binding, _, _ ->
+            binding.root.hideSheetDragHandle()
             binding.applyLabels()
             binding.ivClose.setOnClickListener { onDismiss() }
             binding.llStartTime.setOnClickListener {

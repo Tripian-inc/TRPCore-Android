@@ -35,6 +35,7 @@ import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.ui.timeline.compose.core.rememberSheetViewModel
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.hideSheetDragHandle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -248,7 +249,7 @@ private class ActivityTimeSelectionUi(
     private var isFlexibleSelected: Boolean = false
 
     fun bind(owner: LifecycleOwner) {
-        binding.root.getChildAt(0).visibility = View.GONE
+        binding.root.hideSheetDragHandle()
         setupUI()
         setupDayFilter()
         setupClickListeners()

@@ -18,6 +18,7 @@ import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.util.FormatUtils
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.hideSheetDragHandle
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -44,7 +45,7 @@ internal fun ActivitySortSheet(
                 inflate = BottomSheetActivitySortBinding::inflate,
                 modifier = Modifier.fillMaxWidth()
             ) { binding, _, _ ->
-                binding.root.hideLayoutDragHandle()
+                binding.root.hideSheetDragHandle()
                 binding.applyTexts(getLanguage)
                 binding.checkCurrent(currentSort)
                 binding.ivClose.setOnClickListener { onDismiss() }
@@ -118,7 +119,7 @@ internal fun ActivityFilterSheet(
                 inflate = BottomSheetActivityFilterBinding::inflate,
                 modifier = Modifier.fillMaxWidth()
             ) { binding, _, _ ->
-                binding.root.hideLayoutDragHandle()
+                binding.root.hideSheetDragHandle()
                 val editor = ActivityFilterEditor(binding, currentFilter, currency, getLanguage)
                 binding.tvTitle.text = getLanguage(LanguageConst.ADD_PLAN_FILTERS)
                 binding.tvPriceLabel.text = getLanguage(LanguageConst.ADD_PLAN_FILTER_PRICE)
@@ -252,9 +253,4 @@ private class ActivityFilterEditor(
 
     private fun snapUp(value: Float, step: Float): Float =
         if (step <= 0f) value else ceil(value / step) * step
-}
-
-/** The sheet chrome already draws a drag handle; the layout's own handle is its first child. */
-private fun View.hideLayoutDragHandle() {
-    (this as? ViewGroup)?.getChildAt(0)?.visibility = View.GONE
 }
