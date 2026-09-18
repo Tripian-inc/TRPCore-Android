@@ -2226,11 +2226,11 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Favourites the user can still add: not booked anywhere in the trip, not removed
-     * locally, and belonging to one of the trip's destination cities. The SDK resolves
-     * each favourite's city itself and only falls back to the host's cityId when that
-     * fails; a favourite whose city is unknown, or belongs to another trip, stays out.
-     * While no trip city is known yet the city check is skipped, so favourites are not
-     * hidden by a destination list that carries no cityId.
+     * locally, and belonging to one of the trip's destination cities. The city comes
+     * from the SDK's own resolution (product lookup, then coordinate); a favourite it
+     * cannot place stays out rather than being shown under a guessed city. While no
+     * trip city is known yet the city check is skipped, so favourites are not hidden
+     * by a destination list that carries no cityId.
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
         if (!favouriteCitiesResolved) return emptyList()

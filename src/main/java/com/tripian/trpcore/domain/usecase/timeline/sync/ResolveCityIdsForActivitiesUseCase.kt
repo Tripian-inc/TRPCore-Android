@@ -28,11 +28,11 @@ import javax.inject.Inject
  *  3. The cityName → cityId map built from the trip's destinations, which relies
  *     on the host's city naming.
  *
- * A booked item that survives all three keeps the incoming value. A favourite is
- * resolved by the first two tiers only: the host's city id and city name are never
- * used for it, and one that stays unresolved is handed back with no city so it is
- * neither listed nor booked. Blocking operation — the other sync operations wait on
- * its result.
+ * A favourite is resolved by the first two tiers only. Whatever stays unresolved
+ * after its tiers is handed back with no city: the incoming id is never restored,
+ * so an unresolved favourite is neither listed nor booked, and an unresolved
+ * booking is placed in the trip's own city when its segment is built. Blocking
+ * operation — the other sync operations wait on its result.
  *
  * The activity duration is normalized in the same pass: hosts express it in their
  * own unit, so the product lookup's value (minutes) replaces the incoming one and
@@ -82,13 +82,13 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 
         val tripItems = params.tripItems.mapIndexed { index, item ->
             item.copy(
-                cityId = tripCityIds[index] ?: item.cityId,
+                cityId = tripCityIds[index],
                 duration = tripDurations[index] ?: item.duration
             )
         }
         val favouriteItems = params.favouriteItems.mapIndexed { index, item ->
             item.copy(
-                cityId = favouriteCityIds[index] ?: item.cityId,
+                cityId = favouriteCityIds[index],
                 duration = favouriteDurations[index] ?: item.duration
             )
         }
