@@ -2552,14 +2552,17 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        val bookedBaseIds = initialTimeline.tripProfile?.segments
-            ?.filter { it.segmentType == SegmentType.BOOKED_ACTIVITY }
+        val ownedBaseIds = initialTimeline.tripProfile?.segments
+            ?.filter {
+                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
+                    it.segmentType == SegmentType.RESERVED_ACTIVITY
+            }
             ?.mapNotNull { ActivityIdFormat.base(it.additionalData?.activityId) }
             ?.toSet()
             .orEmpty()
         tracker.addMissing = tripItems.any { item ->
             val baseId = ActivityIdFormat.base(item.activityId)
-            baseId != null && baseId !in bookedBaseIds
+            baseId != null && baseId !in ownedBaseIds
         }
 
         viewModelScope.launch {

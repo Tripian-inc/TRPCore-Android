@@ -51,7 +51,8 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
                             TransitionInfo(
                                 segmentIndex = index,
                                 activityId = activityId,
-                                tripItem = item
+                                tripItem = item,
+                                reservedCityId = segment.cityId?.takeIf { it > 0 }
                             )
                         )
                     }

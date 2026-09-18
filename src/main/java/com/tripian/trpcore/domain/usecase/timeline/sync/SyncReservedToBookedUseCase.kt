@@ -15,6 +15,9 @@ import javax.inject.Inject
  * segments (highest index first, so backend array shifts don't invalidate the
  * remaining indices), then creates the booked segments.
  *
+ * The booking inherits the city of the reserved segment it replaces when the SDK
+ * could not resolve one for it, so the pair never drifts apart.
+ *
  * The booked payload is built by [ItineraryWithActivities.createBookedActivitySegment]
  * so it carries the same `additionalData` (title, image, datetimes, duration, price)
  * as every other booked segment; a partial payload renders as an empty cell.
@@ -48,13 +51,10 @@ class SyncReservedToBookedUseCase @Inject constructor(
 
         for (transition in sortedTransitions) {
             val tripItem = transition.tripItem
-            val cityId = tripItem.cityId?.takeIf { it > 0 }
+            val fallbackCityId = transition.reservedCityId
                 ?: tripItem.cityName?.let { name -> params.cityNameToIdMap[name.cityNameKey()] }
-                ?: 0
 
-            val segment = params.itinerary.createBookedActivitySegment(tripItem).apply {
-                if (this.cityId == null && cityId > 0) this.cityId = cityId
-            }
+            val segment = params.itinerary.createBookedActivitySegment(tripItem, fallbackCityId)
 
             try {
                 repository.editSegmentAsync(params.tripHash, segment)

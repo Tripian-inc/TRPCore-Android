@@ -13,9 +13,11 @@ import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
- * Adds booked_activity segments for tripItems the timeline does not already hold
- * as a booking. A reserved segment for the same product does not count as present:
- * it is removed by the reserved-to-booked transition running alongside this sweep.
+ * Adds booked_activity segments for tripItems the timeline holds under no segment
+ * of its own. A product whose reserved segment is still on the timeline is left
+ * alone: the reserved-to-booked transition replaces that segment itself, and
+ * adding it here too would leave the trip with the booking twice. Ids are compared
+ * bare, since the SDK's own segments may carry the prefixed form.
  * Delegates payload construction to ItineraryWithActivities.createBookedActivitySegment
  * so initial-create and sync paths emit identical segments.
  */
@@ -30,8 +32,11 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val bookedBaseIds = params.timeline.tripProfile?.segments
-            ?.filter { segment -> segment.segmentType == SegmentType.BOOKED_ACTIVITY }
+        val ownedBaseIds = params.timeline.tripProfile?.segments
+            ?.filter { segment ->
+                segment.segmentType == SegmentType.BOOKED_ACTIVITY ||
+                    segment.segmentType == SegmentType.RESERVED_ACTIVITY
+            }
             ?.mapNotNull { segment -> ActivityIdFormat.base(segment.additionalData?.activityId) }
             ?.toSet()
             .orEmpty()
@@ -39,7 +44,7 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
         val missingItems = params.itinerary.tripItems
             ?.filter { item ->
                 val baseId = ActivityIdFormat.base(item.activityId)
-                baseId != null && baseId !in bookedBaseIds
+                baseId != null && baseId !in ownedBaseIds
             }
             ?: emptyList()
 
