@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,10 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,7 +41,7 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanStep
 import com.tripian.trpcore.domain.model.timeline.ManualCategory
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
-import com.tripian.trpcore.ui.timeline.compose.core.rememberMaxSheetContentHeight
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.util.LanguageConst
 
 
@@ -77,7 +73,6 @@ fun AddPlanSheet(
     val continueTextKey by viewModel.continueButtonTextKey.observeAsState()
     val showClearSelection by viewModel.showClearSelection.observeAsState(false)
     val loaderEvent by viewModel.lottieLoadingEvent.observeAsState()
-    val maxSheetContentHeight = rememberMaxSheetContentHeight()
 
     val openManualListing by viewModel.openManualListing.observeAsState()
     LaunchedEffect(openManualListing) {
@@ -107,24 +102,7 @@ fun AddPlanSheet(
         if (resetEvent == true) viewModel.clearResetToFirstStep()
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
-        sheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true,
-            confirmValueChange = { it != SheetValue.Hidden }
-        ),
-        containerColor = colorResource(R.color.trp_white),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-        dragHandle = {
-            Box(
-                Modifier
-                    .padding(top = 8.dp)
-                    .size(width = 32.dp, height = 4.dp)
-                    .background(colorResource(R.color.trp_bgDisabled), RoundedCornerShape(2.dp))
-            )
-        }
-    ) {
-        Box(Modifier.heightIn(max = maxSheetContentHeight)) {
+    TimelineSheet(onDismissRequest = onDismissRequest, dismissible = false) {
             Column {
                 Box(
                     Modifier
@@ -250,7 +228,6 @@ fun AddPlanSheet(
                         .padding(16.dp)
                 )
             }
-        }
     }
 }
 

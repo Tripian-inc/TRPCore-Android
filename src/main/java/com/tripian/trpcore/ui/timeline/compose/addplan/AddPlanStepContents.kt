@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -44,6 +42,7 @@ import com.tripian.trpcore.ui.timeline.addplan.MaterialTimePickerHelper
 import com.tripian.trpcore.ui.timeline.addplan.SmartCategoryAdapter
 import com.tripian.trpcore.ui.timeline.addplan.TimePickerDialogContent
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineSheet
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.applyTimeFieldError
 import java.util.Date
@@ -433,11 +432,7 @@ internal fun AddPlanCitySheet(
     onSelect: (City) -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = colorResource(R.color.trp_white)
-    ) {
+    TimelineSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(bottom = 24.dp)) {
             Text(
                 text = getLanguage(LanguageConst.ADD_PLAN_SELECT_CITY),
