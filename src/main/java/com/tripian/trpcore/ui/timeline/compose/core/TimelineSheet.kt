@@ -70,7 +70,7 @@ internal fun TimelineSheet(
                     Modifier
                         .padding(top = 8.dp)
                         .size(width = 32.dp, height = 4.dp)
-                        .background(colorResource(R.color.trp_bgDisabled), RoundedCornerShape(2.dp))
+                        .background(colorResource(R.color.trp_borderActive), RoundedCornerShape(2.dp))
                 )
             }
         }
