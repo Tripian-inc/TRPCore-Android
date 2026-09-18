@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
+import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
@@ -31,8 +32,8 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
     ): List<TransitionInfo> {
         val segments = timeline.tripProfile?.segments ?: return emptyList()
 
-        val bookedActivityIds = tripItems
-            .mapNotNull { it.activityId }
+        val bookedBaseIds = tripItems
+            .mapNotNull { ActivityIdFormat.base(it.activityId) }
             .toSet()
 
         val transitions = mutableListOf<TransitionInfo>()
@@ -40,9 +41,10 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
         segments.forEachIndexed { index, segment ->
             if (segment.segmentType == SegmentType.RESERVED_ACTIVITY) {
                 val activityId = segment.additionalData?.activityId
+                val baseId = ActivityIdFormat.base(activityId)
 
-                if (activityId != null && activityId in bookedActivityIds) {
-                    val tripItem = tripItems.find { it.activityId == activityId }
+                if (activityId != null && baseId in bookedBaseIds) {
+                    val tripItem = tripItems.find { ActivityIdFormat.base(it.activityId) == baseId }
 
                     tripItem?.let { item ->
                         transitions.add(

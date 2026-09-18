@@ -412,7 +412,7 @@ class ACTimelineVM @Inject constructor(
         if (unresolvedCoordinates.isEmpty()) {
             val uniqueCities = resolvedCities.distinctBy { it.id }
             if (uniqueCities.isNotEmpty()) {
-                _cities.value = uniqueCities
+                publishCities(uniqueCities)
                 updateItineraryWithResolvedCities(resolvedCities)
             }
             proceedWithTimelineOperations()
@@ -426,7 +426,7 @@ class ACTimelineVM @Inject constructor(
                 handleCityResolveResult(result, resolvedCities, unresolvedCityNames)
             }.onFailure {
                 if (resolvedCities.isNotEmpty()) {
-                    _cities.value = resolvedCities.distinctBy { it.id }
+                    publishCities(resolvedCities.distinctBy { it.id })
                     updateItineraryWithResolvedCities(resolvedCities)
                     proceedWithTimelineOperations()
                 } else if (_tripHash.isNotEmpty()) {
@@ -457,14 +457,14 @@ class ACTimelineVM @Inject constructor(
             is CityResolveResult.Success -> {
                 cachedCities.addAll(result.cities)
                 val uniqueCities = cachedCities.distinctBy { it.id }
-                _cities.value = uniqueCities
+                publishCities(uniqueCities)
                 updateItineraryWithResolvedCities(cachedCities)
                 proceedWithTimelineOperations()
             }
             is CityResolveResult.PartialSuccess -> {
                 cachedCities.addAll(result.cities)
                 val uniqueCities = cachedCities.distinctBy { it.id }
-                _cities.value = uniqueCities
+                publishCities(uniqueCities)
                 updateItineraryWithResolvedCities(cachedCities)
 
                 val warningMsg = getLanguageForKey(LanguageConst.CITY_NOT_SUPPORTED)
@@ -475,7 +475,7 @@ class ACTimelineVM @Inject constructor(
             }
             is CityResolveResult.AllFailed -> {
                 if (cachedCities.isNotEmpty()) {
-                    _cities.value = cachedCities.distinctBy { it.id }
+                    publishCities(cachedCities.distinctBy { it.id })
                     updateItineraryWithResolvedCities(cachedCities)
                     proceedWithTimelineOperations()
                 } else if (_tripHash.isNotEmpty()) {
@@ -948,7 +948,7 @@ class ACTimelineVM @Inject constructor(
         }
 
         val uniqueCities = extractCities(timeline)
-        _cities.value = uniqueCities
+        publishCities(uniqueCities)
         com.tripian.trpcore.util.CityTimeZones.register(uniqueCities)
 
         val days = calculateAvailableDays(timeline)
@@ -2225,10 +2225,12 @@ class ACTimelineVM @Inject constructor(
     fun getItinerary(): ItineraryWithActivities? = itinerary
 
     /**
-     * Favourites the user can still add: not booked or reserved anywhere in the trip,
-     * not removed locally, and resolved to one of the trip's destination cities. Empty
-     * until [resolveActivityCityIds] has run, so a host-supplied city is never shown
-     * or counted.
+     * Favourites the user can still add: not booked anywhere in the trip, not removed
+     * locally, and belonging to one of the trip's destination cities. The SDK resolves
+     * each favourite's city itself and only falls back to the host's cityId when that
+     * fails; a favourite whose city is unknown, or belongs to another trip, stays out.
+     * While no trip city is known yet the city check is skipped, so favourites are not
+     * hidden by a destination list that carries no cityId.
      */
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
         if (!favouriteCitiesResolved) return emptyList()
@@ -2252,8 +2254,14 @@ class ACTimelineVM @Inject constructor(
             baseId !in bookedBaseIds &&
                 baseId !in removedBaseIds &&
                 cityId != null &&
-                cityId in tripCityIds
+                (tripCityIds.isEmpty() || cityId in tripCityIds)
         }
+    }
+
+    /** Publishing the trip's cities also refreshes the favourites that depend on them. */
+    private fun publishCities(cities: List<City>) {
+        _cities.value = cities
+        updateSavedPlansCount()
     }
 
     private fun tripDestinationCityIds(): Set<Int> {
@@ -2519,10 +2527,12 @@ class ACTimelineVM @Inject constructor(
                 favouriteItems = itineraryData.favouriteItems?.let { result.favouriteItems }
             )
             favouriteCitiesResolved = true
+        }.onFailure {
+            favouriteCitiesResolved = true
         }
     }
 
-    /** Set once the favourites carry SDK-resolved cities; host cities are never read before. */
+    /** Set once city resolution finished, successfully or not, so the list can render. */
     private var favouriteCitiesResolved = false
 
     /** Base activity ids already present on the timeline as booked/reserved segments. */
@@ -2555,10 +2565,14 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        val existingActivityIds = initialTimeline.tripProfile?.segments
-            ?.mapNotNull { it.additionalData?.activityId }?.toSet().orEmpty()
+        val bookedBaseIds = initialTimeline.tripProfile?.segments
+            ?.filter { it.segmentType == SegmentType.BOOKED_ACTIVITY }
+            ?.mapNotNull { ActivityIdFormat.base(it.additionalData?.activityId) }
+            ?.toSet()
+            .orEmpty()
         tracker.addMissing = tripItems.any { item ->
-            item.activityId != null && item.activityId !in existingActivityIds
+            val baseId = ActivityIdFormat.base(item.activityId)
+            baseId != null && baseId !in bookedBaseIds
         }
 
         viewModelScope.launch {

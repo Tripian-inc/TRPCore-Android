@@ -88,7 +88,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
         }
         val favouriteItems = params.favouriteItems.mapIndexed { index, item ->
             item.copy(
-                cityId = favouriteCityIds[index],
+                cityId = favouriteCityIds[index] ?: item.cityId,
                 duration = favouriteDurations[index] ?: item.duration
             )
         }

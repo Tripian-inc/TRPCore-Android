@@ -125,16 +125,25 @@ data class ItineraryWithActivities(
      * Single source of truth — initial create, the add-missing sweep and the
      * reserved→booked sync all build the payload here, so a booked cell never
      * renders with half its `additionalData` missing.
-     * cityId is only sent once the SDK resolved it itself (product-lookup, then
-     * coordinate); an unresolved item omits it and leaves the server to infer one
-     * from the coordinate. Items without datetimes borrow the trip-level range.
+     * An item whose own city or coordinate is unusable falls back to the trip's
+     * city and that city's coordinate, and is flagged `isNoLocation` so the cell
+     * renders the badge instead of a map pin. Items without datetimes borrow the
+     * trip-level range.
+     *
+     * @param fallbackCityId the timeline's own city, used when the item carries none
      */
-    internal fun createBookedActivitySegment(item: SegmentActivityItem): TimelineSegmentSettings {
+    internal fun createBookedActivitySegment(
+        item: SegmentActivityItem,
+        fallbackCityId: Int? = null
+    ): TimelineSegmentSettings {
         val calculatedEndDatetime = calculateEndDatetime(
             item.startDatetime,
             item.endDatetime,
             item.duration
         )
+
+        val itemCoordinate = item.coordinate.takeIf { it.lat != 0.0 || it.lng != 0.0 }
+        val placedCoordinate = itemCoordinate ?: getFirstCoordinate()
 
         return TimelineSegmentSettings().apply {
             title = item.title
@@ -146,9 +155,11 @@ data class ItineraryWithActivities(
             adults = item.adultCount
             children = item.childCount
             cityId = item.cityId?.takeIf { it > 0 }
+                ?: fallbackCityId?.takeIf { it > 0 }
+                ?: destinationItems.firstOrNull()?.cityId?.takeIf { it > 0 }
             currency = TRPCore.core.getCurrentCurrency()
 
-            item.coordinate.let { coord ->
+            placedCoordinate?.let { coord ->
                 coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
                     lat = coord.lat
                     lng = coord.lng
@@ -168,9 +179,12 @@ data class ItineraryWithActivities(
                     this.price = price.value
                     this.currency = price.currency
                 }
-                this.coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
-                    lat = item.coordinate.lat
-                    lng = item.coordinate.lng
+                isNoLocation = itemCoordinate == null
+                placedCoordinate?.let { coord ->
+                    this.coordinate = com.tripian.one.api.pois.model.Coordinate().apply {
+                        lat = coord.lat
+                        lng = coord.lng
+                    }
                 }
             }
         }
