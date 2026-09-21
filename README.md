@@ -86,7 +86,7 @@ In your app-level `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.Tripian-inc:TRPCore-Android:1.2.18'
+    implementation 'com.github.Tripian-inc:TRPCore-Android:civitatis-2.0.0'
 }
 ```
 
@@ -862,11 +862,11 @@ With the Activity flow, a host detail screen opened from an SDK callback must be
 
 ## Version
 
-Current version: **civitatis-1.0.3**
+Current version: **civitatis-2.0.0**
 
 ## Changelog
 
-- **compose-migration**: Native Compose integration. `NavGraphBuilder.tripianTimeline` adds the SDK screens to the host's own Navigation Compose graph; `TimelineNexus` offers the same flow as a single composable. Host screens pushed on top return to the exact SDK screen and state.
+- **civitatis-2.0.0**: Native Compose integration. `NavGraphBuilder.tripianTimeline` adds the SDK screens to the host's own Navigation Compose graph and `TimelineNexus` offers the same flow as a single composable, so a Single-Activity host keeps its back stack: a host screen pushed from an SDK callback pops back to the exact SDK screen and state. The SDK no longer requires a `FragmentActivity` host and follows the host's own window insets, so full-screen and edge-to-edge hosts render correctly. City resolution ignores the host-provided `cityId` and derives the city from the activity id or its coordinates. The time sheets validate the picked span inline and warn when a place is closed at the selected hours.
 - **civitatis-1.0.3**: `onRequestActivityReservation` now reports the activity's start time as well — its `date` format widens from "yyyy-MM-dd" to "yyyy-MM-dd HH:mm". A host parsing that string must be updated; a flexible activity reports the day at 00:00.
 - **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
 - **1.1.4**: Jetpack Compose integration support - conditional `FLAG_ACTIVITY_NEW_TASK` for proper back navigation when using Activity context
