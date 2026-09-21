@@ -1513,7 +1513,13 @@ private fun showStepTimeSelectionSheet(
 
     sheets.poiTimeLoadingText = null
     sheets.poiTimeRequest = PoiTimeSheetRequest(
-        request = PoiTimeSelectionRequest(startTime = startTime, endTime = endTime, minTime = minTime),
+        request = PoiTimeSelectionRequest(
+            startTime = startTime,
+            endTime = endTime,
+            minTime = minTime,
+            openingHours = step.poi?.hours,
+            selectedDay = stepDay
+        ),
         onConfirm = { newStartTime, newEndTime ->
             viewModel.updateStepTime(
                 step.id, newStartTime, newEndTime,
