@@ -726,6 +726,8 @@ TRPCore.core.startTripianWithUniqueId(
 
 ## Jetpack Compose Integration
 
+> Moving an existing Activity-based integration over? [COMPOSE_MIGRATION.md](COMPOSE_MIGRATION.md) walks through the change step by step.
+
 TRPCore ships a native Compose entry point for Single-Activity hosts: `TimelineNexus`. It renders the whole Timeline flow (timeline, add-plan wizard, POI/activity listings, POI detail, saved plans, starting point picker) as composables inside **your** `NavHost`, so the SDK never launches an Activity and your back stack stays intact.
 
 ### SDK screens inside your NavHost (full navigation control)
