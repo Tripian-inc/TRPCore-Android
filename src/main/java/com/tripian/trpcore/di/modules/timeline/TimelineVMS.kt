@@ -9,7 +9,6 @@ import com.tripian.trpcore.ui.timeline.activity.ACActivityListingVM
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionVM
 import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelectionVM
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
-import com.tripian.trpcore.ui.timeline.poi.ACPOISelectionVM
 import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListingVM
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetailVM
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlansVM
@@ -32,11 +31,6 @@ abstract class TimelineVMS {
     @IntoMap
     @ViewModelKey(AddPlanContainerVM::class)
     abstract fun bindAddPlanContainerVM(viewModel: AddPlanContainerVM): ViewModel
-
-    @Binds
-    @IntoMap
-    @ViewModelKey(ACPOISelectionVM::class)
-    abstract fun bindACPOISelectionVM(viewModel: ACPOISelectionVM): ViewModel
 
     @Binds
     @IntoMap

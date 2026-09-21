@@ -10,7 +10,6 @@ import com.tripian.trpcore.ui.timeline.activity.ACActivityListing
 import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelection
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
-import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.ui.timeline.poilisting.ACPOIListing
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
@@ -46,10 +45,6 @@ abstract class ViewPages {
     @TimelineScope
     @ContributesAndroidInjector(modules = [TimelineModule::class])
     abstract fun bindAddPlanContainerBottomSheet(): AddPlanContainerBottomSheet
-
-    @TimelineScope
-    @ContributesAndroidInjector(modules = [TimelineModule::class])
-    abstract fun bindACPOISelection(): ACPOISelection
 
     @TimelineScope
     @ContributesAndroidInjector(modules = [TimelineModule::class])

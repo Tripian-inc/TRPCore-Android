@@ -22,12 +22,6 @@
             android:windowSoftInputMode="adjustPan" />
 
         <activity
-            android:name="com.tripian.trpcore.ui.timeline.poi.ACPOISelection"
-            android:exported="false"
-            android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize" />
-
-        <activity
             android:name="com.tripian.trpcore.ui.timeline.addplan.ACStartingPointSelection"
             android:exported="false"
             android:screenOrientation="portrait"

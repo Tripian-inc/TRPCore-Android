@@ -26,7 +26,6 @@ import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineOverlays
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineWarningDialogHost
-import com.tripian.trpcore.ui.timeline.compose.poi.PoiSelectionScreen
 import com.tripian.trpcore.ui.timeline.compose.poidetail.PoiDetailScreen
 import com.tripian.trpcore.ui.timeline.compose.poilisting.PoiListingScreen
 import com.tripian.trpcore.ui.timeline.compose.savedplans.SavedPlansScreen
@@ -81,13 +80,6 @@ fun NavGraphBuilder.tripianTimeline(
                         onDismiss = onDismiss,
                         navEntry = entry
                     )
-                }
-            }
-        }
-        composable(TimelineRoutes.POI_SELECTION) { entry ->
-            TimelineRouteScope(navController, entry) {
-                RouteScreen<PoiSelectionArgs>(TimelineRoutes.POI_SELECTION) {
-                    BelowStatusBar { PoiSelectionScreen(it) }
                 }
             }
         }

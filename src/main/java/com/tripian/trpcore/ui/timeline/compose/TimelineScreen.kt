@@ -181,14 +181,6 @@ fun TimelineScreen(
         }
     }
 
-    ResultEffect<Poi>(navEntry, TimelineResults.SELECTED_POI) { poi ->
-        flowState.pendingAddPlanData?.let { data ->
-            data.selectedPoi = poi
-            viewModel.onAddPlanComplete(data)
-            flowState.pendingAddPlanData = null
-        }
-    }
-
     ResultEffect<Boolean>(navEntry, TimelineResults.SAVED_PLANS_CHANGED) {
         viewModel.onReturnFromSavedPlans()
     }
@@ -210,11 +202,6 @@ fun TimelineScreen(
     fun openPoiDetail(poi: Poi) {
         val (tripStart, tripEnd) = viewModel.tripDateRange()
         navigator.openPoiDetail(poi, tripStart, tripEnd)
-    }
-
-    fun openPoiSelection(data: AddPlanData) {
-        flowState.pendingAddPlanData = data
-        data.selectedCity?.let { city -> navigator.openPoiSelection(city) }
     }
 
     fun openManualListing(category: ManualCategory) {
@@ -641,14 +628,6 @@ fun TimelineScreen(
     val showAddPlanEvent by viewModel.showAddPlanSheet.observeAsState()
     LaunchedEffect(showAddPlanEvent) {
         if (showAddPlanEvent == true) showAddPlanSheet()
-    }
-
-    val launchPoiSelection by viewModel.launchPoiSelection.observeAsState()
-    LaunchedEffect(launchPoiSelection) {
-        launchPoiSelection?.let { data ->
-            openPoiSelection(data)
-            viewModel.clearPoiSelectionTrigger()
-        }
     }
 
     val smartSegmentCreated by viewModel.smartSegmentCreated.observeAsState()
@@ -1089,9 +1068,6 @@ fun TimelineScreen(
                     onSelectStartingPoint = { openStartingPoint() },
                     onAddPlanComplete = { data ->
                         when {
-                            data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
-                                openPoiSelection(data)
-                            }
                             data.mode == AddPlanMode.SMART ||
                                 data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
                                 viewModel.onAddPlanComplete(data)

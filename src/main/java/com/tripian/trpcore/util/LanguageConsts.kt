@@ -26,10 +26,6 @@ object LanguageConst {
     const val FREE = "common.label.free"
     const val OFFER_CLAIM = "notification.offerOptIn.title"
     const val DATE = "reservation.date"
-    const val ATTRACTIONS = "trips.myTrips.exploreMore.categories.attractions"
-    const val RESTAURANTS = "trips.myTrips.exploreMore.categories.restaurants"
-    const val CAFES = "trips.myTrips.exploreMore.categories.cafes"
-    const val NIGHTLIFE = "trips.myTrips.exploreMore.categories.nightlife"
     const val MUST_TRY = "trips.myTrips.itinerary.step.poi.mustTry.title"
     const val COMMON_ERROR = "trips.toursAndTickets.error.anErrorOccured"
     const val CITY_NOT_SUPPORTED = "timeline.error.cityNotSupported"
@@ -361,7 +357,6 @@ object LanguageConst {
     const val CUSTOM_LOCATION = "custom_location"
     const val GENERATE_RECOMMENDATIONS = "generate_recommendations"
     const val SELECT_POI = "select_poi"
-    const val SEE_DO = "see_and_do"
     const val EAT_DRINK = "eat_and_drink"
     const val SPORTS = "sports"
     const val ENTERTAINMENT = "entertainment"
@@ -381,9 +376,7 @@ object LanguageConst {
     // EMPTY STATES & SEARCH
     // =====================
     const val ADD_PLAN_NO_RECOMMENDATIONS = "addPlan.emptyState.noRecommendations"
-    const val POI_SELECTION_ADD_PLACE = "addPlan.button.addPlace"
     const val ADD_PLAN_SEARCH_PLACES_HINT = "addPlan.placeholder.searchPlaces"
-    const val POI_SELECTION_NO_PLACES = "addPlan.emptyState.noPlaces"
     const val DESTINATION_SEARCH_NO_RESULTS = "destination.search.noResults"
     const val ACTIVITY_LISTING_NO_ACTIVITIES = "addPlan.emptyState.noActivities"
     const val SEARCH_BAR_HINT = "common.placeholder.search"

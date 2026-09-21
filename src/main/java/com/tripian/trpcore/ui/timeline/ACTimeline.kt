@@ -39,7 +39,6 @@ import com.tripian.trpcore.ui.timeline.activity.ActivityTimeSelectionBottomSheet
 import com.tripian.trpcore.ui.timeline.adapter.MapBottomListAdapter
 import com.tripian.trpcore.ui.timeline.adapter.TimelineAdapter
 import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerBottomSheet
-import com.tripian.trpcore.ui.timeline.poi.ACPOISelection
 import com.tripian.trpcore.ui.timeline.poidetail.ACPOIDetail
 import com.tripian.trpcore.ui.timeline.savedplans.ACSavedPlans
 import com.tripian.trpcore.ui.timeline.views.NoCityView
@@ -60,7 +59,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
     private lateinit var timelineAdapter: TimelineAdapter
     private var addPlanSheet: AddPlanContainerBottomSheet? = null
-    private var pendingAddPlanData: AddPlanData? = null
     private var mapBottomListAdapter: MapBottomListAdapter? = null
     private var isBottomListVisible = false
     private var isBottomListCompletelyHidden = true
@@ -72,21 +70,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
     private var contentInitialBottomPadding = 0
 
     private var changeTimeSheet: ActivityTimeSelectionBottomSheet? = null
-
-    private val poiSelectionLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val selectedPoi = result.data?.getSerializableExtra(ACPOISelection.RESULT_POI) as? Poi
-            selectedPoi?.let { poi ->
-                pendingAddPlanData?.let { data ->
-                    data.selectedPoi = poi
-                    viewModel.onAddPlanComplete(data)
-                    pendingAddPlanData = null
-                }
-            }
-        }
-    }
 
     private val savedPlansLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -340,18 +323,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 } else {
                     showMapBottomList()
                 }
-            }
-        }
-
-        viewModel.launchPoiSelection.observe(this) { data ->
-            data?.let {
-                pendingAddPlanData = it
-                val city = it.selectedCity
-                if (city != null) {
-                    val intent = ACPOISelection.launch(this, city)
-                    poiSelectionLauncher.launch(intent)
-                }
-                viewModel.clearPoiSelectionTrigger()
             }
         }
 
@@ -1406,14 +1377,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
 
         addPlanSheet?.setOnAddPlanCompleteListener { data ->
             when {
-                data.mode == AddPlanMode.MANUAL && data.selectedPoi == null -> {
-                    pendingAddPlanData = data
-                    val city = data.selectedCity
-                    if (city != null) {
-                        val intent = ACPOISelection.launch(this, city)
-                        poiSelectionLauncher.launch(intent)
-                    }
-                }
                 data.mode == AddPlanMode.SMART || data.mode == AddPlanMode.SMART_RECOMMENDATIONS -> {
                     viewModel.onAddPlanComplete(data)
                 }

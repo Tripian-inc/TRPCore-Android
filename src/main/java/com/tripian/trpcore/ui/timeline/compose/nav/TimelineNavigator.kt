@@ -25,7 +25,6 @@ import java.util.Date
 object TimelineRoutes {
     const val GRAPH = "tripian"
     const val TIMELINE = "tripian/timeline"
-    const val POI_SELECTION = "tripian/poi_selection"
     const val POI_LISTING = "tripian/poi_listing"
     const val POI_DETAIL = "tripian/poi_detail"
     const val ACTIVITY_LISTING = "tripian/activity_listing"
@@ -35,13 +34,10 @@ object TimelineRoutes {
 
 /** Keys under which sub-screens hand their result back to the screen that opened them. */
 object TimelineResults {
-    const val SELECTED_POI = "result_selected_poi"
     const val SAVED_PLANS_CHANGED = "result_saved_plans_changed"
     const val SEGMENT_CREATED_DAY_INDEX = "result_segment_created_day_index"
     const val STARTING_POINT = "result_starting_point"
 }
-
-data class PoiSelectionArgs(val city: City)
 
 data class PoiDetailArgs(
     val poi: Poi,
@@ -117,8 +113,6 @@ class TimelineNavigator internal constructor(
 ) {
 
     fun <T> argsFor(route: String): T? = scope.argsFor(route)
-
-    fun openPoiSelection(city: City) = open(TimelineRoutes.POI_SELECTION, PoiSelectionArgs(city))
 
     fun openPoiDetail(poi: Poi, tripStartDate: String?, tripEndDate: String?) =
         open(TimelineRoutes.POI_DETAIL, PoiDetailArgs(poi, tripStartDate, tripEndDate))

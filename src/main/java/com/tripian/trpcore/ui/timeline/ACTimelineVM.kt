@@ -134,9 +134,6 @@ class ACTimelineVM @Inject constructor(
     private val _mapBottomItems = MutableLiveData<List<MapBottomItem>>()
     val mapBottomItems: LiveData<List<MapBottomItem>> = _mapBottomItems
 
-    private val _launchPoiSelection = MutableLiveData<AddPlanData?>()
-    val launchPoiSelection: LiveData<AddPlanData?> = _launchPoiSelection
-
     private val _showNearMeButton = MutableLiveData(false)
     val showNearMeButton: LiveData<Boolean> = _showNearMeButton
 
@@ -1859,23 +1856,17 @@ class ACTimelineVM @Inject constructor(
         _showAddPlanSheet.value = false
     }
 
+    /**
+     * Only the smart modes complete through the sheet; a manual pick is created by
+     * the listing the sheet hands the user over to.
+     */
     fun onAddPlanComplete(data: AddPlanData) {
         _showAddPlanSheet.value = false
         when (data.mode) {
-            AddPlanMode.SMART, AddPlanMode.SMART_RECOMMENDATIONS -> createSmartRecommendationSegment(
-                data
-            )
+            AddPlanMode.SMART, AddPlanMode.SMART_RECOMMENDATIONS ->
+                createSmartRecommendationSegment(data)
 
-            AddPlanMode.MANUAL -> {
-                if (data.selectedPoi != null) {
-                    createManualPoiStep(data)
-                } else {
-                    _launchPoiSelection.value = data
-                }
-            }
-
-            AddPlanMode.NONE -> {
-            }
+            AddPlanMode.MANUAL, AddPlanMode.NONE -> Unit
         }
     }
 
@@ -1888,9 +1879,6 @@ class ACTimelineVM @Inject constructor(
         // TODO: Implement Near Me POI fetching based on user location
     }
 
-    fun clearPoiSelectionTrigger() {
-        _launchPoiSelection.value = null
-    }
 
     /**
      * Clears any selected marker / preview card. The map redraws its marker
@@ -2125,18 +2113,6 @@ class ACTimelineVM @Inject constructor(
         val items = _displayItems.value ?: return
         val markerIds = _mapSteps.value?.mapNotNull { it.poiId }?.toSet() ?: emptySet()
         _mapBottomItems.value = mapItemMapper.buildMapBottomItems(items, markerIds)
-    }
-
-    // =====================
-    // MANUAL POI
-    // =====================
-
-    private fun createManualPoiStep(data: AddPlanData) {
-        // TODO: Implement manual POI step creation
-        showLoading()
-
-        refreshTimeline()
-        hideLoading()
     }
 
     // =====================
