@@ -27,7 +27,7 @@ import com.tripian.trpcore.R
 import com.tripian.trpcore.di.ViewModelFactory
 import com.tripian.trpcore.ui.common.loader.LottieLoading
 import com.tripian.trpcore.ui.common.loader.LottieLoadingPresentation
-import com.tripian.trpcore.util.extensions.consumeSystemBarPadding
+import com.tripian.trpcore.util.extensions.addSystemBarPadding
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.setViewListener
 import java.lang.reflect.ParameterizedType
@@ -51,9 +51,7 @@ abstract class BaseBottomDialogFragment<VB : ViewBinding, VM : BaseViewModel>(pr
     private var lastInSheetPresentation: LottieLoadingPresentation? = null
 
     open fun setListeners() {
-
-
-        binding.root.consumeSystemBarPadding(horizontal = true, bottom = true)
+        binding.root.addSystemBarPadding(horizontal = true, bottom = true)
     }
 
     open fun setReceivers() {}

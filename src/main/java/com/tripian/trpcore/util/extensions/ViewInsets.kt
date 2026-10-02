@@ -1,5 +1,6 @@
 package com.tripian.trpcore.util.extensions
 
+import android.graphics.Rect
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -26,6 +27,29 @@ fun View.consumeSystemBarPadding(
             top = if (top) insets.top else v.paddingTop,
             right = if (horizontal) insets.right else v.paddingRight,
             bottom = if (bottom) insets.bottom else v.paddingBottom
+        )
+        WindowInsetsCompat.CONSUMED
+    }
+}
+
+/**
+ * Adds the system bar insets on the selected edges to the view's own padding and
+ * consumes the inset chain. The XML padding is captured once so repeated inset
+ * passes don't compound it.
+ */
+fun View.addSystemBarPadding(
+    top: Boolean = false,
+    bottom: Boolean = false,
+    horizontal: Boolean = false
+) {
+    val basePadding = Rect(paddingLeft, paddingTop, paddingRight, paddingBottom)
+    ViewCompat.setOnApplyWindowInsetsListener(this) { v, windowInsets ->
+        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+        v.updatePadding(
+            left = basePadding.left + if (horizontal) insets.left else 0,
+            top = basePadding.top + if (top) insets.top else 0,
+            right = basePadding.right + if (horizontal) insets.right else 0,
+            bottom = basePadding.bottom + if (bottom) insets.bottom else 0
         )
         WindowInsetsCompat.CONSUMED
     }
