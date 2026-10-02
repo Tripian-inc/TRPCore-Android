@@ -89,8 +89,17 @@ sealed class TimelineDisplayItem : Serializable {
         val imageUrl: String?
             get() = segment.additionalData?.imageUrl
 
+        /** Duration in minutes: `additionalData.duration` when positive, otherwise the start–end span. Reserved activities only. */
         val duration: Double?
-            get() = if (isReserved) segment.additionalData?.duration else null
+            get() {
+                if (!isReserved) return null
+                val explicit = segment.additionalData?.duration
+                if (explicit != null && explicit > 0) return explicit
+                val start = startDateTime.toDate() ?: return null
+                val end = endDateTime.toDate() ?: return null
+                val minutes = (end.time - start.time) / 60_000.0
+                return if (minutes > 0) minutes else null
+            }
 
         val price: Double?
             get() = if (isReserved) segment.additionalData?.price else null
