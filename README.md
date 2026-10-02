@@ -86,7 +86,7 @@ In your app-level `build.gradle`:
 
 ```gradle
 dependencies {
-    implementation 'com.github.Tripian-inc:TRPCore-Android:civitatis-2.0.0'
+    implementation 'com.github.Tripian-inc:TRPCore-Android:civitatis-2.0.1'
 }
 ```
 
@@ -864,10 +864,11 @@ With the Activity flow, a host detail screen opened from an SDK callback must be
 
 ## Version
 
-Current version: **civitatis-2.0.0**
+Current version: **civitatis-2.0.1**
 
 ## Changelog
 
+- **civitatis-2.0.1**: Visual and sync fixes from the Civitatis review. Every bottom sheet shares one corner radius and keeps its own padding under the system bars; the onboarding and AddPlan sheets use the header close icon; the category filter check renders reliably; the day strip scrolls to the selected day; the time sheet warns when the picked slot is sold out; an activity whose availability expired is greyed out and its button asks to check availability again; the warning dialog's Cancel button is outlined; the Add Plan button stays on past days. A booked activity whose end is unknown shows its start alone and is scheduled from its duration when one is given; a reserved activity derives its duration from its time span; the no-location badge is read in both spellings (TRPOne 1.4.11). Host bookings are matched by `bookingId` before `activityId`, so two bookings of the same product are kept apart during sync.
 - **civitatis-2.0.0**: Native Compose integration. `NavGraphBuilder.tripianTimeline` adds the SDK screens to the host's own Navigation Compose graph and `TimelineNexus` offers the same flow as a single composable, so a Single-Activity host keeps its back stack: a host screen pushed from an SDK callback pops back to the exact SDK screen and state. The SDK no longer requires a `FragmentActivity` host and follows the host's own window insets, so full-screen and edge-to-edge hosts render correctly. City resolution ignores the host-provided `cityId` and derives the city from the activity id or its coordinates. The time sheets validate the picked span inline and warn when a place is closed at the selected hours.
 - **civitatis-1.0.3**: `onRequestActivityReservation` now reports the activity's start time as well — its `date` format widens from "yyyy-MM-dd" to "yyyy-MM-dd HH:mm". A host parsing that string must be updated; a flexible activity reports the day at 00:00.
 - **1.2.18**: Added date parameter to `onRequestActivityReservation` callback (format: "yyyy-MM-dd", backward compatible)
