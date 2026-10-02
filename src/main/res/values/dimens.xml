@@ -22,6 +22,7 @@
     <dimen name="trp_category_grid_spacing">8dp</dimen>
     <dimen name="trp_corner_radius_3dp">3dp</dimen>
     <dimen name="trp_corner_radius_8dp">8dp</dimen>
+    <dimen name="trp_bottom_sheet_corner_radius">24dp</dimen>
 
     <!-- POI Detail -->
     <dimen name="trp_poi_indicator_active_width">14dp</dimen>

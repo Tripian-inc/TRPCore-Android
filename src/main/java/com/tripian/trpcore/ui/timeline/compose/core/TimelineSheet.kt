@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -55,6 +56,7 @@ internal fun TimelineSheet(
     content: @Composable BoxScope.() -> Unit
 ) {
     val maxContentHeight = rememberMaxSheetContentHeight()
+    val sheetCornerRadius = dimensionResource(R.dimen.trp_bottom_sheet_corner_radius)
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(
@@ -63,7 +65,7 @@ internal fun TimelineSheet(
         ),
         containerColor = if (drawsOwnBackground) Color.Transparent else colorResource(R.color.trp_white),
         tonalElevation = 0.dp,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = RoundedCornerShape(topStart = sheetCornerRadius, topEnd = sheetCornerRadius),
         dragHandle = if (drawsOwnBackground) null else {
             {
                 Box(

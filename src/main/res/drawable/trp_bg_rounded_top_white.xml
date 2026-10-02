@@ -11,6 +11,6 @@
         android:startColor="@color/trp_ultra_light_grey" />
 
     <corners
-        android:topLeftRadius="@dimen/_24sdp"
-        android:topRightRadius="@dimen/_24sdp" />
+        android:topLeftRadius="@dimen/trp_bottom_sheet_corner_radius"
+        android:topRightRadius="@dimen/trp_bottom_sheet_corner_radius" />
 </shape>
