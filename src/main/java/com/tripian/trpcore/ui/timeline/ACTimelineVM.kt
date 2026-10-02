@@ -17,6 +17,9 @@ import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.DoLightLogin
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.domain.model.timeline.BookingKeySet
+import com.tripian.trpcore.domain.model.timeline.bookingKey
+import com.tripian.trpcore.domain.model.timeline.missingBookedItems
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -2528,18 +2531,7 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        val ownedBaseIds = initialTimeline.tripProfile?.segments
-            ?.filter {
-                it.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                    it.segmentType == SegmentType.RESERVED_ACTIVITY
-            }
-            ?.mapNotNull { ActivityIdFormat.base(it.additionalData?.activityId) }
-            ?.toSet()
-            .orEmpty()
-        tracker.addMissing = tripItems.any { item ->
-            val baseId = ActivityIdFormat.base(item.activityId)
-            baseId != null && baseId !in ownedBaseIds
-        }
+        tracker.addMissing = initialTimeline.missingBookedItems(tripItems).isNotEmpty()
 
         viewModelScope.launch {
             runCatching {
@@ -2686,15 +2678,17 @@ class ACTimelineVM @Inject constructor(
      *
      * The host's `tripItems` is the full booking state at startup, so a booked
      * segment missing from it — including when the host sends none at all — is
-     * stale. Booked segments are the only host-owned ones; a reserved activity the
-     * user added inside the SDK is never touched.
+     * stale. A segment is matched by `bookingId` first, so two bookings of the
+     * same product are told apart; the bare activityId is the fallback when either
+     * side carries no bookingId. Booked segments are the only host-owned ones; a
+     * reserved activity the user added inside the SDK is never touched.
      *
      * Never a candidate: the TimelineDate sentinel, a segment whose city is simply
-     * unresolved, and a booked segment carrying no activityId to match on.
+     * unresolved, and a booked segment carrying neither bookingId nor activityId.
      */
     private fun computeBackgroundDeletionIndices(
         timeline: Timeline,
-        itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+        itineraryData: ItineraryWithActivities
     ): Set<Int> {
         val segments = timeline.tripProfile?.segments ?: return emptySet()
         val currentCityIds = itineraryData.destinationItems
@@ -2707,9 +2701,7 @@ class ACTimelineVM @Inject constructor(
         val tripEnd = itineraryData.endDatetime.take(10).takeIf { d ->
             d.length == 10 && d[4] == '-' && d[7] == '-'
         }
-        val hostBookedIds = itineraryData.tripItems.orEmpty()
-            .mapNotNull { item -> ActivityIdFormat.base(item.activityId) }
-            .toSet()
+        val hostBookings = BookingKeySet(itineraryData.tripItems.orEmpty().map { it.bookingKey() })
 
         val out = mutableSetOf<Int>()
         segments.forEachIndexed { idx, seg ->
@@ -2724,8 +2716,8 @@ class ACTimelineVM @Inject constructor(
             }
 
             if (seg.segmentType == SegmentType.BOOKED_ACTIVITY) {
-                val activityId = ActivityIdFormat.base(seg.additionalData?.activityId)
-                if (activityId != null && activityId !in hostBookedIds) {
+                val key = seg.additionalData.bookingKey()
+                if (!key.isEmpty && key !in hostBookings) {
                     out += idx
                     return@forEachIndexed
                 }

@@ -1,23 +1,21 @@
 package com.tripian.trpcore.domain.usecase.timeline.sync
 
-import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.ApiErrorMapper
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.domain.model.timeline.missingBookedItems
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
-import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
- * Adds booked_activity segments for tripItems the timeline holds under no segment
- * of its own. A product whose reserved segment is still on the timeline is left
- * alone: the reserved-to-booked transition replaces that segment itself, and
- * adding it here too would leave the trip with the booking twice. Ids are compared
- * bare, since the SDK's own segments may carry the prefixed form.
+ * Adds booked_activity segments for the tripItems [missingBookedItems] reports.
+ * A product whose reserved segment is still on the timeline is left alone: the
+ * reserved-to-booked transition replaces that segment itself, and adding it here
+ * too would leave the trip with the booking twice.
  * Delegates payload construction to ItineraryWithActivities.createBookedActivitySegment
  * so initial-create and sync paths emit identical segments.
  */
@@ -32,21 +30,7 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val ownedBaseIds = params.timeline.tripProfile?.segments
-            ?.filter { segment ->
-                segment.segmentType == SegmentType.BOOKED_ACTIVITY ||
-                    segment.segmentType == SegmentType.RESERVED_ACTIVITY
-            }
-            ?.mapNotNull { segment -> ActivityIdFormat.base(segment.additionalData?.activityId) }
-            ?.toSet()
-            .orEmpty()
-
-        val missingItems = params.itinerary.tripItems
-            ?.filter { item ->
-                val baseId = ActivityIdFormat.base(item.activityId)
-                baseId != null && baseId !in ownedBaseIds
-            }
-            ?: emptyList()
+        val missingItems = params.timeline.missingBookedItems(params.itinerary.tripItems.orEmpty())
 
         if (missingItems.isEmpty()) {
             return ResponseModelBase()
