@@ -1,5 +1,6 @@
 package com.tripian.trpcore.ui.timeline.compose.core
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -105,7 +106,9 @@ internal fun TimelineWarningDialogHost(overlays: TimelineOverlayState) {
                             request.onNegative()
                         },
                         shape = RoundedCornerShape(24.dp),
+                        border = BorderStroke(1.dp, colorResource(R.color.trp_primary)),
                         colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = colorResource(R.color.trp_white),
                             contentColor = colorResource(R.color.trp_primary)
                         ),
                         modifier = Modifier
