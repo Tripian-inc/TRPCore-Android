@@ -111,10 +111,10 @@ sealed class TimelineDisplayItem : Serializable {
             get() = segment.additionalData?.description ?: segment.description
 
         val startDateTime: String?
-            get() = segment.additionalData?.startDatetime ?: segment.startDate
+            get() = segment.effectiveStartDatetime()
 
         val endDateTime: String?
-            get() = segment.additionalData?.endDatetime ?: segment.endDate
+            get() = segment.effectiveEndDatetime()
 
         /** Whether the activity has no real-world coordinate. */
         val isNoLocation: Boolean

@@ -127,8 +127,10 @@ data class ItineraryWithActivities(
      * renders with half its `additionalData` missing.
      * An item whose own city or coordinate is unusable falls back to the trip's
      * city and that city's coordinate, and is flagged `isNoLocation` so the cell
-     * renders the badge instead of a map pin. Items without datetimes borrow the
-     * trip-level range.
+     * renders the badge instead of a map pin. An item without a start borrows the
+     * trip start. The end is the item's own, else start plus duration; when neither
+     * is known `additionalData.endDatetime` stays null and the segment `endDate`
+     * repeats the start only because the API rejects a segment without one.
      *
      * @param fallbackCityId the timeline's own city, used when the item carries none
      */
@@ -148,7 +150,7 @@ data class ItineraryWithActivities(
         return TimelineSegmentSettings().apply {
             title = item.title
             startDate = item.startDatetime ?: this@ItineraryWithActivities.startDatetime
-            endDate = calculatedEndDatetime ?: this@ItineraryWithActivities.endDatetime
+            endDate = calculatedEndDatetime ?: startDate
             segmentType = "booked_activity"
             available = false
             distinctPlan = true

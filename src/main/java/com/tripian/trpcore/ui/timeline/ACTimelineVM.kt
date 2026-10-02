@@ -1794,10 +1794,10 @@ class ACTimelineVM @Inject constructor(
         val segment = tl.tripProfile?.segments?.getOrNull(segmentIndex) ?: return false
         availabilityCheckManager.invalidatePricesFor(segment.additionalData?.activityId)
         segment.startDate = applyDateAndTime(segment.startDate, newDate, newStartTime)
-        segment.endDate = applyDateAndTime(segment.endDate, newDate, newEndTime)
+        segment.endDate = applyDateAndTime(segment.endDate ?: segment.startDate, newDate, newEndTime)
         segment.additionalData?.let { add ->
             add.startDatetime = applyDateAndTime(add.startDatetime, newDate, newStartTime)
-            add.endDatetime = applyDateAndTime(add.endDatetime, newDate, newEndTime)
+            add.endDatetime = applyDateAndTime(add.endDatetime ?: add.startDatetime, newDate, newEndTime)
             if (newPrice != null) add.price = newPrice
         }
         return true

@@ -31,6 +31,8 @@ import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.domain.model.timeline.MapMarkersMode
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.effectiveEndDatetime
+import com.tripian.trpcore.domain.model.timeline.effectiveStartDatetime
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.domain.model.timeline.toReservationDateTime
@@ -1268,12 +1270,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         fun timePart(dt: String?): String? =
             if (dt != null && dt.length >= 16) dt.substring(11, 16) else null
 
-        val startTime = timePart(segment.startDate)
-            ?: timePart(segment.additionalData?.startDatetime)
-        val endTime = timePart(segment.endDate)
-            ?: timePart(segment.additionalData?.endDatetime)
+        val startTime = timePart(segment.effectiveStartDatetime())
+        val endTime = timePart(segment.effectiveEndDatetime())
 
-        val segmentDay = (segment.startDate ?: segment.additionalData?.startDatetime).toDate()
+        val segmentDay = segment.effectiveStartDatetime().toDate()
         val minTime = segmentDay?.let {
             com.tripian.trpcore.util.CityTimeZones.minSelectableTime(it, segment.cityId?.takeIf { c -> c > 0 })
         }

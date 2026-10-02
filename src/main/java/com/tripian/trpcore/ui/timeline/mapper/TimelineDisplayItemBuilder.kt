@@ -5,6 +5,8 @@ import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
+import com.tripian.trpcore.domain.model.timeline.effectiveEndDatetime
+import com.tripian.trpcore.domain.model.timeline.effectiveStartDatetime
 import com.tripian.trpcore.domain.model.timeline.hasNoLocation
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
 import com.tripian.trpcore.domain.model.timeline.toDate
@@ -84,10 +86,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                             segmentIndex = index,
                             city = getCityForSegment(segment, timeline, cities),
                             planId = planId,
-                            startDateTimeSnapshot = segment.startDate
-                                ?: segment.additionalData?.startDatetime,
-                            endDateTimeSnapshot = segment.endDate
-                                ?: segment.additionalData?.endDatetime
+                            startDateTimeSnapshot = segment.effectiveStartDatetime(),
+                            endDateTimeSnapshot = segment.effectiveEndDatetime()
                         )
                     )
                 }
@@ -116,10 +116,8 @@ class TimelineDisplayItemBuilder @Inject constructor(
                                 planId = planId,
                                 isAvailabilityExpired =
                                     segment.additionalData?.isAvailabilityExpired == true,
-                                startDateTimeSnapshot = segment.startDate
-                                    ?: segment.additionalData?.startDatetime,
-                                endDateTimeSnapshot = segment.endDate
-                                    ?: segment.additionalData?.endDatetime,
+                                startDateTimeSnapshot = segment.effectiveStartDatetime(),
+                                endDateTimeSnapshot = segment.effectiveEndDatetime(),
                                 priceSnapshot = segment.additionalData?.price
                             )
                         )
