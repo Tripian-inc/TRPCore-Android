@@ -263,6 +263,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         }
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
+        binding.rvDays.scrollToPosition(selectedDayIndex)
     }
 
     private fun setupClickListeners() {

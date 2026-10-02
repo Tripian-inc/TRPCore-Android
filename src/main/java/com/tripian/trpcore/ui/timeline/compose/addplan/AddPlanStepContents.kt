@@ -66,6 +66,7 @@ private class SelectDayStepViews(
     val dayAdapter: DayFilterAdapter
 ) {
     var lastDays: List<Date>? = null
+    var lastSelectedDayIndex: Int = -1
 }
 
 /**
@@ -166,6 +167,10 @@ internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
                     views.dayAdapter.setDays(availableDays)
                 }
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
+                if (views.lastSelectedDayIndex != selectedDayIndex) {
+                    views.lastSelectedDayIndex = selectedDayIndex
+                    b.rvDays.scrollToPosition(selectedDayIndex)
+                }
 
                 val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
                 b.llCitySelection.visibility = if (shouldShowCity) View.VISIBLE else View.GONE
@@ -225,6 +230,7 @@ private class TimeTravelersStepViews(
     val dayAdapter: DayFilterAdapter
 ) {
     var lastDays: List<Date>? = null
+    var lastSelectedDayIndex: Int = -1
 }
 
 private data class AddPlanTimePickerRequest(
@@ -313,6 +319,10 @@ internal fun AddPlanTimeTravelersStep(
                     views.dayAdapter.setDays(availableDays)
                 }
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
+                if (views.lastSelectedDayIndex != selectedDayIndex) {
+                    views.lastSelectedDayIndex = selectedDayIndex
+                    b.rvDays.scrollToPosition(selectedDayIndex)
+                }
 
                 val name = startingPointName
                 val key = startingPointNameKey

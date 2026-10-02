@@ -357,6 +357,7 @@ private class ActivityTimeSelectionUi(
         }
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
+        binding.rvDays.scrollToPosition(selectedDayIndex)
     }
 
     private fun setupClickListeners() {
