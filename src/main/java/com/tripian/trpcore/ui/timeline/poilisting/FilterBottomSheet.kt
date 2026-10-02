@@ -166,11 +166,11 @@ class CategoryFilterAdapter(
 
         fun bind(categoryId: Int, categoryName: String, isSelected: Boolean) {
             binding.tvCategoryName.text = categoryName
-            binding.cbCategory.isChecked = isSelected
+            binding.ivCategoryCheck.isSelected = isSelected
 
             binding.root.setOnClickListener {
-                val newState = !binding.cbCategory.isChecked
-                binding.cbCategory.isChecked = newState
+                val newState = !binding.ivCategoryCheck.isSelected
+                binding.ivCategoryCheck.isSelected = newState
                 onCategoryToggled(categoryId, newState)
             }
         }

@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Category Filter Item with Checkbox -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -10,13 +9,12 @@
     android:paddingHorizontal="16dp"
     android:background="?attr/selectableItemBackground">
 
-    <CheckBox
-        android:id="@+id/cbCategory"
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/ivCategoryCheck"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:button="@drawable/trp_checkbox_selector"
-        android:clickable="false"
-        android:focusable="false" />
+        android:importantForAccessibility="no"
+        android:src="@drawable/trp_checkbox_selector" />
 
     <com.tripian.trpcore.util.widget.TextView
         android:id="@+id/tvCategoryName"
