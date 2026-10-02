@@ -90,7 +90,7 @@ class FlexibleActivityVH(
         binding.tvActivityBadge.text =
             TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.TIMELINE_LABEL_ACTIVITY_BADGE)
 
-        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
+        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl, item.isAvailabilityExpired)
 
         val rating = item.rating
         val reviewCount = item.reviewCount
@@ -123,8 +123,7 @@ class FlexibleActivityVH(
             currency = item.currency
         )
 
-        binding.btnReservation.text =
-            TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
+        binding.btnReservation.text = TimelineCellBinder.reservationButtonText(item.isAvailabilityExpired)
         binding.btnReservation.visibility = if (isPastDayMode) View.GONE else View.VISIBLE
 
         if (isPastDayMode) {

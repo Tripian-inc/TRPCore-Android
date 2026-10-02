@@ -120,7 +120,7 @@ class StepActivityVH(
         val isNoLocation = coord == null || (coord.lat == 0.0 && coord.lng == 0.0)
         TimelineCellBinder.bindNoLocationBadge(binding.noLocationBadge, isNoLocation)
 
-        TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url)
+        TimelineCellBinder.loadPoiImage(binding.ivImage, poi?.image?.url, isAvailabilityExpired)
 
         val rating = poi?.rating
         val reviewCount = poi?.ratingCount
@@ -160,7 +160,7 @@ class StepActivityVH(
             currency = poi?.additionalData?.currency
         )
 
-        binding.btnReservation.text = getLanguage(LanguageConst.RESERVATION)
+        binding.btnReservation.text = TimelineCellBinder.reservationButtonText(isAvailabilityExpired)
         val actionVisibility = if (pastDayLocked) View.GONE else View.VISIBLE
         binding.btnReservation.visibility = actionVisibility
         binding.btnChangeTime.visibility = actionVisibility

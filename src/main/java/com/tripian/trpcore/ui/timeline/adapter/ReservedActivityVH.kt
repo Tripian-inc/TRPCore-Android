@@ -101,7 +101,7 @@ class ReservedActivityVH(
             binding.tvTime.visibility = View.GONE
         }
 
-        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl)
+        TimelineCellBinder.loadActivityImage(binding.ivImage, item.imageUrl, item.isAvailabilityExpired)
 
         val rating = item.segment.additionalData?.rating
         val reviewCount = item.segment.additionalData?.reviewCount
@@ -143,7 +143,7 @@ class ReservedActivityVH(
             currency = item.currency
         )
 
-        binding.btnReservation.text = TRPCore.core.miscRepository.getLanguageValueForKey(LanguageConst.RESERVATION)
+        binding.btnReservation.text = TimelineCellBinder.reservationButtonText(item.isAvailabilityExpired)
         val actionVisibility = if (pastDayLocked) View.GONE else View.VISIBLE
         binding.btnReservation.visibility = actionVisibility
         binding.btnChangeTime.visibility = actionVisibility

@@ -1,5 +1,7 @@
 package com.tripian.trpcore.ui.timeline.adapter
 
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -53,9 +55,13 @@ internal object TimelineCellBinder {
         )
     }
 
-    /** Activity image; the no-image / load-error fallback is the SDK's generic placeholder. */
-    fun loadActivityImage(imageView: ImageView, imageUrl: String?) {
+    /**
+     * Activity image; the no-image / load-error fallback is the SDK's generic placeholder.
+     * [desaturated] renders the image in grayscale for activities that are no longer available.
+     */
+    fun loadActivityImage(imageView: ImageView, imageUrl: String?, desaturated: Boolean = false) {
         val fallback = R.drawable.trp_bg_place_holder_image
+        applySaturation(imageView, desaturated)
         if (!imageUrl.isNullOrBlank()) {
             imageView.scaleType = ImageView.ScaleType.CENTER_CROP
             Glide.with(imageView)
@@ -70,8 +76,9 @@ internal object TimelineCellBinder {
         }
     }
 
-    /** POI image — generic placeholder fallback (no brand logo). */
-    fun loadPoiImage(imageView: ImageView, imageUrl: String?) {
+    /** POI image — generic placeholder fallback (no brand logo); [desaturated] renders it in grayscale. */
+    fun loadPoiImage(imageView: ImageView, imageUrl: String?, desaturated: Boolean = false) {
+        applySaturation(imageView, desaturated)
         if (!imageUrl.isNullOrBlank()) {
             Glide.with(imageView)
                 .load(imageUrl)
@@ -81,6 +88,20 @@ internal object TimelineCellBinder {
         } else {
             imageView.setImageResource(R.drawable.trp_bg_place_holder_image)
         }
+    }
+
+    private fun applySaturation(imageView: ImageView, desaturated: Boolean) {
+        if (desaturated) {
+            imageView.colorFilter = ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(0f) })
+        } else {
+            imageView.clearColorFilter()
+        }
+    }
+
+    /** Localized reservation button label; expired availability asks the user to re-check it. */
+    fun reservationButtonText(isAvailabilityExpired: Boolean): String {
+        val key = if (isAvailabilityExpired) LanguageConst.CHECK_AVAILABILITY else LanguageConst.RESERVATION
+        return key.languageValue()
     }
 
     /** Toggle the "No exact location" badge and set its localized label. */

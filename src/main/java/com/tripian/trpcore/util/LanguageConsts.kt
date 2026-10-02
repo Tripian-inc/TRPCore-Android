@@ -183,6 +183,7 @@ object LanguageConst {
     const val RECOMMENDATIONS = "timeline.label.recommendations"
     const val CONFIRMED = "timeline.bookedActivity.confirmed"
     const val RESERVATION = "timeline.bookedActivity.reservation"
+    const val CHECK_AVAILABILITY = "check_availability"
     const val VIEW_DETAILS = "view_details"
     const val DELETE_SEGMENT = "delete_segment"
     const val DELETE_SEGMENT_CONFIRM = "delete_segment_confirm"
