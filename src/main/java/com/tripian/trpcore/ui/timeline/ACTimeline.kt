@@ -232,8 +232,6 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         viewModel.selectedDayIndex.observe(this) { index ->
             binding.dayFilterView.setSelectedDay(index)
             timelineAdapter.pastDayLocked = isPastDayLocked()
-            binding.fabAddPlan.visibility =
-                if (isPastDayLocked()) View.GONE else View.VISIBLE
         }
 
         viewModel.isMapMode.observe(this) { isMapMode ->
@@ -771,14 +769,12 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         }
         ViewCompat.requestApplyInsets(binding.root)
 
-        val addPlanVisibility = if (isPastDayLocked()) View.GONE else View.VISIBLE
+        binding.fabAddPlan.visibility = View.VISIBLE
         if (isMapMode) {
             binding.fabMap.visibility = View.GONE
-            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.VISIBLE
         } else {
             binding.fabMap.visibility = View.VISIBLE
-            binding.fabAddPlan.visibility = addPlanVisibility
             binding.fabList.visibility = View.GONE
         }
 

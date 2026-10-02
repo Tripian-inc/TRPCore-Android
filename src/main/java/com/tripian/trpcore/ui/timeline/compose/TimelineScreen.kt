@@ -1013,14 +1013,12 @@ fun TimelineScreen(
                 containerColor = colorResource(R.color.trp_text_primary),
                 onClick = { viewModel.toggleMapMode() }
             )
-            if (!pastDayLocked) {
-                Spacer(Modifier.height(16.dp))
-                TimelineFab(
-                    iconRes = R.drawable.trp_ic_plus_bold,
-                    containerColor = colorResource(R.color.trp_timeline_fab_color),
-                    onClick = { showAddPlanSheet() }
-                )
-            }
+            Spacer(Modifier.height(16.dp))
+            TimelineFab(
+                iconRes = R.drawable.trp_ic_plus_bold,
+                containerColor = colorResource(R.color.trp_timeline_fab_color),
+                onClick = { showAddPlanSheet() }
+            )
         }
 
         if (sheets.onboardingVisible) {
