@@ -133,12 +133,11 @@ fun AddPlanSheet(
                         modifier = Modifier.align(Alignment.Center)
                     )
                     Image(
-                        painter = painterResource(R.drawable.trp_ic_close),
+                        painter = painterResource(R.drawable.trp_ic_close_header),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(end = 8.dp)
+                            .padding(end = 16.dp)
                             .size(24.dp)
-                            .padding(4.dp)
                             .align(Alignment.CenterEnd)
                             .clickable { onDismissRequest() }
                     )

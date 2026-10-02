@@ -56,12 +56,11 @@
             android:id="@+id/ivClose"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:padding="7dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="16dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/trp_ic_close"
+            android:src="@drawable/trp_ic_close_header"
             android:contentDescription="Close"/>
 
     </RelativeLayout>
