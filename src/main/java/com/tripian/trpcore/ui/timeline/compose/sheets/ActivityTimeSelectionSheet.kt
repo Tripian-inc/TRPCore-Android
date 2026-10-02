@@ -277,6 +277,7 @@ private class ActivityTimeSelectionUi(
             binding.tvNoTimeSlots.visibility = View.GONE
             binding.flexibleInfoCard.visibility = View.GONE
             binding.tvFlexibleTopOfItinerary.visibility = View.GONE
+            binding.soldOutWarningCard.visibility = View.GONE
             selectedTimeSlot = null
             selectedPrice = null
             isFlexibleSelected = false
@@ -338,6 +339,8 @@ private class ActivityTimeSelectionUi(
             viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_CONTINUE)
         }
         binding.btnRemove.text = viewModel.getLanguageForKey(LanguageConst.REMOVE_BUTTON)
+        binding.tvSoldOutWarning.text =
+            viewModel.getLanguageForKey(LanguageConst.ADD_PLAN_SOLD_OUT_WARNING)
     }
 
     private fun setupDayFilter() {
@@ -435,6 +438,7 @@ private class ActivityTimeSelectionUi(
                 binding.tvNoTimeSlots.visibility = View.GONE
                 binding.flexibleInfoCard.visibility = View.VISIBLE
                 binding.tvFlexibleTopOfItinerary.visibility = View.VISIBLE
+                binding.soldOutWarningCard.visibility = View.GONE
                 applyFlexibleInfoTexts()
                 isFlexibleSelected = true
                 if (isStepEditMode) {
@@ -449,6 +453,7 @@ private class ActivityTimeSelectionUi(
                 if (currentSlots.isEmpty()) {
                     binding.tvNoTimeSlots.visibility = View.VISIBLE
                     binding.scrollTimeSlots.visibility = View.GONE
+                    binding.soldOutWarningCard.visibility = View.GONE
                 } else {
                     binding.tvNoTimeSlots.visibility = View.GONE
                     binding.scrollTimeSlots.visibility = View.VISIBLE
@@ -500,6 +505,7 @@ private class ActivityTimeSelectionUi(
             ChipSpec(slot.time, slot.minPrice, isDisabled = isPast)
         }
         disabledTime?.let { chips += ChipSpec(it, price = null, isDisabled = true) }
+        binding.soldOutWarningCard.visibility = if (disabledTime != null) View.VISIBLE else View.GONE
         chips.sortBy { it.time }
 
         val disabledTextColor = ContextCompat.getColor(context, R.color.trp_white)

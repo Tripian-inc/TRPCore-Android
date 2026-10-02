@@ -211,6 +211,38 @@
 
     </FrameLayout>
 
+    <LinearLayout
+        android:id="@+id/soldOutWarningCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/_12sdp"
+        android:layout_marginTop="@dimen/_12sdp"
+        android:background="@drawable/trp_bg_sold_out_warning"
+        android:gravity="top"
+        android:orientation="horizontal"
+        android:padding="@dimen/_12sdp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="@dimen/_20sdp"
+            android:layout_height="@dimen/_20sdp"
+            android:contentDescription="@null"
+            android:src="@drawable/trp_ic_error_popup" />
+
+        <com.tripian.trpcore.util.widget.TextView
+            android:id="@+id/tvSoldOutWarning"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/_8sdp"
+            android:layout_weight="1"
+            android:fontFamily="@font/medium"
+            android:textColor="@color/trp_text_primary"
+            android:textSize="14sp"
+            tools:text="The selected time is fully booked. Please select another time or day to check availability." />
+
+    </LinearLayout>
+
     <!-- Continue / Select Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnContinue"

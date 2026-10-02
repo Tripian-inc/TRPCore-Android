@@ -182,6 +182,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             binding.tvNoTimeSlots.visibility = View.GONE
             binding.flexibleInfoCard.visibility = View.GONE
             binding.tvFlexibleTopOfItinerary.visibility = View.GONE
+            binding.soldOutWarningCard.visibility = View.GONE
             selectedTimeSlot = null
             selectedPrice = null
             isFlexibleSelected = false
@@ -244,6 +245,8 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             getLanguageForKey(LanguageConst.ADD_PLAN_CONTINUE)
         }
         binding.btnRemove.text = getLanguageForKey(LanguageConst.REMOVE_BUTTON)
+        binding.tvSoldOutWarning.text =
+            getLanguageForKey(LanguageConst.ADD_PLAN_SOLD_OUT_WARNING)
     }
 
     private fun setupDayFilter() {
@@ -391,6 +394,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 binding.tvNoTimeSlots.visibility = View.GONE
                 binding.flexibleInfoCard.visibility = View.VISIBLE
                 binding.tvFlexibleTopOfItinerary.visibility = View.VISIBLE
+                binding.soldOutWarningCard.visibility = View.GONE
                 applyFlexibleInfoTexts()
                 isFlexibleSelected = true
                 if (isStepEditMode) {
@@ -405,6 +409,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
                 if (currentSlots.isEmpty()) {
                     binding.tvNoTimeSlots.visibility = View.VISIBLE
                     binding.scrollTimeSlots.visibility = View.GONE
+                    binding.soldOutWarningCard.visibility = View.GONE
                 } else {
                     binding.tvNoTimeSlots.visibility = View.GONE
                     binding.scrollTimeSlots.visibility = View.VISIBLE
@@ -467,6 +472,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             ChipSpec(slot.time, slot.minPrice, isDisabled = isPast)
         }
         disabledTime?.let { chips += ChipSpec(it, price = null, isDisabled = true) }
+        binding.soldOutWarningCard.visibility = if (disabledTime != null) View.VISIBLE else View.GONE
         chips.sortBy { it.time }
 
         val disabledTextColor = androidx.core.content.ContextCompat.getColor(
