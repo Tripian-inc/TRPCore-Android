@@ -201,7 +201,6 @@
 # ============================================================================
 
 -keep @interface com.google.android.material.* { *; }
--keep class com.google.firebase.crashlytics.** { *; }
 -keep class com.google.android.libraries.places.** { *; }
 -keep class com.google.common.** { *; }
 -keep class com.google.android.flexbox.** { *; }

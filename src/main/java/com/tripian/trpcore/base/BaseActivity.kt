@@ -1,6 +1,7 @@
 package com.tripian.trpcore.base
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.ViewGroup
@@ -30,6 +31,8 @@ import javax.inject.Inject
 
 /**
  * Created by Semih Özköroğlu on 29.09.2019
+ *
+ * SDK screens render light only; the light night mode is applied per activity so the host's night mode is untouched.
  */
 abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatActivity(),
     HasAndroidInjector {
@@ -61,11 +64,14 @@ abstract class BaseActivity<VB : ViewBinding, VM : BaseViewModel> : AppCompatAct
 
     abstract fun getViewBinding(): VB
 
+    override fun attachBaseContext(newBase: Context) {
+        delegate.localNightMode = AppCompatDelegate.MODE_NIGHT_NO
+        super.attachBaseContext(newBase)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         TRPCore.inject(this)
         TRPCore.registerActivity(this)
-
-        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
 
         LottieCompositionFactory.fromRawRes(applicationContext, R.raw.loader)
 

@@ -1,7 +1,4 @@
 <resources>
     <!-- Library identifier - required for Android library modules -->
     <string name="trp_library_name" translatable="false">TRPCore</string>
-
-    <!-- Firebase notification channel -->
-    <string name="default_notification_channel_id" translatable="false">tripian_push_channel</string>
 </resources>

@@ -173,11 +173,6 @@ dependencies {
     // Civitatis slim build: TRPProviderKit, TRPAuth, and TRPGyg were retired
     // along with the legacy Trip-Mode UI in this branch. Do not add them
     // back here without re-introducing their consumer code first.
-    // Firebase
-    implementation platform('com.google.firebase:firebase-bom:33.1.2')
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
-    implementation 'com.google.firebase:firebase-analytics-ktx'
-    implementation "com.google.firebase:firebase-messaging-ktx"
 
     // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1'

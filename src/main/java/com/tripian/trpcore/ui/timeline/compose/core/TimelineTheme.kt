@@ -20,8 +20,8 @@ val TimelineFontFamily = FontFamily(
 
 /**
  * Material3 theme for the Compose Timeline UI. Maps the SDK's color and font
- * resources and always renders light, matching the MODE_NIGHT_NO the
- * View-based screens enforce regardless of the host app's theme.
+ * resources and always renders light: SDK screens are light-only, and each SDK
+ * activity applies a local light night mode.
  */
 @Composable
 fun TimelineTheme(content: @Composable () -> Unit) {

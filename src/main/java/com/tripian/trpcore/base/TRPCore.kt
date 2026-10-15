@@ -9,8 +9,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
-import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.one.TRPRest
 import com.tripian.trpcore.di.AppComponent
@@ -477,9 +475,6 @@ class TRPCore {
         if (!mapboxApiKey.isNullOrBlank()) {
             applyMapboxAccessToken(mapboxApiKey)
         }
-        runOnMainThread {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-        }
 
         appComponent = DaggerAppComponent.builder()
             .configurations(object : AppConfig() {
@@ -512,10 +507,6 @@ class TRPCore {
             miscRepository.getPersistedGooglePlacesApiKey()
                 ?.takeIf { ResolveGooglePlacesApiKey.isUsableGooglePlacesApiKey(it) }
                 ?.let { applyGooglePlacesApiKey(it) }
-        }
-
-        if (FirebaseApp.getApps(app).isEmpty()) {
-            FirebaseApp.initializeApp(app)
         }
 
         return this
