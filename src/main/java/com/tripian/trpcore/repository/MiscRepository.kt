@@ -19,6 +19,7 @@ import com.tripian.trpcore.util.extensions.sundayText
 import com.tripian.trpcore.util.extensions.thursdayText
 import com.tripian.trpcore.util.extensions.tuesdayText
 import com.tripian.trpcore.util.extensions.wednesdayText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -27,13 +28,17 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.ResponseBody
 import org.json.JSONObject
-import javax.inject.Inject
 
-class MiscRepository @Inject constructor(
+/**
+ * @param now Clock used for cache freshness checks
+ */
+class MiscRepository(
     var app: Application,
-    val preferences: Preferences
+    val preferences: Preferences,
+    private val now: () -> Long = System::currentTimeMillis
 ) {
     @Volatile
     private var languageValues: JSONObject? = null
@@ -214,14 +219,94 @@ class MiscRepository @Inject constructor(
         return tryLoadCachedLanguages(language)
     }
 
-    suspend fun getConfigListAsync(): ConfigList? {
-        configList?.let { return it }
+    /**
+     * Returns the `misc/config-list` payload, served from memory unless [forceRefresh] is set.
+     */
+    suspend fun getConfigListAsync(forceRefresh: Boolean = false): ConfigList? {
+        if (!forceRefresh) configList?.let { return it }
         val response: ConfigListResponse = awaitCallback { ok, fail ->
             TRPCore.core.trpRest.getConfigList(success = ok, error = fail)
         }
         configList = response.data
         return response.data
     }
+
+    /**
+     * Mapbox access token served by `misc/config-list`, cached as described in [getConfigSecret].
+     */
+    suspend fun getMapboxAccessToken(): String? = getConfigSecret(MAPBOX_TOKEN)
+
+    /**
+     * Last Mapbox access token persisted from `misc/config-list`, regardless of its age,
+     * or `null` when none was stored.
+     */
+    fun getPersistedMapboxAccessToken(): String? = getPersistedConfigSecret(MAPBOX_TOKEN)
+
+    /**
+     * Google Places API key served by `misc/config-list`, cached as described in [getConfigSecret].
+     */
+    suspend fun getGooglePlacesApiKey(): String? = getConfigSecret(GOOGLE_PLACES_KEY)
+
+    /**
+     * Last Google Places API key persisted from `misc/config-list`, regardless of its age,
+     * or `null` when none was stored.
+     */
+    fun getPersistedGooglePlacesApiKey(): String? = getPersistedConfigSecret(GOOGLE_PLACES_KEY)
+
+    /**
+     * Returns [secret] from `misc/config-list`. A persisted value younger than
+     * [CONFIG_SECRET_CACHE_TTL_MS] is returned without a request; otherwise the config list is
+     * fetched from the network, bypassing the in-memory copy, and every secret it carries is
+     * persisted. When that request fails or exceeds [CONFIG_FETCH_TIMEOUT_MS], or the response
+     * lacks [secret], the expired persisted value is returned instead. Returns `null` when
+     * neither exists.
+     */
+    private suspend fun getConfigSecret(secret: ConfigSecret): String? {
+        val cachedValue = getPersistedConfigSecret(secret)
+        if (cachedValue != null && isConfigSecretFresh(secret)) return cachedValue
+        val fetchedConfigList = try {
+            withTimeoutOrNull(CONFIG_FETCH_TIMEOUT_MS) {
+                getConfigListAsync(forceRefresh = true)
+            }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Throwable) {
+            return cachedValue
+        } ?: return cachedValue
+        persistConfigSecrets(fetchedConfigList)
+        return secret.extract(fetchedConfigList)?.takeIf { it.isNotBlank() } ?: cachedValue
+    }
+
+    private fun getPersistedConfigSecret(secret: ConfigSecret): String? {
+        return preferences.getString(secret.valueKey, "")
+            .takeIf { it.isNotBlank() }
+    }
+
+    private fun persistConfigSecrets(configList: ConfigList) {
+        val fetchedAt = now()
+        CONFIG_SECRETS.forEach { secret ->
+            val value = secret.extract(configList)?.takeIf { it.isNotBlank() } ?: return@forEach
+            preferences.setString(secret.valueKey, value)
+            preferences.setLong(secret.fetchedAtKey, fetchedAt)
+        }
+    }
+
+    private fun isConfigSecretFresh(secret: ConfigSecret): Boolean {
+        val fetchedAt = preferences.getLong(secret.fetchedAtKey, 0L)
+        if (fetchedAt <= 0L) return false
+        val age = now() - fetchedAt
+        return age in 0 until CONFIG_SECRET_CACHE_TTL_MS
+    }
+
+    /**
+     * A credential served by `misc/config-list` and persisted under [valueKey] with its fetch
+     * time under [fetchedAtKey].
+     */
+    private class ConfigSecret(
+        val valueKey: String,
+        val fetchedAtKey: String,
+        val extract: (ConfigList) -> String?
+    )
 
     /**
      * Parses a v2 translations payload, which carries only [requestedLanguage]
@@ -360,6 +445,26 @@ class MiscRepository @Inject constructor(
     companion object {
         /** Cold starts within this window load translations from preferences and skip the API. */
         private const val LANGUAGE_CACHE_TTL_MS: Long = 60L * 60L * 1000L
+
+        /** A persisted config-list secret younger than this window is used without asking the API. */
+        private const val CONFIG_SECRET_CACHE_TTL_MS: Long = 24L * 60L * 60L * 1000L
+
+        /** Upper bound for the config-list request that refreshes the persisted secrets. */
+        private const val CONFIG_FETCH_TIMEOUT_MS: Long = 10_000L
+
+        private val MAPBOX_TOKEN = ConfigSecret(
+            valueKey = Preferences.Keys.MAPBOX_ACCESS_TOKEN,
+            fetchedAtKey = Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT,
+            extract = { it.mapboxAccessToken }
+        )
+
+        private val GOOGLE_PLACES_KEY = ConfigSecret(
+            valueKey = Preferences.Keys.GOOGLE_PLACES_API_KEY,
+            fetchedAtKey = Preferences.Keys.GOOGLE_PLACES_API_KEY_FETCHED_AT,
+            extract = { it.googlePlacesApiKey }
+        )
+
+        private val CONFIG_SECRETS = listOf(MAPBOX_TOKEN, GOOGLE_PLACES_KEY)
 
         private const val DEFAULT_LANGUAGE = "en"
     }

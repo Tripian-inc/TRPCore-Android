@@ -24,6 +24,10 @@ class Preferences @Inject constructor(var context: Context) {
         fun translationsFetchedAtForLanguage(lang: String) =
             "${APP_LANGUAGE_TRANSLATIONS_FETCHED_AT}_$lang"
         const val APP_CURRENCY = "app_currency"
+        const val MAPBOX_ACCESS_TOKEN = "mapbox_access_token"
+        const val MAPBOX_ACCESS_TOKEN_FETCHED_AT = "mapbox_access_token_fetched_at"
+        const val GOOGLE_PLACES_API_KEY = "google_places_api_key"
+        const val GOOGLE_PLACES_API_KEY_FETCHED_AT = "google_places_api_key_fetched_at"
         const val CACHED_CITIES = "cached_cities"
         // TOKEN info
         const val TOKEN_TYPE = "TokenType"

@@ -16,6 +16,8 @@ import com.tripian.one.TRPRest
 import com.tripian.trpcore.di.AppComponent
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.di.ViewModelFactory
+import com.tripian.trpcore.domain.ResolveGooglePlacesApiKey
+import com.tripian.trpcore.domain.ResolveMapboxAccessToken
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripRepository
@@ -26,6 +28,7 @@ import com.tripian.trpcore.util.CurrencyUtil
 import com.tripian.trpcore.util.Preferences
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,9 +43,16 @@ class TRPCore {
 
     companion object {
         lateinit var core: TRPCore
-        lateinit var placesApiKey: String
-        lateinit var mapBoxApiKey: String
+        @Volatile
+        var placesApiKey: String = ""
+
+        @Volatile
+        var mapBoxApiKey: String = ""
+        private const val TAG = "TRPCore"
         private const val BASE_URL = "https://gyssxjfp9d.execute-api.eu-west-1.amazonaws.com"
+        private const val MAPBOX_TOKEN_UNAVAILABLE_MESSAGE =
+            "Mapbox access token is unavailable: pass mapboxApiKey to TRPCore.init " +
+                "or make sure misc/config-list returns mapboxAccessToken."
         private lateinit var apiVersion: String
 
         const val EXTRA_ITINERARY = "extra_itinerary"
@@ -329,6 +339,14 @@ class TRPCore {
     @Inject
     lateinit var appConfig: AppConfig
 
+    @Inject
+    internal lateinit var resolveMapboxAccessToken: ResolveMapboxAccessToken
+
+    private var hostMapboxAccessToken: String? = null
+
+    @Volatile
+    internal var hostGooglePlacesApiKey: String? = null
+
     // =====================
     // CURRENCY METHODS (Instance)
     // =====================
@@ -434,30 +452,33 @@ class TRPCore {
      *
      * @param app Application instance
      * @param tripianApiKey Tripian API key
-     * @param placesApiKey Google Places API key
-     * @param mapboxApiKey Mapbox API key
+     * @param placesApiKey Google Places API key. Optional: when null, blank or `DEFAULT_API_KEY`,
+     *                     the last key persisted from the Tripian backend is applied right away
+     *                     and the backend key is fetched or refreshed on the first address search.
+     * @param mapboxApiKey Mapbox access token. Optional: when null or blank, the last token
+     *                     persisted from the Tripian backend is applied right away. The timeline
+     *                     opens immediately when a host-supplied or fresh cached token exists;
+     *                     a stale cached token waits for one refetch (10 s cap), on failure the
+     *                     stale token is used.
      * @param environment Environment (DEV, PREDEV, PROD) - determines API version path
      */
     fun init(
         app: Application,
         tripianApiKey: String,
-        placesApiKey: String,
-        mapboxApiKey: String,
+        placesApiKey: String? = null,
+        mapboxApiKey: String? = null,
         environment: Environment = Environment.PROD
     ): TRPCore {
         core = this
-        Companion.placesApiKey = placesApiKey
-        mapBoxApiKey = mapboxApiKey
         apiVersion = environment.getApiVersion()
+        hostMapboxAccessToken = mapboxApiKey
+        hostGooglePlacesApiKey = placesApiKey
 
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            MapboxOptions.accessToken = mapboxApiKey
+        if (!mapboxApiKey.isNullOrBlank()) {
+            applyMapboxAccessToken(mapboxApiKey)
+        }
+        runOnMainThread {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-        } else {
-            Handler(Looper.getMainLooper()).post {
-                MapboxOptions.accessToken = mapboxApiKey
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            }
         }
 
         appComponent = DaggerAppComponent.builder()
@@ -471,7 +492,7 @@ class TRPCore {
                 }
 
                 override fun mapboxApiKey(): String {
-                    return mapboxApiKey
+                    return Companion.mapBoxApiKey
                 }
 
                 override fun apiVersion(): String {
@@ -482,6 +503,17 @@ class TRPCore {
             .build()
             .also { it.inject(this) }
 
+        if (mapboxApiKey.isNullOrBlank()) {
+            miscRepository.getPersistedMapboxAccessToken()?.let { applyMapboxAccessToken(it) }
+        }
+        if (placesApiKey != null && ResolveGooglePlacesApiKey.isUsableGooglePlacesApiKey(placesApiKey)) {
+            applyGooglePlacesApiKey(placesApiKey)
+        } else {
+            miscRepository.getPersistedGooglePlacesApiKey()
+                ?.takeIf { ResolveGooglePlacesApiKey.isUsableGooglePlacesApiKey(it) }
+                ?.let { applyGooglePlacesApiKey(it) }
+        }
+
         if (FirebaseApp.getApps(app).isEmpty()) {
             FirebaseApp.initializeApp(app)
         }
@@ -490,7 +522,11 @@ class TRPCore {
     }
 
     /**
-     * Starts the Timeline screen directly with a trip hash.
+     * Starts the Timeline screen directly with a trip hash. The screen opens on the main thread
+     * once a Mapbox access token is available: immediately when a host-supplied or fresh cached
+     * token exists; a stale cached token waits for one refetch (10 s cap), on failure the stale
+     * token is used. When no token can be obtained, the listener receives `onError` and the
+     * screen is not opened.
      *
      * @param context The application context.
      * @param tripHash The timeline/trip hash to load.
@@ -499,16 +535,22 @@ class TRPCore {
         context: Context,
         tripHash: String
     ) {
-        val intent = ACTimeline.newIntent(context, tripHash)
-        if (context !is Activity) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchWhenMapboxTokenReady(context) {
+            val intent = ACTimeline.newIntent(context, tripHash)
+            if (context !is Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
         }
-        context.startActivity(intent)
     }
 
     /**
      * Primary SDK entry point. Fetches the existing timeline when a tripHash
-     * is available, otherwise creates one from the itinerary model.
+     * is available, otherwise creates one from the itinerary model. The screen opens on the main
+     * thread once a Mapbox access token is available: immediately when a host-supplied or fresh
+     * cached token exists; a stale cached token waits for one refetch (10 s cap), on failure the
+     * stale token is used. When no token can be obtained, the listener receives `onError` and the
+     * screen is not opened.
      *
      * @param context Android context
      * @param itinerary Itinerary data (destinations, activities, favorites)
@@ -538,18 +580,63 @@ class TRPCore {
 
         applyLanguageAndPrefetchCities(appLanguage)
 
-        val intent = Intent(context, ACTimeline::class.java).apply {
-            putExtra(EXTRA_ITINERARY, itinerary)
-            putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
-            putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
-            putExtra(EXTRA_CAN_BACK, canBack)
-            putExtra(EXTRA_APP_LANGUAGE, appLanguage)
-            putExtra(EXTRA_APP_CURRENCY, appCurrency)
-            if (context !is Activity) {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        launchWhenMapboxTokenReady(context) {
+            val intent = Intent(context, ACTimeline::class.java).apply {
+                putExtra(EXTRA_ITINERARY, itinerary)
+                putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
+                putExtra(EXTRA_UNIQUE_ID, effectiveUniqueId)
+                putExtra(EXTRA_CAN_BACK, canBack)
+                putExtra(EXTRA_APP_LANGUAGE, appLanguage)
+                putExtra(EXTRA_APP_CURRENCY, appCurrency)
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            context.startActivity(intent)
+        }
+    }
+
+    /**
+     * Sets [token] as the Mapbox access token for route requests and for map views
+     * inflated afterwards.
+     */
+    internal fun applyMapboxAccessToken(token: String) {
+        mapBoxApiKey = token
+        runOnMainThread {
+            MapboxOptions.accessToken = token
+        }
+    }
+
+    /**
+     * Sets [key] as the effective Google Places API key exposed through [placesApiKey].
+     */
+    internal fun applyGooglePlacesApiKey(key: String) {
+        placesApiKey = key
+    }
+
+    /**
+     * Resolves the Mapbox access token and runs [startScreen] on the main thread once one is
+     * applied. Reports an error to the listener and skips [startScreen] when no token is
+     * available or resolution fails; also skips it when [context] is a finishing activity.
+     */
+    private fun launchWhenMapboxTokenReady(context: Context, startScreen: () -> Unit) {
+        initScope.launch(Dispatchers.Main.immediate) {
+            try {
+                val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken)
+                if (token.isNullOrBlank()) {
+                    notifyError(MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
+                    return@launch
+                }
+                applyMapboxAccessToken(token)
+                if ((context as? Activity)?.isFinishing == true) return@launch
+                startScreen()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Throwable) {
+                Log.e(TAG, "Failed to resolve the Mapbox access token", error)
+                notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
             }
         }
-        context.startActivity(intent)
     }
 
     fun activityInjector(): AndroidInjector<Activity> {
