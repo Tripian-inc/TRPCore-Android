@@ -90,22 +90,27 @@ class TimeSelectionBottomSheet : BaseSimpleBottomSheet<BottomSheetTimeSelectionB
             )
         )
 
+        val isOutsideOpeningHours = isSelectionOutsideOpeningHours()
         binding.btnConfirm.isEnabled =
             startTime != null &&
             endTime != null &&
-            MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime)
+            MaterialTimePickerHelper.isEndTimeAfterStartTime(startTime, endTime) &&
+            !isOutsideOpeningHours
 
-        updateClosedWarning()
+        updateClosedWarning(isOutsideOpeningHours)
     }
 
+    /** True only when the hours are known and the picked span falls outside them. */
+    private fun isSelectionOutsideOpeningHours(): Boolean =
+        OpeningHours.coversSelection(openingHours, selectedDay, startTime, endTime) == false
+
     /**
-     * Shows a non-blocking notice when the picked span falls outside the POI's
-     * opening hours for [selectedDay]. Stays hidden when the hours are unknown or
-     * unparsable, so a missing `hours` string never blocks or nags the user.
+     * Shows the closed notice when the picked span falls outside the POI's opening
+     * hours for [selectedDay]; Confirm stays disabled while it is visible. Hidden when
+     * the hours are unknown or unparsable, so a missing `hours` string never blocks the user.
      */
-    private fun updateClosedWarning() {
-        val isOpen = OpeningHours.coversSelection(openingHours, selectedDay, startTime, endTime)
-        if (isOpen != false) {
+    private fun updateClosedWarning(isOutsideOpeningHours: Boolean) {
+        if (!isOutsideOpeningHours) {
             binding.llClosedWarning.visibility = View.GONE
             return
         }

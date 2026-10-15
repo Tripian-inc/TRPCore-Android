@@ -31,6 +31,13 @@ class ManualPoiVH(
         }
     }
 
+    /** Time overlap takes precedence over the closed-venue flag; null when neither applies. */
+    private fun statusLabel(item: TimelineDisplayItem.ManualPoi): String? = when {
+        item.showTimeOverlapText -> getLanguage(LanguageConst.TIME_OVERLAP)
+        item.isOutsideOpeningHours -> getLanguage(LanguageConst.POI_DETAIL_CLOSED)
+        else -> null
+    }
+
     /** Binds the cell. Manual POIs never show a rating row. */
     fun bind(
         item: TimelineDisplayItem.ManualPoi,
@@ -42,7 +49,7 @@ class ManualPoiVH(
             com.tripian.trpcore.util.extensions.MINUS_SIGN
         else item.order.toString()
 
-        if (item.hasConflict) {
+        if (item.hasConflict || item.isOutsideOpeningHours) {
             binding.orderTimeContainer.setBackgroundResource(R.drawable.trp_bg_order_time_container_conflict)
             binding.tvOrder.setBackgroundResource(R.drawable.trp_bg_step_order_conflict)
         } else {
@@ -56,12 +63,9 @@ class ManualPoiVH(
         val endTime = item.endTime
         if (startTime != null && endTime != null) {
             val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
-            binding.tvTime.text = if (item.showTimeOverlapText) {
-                val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
-                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)
-            } else {
-                timeText
-            }
+            binding.tvTime.text = statusLabel(item)?.let { label ->
+                TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, label)
+            } ?: timeText
             binding.tvTime.visibility = View.VISIBLE
         } else if (startTime != null) {
             binding.tvTime.text = timeFormat.format(startTime)
