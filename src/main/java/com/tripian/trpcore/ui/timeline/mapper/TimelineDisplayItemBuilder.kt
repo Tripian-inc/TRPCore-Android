@@ -323,6 +323,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
         items.forEachIndexed { index, item ->
             when (item) {
                 is TimelineDisplayItem.BookedActivity -> {
+                    if (item.isTimePending) return@forEachIndexed
                     val startTime = item.startDateTime?.toDate()
                     val endTime = item.endDateTime?.toDate()
                     if (startTime != null && endTime != null && !spansFullDay(startTime, endTime)) {

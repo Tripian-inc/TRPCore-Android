@@ -1,12 +1,11 @@
 package com.tripian.trpcore.domain.usecase.timeline
 
 import com.tripian.one.api.timeline.model.TimelineSegment
-import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.SuspendUseCase
-import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
+import com.tripian.trpcore.util.extensions.toEditSettings
 import javax.inject.Inject
 
 /**
@@ -42,52 +41,14 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         val newStartDate = "$baseDate ${params.newStartTime}"
         val newEndDate = "$baseDate ${params.newEndTime}"
 
-        val updatedAdditionalData = params.original.additionalData?.let { src ->
-            TimelineSegmentAdditionalData().apply {
-                activityId = src.activityId
-                bookingId = src.bookingId
-                title = src.title
-                imageUrl = src.imageUrl
-                startDatetime = newStartDate
-                endDatetime = newEndDate
-                coordinate = src.coordinate
-                cancellation = src.cancellation
-                price = params.newPrice ?: src.price
-                currency = src.currency
-                duration = src.duration
-                rating = src.rating
-                reviewCount = src.reviewCount
-                isNoLocation = src.isNoLocation
-            }
-        }
-
-        val segment = TimelineSegmentSettings().apply {
-            segmentIndex = params.segmentIndex
-            cityId = params.original.cityId
-            title = params.original.title
+        val segment = params.original.toEditSettings(params.segmentIndex).apply {
             startDate = newStartDate
             endDate = newEndDate
-            adults = params.original.adults
-            children = params.original.children
-            pets = params.original.pets
-            coordinate = params.original.coordinate
-            destinationCoordinate = params.original.destinationCoordinate
-            answerIds = params.original.answerIds ?: emptyList()
-            doNotRecommend = params.original.doNotRecommend
-            excludePoiIds = params.original.excludePoiIds
-            includePoiIds = params.original.includePoiIds
-            considerWeather = params.original.considerWeather
-            distinctPlan = params.original.distinctPlan
-            available = params.original.available
-            accommodation = params.original.accommodation
-            destinationAccommodation = params.original.destinationAccommodation
-            smartRecommendation = params.original.smartRecommendation
-            activityFreeText = params.original.activityFreeText
-            activityIds = params.original.activityIds
-            excludedActivityIds = params.original.excludedActivityIds
-            segmentType = params.original.segmentType
-            additionalData = updatedAdditionalData
-            currency = TRPCore.core.getCurrentCurrency()
+            additionalData?.apply {
+                startDatetime = newStartDate
+                endDatetime = newEndDate
+                params.newPrice?.let { price = it }
+            }
         }
 
         repository.editSegmentAsync(params.tripHash, segment)

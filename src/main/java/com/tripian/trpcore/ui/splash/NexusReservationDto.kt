@@ -20,6 +20,9 @@ internal class NexusReservationDto {
     @SerializedName("Direction") val direction: String? = null
     @SerializedName("FlightCode") val flightCode: String? = null
     @SerializedName("Id") val id: Long? = null
+    @SerializedName("ProductId") val productId: Int? = null
+    @SerializedName("BookingId") val bookingId: String? = null
+    @SerializedName("DestinationId") val destinationId: Int? = null
     @SerializedName("IsScheduledGrouped") val isScheduledGrouped: Boolean? = null
     @SerializedName("Locator") val locator: String? = null
     @SerializedName("AgencyRef") val agencyRef: String? = null
@@ -41,6 +44,21 @@ internal class NexusReservationDto {
     @SerializedName("detailURL") val detailURL: String? = null
     @SerializedName("meetingPoint") val meetingPointAlias: String? = null
     @SerializedName("locator") val locatorAlias: String? = null
+    @SerializedName("productId") val productIdAlias: Int? = null
+    @SerializedName("bookingId") val bookingIdAlias: String? = null
+    @SerializedName("destinationId") val destinationIdAlias: Int? = null
+
+    /** Catalogue product id as a non-empty string, or null when the host sent none. */
+    val catalogueProductId: String?
+        get() = (productId ?: productIdAlias)?.takeIf { it > 0 }?.toString()
+
+    /** Juniper zone id as a non-empty string, or null when the host sent none. */
+    val zoneId: String?
+        get() = (destinationId ?: destinationIdAlias)?.takeIf { it > 0 }?.toString()
+
+    /** Juniper line id of the booked service. */
+    val juniperLineId: String?
+        get() = (bookingId ?: bookingIdAlias)?.takeIf { it.isNotBlank() }
 
     // Optional pricing (present on some reservation types).
     @SerializedName("AmountClient") val amountClient: Double? = null

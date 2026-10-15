@@ -9,6 +9,7 @@ import com.tripian.trpcore.databinding.ItemTimelineBookedActivityBinding
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.toDate
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.PENDING_TIME_TEXT
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -54,8 +55,13 @@ class BookedActivityVH(
 
         val startTime = item.startDateTime?.toDate()
         val endTime = item.endDateTime?.toDate()
-        if (startTime != null && endTime != null) {
-            val timeText = "${timeFormat.format(startTime)} - ${timeFormat.format(endTime)}"
+        if (item.isTimePending) {
+            binding.tvTime.text = PENDING_TIME_TEXT
+            binding.tvTime.visibility = View.VISIBLE
+        } else if (startTime != null && endTime != null) {
+            val startText = timeFormat.format(startTime)
+            val endText = timeFormat.format(endTime)
+            val timeText = if (startText == endText) startText else "$startText - $endText"
             binding.tvTime.text = if (item.showTimeOverlapText) {
                 val overlapText = getLanguage(LanguageConst.TIME_OVERLAP)
                 TimeOverlapTextBuilder.build(binding.tvTime.context, timeText, overlapText)

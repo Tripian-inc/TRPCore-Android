@@ -43,7 +43,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
 ) : SuspendUseCase<ResolveCityIdsForActivitiesUseCase.Result, ResolveCityIdsForActivitiesUseCase.Params>() {
 
     /**
-     * @param knownActivityIds base ids the timeline already holds; those items are
+     * @param knownActivityIds match keys the timeline already holds; those items are
      *   skipped by the lookup tier because their segment already carries a city.
      *   Empty when the timeline is about to be created.
      */
@@ -112,7 +112,7 @@ class ResolveCityIdsForActivitiesUseCase @Inject constructor(
             params.tripItems.map { it.activityId } + params.favouriteItems.map { it.activityId }
             )
             .mapNotNull { id -> lookupKey(id) }
-            .filterNot { id -> id in params.knownActivityIds }
+            .filterNot { id -> ActivityIdFormat.matchKey(id) in params.knownActivityIds }
             .distinct()
 
         if (activityIds.isEmpty()) return

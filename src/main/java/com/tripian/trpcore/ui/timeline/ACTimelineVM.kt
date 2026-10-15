@@ -12,6 +12,11 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelinePlan
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.isGenerated
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.DoLightLogin
@@ -46,6 +51,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateSegmentTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.SyncBookedActivityTimesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveObsoleteSegmentsUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.ResolveCityIdsForActivitiesUseCase
@@ -98,6 +104,7 @@ class ACTimelineVM @Inject constructor(
     private val detectReservedToBookedTransitionUseCase: DetectReservedToBookedTransitionUseCase,
     private val syncReservedToBookedUseCase: SyncReservedToBookedUseCase,
     private val addMissingBookedActivitiesUseCase: AddMissingBookedActivitiesUseCase,
+    private val syncBookedActivityTimesUseCase: SyncBookedActivityTimesUseCase,
     private val updateDateRangeUseCase: UpdateDateRangeUseCase,
     private val removeObsoleteSegmentsUseCase: RemoveObsoleteSegmentsUseCase,
     private val availabilityCheckManager: com.tripian.trpcore.domain.manager.AvailabilityCheckManager,
@@ -281,6 +288,7 @@ class ACTimelineVM @Inject constructor(
         _tripHash = arguments?.getString(TRPCore.EXTRA_TRIP_HASH) ?: ""
         itinerary = arguments?.getParcelable(TRPCore.EXTRA_ITINERARY)
         uniqueId = arguments?.getString(TRPCore.EXTRA_UNIQUE_ID)
+        TRPAnalytics.screen(TRPAnalyticsScreen.TIMELINE, mapOf(TRPAnalyticsParam.TRIP_HASH to _tripHash))
 
         val language = arguments?.getString(TRPCore.EXTRA_APP_LANGUAGE)
         if (!language.isNullOrEmpty()) {
@@ -726,6 +734,7 @@ class ACTimelineVM @Inject constructor(
                 .onSuccess { timeline ->
                     _tripHash = timeline.tripHash ?: ""
                     if (_tripHash.isNotEmpty()) {
+                        logTimelineCreated(modifiedItinerary)
                         TRPCore.notifyTimelineCreated(_tripHash)
                         // Host policy: persist the hash if the host manages it internally.
                         TRPCore.host.onTimelineCreated(preferences, _tripHash)
@@ -790,6 +799,7 @@ class ACTimelineVM @Inject constructor(
                 .onSuccess { timeline ->
                     _tripHash = timeline.tripHash ?: ""
                     if (_tripHash.isNotEmpty()) {
+                        logTimelineCreated(resolvedItinerary)
                         TRPCore.notifyTimelineCreated(_tripHash)
                         // Host policy: persist the hash if the host manages it internally.
                         TRPCore.host.onTimelineCreated(preferences, _tripHash)
@@ -1022,6 +1032,7 @@ class ACTimelineVM @Inject constructor(
 
         timeline.tripHash.let { hash ->
             if (hash.isNotEmpty()) {
+                logTimelineLoaded(timeline)
                 TRPCore.notifyTimelineLoaded(hash)
             }
         }
@@ -1254,6 +1265,12 @@ class ACTimelineVM @Inject constructor(
     // =====================
 
     fun selectDay(index: Int) {
+        if (_selectedDayIndex.value != index) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.TIMELINE_DAY_CHANGED,
+                mapOf(TRPAnalyticsParam.TRIP_HASH to _tripHash, TRPAnalyticsParam.DAY_INDEX to index)
+            )
+        }
         _selectedDayIndex.value = index
         selectedStepId = null
         collapsedSectionCityIds.clear()
@@ -1513,6 +1530,18 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess {
+                    TRPAnalytics.log(
+                        TRPAnalyticsEvent.STEP_ADDED,
+                        mapOf(
+                            TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.ADD_PLAN,
+                            TRPAnalyticsParam.TRIP_HASH to _tripHash,
+                            TRPAnalyticsParam.DAY_INDEX to data.selectedDayIndex,
+                            TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.SMART_RECOMMENDATION,
+                            TRPAnalyticsParam.CATEGORIES to data.selectedCategories,
+                            TRPAnalyticsParam.CITY_ID to validCity.id,
+                            TRPAnalyticsParam.TIME to "${data.startTime}-${data.endTime}"
+                        )
+                    )
                     _smartCreateInProgress.value = false
                     _smartSegmentCreated.value = data.selectedDayIndex
                     showLottieLoading()
@@ -1576,10 +1605,12 @@ class ACTimelineVM @Inject constructor(
 
     fun deleteSegment(segmentIndex: Int) {
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
+        val removedSegment = _timeline.value?.tripProfile?.segments?.getOrNull(segmentIndex)
 
         viewModelScope.launch {
             runCatching { deleteSegmentUseCase(DeleteSegmentUseCase.Params(_tripHash, segmentIndex)) }
                 .onSuccess {
+                    removedSegment?.let { logSegmentEvent(TRPAnalyticsEvent.STEP_REMOVED, it) }
                     val mutated = applyLocalSegmentDelete(segmentIndex)
                     hideLottieLoading()
                     if (mutated) {
@@ -1623,10 +1654,12 @@ class ACTimelineVM @Inject constructor(
 
     fun deleteStep(stepId: Int) {
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
+        val removedStep = analyticsStepById(stepId)
 
         viewModelScope.launch {
             runCatching { deleteStepUseCase(DeleteStepUseCase.Params(stepId)) }
                 .onSuccess {
+                    removedStep?.let { logStepEvent(TRPAnalyticsEvent.STEP_REMOVED, it) }
                     val mutated = applyLocalStepDelete(stepId)
                     hideLottieLoading()
                     if (mutated) {
@@ -1705,6 +1738,13 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess {
+                    analyticsStepById(stepId)?.let {
+                        logStepEvent(
+                            TRPAnalyticsEvent.STEP_TIME_CHANGED,
+                            it,
+                            mapOf(TRPAnalyticsParam.TIME to "$startTime-$resolvedEndTime")
+                        )
+                    }
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
                         applyLocalStepTimeUpdate(stepId, startTime, resolvedEndTime)
                     }
@@ -1845,6 +1885,14 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess {
+                    logSegmentEvent(
+                        TRPAnalyticsEvent.STEP_TIME_CHANGED,
+                        segment,
+                        mapOf(
+                            TRPAnalyticsParam.TIME to "$startTime-$endTime",
+                            TRPAnalyticsParam.DATE to newDate
+                        )
+                    )
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
                         applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newDate, newPrice)
                     }
@@ -1947,11 +1995,25 @@ class ACTimelineVM @Inject constructor(
         _isMapMode.value = newMapMode
 
         if (newMapMode) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.MAP_OPENED,
+                mapOf(
+                    TRPAnalyticsParam.TRIP_HASH to _tripHash,
+                    TRPAnalyticsParam.DAY_INDEX to _selectedDayIndex.value
+                )
+            )
             updateMapSteps()
         }
     }
 
     fun showAddPlan() {
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.ADD_PLAN_OPENED,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to _tripHash,
+                TRPAnalyticsParam.DAY_INDEX to _selectedDayIndex.value
+            )
+        )
         _showAddPlanSheet.value = true
     }
 
@@ -2152,7 +2214,14 @@ class ACTimelineVM @Inject constructor(
      *
      * @param activityId ID of the tapped activity
      */
-    fun onActivityDetailRequested(activityId: String) {
+    fun onActivityDetailRequested(activityId: String, itemName: String? = null, source: String? = null) {
+        logClickEvent(
+            TRPAnalyticsEvent.ACTIVITY_DETAIL_CLICK,
+            activityId,
+            TRPAnalyticsItemType.ACTIVITY,
+            itemName,
+            source
+        )
         TRPCore.notifyActivityDetailRequested(activityId)
     }
 
@@ -2162,7 +2231,14 @@ class ACTimelineVM @Inject constructor(
      *
      * @param bookingId ID of the tapped booking
      */
-    fun onBookingDetailRequested(bookingId: String) {
+    fun onBookingDetailRequested(bookingId: String, itemName: String? = null, source: String? = null) {
+        logClickEvent(
+            TRPAnalyticsEvent.BOOKING_DETAIL_CLICK,
+            bookingId,
+            TRPAnalyticsItemType.BOOKED_ACTIVITY,
+            itemName,
+            source
+        )
         TRPCore.notifyBookingDetailRequested(bookingId)
     }
 
@@ -2173,7 +2249,20 @@ class ACTimelineVM @Inject constructor(
      * @param activityId ID of the activity to be reserved
      * @param date Date of the activity in "yyyy-MM-dd" format (null if not available)
      */
-    fun onActivityReservationRequested(activityId: String, date: String? = null) {
+    fun onActivityReservationRequested(
+        activityId: String,
+        date: String? = null,
+        itemName: String? = null,
+        source: String? = null
+    ) {
+        logClickEvent(
+            TRPAnalyticsEvent.RESERVE_CLICK,
+            activityId,
+            TRPAnalyticsItemType.ACTIVITY,
+            itemName,
+            source,
+            mapOf(TRPAnalyticsParam.DATE to date)
+        )
         TRPCore.notifyActivityReservationRequested(activityId, date)
     }
 
@@ -2184,6 +2273,102 @@ class ACTimelineVM @Inject constructor(
     fun onSDKDismissed() {
         TRPCore.notifySDKDismissed()
     }
+
+    // =====================
+    // ANALYTICS
+    // =====================
+
+    private var lastLoggedLoadedTripHash: String? = null
+
+    private fun timelineParams(): Map<String, Any?> = mapOf(
+        TRPAnalyticsParam.TRIP_HASH to _tripHash,
+        TRPAnalyticsParam.DAY_INDEX to _selectedDayIndex.value
+    )
+
+    private fun logTimelineCreated(itineraryData: ItineraryWithActivities) {
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.TIMELINE_CREATED,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to _tripHash,
+                TRPAnalyticsParam.START_DATE to itineraryData.startDatetime,
+                TRPAnalyticsParam.END_DATE to itineraryData.endDatetime,
+                TRPAnalyticsParam.RESERVATION_COUNT to (itineraryData.tripItems?.size ?: 0)
+            )
+        )
+    }
+
+    /** Logs [TRPAnalyticsEvent.TIMELINE_LOADED] once per trip hash; refreshes of the same timeline stay silent. */
+    private fun logTimelineLoaded(timeline: Timeline) {
+        if (timeline.tripHash == lastLoggedLoadedTripHash) return
+        lastLoggedLoadedTripHash = timeline.tripHash
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.TIMELINE_LOADED,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to timeline.tripHash,
+                TRPAnalyticsParam.CITY_ID to timeline.city?.id,
+                TRPAnalyticsParam.CITY_NAME to timeline.city?.name,
+                TRPAnalyticsParam.DAY_COUNT to calculateAvailableDays(timeline).size,
+                TRPAnalyticsParam.RESERVATION_COUNT to (timeline.tripProfile?.segments?.size ?: 0)
+            )
+        )
+    }
+
+    private fun logStepEvent(
+        event: String,
+        step: com.tripian.one.api.timeline.model.TimelineStep,
+        extra: Map<String, Any?> = emptyMap()
+    ) {
+        val isPoi = step.stepType == "poi"
+        TRPAnalytics.log(
+            event,
+            timelineParams() + mapOf(
+                TRPAnalyticsParam.ITEM_ID to (step.poi?.additionalData?.productId ?: step.poi?.id),
+                TRPAnalyticsParam.ITEM_TYPE to if (isPoi) TRPAnalyticsItemType.POI else TRPAnalyticsItemType.ACTIVITY,
+                TRPAnalyticsParam.ITEM_NAME to step.poi?.name
+            ) + extra
+        )
+    }
+
+    private fun logSegmentEvent(
+        event: String,
+        segment: TimelineSegment,
+        extra: Map<String, Any?> = emptyMap()
+    ) {
+        val isBooked = segment.segmentType == "booked_activity"
+        TRPAnalytics.log(
+            event,
+            timelineParams() + mapOf(
+                TRPAnalyticsParam.ITEM_ID to (segment.additionalData?.activityId ?: segment.additionalData?.bookingId),
+                TRPAnalyticsParam.ITEM_TYPE to if (isBooked) TRPAnalyticsItemType.BOOKED_ACTIVITY else TRPAnalyticsItemType.ACTIVITY,
+                TRPAnalyticsParam.ITEM_NAME to segment.title
+            ) + extra
+        )
+    }
+
+    private fun logClickEvent(
+        event: String,
+        itemId: String,
+        itemType: String,
+        itemName: String?,
+        source: String?,
+        extra: Map<String, Any?> = emptyMap()
+    ) {
+        TRPAnalytics.log(
+            event,
+            timelineParams() + mapOf(
+                TRPAnalyticsParam.ITEM_ID to itemId,
+                TRPAnalyticsParam.ITEM_TYPE to itemType,
+                TRPAnalyticsParam.ITEM_NAME to itemName,
+                TRPAnalyticsParam.SOURCE to (source ?: TRPAnalyticsScreen.TIMELINE)
+            ) + extra
+        )
+    }
+
+    private fun analyticsStepById(stepId: Int): com.tripian.one.api.timeline.model.TimelineStep? =
+        _timeline.value?.plans
+            ?.asSequence()
+            ?.flatMap { it.steps.orEmpty().asSequence() }
+            ?.firstOrNull { it.id == stepId }
 
     // =====================
     // MAP INTEGRATION
@@ -2442,9 +2627,9 @@ class ACTimelineVM @Inject constructor(
     fun getFilteredFavorites(): List<SegmentFavoriteItem> {
         val favourites = itinerary?.favouriteItems ?: return emptyList()
 
-        val plannedBaseIds = _timeline.value
+        val plannedKeys = _timeline.value
             ?.plannedActivities()
-            ?.map { it.productId }
+            ?.mapNotNull { ActivityIdFormat.matchKey(it.productId) }
             ?.toSet()
             .orEmpty()
 
@@ -2453,7 +2638,7 @@ class ACTimelineVM @Inject constructor(
 
         return favourites.filter { favourite ->
             val baseId = ActivityIdFormat.base(favourite.activityId)
-            baseId !in plannedBaseIds &&
+            ActivityIdFormat.matchKey(baseId) !in plannedKeys &&
                 baseId !in removedBaseIds &&
                 (favourite.cityId?.takeIf { it > 0 }
                     ?: getResolvedCityId(favourite.cityName)) != null
@@ -2650,8 +2835,9 @@ class ACTimelineVM @Inject constructor(
         var addMissing: Boolean = false,
         var dateRange: Boolean = false,
         var transitions: Boolean = false,
+        var bookedTimes: Boolean = false,
     ) {
-        val anyMutated: Boolean get() = addMissing || dateRange || transitions
+        val anyMutated: Boolean get() = addMissing || dateRange || transitions || bookedTimes
     }
 
     /**
@@ -2742,10 +2928,10 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
-    /** Base activity ids already present on the timeline as booked/reserved segments. */
+    /** Match keys of the activities already on the timeline as booked/reserved segments. */
     private fun timelineActivityIds(timeline: Timeline): Set<String> =
         timeline.tripProfile?.segments
-            ?.mapNotNull { segment -> ActivityIdFormat.base(segment.additionalData?.activityId) }
+            ?.mapNotNull { segment -> ActivityIdFormat.matchKey(segment.additionalData?.activityId) }
             ?.toSet()
             .orEmpty()
 
@@ -2766,16 +2952,16 @@ class ACTimelineVM @Inject constructor(
 
         val onParallelComplete = {
             completed++
-            if (completed == 3) {
+            if (completed == 4) {
                 tracker.transitions = !detectedTransitions.isNullOrEmpty()
                 runSequentialSyncForInitial(initialTimeline, detectedTransitions, cityMap, tracker)
             }
         }
 
-        val existingActivityIds = initialTimeline.tripProfile?.segments
-            ?.mapNotNull { it.additionalData?.activityId }?.toSet().orEmpty()
+        val existingActivityKeys = timelineActivityIds(initialTimeline)
         tracker.addMissing = tripItems.any { item ->
-            item.activityId != null && item.activityId !in existingActivityIds
+            val key = ActivityIdFormat.matchKey(item.activityId)
+            key != null && key !in existingActivityKeys
         }
 
         viewModelScope.launch {
@@ -2798,6 +2984,19 @@ class ACTimelineVM @Inject constructor(
                 )
             }
                 .onSuccess { onParallelComplete() }
+                .onFailure { onParallelComplete() }
+        }
+
+        viewModelScope.launch {
+            runCatching {
+                syncBookedActivityTimesUseCase(
+                    SyncBookedActivityTimesUseCase.Params(_tripHash, itinerary!!, initialTimeline)
+                )
+            }
+                .onSuccess { result ->
+                    tracker.bookedTimes = result.mutated
+                    onParallelComplete()
+                }
                 .onFailure { onParallelComplete() }
         }
 
@@ -2945,7 +3144,7 @@ class ACTimelineVM @Inject constructor(
             d.length == 10 && d[4] == '-' && d[7] == '-'
         }
         val hostBookedIds = itineraryData.tripItems.orEmpty()
-            .mapNotNull { item -> ActivityIdFormat.base(item.activityId) }
+            .mapNotNull { item -> ActivityIdFormat.matchKey(item.activityId) }
             .toSet()
 
         val out = mutableSetOf<Int>()
@@ -2961,7 +3160,7 @@ class ACTimelineVM @Inject constructor(
             }
 
             if (seg.segmentType == SegmentType.BOOKED_ACTIVITY) {
-                val activityId = ActivityIdFormat.base(seg.additionalData?.activityId)
+                val activityId = ActivityIdFormat.matchKey(seg.additionalData?.activityId)
                 if (activityId != null && activityId !in hostBookedIds) {
                     out += idx
                     return@forEachIndexed

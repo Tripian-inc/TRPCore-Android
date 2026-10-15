@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.SegmentActivityItem
 import com.tripian.trpcore.domain.model.timeline.TransitionInfo
+import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
@@ -31,28 +32,25 @@ class DetectReservedToBookedTransitionUseCase @Inject constructor() :
     ): List<TransitionInfo> {
         val segments = timeline.tripProfile?.segments ?: return emptyList()
 
-        val bookedActivityIds = tripItems
-            .mapNotNull { it.activityId }
-            .toSet()
+        val bookedItemsByKey = tripItems
+            .mapNotNull { item -> ActivityIdFormat.matchKey(item.activityId)?.let { key -> key to item } }
+            .toMap()
 
         val transitions = mutableListOf<TransitionInfo>()
 
         segments.forEachIndexed { index, segment ->
             if (segment.segmentType == SegmentType.RESERVED_ACTIVITY) {
                 val activityId = segment.additionalData?.activityId
+                val tripItem = ActivityIdFormat.matchKey(activityId)?.let { bookedItemsByKey[it] }
 
-                if (activityId != null && activityId in bookedActivityIds) {
-                    val tripItem = tripItems.find { it.activityId == activityId }
-
-                    tripItem?.let { item ->
-                        transitions.add(
-                            TransitionInfo(
-                                segmentIndex = index,
-                                activityId = activityId,
-                                tripItem = item
-                            )
+                if (activityId != null && tripItem != null) {
+                    transitions.add(
+                        TransitionInfo(
+                            segmentIndex = index,
+                            activityId = activityId,
+                            tripItem = tripItem
                         )
-                    }
+                    )
                 }
             }
         }

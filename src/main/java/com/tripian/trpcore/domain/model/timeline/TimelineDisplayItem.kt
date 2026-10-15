@@ -7,11 +7,15 @@ import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.TimelineStep
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.OpeningHours
+import com.tripian.trpcore.util.extensions.isBookedTimePending
 import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+
+private val CLOCK_TIME_FORMAT = SimpleDateFormat("HH:mm", Locale.US)
 
 /**
  * TimelineDisplayItem
@@ -120,6 +124,10 @@ sealed class TimelineDisplayItem : Serializable {
         /** Whether the activity has no real-world coordinate. */
         val isNoLocation: Boolean
             get() = segment.hasNoLocation()
+
+        /** Whether the host has not assigned a time to this booked activity yet. */
+        val isTimePending: Boolean
+            get() = segment.isBookedTimePending
     }
 
     /**
@@ -266,6 +274,15 @@ sealed class TimelineDisplayItem : Serializable {
         /** Whether the POI has no real-world coordinate. */
         val isNoLocation: Boolean
             get() = segment?.additionalData?.isNoLocation == true
+
+        /** True only when the POI's hours are known and the planned span falls outside them. */
+        val isOutsideOpeningHours: Boolean
+            get() = OpeningHours.coversSelection(
+                step.poi?.hours,
+                startTime,
+                startTime?.let(CLOCK_TIME_FORMAT::format),
+                endTime?.let(CLOCK_TIME_FORMAT::format)
+            ) == false
     }
 
     /**

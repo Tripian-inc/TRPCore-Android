@@ -11,6 +11,8 @@ import com.tripian.trpcore.base.TripianProvider
  */
 object ActivityIdFormat {
 
+    private const val PRODUCT_TYPE_SEPARATOR = '¬'
+
     /** The host-configured tour-api provider, used when a caller has no better source. */
     val DEFAULT_PROVIDER_ID: Int
         get() = TRPCore.provider.id
@@ -35,6 +37,14 @@ object ActivityIdFormat {
      * Strips any provider prefix and the provider/city suffixes, leaving the base id.
      * "C_15423_15_28", "J_15423_7" and "15423" all return "15423"; null for a blank input.
      */
+    /**
+     * Comparison key shared by every id form the SDK sees: [base] without the Nexus
+     * product-type suffix, so a host booking ("4695") matches the reserved segment made
+     * from the tour-api code ("4695¬TKT"). Null for a blank input.
+     */
+    fun matchKey(activityId: String?): String? =
+        base(activityId)?.substringBefore(PRODUCT_TYPE_SEPARATOR)?.takeIf { it.isNotBlank() }
+
     fun base(activityId: String?): String? {
         if (activityId.isNullOrBlank()) return null
         val prefix = TripianProvider.knownPrefixes.firstOrNull { activityId.startsWith(it) }.orEmpty()

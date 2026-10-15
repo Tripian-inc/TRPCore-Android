@@ -8,6 +8,7 @@ import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
+import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
@@ -26,13 +27,16 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val existingActivityIds = params.timeline.tripProfile?.segments
-            ?.mapNotNull { segment -> segment.additionalData?.activityId }
+        val existingActivityKeys = params.timeline.tripProfile?.segments
+            ?.mapNotNull { segment -> ActivityIdFormat.matchKey(segment.additionalData?.activityId) }
             ?.toSet()
             ?: emptySet()
 
         val missingItems = params.itinerary.tripItems
-            ?.filter { item -> item.activityId != null && item.activityId !in existingActivityIds }
+            ?.filter { item ->
+                val key = ActivityIdFormat.matchKey(item.activityId)
+                key != null && key !in existingActivityKeys
+            }
             ?: emptyList()
 
         if (missingItems.isEmpty()) {

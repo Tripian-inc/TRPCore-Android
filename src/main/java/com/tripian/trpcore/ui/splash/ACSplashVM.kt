@@ -4,6 +4,10 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.DoLightLogin
@@ -20,6 +24,9 @@ import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.repository.experience.ExperienceRepository
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.event.SingleLiveEvent
+import com.tripian.trpcore.util.extensions.PLACEHOLDER_DURATION
+import com.tripian.trpcore.util.extensions.PLACEHOLDER_END_TIME
+import com.tripian.trpcore.util.extensions.PLACEHOLDER_START_TIME
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -76,6 +83,7 @@ class ACSplashVM @Inject constructor(
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
+        TRPAnalytics.screen(TRPAnalyticsScreen.SPLASH)
         showFullScreenLoaderNoText()
         prepare()
     }
@@ -90,8 +98,10 @@ class ACSplashVM @Inject constructor(
                 doLightLogin(
                     DoLightLogin.Params(uniqueId = uniqueId)
                 )
+                TRPAnalytics.log(TRPAnalyticsEvent.LOGIN_SUCCESS)
                 buildItinerary()
             }.onSuccess { itinerary ->
+                logSdkOpened(itinerary)
                 if (itinerary != null) {
                     onItineraryReady.value = itinerary
                 } else if (TRPCore.host.createsTimelineFromScratchOnEmpty()) {
@@ -121,7 +131,27 @@ class ACSplashVM @Inject constructor(
     private fun fail(message: String) {
         hideLottieLoading()
         TRPCore.notifyError(message)
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.SDK_CLOSED,
+            mapOf(TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.SPLASH)
+        )
         finishActivity()
+    }
+
+    private fun logSdkOpened(itinerary: ItineraryWithActivities?) {
+        val entry = when {
+            itinerary == null -> "empty"
+            itinerary.tripianHash.isNullOrEmpty() -> "create"
+            else -> "resume"
+        }
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.SDK_OPENED,
+            mapOf(
+                TRPAnalyticsParam.ENTRY to entry,
+                TRPAnalyticsParam.RESERVATION_COUNT to (itinerary?.tripItems?.size ?: 0),
+                TRPAnalyticsParam.TRIP_HASH to itinerary?.tripianHash
+            )
+        )
     }
 
     /**
@@ -151,14 +181,10 @@ class ACSplashVM @Inject constructor(
             (serviceDate ?: startDate ?: endDate)?.let { startDates.add(it) }
             (serviceDate ?: endDate ?: startDate)?.let { endDates.add(it) }
 
-            // The destination/activity build below needs a parseable detailURL.
-            if (uri == null) return@forEach
-            val url = r.detailURL ?: return@forEach
-
-            // Priority 1: product-lookup with the fixed Nexus providerId (7) and the
-            // detailURL's `productID`. Falls back to the destinationID→cityId path
-            // below when there is no productID or the lookup yields nothing.
-            val productId = uri.getQueryParameter("productID") ?: uri.getQueryParameter("productId")
+            val url = r.detailURL
+            val productId = r.catalogueProductId
+                ?: uri?.getQueryParameter("productID")
+                ?: uri?.getQueryParameter("productId")
             val product = if (!productId.isNullOrBlank()) {
                 runCatching {
                     lookupTourProductUseCase(
@@ -170,10 +196,11 @@ class ACSplashVM @Inject constructor(
                 }.getOrNull()
             } else null
 
-            // City: product cityId, else destinationID → juniper cityId.
+            val zoneId = r.zoneId
+                ?: uri?.getQueryParameter("destinationID")?.takeIf { it.isNotBlank() }
+                ?: uri?.getQueryParameter("destinationId")?.takeIf { it.isNotBlank() }
             val cityId = product?.cityId?.takeIf { it != 0 }
-                ?: uri.getQueryParameter("destinationID")?.takeIf { it.isNotBlank() }
-                    ?.let { ExperienceRepository.getCityIdFromDestination(it) }
+                ?: zoneId?.let { ExperienceRepository.getCityIdFromDestination(it) }
                 ?: return@forEach
 
             val city = tripRepository.getCachedCityById(cityId)
@@ -215,8 +242,7 @@ class ACSplashVM @Inject constructor(
                 ?: r.nexusBookingInformation?.coverImageUrl
             // Each reservation sits on ITS OWN date (TripService.Date), not the
             // shared trip-range startDate — otherwise both land on day one.
-            val activityStart = reservationDatetime(r.date)
-                ?: startDate?.let { "${it.take(10)} 09:00" }
+            val timing = activityTiming(r, startDate, product?.duration)
             activities.add(
                 SegmentActivityItem(
                     activityId = productId ?: product?.productId,
@@ -224,16 +250,14 @@ class ACSplashVM @Inject constructor(
                     title = product?.title ?: r.title,
                     imageUrl = imageUrl,
                     description = product?.description ?: r.nexusBookingInformation?.description,
-                    startDatetime = activityStart,
-                    // With a known duration the SDK computes the end; otherwise keep
-                    // it on the same slot so it doesn't span to the trip end.
-                    endDatetime = if (product?.duration != null) null else activityStart,
+                    startDatetime = timing.start,
+                    endDatetime = timing.end,
                     coordinate = activityCoord,
                     cancellation = r.nexusBookingInformation?.cancellationPolicyDescription,
                     adultCount = r.paxAdults ?: 1,
                     childCount = (r.paxChildren ?: 0) + (r.paxBabies ?: 0),
                     bookingUrl = url,
-                    duration = product?.duration,
+                    duration = timing.duration,
                     price = price,
                     cityId = cityId,
                     cityName = city?.name,
@@ -294,6 +318,36 @@ class ACSplashVM @Inject constructor(
      * "2026-07-02 20:30" or "2026-07-02" — into the SDK's "yyyy-MM-dd HH:mm".
      * Returns null when the date part is missing/malformed.
      */
+    private data class ActivityTiming(val start: String?, val end: String?, val duration: Double?)
+
+    /**
+     * Start/end/duration of a reservation. A reservation whose meeting time the host
+     * has not assigned yet (MeetingTimeAssigned == false) becomes a pending all-day
+     * slot (00:00–23:59, duration -1) instead of a midnight placeholder. With a known
+     * product duration the end is left null so the SDK derives it; otherwise the end
+     * stays on the start slot so the segment does not span to the trip end.
+     */
+    private fun activityTiming(
+        r: NexusReservationDto,
+        tripStartDate: String?,
+        productDuration: Double?
+    ): ActivityTiming {
+        val start = reservationDatetime(r.date) ?: tripStartDate?.let { "${it.take(10)} 09:00" }
+        val day = start?.take(10)
+        if (r.meetingTimeAssigned == false && day != null) {
+            return ActivityTiming(
+                start = "$day $PLACEHOLDER_START_TIME",
+                end = "$day $PLACEHOLDER_END_TIME",
+                duration = PLACEHOLDER_DURATION
+            )
+        }
+        return ActivityTiming(
+            start = start,
+            end = if (productDuration != null) null else start,
+            duration = productDuration
+        )
+    }
+
     private fun reservationDatetime(raw: String?): String? {
         val s = raw?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         if (s.length < 10) return null
