@@ -4,6 +4,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.pois.model.PoiCategoryGroup
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.GetPoiCategories
 import com.tripian.trpcore.domain.manager.POICategoryManager
@@ -139,6 +144,15 @@ class ACPOIListingVM @Inject constructor(
         this.cityId = planData.selectedCity?.id ?: 0
         this.listingType = listingType
         this.selectedDayIndex = planData.selectedDayIndex
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.POI_LISTING,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to tripHash,
+                TRPAnalyticsParam.LISTING_TYPE to listingType,
+                TRPAnalyticsParam.CITY_ID to cityId,
+                TRPAnalyticsParam.DAY_INDEX to selectedDayIndex
+            )
+        )
         poiIdsByDay.clear()
         plannedPoiIdsByDay.forEach { (day, ids) -> poiIdsByDay[day] = ids.toMutableList() }
 
@@ -185,7 +199,21 @@ class ACPOIListingVM @Inject constructor(
     fun search(query: String) {
         if (currentSearchQuery == query) return
         currentSearchQuery = query
+        if (query.isNotBlank()) {
+            logListingEvent(TRPAnalyticsEvent.SEARCH, mapOf(TRPAnalyticsParam.QUERY to query))
+        }
         resetAndSearch()
+    }
+
+    private fun logListingEvent(event: String, extra: Map<String, Any?> = emptyMap()) {
+        TRPAnalytics.log(
+            event,
+            mapOf(
+                TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.POI_LISTING,
+                TRPAnalyticsParam.LISTING_TYPE to listingType,
+                TRPAnalyticsParam.TRIP_HASH to tripHash
+            ) + extra
+        )
     }
 
     private fun resetAndSearch() {
@@ -314,6 +342,10 @@ class ACPOIListingVM @Inject constructor(
      */
     fun applyFilter(filter: FilterData) {
         _currentFilter.value = filter
+        logListingEvent(
+            TRPAnalyticsEvent.FILTER_APPLIED,
+            mapOf(TRPAnalyticsParam.RESULT_COUNT to filter.activeFilterCount)
+        )
         resetAndSearch()
     }
 
@@ -324,6 +356,7 @@ class ACPOIListingVM @Inject constructor(
      */
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
+        logListingEvent(TRPAnalyticsEvent.SORT_APPLIED, mapOf(TRPAnalyticsParam.SORT to sort))
         resetAndSearch()
     }
 
@@ -359,7 +392,22 @@ class ACPOIListingVM @Inject constructor(
                     )
                 )
             }
-                .onSuccess { refreshTimelineAfterSegment(poi, selectedDate) }
+                .onSuccess {
+                    TRPAnalytics.log(
+                        TRPAnalyticsEvent.STEP_ADDED,
+                        mapOf(
+                            TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.POI_LISTING,
+                            TRPAnalyticsParam.LISTING_TYPE to listingType,
+                            TRPAnalyticsParam.TRIP_HASH to tripHash,
+                            TRPAnalyticsParam.ITEM_ID to poi.id,
+                            TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.POI,
+                            TRPAnalyticsParam.ITEM_NAME to poi.name,
+                            TRPAnalyticsParam.DATE to dateString,
+                            TRPAnalyticsParam.TIME to "$startTime-$endTime"
+                        )
+                    )
+                    refreshTimelineAfterSegment(poi, selectedDate)
+                }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
                     _addSegmentError.value = msg ?: getLanguageForKey(LanguageConst.COMMON_ERROR)

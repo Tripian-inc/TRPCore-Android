@@ -7,6 +7,9 @@ import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
 import com.tripian.trpcore.domain.model.timeline.toApiDateString
@@ -332,6 +335,7 @@ class AddPlanContainerVM @Inject constructor(
         planData.startingPointLocation = coordinate
         planData.startingPointAccommodation = selectedAccommodation
         selectedStartingPointOptionId = StartingPointOption.SEARCH_LOCATION
+        logStartingPointSelected("search_location", name)
         updateContinueButtonState()
     }
 
@@ -393,7 +397,20 @@ class AddPlanContainerVM @Inject constructor(
         planData.startingPointName = accommodationName
         planData.startingPointLocation = coordinate
         selectedStartingPointOptionId = StartingPointOption.MY_ACCOMMODATION
+        logStartingPointSelected("accommodation", accommodationName)
         updateContinueButtonState()
+    }
+
+    private fun logStartingPointSelected(source: String, name: String) {
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.STARTING_POINT_SELECTED,
+            mapOf(
+                TRPAnalyticsParam.SOURCE to source,
+                TRPAnalyticsParam.ITEM_NAME to name,
+                TRPAnalyticsParam.CITY_ID to planData.selectedCity?.id,
+                TRPAnalyticsParam.TRIP_HASH to planData.tripHash
+            )
+        )
     }
 
     // =====================

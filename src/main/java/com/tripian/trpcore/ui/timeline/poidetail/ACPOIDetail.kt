@@ -292,6 +292,7 @@ class ACPOIDetail : BaseActivity<AcPoiDetailBinding, ACPOIDetailVM>() {
         poi.coordinate?.let { coord ->
             setupMap(coord.lat, coord.lng)
             binding.btnViewMap.setOnClickListener {
+                viewModel.onDirectionsClicked()
                 openExternalMap(coord.lat, coord.lng, poi.name ?: "")
             }
         }

@@ -6,6 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.usecase.timeline.SearchPOIsUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
@@ -88,6 +92,15 @@ class ACPOISelectionVM @Inject constructor(
     fun search(query: String) {
         if (currentSearchQuery == query) return
         currentSearchQuery = query
+        if (query.isNotBlank()) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.SEARCH,
+                mapOf(
+                    TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.POI_SELECTION,
+                    TRPAnalyticsParam.QUERY to query
+                )
+            )
+        }
         fetchFirstPage(useFullScreen = false)
     }
 

@@ -2,6 +2,10 @@ package com.tripian.trpcore.ui.createtrip
 
 import android.os.Bundle
 import com.tripian.one.api.cities.model.City
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
@@ -32,6 +36,13 @@ class ACDateSelectionVM @Inject constructor() : BaseViewModel() {
         super.onViewCreated(savedInstanceState)
         @Suppress("DEPRECATION")
         city = arguments?.getSerializable(ARG_CITY) as? City
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.DATE_SELECTION,
+            mapOf(
+                TRPAnalyticsParam.CITY_ID to city?.id,
+                TRPAnalyticsParam.CITY_NAME to city?.name
+            )
+        )
     }
 
     /**
@@ -43,6 +54,17 @@ class ACDateSelectionVM @Inject constructor() : BaseViewModel() {
         val coord = c.coordinate ?: return
         val start = dateFormat.format(Date(startMillis))
         val end = dateFormat.format(Date(clampEnd(startMillis, endMillis)))
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.DATES_SELECTED,
+            mapOf(
+                TRPAnalyticsParam.CITY_ID to c.id,
+                TRPAnalyticsParam.CITY_NAME to c.name,
+                TRPAnalyticsParam.START_DATE to "$start 00:00",
+                TRPAnalyticsParam.END_DATE to "$end 23:59"
+            )
+        )
+
+
 
         val destination = SegmentDestinationItem(
             title = c.name.orEmpty(),

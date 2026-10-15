@@ -10,6 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.R
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.AcPoiListingBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -303,6 +306,14 @@ class ACPOIListing : BaseActivity<AcPoiListingBinding, ACPOIListingVM>() {
             selectedPoi = null
             viewModel.clearTimeSelection()
         }
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.TIME_SELECTION,
+            mapOf(
+                TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.POI_LISTING,
+                TRPAnalyticsParam.ITEM_ID to poi.id,
+                TRPAnalyticsParam.ITEM_NAME to poi.name
+            )
+        )
         timeSelectionBottomSheet?.show(supportFragmentManager, TimeSelectionBottomSheet.TAG)
     }
 

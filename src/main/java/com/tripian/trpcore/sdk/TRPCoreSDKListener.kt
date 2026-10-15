@@ -134,4 +134,18 @@ interface TRPCoreSDKListener {
      *                   suffixes stripped (e.g. "15423").
      */
     fun onActivityRemovedFromSavedPlans(activityId: String) {}
+
+    /**
+     * Called for every analytics event the SDK emits (see
+     * [com.tripian.trpcore.analytics.TRPAnalyticsEvent]). Host app forwards the
+     * event to its own analytics backend (e.g. Firebase Analytics). Names and
+     * parameter keys are GA4-compatible; values are String, Int, Long or Double.
+     * Optional callback - default implementation is empty.
+     *
+     * @param name Event name (e.g. "tripian_timeline_created")
+     * @param params Event parameters
+     *
+     * iOS equivalent: trpCoreKitDidLogAnalyticsEvent(name:parameters:)
+     */
+    fun onAnalyticsEvent(name: String, params: Map<String, Any>) {}
 }

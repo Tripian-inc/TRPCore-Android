@@ -14,6 +14,9 @@ import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseBottomDialogFragment
 import com.tripian.trpcore.databinding.BottomSheetAddPlanContainerBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -81,6 +84,10 @@ class AddPlanContainerBottomSheet : BaseBottomDialogFragment<BottomSheetAddPlanC
         arguments?.let { args ->
             sharedVM.initializeFromArgs(args)
         }
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.ADD_PLAN,
+            mapOf(TRPAnalyticsParam.TRIP_HASH to sharedVM.getTripHash())
+        )
 
         showFragment(FRSelectDay())
     }

@@ -13,6 +13,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.google.firebase.FirebaseApp
 import com.mapbox.common.MapboxOptions
 import com.tripian.one.TRPRest
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
 import com.tripian.trpcore.di.DaggerAppComponent
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.MiscRepository
@@ -121,6 +124,7 @@ class TRPCore {
             }
             runOnMainThread {
                 openActivities.forEach { it.finish() }
+                TRPAnalytics.log(TRPAnalyticsEvent.SDK_CLOSED)
                 listener?.onSDKDismissed()
             }
         }
@@ -155,12 +159,7 @@ class TRPCore {
             currency: String = "EUR"
         ) {
             val intent = Intent(context, ACSplash::class.java).apply {
-                // Always start the SDK in its OWN task (ACSplash/ACTimeline carry a
-                // distinct taskAffinity). This keeps the SDK alive in the background
-                // when the host comes to the front for a detail screen, so the host
-                // can bring it back exactly where the user left off (moveTaskToFront)
-                // instead of the host's singleTask launch clearing it.
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                 putExtra("reservations", reservations)
                 putExtra("name", name)
                 putExtra("lastName", lastName)
@@ -243,6 +242,13 @@ class TRPCore {
          * Triggers error callback with a typed [code] so the host can switch on the category.
          */
         internal fun notifyError(error: String, code: TRPCoreErrorCode) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.ERROR,
+                mapOf(
+                    TRPAnalyticsParam.ERROR_CODE to code,
+                    TRPAnalyticsParam.ERROR_MESSAGE to error
+                )
+            )
             listener?.onError(error, code)
         }
 
@@ -250,6 +256,7 @@ class TRPCore {
          * Triggers SDK dismissed callback
          */
         internal fun notifySDKDismissed() {
+            TRPAnalytics.log(TRPAnalyticsEvent.SDK_CLOSED)
             listener?.onSDKDismissed()
         }
 

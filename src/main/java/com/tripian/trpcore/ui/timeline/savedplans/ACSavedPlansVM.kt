@@ -2,6 +2,11 @@ package com.tripian.trpcore.ui.timeline.savedplans
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
@@ -15,7 +20,9 @@ import com.tripian.trpcore.util.RemovedFavoritesStore
 import com.tripian.trpcore.util.extensions.cityNameKey
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 /**
@@ -90,9 +97,31 @@ class ACSavedPlansVM @Inject constructor(
         this.selectedDate = availableDays.firstOrNull()
         this.cityNameToIdMap = cityNameToIdMap
         this.plannedActivityIdsByDay = plannedActivityIdsByDay
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.SAVED_PLANS,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to tripHash,
+                TRPAnalyticsParam.RESULT_COUNT to favorites.size
+            )
+        )
 
         processAndDisplayItems()
     }
+
+    /** Emits an [TRPAnalyticsEvent.ACTIVITY_DETAIL_CLICK] for a tapped favorite. */
+    fun logFavoriteDetailClick(favorite: SegmentFavoriteItem) {
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.ACTIVITY_DETAIL_CLICK,
+            mapOf(TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.SAVED_PLANS) + favoriteParams(favorite)
+        )
+    }
+
+    private fun favoriteParams(favorite: SegmentFavoriteItem): Map<String, Any?> = mapOf(
+        TRPAnalyticsParam.TRIP_HASH to tripHash,
+        TRPAnalyticsParam.ITEM_ID to favorite.activityId,
+        TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.FAVORITE,
+        TRPAnalyticsParam.ITEM_NAME to favorite.title
+    )
 
     /** Days that already hold a given activity; blocks them in the time selection sheet. */
     fun getPlannedActivityIdsByDay(): Map<String, List<String>> = plannedActivityIdsByDay
@@ -131,6 +160,10 @@ class ACSavedPlansVM @Inject constructor(
      */
     fun onActivityAddClicked(favorite: SegmentFavoriteItem) {
         pendingFavorite = favorite
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.TIME_SELECTION,
+            mapOf(TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.SAVED_PLANS) + favoriteParams(favorite)
+        )
         _showTimeSelection.value = favorite
     }
 
@@ -179,7 +212,17 @@ class ACSavedPlansVM @Inject constructor(
                     )
                 )
             }
-                .onSuccess { waitForSegmentGeneration() }
+                .onSuccess {
+                    TRPAnalytics.log(
+                        TRPAnalyticsEvent.STEP_ADDED,
+                        mapOf(
+                            TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.SAVED_PLANS,
+                            TRPAnalyticsParam.DATE to SimpleDateFormat("yyyy-MM-dd", Locale.US).format(selectedDate),
+                            TRPAnalyticsParam.TIME to resolvedStartTime
+                        ) + favoriteParams(favorite)
+                    )
+                    waitForSegmentGeneration()
+                }
                 .onFailure { t ->
                     val msg = (t as? ErrorModel)?.errorDesc ?: t.message
                     _segmentCreationFailed.value = true
@@ -246,6 +289,7 @@ class ACSavedPlansVM @Inject constructor(
      * the base activityId, drops it from the list and emits [favoriteRemoved].
      */
     fun removeFavorite(favorite: SegmentFavoriteItem) {
+        TRPAnalytics.log(TRPAnalyticsEvent.FAVORITE_REMOVED, favoriteParams(favorite))
         RemovedFavoritesStore.addRemoved(preferences, tripHash, favorite.activityId)
 
         RemovedFavoritesStore.baseActivityId(favorite.activityId)?.let { baseId ->

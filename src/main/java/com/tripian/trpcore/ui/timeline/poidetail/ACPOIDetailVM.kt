@@ -5,6 +5,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.one.api.tour.model.TourProduct
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.manager.POICategoryManager
@@ -83,6 +88,8 @@ class ACPOIDetailVM @Inject constructor(
         _poi.value = poi
         this.tripStartDate = tripStartDate
         this.tripEndDate = tripEndDate
+        TRPAnalytics.screen(TRPAnalyticsScreen.POI_DETAIL, poiParams(poi))
+        TRPAnalytics.log(TRPAnalyticsEvent.POI_DETAIL_VIEWED, poiParams(poi))
 
         processPoi(poi)
         loadProducts()
@@ -272,9 +279,31 @@ class ACPOIDetailVM @Inject constructor(
      */
     fun onProductClicked(product: TourProduct) {
         product.productId?.let { productId ->
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.ACTIVITY_DETAIL_CLICK,
+                mapOf(
+                    TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.POI_DETAIL,
+                    TRPAnalyticsParam.ITEM_ID to productId,
+                    TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.ACTIVITY,
+                    TRPAnalyticsParam.ITEM_NAME to product.title
+                )
+            )
             TRPCore.notifyActivityDetailRequested(productId)
         }
     }
+
+    /** Emits a [TRPAnalyticsEvent.DIRECTIONS_CLICK] for the POI shown on this screen. */
+    fun onDirectionsClicked() {
+        val poi = _poi.value ?: return
+        TRPAnalytics.log(TRPAnalyticsEvent.DIRECTIONS_CLICK, poiParams(poi))
+    }
+
+    private fun poiParams(poi: Poi): Map<String, Any?> = mapOf(
+        TRPAnalyticsParam.ITEM_ID to poi.id,
+        TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.POI,
+        TRPAnalyticsParam.ITEM_NAME to poi.name,
+        TRPAnalyticsParam.CITY_ID to poi.cityId
+    )
 
     /**
      * Get city name from POI locations

@@ -113,6 +113,7 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             onAddClicked = { favorite -> viewModel.onActivityAddClicked(favorite) },
             onItemClicked = { favorite ->
                 favorite.activityId?.let { activityId ->
+                    viewModel.logFavoriteDetailClick(favorite)
                     TRPCore.notifyActivityDetailRequested(activityId)
                 }
             }

@@ -22,6 +22,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.PagerSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.tripian.one.api.pois.model.Poi
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.FRWarning
 import com.tripian.trpcore.base.TRPCore
@@ -568,7 +571,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 if (isPastDayLocked()) return@TimelineAdapter
                 bookedActivity.segment.additionalData?.activityId?.let { activityId ->
                     val dateTime = bookedActivity.startDateTime.toReservationDateTime()
-                    viewModel.onActivityReservationRequested(activityId, dateTime)
+                    viewModel.onActivityReservationRequested(activityId, dateTime, bookedActivity.title)
                 }
             },
             onFlexibleReservationClick = { flexibleActivity ->
@@ -576,7 +579,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 flexibleActivity.segment.additionalData?.activityId?.let { activityId ->
                     val dateTime = flexibleActivity.segment.startDate
                         .toReservationDateTime(isFlexible = true)
-                    viewModel.onActivityReservationRequested(activityId, dateTime)
+                    viewModel.onActivityReservationRequested(activityId, dateTime, flexibleActivity.title)
                 }
             },
             onStepChangeTimeClick = { step ->
@@ -589,7 +592,7 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
                 val activityId = step.poi?.additionalData?.productId ?: step.poi?.id
                 activityId?.let { id ->
                     val dateTime = step.startDateTimes.toReservationDateTime()
-                    viewModel.onActivityReservationRequested(id, dateTime)
+                    viewModel.onActivityReservationRequested(id, dateTime, step.poi?.name)
                 }
             },
             onRequestRouteCalculation = { recommendations ->
@@ -1098,9 +1101,9 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             is TimelineDisplayItem.BookedActivity -> {
                 val data = item.segment.additionalData
                 if (item.isReserved) {
-                    data?.activityId?.let { viewModel.onActivityDetailRequested(it) }
+                    data?.activityId?.let { viewModel.onActivityDetailRequested(it, item.title) }
                 } else {
-                    data?.bookingId?.let { viewModel.onBookingDetailRequested(it) }
+                    data?.bookingId?.let { viewModel.onBookingDetailRequested(it, item.title) }
                 }
             }
             is TimelineDisplayItem.Recommendations -> {
@@ -1223,6 +1226,15 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         onConfirm: (selectedDate: Date, startTime: String, endTime: String?, slotPrice: Double?) -> Unit
     ) {
         if (activityId.isNullOrEmpty()) return
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.TIME_SELECTION,
+            mapOf(
+                TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.TIMELINE,
+                TRPAnalyticsParam.TRIP_HASH to viewModel.tripHash,
+                TRPAnalyticsParam.ITEM_ID to activityId,
+                TRPAnalyticsParam.ITEM_NAME to title
+            )
+        )
         val initialDay = initialDateTime.toDate()
         val availableDays = if (restrictToInitialDay && initialDay != null) {
             listOf(initialDay)

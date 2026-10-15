@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.tripian.one.api.cities.model.City
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.event.SingleLiveEvent
@@ -36,6 +40,7 @@ class ACCitySelectionVM @Inject constructor(
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
+        TRPAnalytics.screen(TRPAnalyticsScreen.CITY_SELECTION)
         loadCities()
     }
 
@@ -58,10 +63,21 @@ class ACCitySelectionVM @Inject constructor(
 
     fun search(query: String) {
         val q = query.trim().lowercase()
-        cities.value = if (q.isEmpty()) {
+        val results = if (q.isEmpty()) {
             allCities
         } else {
             allCities.filter { (it.name ?: "").lowercase().contains(q) }
+        }
+        cities.value = results
+        if (q.isNotEmpty()) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.SEARCH,
+                mapOf(
+                    TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.CITY_SELECTION,
+                    TRPAnalyticsParam.QUERY to q,
+                    TRPAnalyticsParam.RESULT_COUNT to results.size
+                )
+            )
         }
     }
 
@@ -71,6 +87,14 @@ class ACCitySelectionVM @Inject constructor(
     }
 
     fun proceed() {
-        selectedCity.value?.let { onCitySelectedNext.value = it }
+        val city = selectedCity.value ?: return
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.CITY_SELECTED,
+            mapOf(
+                TRPAnalyticsParam.CITY_ID to city.id,
+                TRPAnalyticsParam.CITY_NAME to city.name
+            )
+        )
+        onCitySelectedNext.value = city
     }
 }

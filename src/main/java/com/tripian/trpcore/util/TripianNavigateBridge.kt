@@ -78,7 +78,18 @@ object TripianNavigateBridge {
         override fun onTimelineCreated(tripHash: String) {
             // No navigation; a host needing tripHash can observe it elsewhere.
         }
+
+        override fun onAnalyticsEvent(name: String, params: Map<String, Any>) {
+            onAnalyticsEvent?.invoke(name, params)
+        }
     }
+
+    /**
+     * Host analytics sink. Receives every SDK analytics event (name + params)
+     * once [onNavigate] has installed the listener; the host forwards them to
+     * its analytics backend (e.g. Firebase Analytics).
+     */
+    var onAnalyticsEvent: ((name: String, params: Map<String, Any>) -> Unit)? = null
 
     /**
      * Host navigation callback. Assigning a non-null value installs the SDK

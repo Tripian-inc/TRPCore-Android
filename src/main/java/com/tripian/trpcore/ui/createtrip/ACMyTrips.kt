@@ -5,6 +5,9 @@ import android.content.Intent
 import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.tripian.one.api.timeline.model.Timeline
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.databinding.ActivityMyTripsBinding
@@ -36,7 +39,17 @@ class ACMyTrips : BaseActivity<ActivityMyTripsBinding, ACMyTripsVM>() {
         binding.tvTitle.text = lang(LanguageConst.MY_PLANS, "My Trips")
 
         adapter = MyTripsAdapter(
-            onTripClicked = { trip -> TRPCore.core.startTimeline(this, trip.tripHash) },
+            onTripClicked = { trip ->
+                TRPAnalytics.log(
+                    TRPAnalyticsEvent.TRIP_SELECTED,
+                    mapOf(
+                        TRPAnalyticsParam.TRIP_HASH to trip.tripHash,
+                        TRPAnalyticsParam.CITY_ID to trip.city?.id,
+                        TRPAnalyticsParam.CITY_NAME to trip.city?.name
+                    )
+                )
+                TRPCore.core.startTimeline(this, trip.tripHash)
+            },
             onDeleteClicked = { trip -> showDeleteConfirmation(trip) }
         )
         binding.rvTrips.layoutManager = LinearLayoutManager(this)

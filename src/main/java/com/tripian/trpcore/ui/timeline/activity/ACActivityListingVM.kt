@@ -9,6 +9,11 @@ import com.tripian.one.api.tour.model.TourFacetCategory
 import com.tripian.one.api.tour.model.TourFacetDurationRange
 import com.tripian.one.api.tour.model.TourFacetPriceRange
 import com.tripian.one.api.tour.model.TourProduct
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -177,6 +182,14 @@ class ACActivityListingVM @Inject constructor(
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
         this.tripWideExcludedActivityIds = tripWideExcludedActivityIds
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.ACTIVITY_LISTING,
+            mapOf(
+                TRPAnalyticsParam.TRIP_HASH to tripHash,
+                TRPAnalyticsParam.CITY_ID to cityId,
+                TRPAnalyticsParam.DAY_INDEX to planData.selectedDayIndex
+            )
+        )
         activityIdsByDay.clear()
         plannedActivityIdsByDay.forEach { (day, ids) ->
             activityIdsByDay[day] = ids.toMutableList()
@@ -207,6 +220,16 @@ class ACActivityListingVM @Inject constructor(
     fun search(query: String) {
         if (currentSearchQuery == query) return
         currentSearchQuery = query
+        if (query.isNotBlank()) {
+            TRPAnalytics.log(
+                TRPAnalyticsEvent.SEARCH,
+                mapOf(
+                    TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                    TRPAnalyticsParam.QUERY to query,
+                    TRPAnalyticsParam.TRIP_HASH to tripHash
+                )
+            )
+        }
         if (canNarrowLocally()) {
             applyAllFilters()
             _scrollToTop.value = true
@@ -292,6 +315,14 @@ class ACActivityListingVM @Inject constructor(
 
     fun applyFilter(filter: ActivityFilterData) {
         _currentFilter.value = filter
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.FILTER_APPLIED,
+            mapOf(
+                TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                TRPAnalyticsParam.RESULT_COUNT to filter.activeFilterCount(),
+                TRPAnalyticsParam.TRIP_HASH to tripHash
+            )
+        )
         applyNarrowingChange()
     }
 
@@ -308,6 +339,14 @@ class ACActivityListingVM @Inject constructor(
 
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
+        TRPAnalytics.log(
+            TRPAnalyticsEvent.SORT_APPLIED,
+            mapOf(
+                TRPAnalyticsParam.SCREEN_NAME to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                TRPAnalyticsParam.SORT to sort,
+                TRPAnalyticsParam.TRIP_HASH to tripHash
+            )
+        )
         applyNarrowingChange()
     }
 
@@ -577,6 +616,18 @@ class ACActivityListingVM @Inject constructor(
                 )
             }
                 .onSuccess {
+                    TRPAnalytics.log(
+                        TRPAnalyticsEvent.STEP_ADDED,
+                        mapOf(
+                            TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                            TRPAnalyticsParam.TRIP_HASH to tripHash,
+                            TRPAnalyticsParam.ITEM_ID to tour.productId,
+                            TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.ACTIVITY,
+                            TRPAnalyticsParam.ITEM_NAME to tour.title,
+                            TRPAnalyticsParam.DATE to dateString,
+                            TRPAnalyticsParam.TIME to timeSlot
+                        )
+                    )
                     markActivityAdded(tour, selectedDate)
                     tour.productId?.let { TRPCore.notifyActivityAdded(it) }
                     refreshTimelineAfterSegment(tour, selectedDate)

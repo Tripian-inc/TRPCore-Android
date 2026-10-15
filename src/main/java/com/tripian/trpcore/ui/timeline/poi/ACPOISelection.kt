@@ -11,6 +11,8 @@ import com.google.android.material.chip.Chip
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Poi
 import com.tripian.trpcore.R
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.ActivityPoiSelectionBinding
 import com.tripian.trpcore.util.LanguageConst
@@ -31,6 +33,7 @@ class ACPOISelection : BaseActivity<ActivityPoiSelectionBinding, ACPOISelectionV
     override fun setListeners() {
         setupRecyclerView()
         setupSearchBar()
+        TRPAnalytics.screen(TRPAnalyticsScreen.POI_SELECTION)
         setupClickListeners()
         setupCategoryChips()
 

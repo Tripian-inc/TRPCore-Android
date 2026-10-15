@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.tripian.one.api.timeline.model.Timeline
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseViewModel
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.util.AlertType
@@ -26,6 +30,7 @@ class ACMyTripsVM @Inject constructor(
 
     override fun onViewCreated(savedInstanceState: Bundle?) {
         super.onViewCreated(savedInstanceState)
+        TRPAnalytics.screen(TRPAnalyticsScreen.MY_PLANS)
         // Instant paint from the splash-populated cache.
         timelineRepository.cachedUserTimelines?.let { trips.value = TripDisplay.sortByStart(it) }
     }
@@ -40,6 +45,10 @@ class ACMyTripsVM @Inject constructor(
             val deleted = runCatching { timelineRepository.deleteTimelineAsync(tripHash) }.isSuccess
             hideLottieLoading()
             if (deleted) {
+                TRPAnalytics.log(
+                    TRPAnalyticsEvent.TIMELINE_DELETED,
+                    mapOf(TRPAnalyticsParam.TRIP_HASH to tripHash)
+                )
                 val remaining = (trips.value ?: emptyList()).filterNot { it.tripHash == tripHash }
                 timelineRepository.cachedUserTimelines = remaining
                 trips.value = remaining

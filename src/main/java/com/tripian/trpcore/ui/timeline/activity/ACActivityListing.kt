@@ -17,6 +17,11 @@ import com.tripian.trpcore.util.extensions.dp
 import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
+import com.tripian.trpcore.analytics.TRPAnalytics
+import com.tripian.trpcore.analytics.TRPAnalyticsEvent
+import com.tripian.trpcore.analytics.TRPAnalyticsItemType
+import com.tripian.trpcore.analytics.TRPAnalyticsParam
+import com.tripian.trpcore.analytics.TRPAnalyticsScreen
 import com.tripian.trpcore.base.BaseActivity
 import com.tripian.trpcore.databinding.AcActivityListingBinding
 import com.tripian.trpcore.domain.model.timeline.AddPlanData
@@ -227,6 +232,15 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
                 // policy (see HostStrategy.activityDetailId).
                 val activityId = TRPCore.host.activityDetailId(activity)
                 if (activityId.isEmpty()) return@AdapterActivityListing
+                TRPAnalytics.log(
+                    TRPAnalyticsEvent.ACTIVITY_DETAIL_CLICK,
+                    mapOf(
+                        TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                        TRPAnalyticsParam.ITEM_ID to activityId,
+                        TRPAnalyticsParam.ITEM_TYPE to TRPAnalyticsItemType.ACTIVITY,
+                        TRPAnalyticsParam.ITEM_NAME to activity.title
+                    )
+                )
                 TRPCore.notifyActivityDetailRequested(activityId)
             }
         )
@@ -387,6 +401,14 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
             )
             viewModel.createReservedActivitySegment(tour, selectedDate, timeSlot, slotPrice, isFlexible)
         }
+        TRPAnalytics.screen(
+            TRPAnalyticsScreen.TIME_SELECTION,
+            mapOf(
+                TRPAnalyticsParam.SOURCE to TRPAnalyticsScreen.ACTIVITY_LISTING,
+                TRPAnalyticsParam.ITEM_ID to activity.productId,
+                TRPAnalyticsParam.ITEM_NAME to activity.title
+            )
+        )
         timeSelectionBottomSheet?.show(supportFragmentManager, ActivityTimeSelectionBottomSheet.TAG)
     }
 
