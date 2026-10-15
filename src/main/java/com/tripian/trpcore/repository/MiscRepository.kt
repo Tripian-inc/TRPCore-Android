@@ -243,6 +243,13 @@ class MiscRepository(
     fun getPersistedMapboxAccessToken(): String? = getPersistedConfigSecret(MAPBOX_TOKEN)
 
     /**
+     * Mapbox access token persisted from `misc/config-list` when it is younger than
+     * [CONFIG_SECRET_CACHE_TTL_MS], otherwise `null`.
+     */
+    fun getFreshPersistedMapboxAccessToken(): String? =
+        getPersistedConfigSecret(MAPBOX_TOKEN)?.takeIf { isConfigSecretFresh(MAPBOX_TOKEN) }
+
+    /**
      * Google Places API key served by `misc/config-list`, cached as described in [getConfigSecret].
      */
     suspend fun getGooglePlacesApiKey(): String? = getConfigSecret(GOOGLE_PLACES_KEY)
@@ -450,7 +457,7 @@ class MiscRepository(
         private const val CONFIG_SECRET_CACHE_TTL_MS: Long = 24L * 60L * 60L * 1000L
 
         /** Upper bound for the config-list request that refreshes the persisted secrets. */
-        private const val CONFIG_FETCH_TIMEOUT_MS: Long = 10_000L
+        internal const val CONFIG_FETCH_TIMEOUT_MS: Long = 10_000L
 
         private val MAPBOX_TOKEN = ConfigSecret(
             valueKey = Preferences.Keys.MAPBOX_ACCESS_TOKEN,

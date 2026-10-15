@@ -515,9 +515,10 @@ class TRPCore {
     /**
      * Starts the Timeline screen directly with a trip hash. The screen opens on the main thread
      * once a Mapbox access token is available: immediately when a host-supplied or fresh cached
-     * token exists; a stale cached token waits for one refetch (10 s cap), on failure the stale
-     * token is used. When no token can be obtained, the listener receives `onError` and the
-     * screen is not opened.
+     * token exists. Otherwise the token is fetched from the backend; when no session exists a
+     * light login runs first, each step capped at 10 s, and a stale cached token is used if the
+     * fetch fails. When no token can be obtained, the listener receives `onError` and the screen
+     * is not opened.
      *
      * @param context The application context.
      * @param tripHash The timeline/trip hash to load.
@@ -526,7 +527,7 @@ class TRPCore {
         context: Context,
         tripHash: String
     ) {
-        launchWhenMapboxTokenReady(context) {
+        launchWhenMapboxTokenReady(context, null) {
             val intent = ACTimeline.newIntent(context, tripHash)
             if (context !is Activity) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -539,9 +540,10 @@ class TRPCore {
      * Primary SDK entry point. Fetches the existing timeline when a tripHash
      * is available, otherwise creates one from the itinerary model. The screen opens on the main
      * thread once a Mapbox access token is available: immediately when a host-supplied or fresh
-     * cached token exists; a stale cached token waits for one refetch (10 s cap), on failure the
-     * stale token is used. When no token can be obtained, the listener receives `onError` and the
-     * screen is not opened.
+     * cached token exists. Otherwise the token is fetched from the backend; when no session exists
+     * a light login runs first with [uniqueId], each step capped at 10 s, and a stale cached token
+     * is used if the fetch fails. When no token can be obtained, the listener receives `onError`
+     * and the screen is not opened.
      *
      * @param context Android context
      * @param itinerary Itinerary data (destinations, activities, favorites)
@@ -571,7 +573,7 @@ class TRPCore {
 
         applyLanguageAndPrefetchCities(appLanguage)
 
-        launchWhenMapboxTokenReady(context) {
+        launchWhenMapboxTokenReady(context, effectiveUniqueId) {
             val intent = Intent(context, ACTimeline::class.java).apply {
                 putExtra(EXTRA_ITINERARY, itinerary)
                 putExtra(EXTRA_TRIP_HASH, effectiveTripHash)
@@ -609,11 +611,17 @@ class TRPCore {
      * Resolves the Mapbox access token and runs [startScreen] on the main thread once one is
      * applied. Reports an error to the listener and skips [startScreen] when no token is
      * available or resolution fails; also skips it when [context] is a finishing activity.
+     *
+     * @param uniqueId User id for the light login run before the token fetch when no session exists
      */
-    private fun launchWhenMapboxTokenReady(context: Context, startScreen: () -> Unit) {
+    private fun launchWhenMapboxTokenReady(
+        context: Context,
+        uniqueId: String?,
+        startScreen: () -> Unit
+    ) {
         initScope.launch(Dispatchers.Main.immediate) {
             try {
-                val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken)
+                val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken, uniqueId)
                 if (token.isNullOrBlank()) {
                     notifyError(MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
                     return@launch

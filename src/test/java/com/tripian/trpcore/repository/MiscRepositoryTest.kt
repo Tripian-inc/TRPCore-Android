@@ -395,6 +395,66 @@ class MiscRepositoryTest {
     }
 
     @Test
+    fun testGetFreshPersistedMapboxAccessTokenReturnsTokenWhenFresh() {
+        every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.cached"
+        every {
+            preferences.getLong(Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT, 0L)
+        } returns NOW
+
+        val repository = repository()
+
+        assertEquals("pk.cached", repository.getFreshPersistedMapboxAccessToken())
+    }
+
+    @Test
+    fun testGetFreshPersistedMapboxAccessTokenReturnsNullWhenStale() {
+        every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.stale"
+        every {
+            preferences.getLong(Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT, 0L)
+        } returns STALE_FETCHED_AT
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedMapboxAccessToken())
+    }
+
+    @Test
+    fun testGetFreshPersistedMapboxAccessTokenReturnsNullWhenFetchedAtIsZero() {
+        every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.cached"
+        every {
+            preferences.getLong(Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT, 0L)
+        } returns 0L
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedMapboxAccessToken())
+    }
+
+    @Test
+    fun testGetFreshPersistedMapboxAccessTokenReturnsNullWhenFetchedAtIsInFuture() {
+        every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.cached"
+        every {
+            preferences.getLong(Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT, 0L)
+        } returns NOW + (60L * 60L * 1000L)
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedMapboxAccessToken())
+    }
+
+    @Test
+    fun testGetFreshPersistedMapboxAccessTokenReturnsNullWhenNoTokenIsPersisted() {
+        every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns ""
+        every {
+            preferences.getLong(Preferences.Keys.MAPBOX_ACCESS_TOKEN_FETCHED_AT, 0L)
+        } returns NOW
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedMapboxAccessToken())
+    }
+
+    @Test
     fun testGetPersistedMapboxAccessTokenReturnsStoredTokenRegardlessOfAge() {
         every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.any-age"
 
