@@ -31,6 +31,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 import javax.inject.Inject
 
@@ -620,22 +621,61 @@ class TRPCore {
         startScreen: () -> Unit
     ) {
         initScope.launch(Dispatchers.Main.immediate) {
+            if (!ensureMapboxAccessToken(uniqueId)) return@launch
+            if ((context as? Activity)?.isFinishing == true) return@launch
+            try {
+                startScreen()
+            } catch (error: Throwable) {
+                Log.e(TAG, "Failed to open the Timeline screen", error)
+                notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
+            }
+        }
+    }
+
+    /**
+     * Makes sure a Mapbox access token is applied before a map view is created. Returns at once
+     * when the applied token is the host-supplied or a fresh cached one; otherwise resolves it
+     * through [ResolveMapboxAccessToken] and applies it on the main thread. Reports an error to
+     * the listener when no token can be obtained.
+     *
+     * @param uniqueId User id for the light login run before the token fetch when no session exists
+     * @return `true` once a token is applied, `false` when none is available or resolution fails
+     */
+    internal suspend fun ensureMapboxAccessToken(uniqueId: String?): Boolean =
+        withContext(Dispatchers.Main.immediate) {
+            if (isAppliedMapboxAccessTokenCurrent()) return@withContext true
             try {
                 val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken, uniqueId)
                 if (token.isNullOrBlank()) {
                     notifyError(MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
-                    return@launch
+                    return@withContext false
                 }
                 applyMapboxAccessToken(token)
-                if ((context as? Activity)?.isFinishing == true) return@launch
-                startScreen()
+                true
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {
                 Log.e(TAG, "Failed to resolve the Mapbox access token", error)
                 notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
+                false
             }
         }
+
+    /**
+     * Whether a Mapbox access token has been applied, so map views can be created right away.
+     */
+    internal fun hasAppliedMapboxAccessToken(): Boolean = mapBoxApiKey.isNotBlank()
+
+    /**
+     * Whether the applied token is the one [ResolveMapboxAccessToken] would return without a
+     * network request: the host-supplied token, or else the fresh persisted token.
+     */
+    private fun isAppliedMapboxAccessTokenCurrent(): Boolean {
+        val appliedToken = mapBoxApiKey
+        if (appliedToken.isBlank()) return false
+        val hostToken = hostMapboxAccessToken
+        if (!hostToken.isNullOrBlank()) return appliedToken == hostToken
+        return appliedToken == miscRepository.getFreshPersistedMapboxAccessToken()
     }
 
     fun activityInjector(): AndroidInjector<Activity> {

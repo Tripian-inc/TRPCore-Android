@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -19,11 +21,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import com.tripian.trpcore.base.TRPCore
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.ui.common.loader.LottieLoadingText
 import com.tripian.trpcore.ui.timeline.compose.TimelineScreen
 import com.tripian.trpcore.ui.timeline.compose.activity.ActivityListingScreen
 import com.tripian.trpcore.ui.timeline.compose.addplan.StartingPointScreen
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineOverlays
 import com.tripian.trpcore.ui.timeline.compose.core.LocalTimelineViewModelFactory
+import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineTheme
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineWarningDialogHost
 import com.tripian.trpcore.ui.timeline.compose.poidetail.PoiDetailScreen
@@ -70,16 +74,24 @@ fun NavGraphBuilder.tripianTimeline(
                 LaunchedEffect(launch.appLanguage) {
                     TRPCore.core.applyLanguageAndPrefetchCities(launch.appLanguage)
                 }
-                BelowStatusBar {
-                    TimelineScreen(
-                        itinerary = launch.itinerary,
-                        tripHash = launch.tripHash ?: launch.itinerary.tripianHash,
-                        uniqueId = launch.uniqueId ?: launch.itinerary.uniqueId,
-                        appLanguage = launch.appLanguage,
-                        appCurrency = launch.appCurrency,
-                        onDismiss = onDismiss,
-                        navEntry = entry
-                    )
+                val uniqueId = launch.uniqueId ?: launch.itinerary.uniqueId
+                val tokenGate = remember { MapboxTokenGate() }
+                LaunchedEffect(launch) { tokenGate.resolve(uniqueId) }
+                val tokenState by tokenGate.state.collectAsState()
+                when (tokenState) {
+                    MapboxTokenGate.State.Resolving -> TimelineLoaderOverlay(LottieLoadingText.None)
+                    MapboxTokenGate.State.Ready -> BelowStatusBar {
+                        TimelineScreen(
+                            itinerary = launch.itinerary,
+                            tripHash = launch.tripHash ?: launch.itinerary.tripianHash,
+                            uniqueId = uniqueId,
+                            appLanguage = launch.appLanguage,
+                            appCurrency = launch.appCurrency,
+                            onDismiss = onDismiss,
+                            navEntry = entry
+                        )
+                    }
+                    MapboxTokenGate.State.Unavailable -> LaunchedEffect(Unit) { onDismiss() }
                 }
             }
         }

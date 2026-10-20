@@ -125,6 +125,8 @@ NavHost(navController, startDestination = "home") {
 
 `request` is a lambda read when the Timeline destination opens, so the trip can still be loading when the graph is built; returning `null` pops the flow. To open a *different* itinerary later, pop the graph first and navigate again — the flow initializes once per graph entry.
 
+Both `tripianTimeline` and `TimelineNexus` make sure a Mapbox access token is in place before the map is shown: the `mapboxApiKey` passed to `TRPCore.init`, a token already cached from an earlier run, or otherwise the token served by the Tripian backend. While the token is being fetched the flow shows the SDK loader. If no token can be obtained, your listener receives `onError` and `onDismiss` is called, so the map never opens without a token.
+
 ### Alternative: one composable destination
 
 If you would rather keep the SDK behind a single route, `TimelineNexus` wraps the same graph in a nested `NavHost`. Back-stack preservation works the same way; you just don't see the individual SDK routes.
