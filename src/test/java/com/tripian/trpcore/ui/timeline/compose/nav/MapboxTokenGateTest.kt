@@ -69,4 +69,23 @@ class MapboxTokenGateTest {
         assertEquals(1, calls)
         assertEquals(MapboxTokenGate.State.Unavailable, gate.state.value)
     }
+
+    @Test
+    fun testConcurrentResolveCallsRunResolverOnce() = runTest {
+        val result = CompletableDeferred<Boolean>()
+        var calls = 0
+        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { calls++; result.await() }
+
+        val first = launch { gate.resolve("user-1") }
+        val second = launch { gate.resolve("user-1") }
+        runCurrent()
+        assertEquals(1, calls)
+
+        result.complete(true)
+        first.join()
+        second.join()
+
+        assertEquals(1, calls)
+        assertEquals(MapboxTokenGate.State.Ready, gate.state.value)
+    }
 }

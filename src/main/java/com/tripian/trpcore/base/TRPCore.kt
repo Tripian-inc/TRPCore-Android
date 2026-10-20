@@ -596,9 +596,15 @@ class TRPCore {
      */
     internal fun applyMapboxAccessToken(token: String) {
         mapBoxApiKey = token
-        runOnMainThread {
-            MapboxOptions.accessToken = token
-        }
+        mapboxTokenSink(token)
+    }
+
+    /**
+     * Hands an applied token to the Mapbox SDK on the main thread. Replaceable in JVM tests, where
+     * the Mapbox setter is a native call.
+     */
+    internal var mapboxTokenSink: (String) -> Unit = { token ->
+        runOnMainThread { MapboxOptions.accessToken = token }
     }
 
     /**

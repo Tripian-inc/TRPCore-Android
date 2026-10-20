@@ -1,7 +1,5 @@
 package com.tripian.trpcore.base
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import com.tripian.trpcore.domain.ResolveMapboxAccessToken
 import com.tripian.trpcore.repository.MiscRepository
@@ -11,7 +9,6 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkConstructor
 import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
@@ -36,28 +33,26 @@ class TRPCoreEnsureMapboxAccessTokenTest {
     private val miscRepository: MiscRepository = mockk()
     private val resolveMapboxAccessToken: ResolveMapboxAccessToken = mockk()
     private val listener: TRPCoreSDKListener = mockk(relaxed = true)
+    private val sunkTokens = mutableListOf<String>()
     private lateinit var trpCore: TRPCore
 
     @Before
     fun setUp() {
         Dispatchers.setMain(StandardTestDispatcher())
-        mockkStatic(Looper::class)
-        val mainLooper: Looper = mockk()
-        every { Looper.myLooper() } returns null
-        every { Looper.getMainLooper() } returns mainLooper
-        mockkConstructor(Handler::class)
-        every { anyConstructed<Handler>().post(any()) } returns true
         mockkStatic(Log::class)
         every { Log.e(any(), any(), any()) } returns 0
 
         trpCore = TRPCore()
         trpCore.miscRepository = miscRepository
         trpCore.resolveMapboxAccessToken = resolveMapboxAccessToken
+        trpCore.mapboxTokenSink = { sunkTokens += it }
         TRPCore.setListener(listener)
     }
 
     @After
     fun tearDown() {
+        trpCore.mapboxTokenSink = {}
+        sunkTokens.clear()
         TRPCore.mapBoxApiKey = ""
         TRPCore.setListener(null)
         Dispatchers.resetMain()
@@ -85,6 +80,7 @@ class TRPCoreEnsureMapboxAccessTokenTest {
 
         assertTrue(result)
         coVerify(exactly = 1) { resolveMapboxAccessToken.execute(null, "user-1") }
+        assertEquals("pk.fresh", TRPCore.mapBoxApiKey)
     }
 
     @Test
@@ -97,6 +93,7 @@ class TRPCoreEnsureMapboxAccessTokenTest {
 
         assertTrue(result)
         assertEquals("pk.resolved", TRPCore.mapBoxApiKey)
+        assertEquals(listOf("pk.resolved"), sunkTokens)
     }
 
     @Test

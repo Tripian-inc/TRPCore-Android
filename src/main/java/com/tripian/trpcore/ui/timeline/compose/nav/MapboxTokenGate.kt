@@ -4,6 +4,8 @@ import com.tripian.trpcore.base.TRPCore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Holds back the Timeline map until a Mapbox access token is applied. Starts [State.Ready] when
@@ -28,12 +30,16 @@ internal class MapboxTokenGate(
 
     val state: StateFlow<State> = mutableState.asStateFlow()
 
+    private val resolveLock = Mutex()
+
     /**
      * Resolves the token for [uniqueId] and moves to [State.Ready] or [State.Unavailable].
-     * Does nothing once the gate has settled.
+     * Concurrent calls run the resolver once; calls after the gate has settled do nothing.
      */
     suspend fun resolve(uniqueId: String?) {
-        if (mutableState.value != State.Resolving) return
-        mutableState.value = if (ensureToken(uniqueId)) State.Ready else State.Unavailable
+        resolveLock.withLock {
+            if (mutableState.value != State.Resolving) return
+            mutableState.value = if (ensureToken(uniqueId)) State.Ready else State.Unavailable
+        }
     }
 }
