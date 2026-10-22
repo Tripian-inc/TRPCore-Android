@@ -8,6 +8,7 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
+import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
@@ -82,18 +83,23 @@ class ACSavedPlansVM @Inject constructor(
     /**
      * Initialize with pre-filtered favorites from ACTimeline
      * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
+     * @param selectedDayIndex Day selected on the timeline; a past or out-of-range index is
+     *   resolved like the Add Plan flow, and no day is selected when every day is past
      */
     fun initialize(
         favorites: List<SegmentFavoriteItem>,
         tripHash: String,
         availableDays: List<Date>,
         cityNameToIdMap: Map<String, Int> = emptyMap(),
-        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+        plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+        selectedDayIndex: Int = 0
     ) {
         this.favorites = favorites
         this.tripHash = tripHash
         this.availableDays = availableDays
-        this.selectedDate = availableDays.firstOrNull()
+        this.selectedDate = availableDays.getOrNull(
+            AddPlanContainerVM.resolveInitialDayIndex(availableDays, selectedDayIndex)
+        )
         this.cityNameToIdMap = cityNameToIdMap
         this.plannedActivityIdsByDay.clear()
         plannedActivityIdsByDay.forEach { (day, ids) ->
@@ -319,9 +325,7 @@ class ACSavedPlansVM @Inject constructor(
      */
     fun getAvailableDays(): List<Date> = availableDays
 
-    /**
-     * Get selected date
-     */
+    /** Initial day for the time selection sheet, or null when every trip day is past. */
     fun getSelectedDate(): Date? = selectedDate
 
     /**

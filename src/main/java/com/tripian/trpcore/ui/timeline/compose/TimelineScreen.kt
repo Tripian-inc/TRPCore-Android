@@ -298,7 +298,8 @@ fun TimelineScreen(
             tripHash = viewModel.tripHash,
             availableDays = viewModel.availableDays.value ?: emptyList(),
             cityNameToIdMap = viewModel.getCityNameToIdMap(),
-            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+            selectedDayIndex = viewModel.selectedDayIndex.value ?: 0
         )
     }
 

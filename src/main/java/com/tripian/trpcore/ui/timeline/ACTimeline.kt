@@ -1344,7 +1344,8 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
             tripHash = viewModel.tripHash,
             availableDays = availableDays,
             cityNameToIdMap = cityMap,
-            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay()
+            plannedActivityIdsByDay = viewModel.plannedActivityIdsByDay(),
+            selectedDayIndex = viewModel.selectedDayIndex.value ?: 0
         )
         savedPlansLauncher.launch(intent)
     }

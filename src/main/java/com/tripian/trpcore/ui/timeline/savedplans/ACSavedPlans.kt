@@ -55,7 +55,8 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
                 tripHash,
                 availableDays,
                 cityMap,
-                plannedActivityIds
+                plannedActivityIds,
+                intent.getIntExtra(EXTRA_SELECTED_DAY_INDEX, 0)
             )
         }
     }
@@ -216,12 +217,14 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
         const val EXTRA_AVAILABLE_DAYS = "extra_available_days"
         const val EXTRA_CITY_MAP = "extra_city_map"
         const val EXTRA_PLANNED_ACTIVITY_IDS = "extra_planned_activity_ids"
+        const val EXTRA_SELECTED_DAY_INDEX = "extra_selected_day_index"
 
         /**
          * Launch SavedPlans screen with pre-filtered favorites
          * @param favorites List of favorites that haven't been added as reserved_activity yet
          * @param cityNameToIdMap Mapping of cityName (lowercase) to our system's cityId
          * @param plannedActivityIdsByDay "yyyy-MM-dd" → activity ids that day already holds
+         * @param selectedDayIndex index into [availableDays] of the day selected on the timeline
          */
         fun launch(
             context: Context,
@@ -229,13 +232,15 @@ class ACSavedPlans : BaseActivity<AcSavedPlansBinding, ACSavedPlansVM>() {
             tripHash: String,
             availableDays: List<Date>,
             cityNameToIdMap: Map<String, Int> = emptyMap(),
-            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap()
+            plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
+            selectedDayIndex: Int = 0
         ): Intent {
             return Intent(context, ACSavedPlans::class.java).apply {
                 putParcelableArrayListExtra(EXTRA_FAVORITES, ArrayList(favorites))
                 putExtra(EXTRA_TRIP_HASH, tripHash)
                 putExtra(EXTRA_AVAILABLE_DAYS, availableDays.map { it.time }.toLongArray())
                 putExtra(EXTRA_CITY_MAP, HashMap(cityNameToIdMap))
+                putExtra(EXTRA_SELECTED_DAY_INDEX, selectedDayIndex)
                 putExtra(
                     EXTRA_PLANNED_ACTIVITY_IDS,
                     plannedActivityIdsByDay.toSerializableIdsByDay()
