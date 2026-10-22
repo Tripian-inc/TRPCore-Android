@@ -14,6 +14,7 @@ import java.util.Date
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -132,14 +133,16 @@ class AddPlanContainerVMTest {
         val cities = arrayListOf(mockk<City>(relaxed = true))
 
         vm.initializeFromArgs(bundleOf(days, cities, selectedDayIndex = 1))
+        vm.selectMode(AddPlanMode.SMART)
 
+        assertNotNull(vm.planData.selectedCity)
         assertEquals(AddPlanContainerVM.NO_DAY_SELECTED, vm.selectedDayIndex.value)
         assertNull(vm.planData.selectedDay)
         assertFalse(vm.continueButtonEnabled.value ?: true)
     }
 
     @Test
-    fun `test initializeFromArgs remaps past requested index to first future day`() {
+    fun `test initializeFromArgs remaps past requested index to today`() {
         val vm = viewModel()
         val days = arrayListOf(yesterday, today, tomorrow)
         val cities = arrayListOf(mockk<City>(relaxed = true))
@@ -148,6 +151,18 @@ class AddPlanContainerVMTest {
 
         assertEquals(1, vm.selectedDayIndex.value)
         assertEquals(today, vm.planData.selectedDay)
+    }
+
+    @Test
+    fun `test initializeFromArgs remaps past requested index to first future day when today is absent`() {
+        val vm = viewModel()
+        val days = arrayListOf(dayOffsetFromToday(-2), yesterday, tomorrow, dayAfterTomorrow)
+        val cities = arrayListOf(mockk<City>(relaxed = true))
+
+        vm.initializeFromArgs(bundleOf(days, cities, selectedDayIndex = 0))
+
+        assertEquals(2, vm.selectedDayIndex.value)
+        assertEquals(tomorrow, vm.planData.selectedDay)
     }
 
     @Test
