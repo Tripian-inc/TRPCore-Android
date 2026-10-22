@@ -65,7 +65,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize keeps selected index when it points at today`() {
+    fun `test initialize keeps selected index when it points at today success`() {
         val vm = viewModel()
         val days = listOf(yesterday, today, tomorrow)
 
@@ -75,7 +75,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize keeps selected index when it points at a future day`() {
+    fun `test initialize keeps selected index when it points at a future day success`() {
         val vm = viewModel()
         val days = listOf(yesterday, today, tomorrow, dayAfterTomorrow)
 
@@ -85,7 +85,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize remaps past selected index to today when today is present`() {
+    fun `test initialize remaps past selected index to today when today is present success`() {
         val vm = viewModel()
         val days = listOf(yesterday, today, tomorrow)
 
@@ -95,7 +95,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize remaps past selected index to first future day when today is absent`() {
+    fun `test initialize remaps past selected index to first future day when today is absent success`() {
         val vm = viewModel()
         val days = listOf(dayOffsetFromToday(-2), yesterday, tomorrow, dayAfterTomorrow)
 
@@ -105,7 +105,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize selects nothing when every day is past`() {
+    fun `test initialize selects nothing when every day is past success`() {
         val vm = viewModel()
         val days = listOf(dayOffsetFromToday(-2), yesterday)
 
@@ -115,7 +115,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize remaps out of range selected index like a past day`() {
+    fun `test initialize remaps out of range selected index like a past day success`() {
         val vm = viewModel()
         val days = listOf(yesterday, today, tomorrow)
 
@@ -125,7 +125,7 @@ class ACSavedPlansVMTest {
     }
 
     @Test
-    fun `test initialize with empty available days selects nothing`() {
+    fun `test initialize with empty available days selects nothing success`() {
         val vm = viewModel()
 
         vm.initialize(favorites = emptyList(), tripHash = "", availableDays = emptyList(), selectedDayIndex = 0)
