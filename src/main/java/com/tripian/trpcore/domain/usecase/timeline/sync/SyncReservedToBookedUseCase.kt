@@ -21,7 +21,7 @@ import javax.inject.Inject
  * The booked payload is built by [ItineraryWithActivities.createBookedActivitySegment]
  * so it carries the same `additionalData` (title, image, datetimes, duration, price)
  * as every other booked segment; a partial payload renders as an empty cell.
- * `doNotGenerate` must stay 0 on every segment — the API rejects the request otherwise.
+ * Booked segments are created without a segmentIndex, so they go out with `doNotGenerate` 0.
  * iOS Reference: Guide Operation 3 (Reserved → Booked Transition)
  */
 class SyncReservedToBookedUseCase @Inject constructor(

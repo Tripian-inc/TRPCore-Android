@@ -5,6 +5,7 @@ import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.domain.usecase.timeline.SegmentTimeRangeAdjustment.datePartOf
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
@@ -29,18 +30,21 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         val newEndTime: String,    // "HH:mm"
         /** Target day "yyyy-MM-dd"; when null the segment's existing date is kept. */
         val newDate: String? = null,
+        /** End day "yyyy-MM-dd"; when null the end shares the start's day. */
+        val newEndDate: String? = null,
         /** Price of the newly selected time slot; overrides the segment price when non-null. */
         val newPrice: Double? = null
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val baseDate = datePart(params.newDate)
-            ?: datePart(params.original.startDate)
-            ?: datePart(params.original.additionalData?.startDatetime)
+        val baseDate = datePartOf(params.newDate)
+            ?: datePartOf(params.original.startDate)
+            ?: datePartOf(params.original.additionalData?.startDatetime)
             ?: return ResponseModelBase().apply { status = 200 }
+        val endBaseDate = datePartOf(params.newEndDate) ?: baseDate
 
         val newStartDate = "$baseDate ${params.newStartTime}"
-        val newEndDate = "$baseDate ${params.newEndTime}"
+        val newEndDate = "$endBaseDate ${params.newEndTime}"
 
         val updatedAdditionalData = params.original.additionalData?.let { src ->
             TimelineSegmentAdditionalData().apply {
@@ -65,6 +69,7 @@ class UpdateSegmentTimeUseCase @Inject constructor(
             segmentIndex = params.segmentIndex
             cityId = params.original.cityId
             title = params.original.title
+            description = params.original.description
             startDate = newStartDate
             endDate = newEndDate
             adults = params.original.adults
@@ -92,14 +97,5 @@ class UpdateSegmentTimeUseCase @Inject constructor(
 
         repository.editSegmentAsync(params.tripHash, segment)
         return ResponseModelBase().apply { status = 200 }
-    }
-
-    /** "yyyy-MM-dd HH:mm" or "yyyy-MM-dd" → "yyyy-MM-dd"; null on parse miss. */
-    private fun datePart(raw: String?): String? {
-        if (raw.isNullOrBlank()) return null
-        val spaceIdx = raw.indexOf(' ')
-        val datePiece = if (spaceIdx > 0) raw.substring(0, spaceIdx) else raw
-        return if (datePiece.length >= 10 && datePiece[4] == '-' && datePiece[7] == '-')
-            datePiece.substring(0, 10) else null
     }
 }

@@ -87,7 +87,20 @@ class TimelineRepository @Inject constructor(
         )
     }.also { rememberTimeline(it.tripHash, it) }
 
+    /**
+     * Adds [segment] when its segmentIndex is null, otherwise updates the segment at
+     * that index. `doNotGenerate` is derived here and nowhere else: 0 on create so the
+     * backend generates the plan, 1 on update so the existing plan is kept.
+     */
     suspend fun editSegmentAsync(
+        tripHash: String,
+        segment: TimelineSegmentSettings
+    ) {
+        segment.doNotGenerate = if (segment.segmentIndex == null) 0 else 1
+        sendSegment(tripHash, segment)
+    }
+
+    private suspend fun sendSegment(
         tripHash: String,
         segment: TimelineSegmentSettings
     ): Unit = suspendCancellableCoroutine { cont ->
