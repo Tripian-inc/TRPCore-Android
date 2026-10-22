@@ -93,7 +93,7 @@ private fun StepScrollContainer(scrollState: ScrollState, content: @Composable (
 @Composable
 internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
     val availableDays by viewModel.availableDays.observeAsState(emptyList())
-    val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(0)
+    val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(AddPlanContainerVM.NO_DAY_SELECTED)
     val cities by viewModel.cities.observeAsState(emptyList())
     val isLoadingCities by viewModel.isLoadingCities.observeAsState(false)
     val selectedCity by viewModel.selectedCity.observeAsState()
@@ -169,7 +169,7 @@ internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
                 if (views.lastSelectedDayIndex != selectedDayIndex) {
                     views.lastSelectedDayIndex = selectedDayIndex
-                    b.rvDays.scrollToPosition(selectedDayIndex)
+                    if (selectedDayIndex >= 0) b.rvDays.scrollToPosition(selectedDayIndex)
                 }
 
                 val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
@@ -251,7 +251,7 @@ internal fun AddPlanTimeTravelersStep(
     onSelectStartingPoint: () -> Unit
 ) {
     val availableDays by viewModel.availableDays.observeAsState(emptyList())
-    val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(0)
+    val selectedDayIndex by viewModel.selectedDayIndex.observeAsState(AddPlanContainerVM.NO_DAY_SELECTED)
     val selectedCity by viewModel.selectedCity.observeAsState()
     val startingPointName by viewModel.startingPointName.observeAsState()
     val startingPointNameKey by viewModel.startingPointNameKey.observeAsState()
@@ -321,7 +321,7 @@ internal fun AddPlanTimeTravelersStep(
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
                 if (views.lastSelectedDayIndex != selectedDayIndex) {
                     views.lastSelectedDayIndex = selectedDayIndex
-                    b.rvDays.scrollToPosition(selectedDayIndex)
+                    if (selectedDayIndex >= 0) b.rvDays.scrollToPosition(selectedDayIndex)
                 }
 
                 val name = startingPointName

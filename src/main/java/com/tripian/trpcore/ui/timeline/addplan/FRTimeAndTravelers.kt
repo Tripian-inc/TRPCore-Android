@@ -198,7 +198,7 @@ class FRTimeAndTravelers : Fragment() {
 
         sharedVM.selectedDayIndex.observe(viewLifecycleOwner) { index ->
             dayFilterAdapter?.setSelectedPosition(index)
-            binding.rvDays.scrollToPosition(index)
+            if (index >= 0) binding.rvDays.scrollToPosition(index)
         }
 
         sharedVM.startingPointName.observe(viewLifecycleOwner) { name ->
