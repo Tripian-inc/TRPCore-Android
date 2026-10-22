@@ -1624,8 +1624,9 @@ class ACTimelineVM @Inject constructor(
 
     /**
      * Widens the segment that owns [stepId] when the step's new window falls outside the
-     * segment's startDate..endDate, since the step endpoint rejects such a move. Throws
-     * when the segment update fails so the step update is never sent.
+     * segment's startDate..endDate, since the step endpoint rejects such a move. Booked and
+     * reserved segments are left untouched so their booking times are never rewritten.
+     * Throws when the segment update fails so the step update is never sent.
      */
     private suspend fun widenSegmentToFitStep(stepId: Int, startTime: String?, endTime: String?) {
         val timeline = _timeline.value ?: return
@@ -1634,6 +1635,7 @@ class ACTimelineVM @Inject constructor(
         if (segmentIndex < 0) return
         val plan = plans[segmentIndex]
         val segment = timeline.tripProfile?.segments?.getOrNull(segmentIndex) ?: return
+        if (segment.segmentType !in WIDENABLE_SEGMENT_TYPES) return
         val step = plan.steps?.firstOrNull { it.id == stepId } ?: return
 
         val stepDate = SegmentTimeRangeAdjustment.datePartOf(step.startDateTimes)
@@ -2784,6 +2786,13 @@ class ACTimelineVM @Inject constructor(
 
         /** Span applied to a moved step whose own start/end can't be read. */
         private const val DEFAULT_STEP_DURATION_MINUTES = 60
+
+        /** Segment types whose time window may be widened to fit a moved step. */
+        private val WIDENABLE_SEGMENT_TYPES = setOf(
+            SegmentType.ITINERARY,
+            SegmentType.GENERATED,
+            SegmentType.MANUAL_POI
+        )
 
         // Multi-city zoom thresholds. Lower threshold = the user must zoom out
         // FARTHER before step markers collapse back into city markers.

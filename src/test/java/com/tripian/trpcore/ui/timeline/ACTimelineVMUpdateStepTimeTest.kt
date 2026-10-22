@@ -2,6 +2,7 @@ package com.tripian.trpcore.ui.timeline
 
 import android.os.Looper
 import androidx.lifecycle.MutableLiveData
+import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelinePlan
 import com.tripian.one.api.timeline.model.TimelineProfile
@@ -81,7 +82,8 @@ class ACTimelineVMUpdateStepTimeTest {
         Dispatchers.resetMain()
     }
 
-    private fun segment() = TimelineSegment().apply {
+    private fun segment(type: String = SegmentType.ITINERARY) = TimelineSegment().apply {
+        segmentType = type
         startDate = "2024-05-01 09:00"
         endDate = "2024-05-01 18:00"
     }
@@ -191,6 +193,21 @@ class ACTimelineVMUpdateStepTimeTest {
                 }
             )
         }
+    }
+
+    @Test
+    fun `test updateStepTime leaves a booked segment untouched when step moves outside its range success`() = runTest {
+        val vm = vm()
+        val timeline = timelineWithStep(
+            segment(SegmentType.BOOKED_ACTIVITY), "2024-05-01 10:00", "2024-05-01 11:00"
+        )
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { fetchTimelineUseCase(any()) } returns timeline
+
+        vm.updateStepTime(stepId, "07:00", "11:00")
+
+        coVerify(exactly = 0) { updateSegmentTimeUseCase(any()) }
+        coVerify(exactly = 1) { updateStepTimeUseCase(any()) }
     }
 
     @Test

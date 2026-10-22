@@ -25,6 +25,7 @@ class UpdateSegmentTimeUseCaseTest {
     private fun original(): TimelineSegment = TimelineSegment().apply {
         startDate = "2024-05-01 09:00"
         endDate = "2024-05-01 18:00"
+        description = "Old town walk"
     }
 
     @Test
@@ -49,6 +50,7 @@ class UpdateSegmentTimeUseCaseTest {
         assertEquals("2024-05-01 10:00", segmentSlot.captured.startDate)
         assertEquals("2024-05-01 11:00", segmentSlot.captured.endDate)
         assertEquals(3, segmentSlot.captured.segmentIndex)
+        assertEquals("Old town walk", segmentSlot.captured.description)
     }
 
     @Test

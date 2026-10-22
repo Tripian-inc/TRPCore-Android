@@ -69,6 +69,7 @@ class UpdateSegmentTimeUseCase @Inject constructor(
             segmentIndex = params.segmentIndex
             cityId = params.original.cityId
             title = params.original.title
+            description = params.original.description
             startDate = newStartDate
             endDate = newEndDate
             adults = params.original.adults
