@@ -41,6 +41,7 @@ import com.tripian.trpcore.domain.usecase.timeline.DeleteStepUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.SegmentTimeRangeAdjustment
 import com.tripian.trpcore.domain.usecase.timeline.UpdateSegmentTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
@@ -1596,6 +1597,7 @@ class ACTimelineVM @Inject constructor(
 
         viewModelScope.launch {
             runCatching {
+                widenSegmentToFitStep(stepId, startTime, resolvedEndTime)
                 updateStepTimeUseCase(
                     UpdateStepTimeUseCase.Params(
                         stepId = stepId,
@@ -1618,6 +1620,48 @@ class ACTimelineVM @Inject constructor(
                     onInlineResult?.invoke(false)
                 }
         }
+    }
+
+    /**
+     * Widens the segment that owns [stepId] when the step's new window falls outside the
+     * segment's startDate..endDate, since the step endpoint rejects such a move. Throws
+     * when the segment update fails so the step update is never sent.
+     */
+    private suspend fun widenSegmentToFitStep(stepId: Int, startTime: String?, endTime: String?) {
+        val timeline = _timeline.value ?: return
+        val plans = timeline.plans ?: return
+        val segmentIndex = plans.indexOfFirst { plan -> plan.steps?.any { it.id == stepId } == true }
+        if (segmentIndex < 0) return
+        val plan = plans[segmentIndex]
+        val segment = timeline.tripProfile?.segments?.getOrNull(segmentIndex) ?: return
+        val step = plan.steps?.firstOrNull { it.id == stepId } ?: return
+
+        val stepDate = SegmentTimeRangeAdjustment.datePartOf(step.startDateTimes)
+            ?: SegmentTimeRangeAdjustment.datePartOf(plan.startDate)
+            ?: SegmentTimeRangeAdjustment.datePartOf(segment.startDate)
+            ?: return
+        val stepStartTime = startTime ?: SegmentTimeRangeAdjustment.timePartOf(step.startDateTimes) ?: return
+        val stepWindow = SegmentTimeRangeAdjustment.stepWindow(stepDate, stepStartTime, endTime) ?: return
+        val widened = SegmentTimeRangeAdjustment.widenedRange(
+            segmentStart = segment.startDate,
+            segmentEnd = segment.endDate,
+            stepStart = stepWindow.startDate,
+            stepEnd = stepWindow.endDate
+        ) ?: return
+
+        val newStartTime = SegmentTimeRangeAdjustment.timePartOf(widened.startDate) ?: return
+        val newEndTime = SegmentTimeRangeAdjustment.timePartOf(widened.endDate) ?: return
+        updateSegmentTimeUseCase(
+            UpdateSegmentTimeUseCase.Params(
+                tripHash = _tripHash,
+                segmentIndex = segmentIndex,
+                original = segment,
+                newStartTime = newStartTime,
+                newEndTime = newEndTime,
+                newDate = SegmentTimeRangeAdjustment.datePartOf(widened.startDate),
+                newEndDate = SegmentTimeRangeAdjustment.datePartOf(widened.endDate)
+            )
+        )
     }
 
     /**
