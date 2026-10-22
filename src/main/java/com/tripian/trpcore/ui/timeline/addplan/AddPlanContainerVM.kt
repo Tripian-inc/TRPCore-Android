@@ -99,7 +99,9 @@ class AddPlanContainerVM @Inject constructor(
 
     private var isUsingAllCities = false
 
-    private val _selectedDayIndex = MutableLiveData(0)
+    private val _selectedDayIndex = MutableLiveData(NO_DAY_SELECTED)
+
+    /** Index into [availableDays] of the selected day, or [NO_DAY_SELECTED]. */
     val selectedDayIndex: LiveData<Int> = _selectedDayIndex
 
     private val _selectedCity = MutableLiveData<City?>()
@@ -161,7 +163,7 @@ class AddPlanContainerVM @Inject constructor(
     fun initializeFromArgs(args: Bundle) {
         val days = args.getSerializable(ARG_AVAILABLE_DAYS) as? ArrayList<Date> ?: arrayListOf()
         val citiesList = args.getSerializable(ARG_CITIES) as? ArrayList<City> ?: arrayListOf()
-        var dayIndex = args.getInt(ARG_SELECTED_DAY_INDEX, 0)
+        val dayIndex = resolveInitialDayIndex(days, args.getInt(ARG_SELECTED_DAY_INDEX, 0))
         val city = args.getSerializable(ARG_SELECTED_CITY) as? City
         val tripHash = args.getString(ARG_TRIP_HASH)
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
@@ -175,26 +177,13 @@ class AddPlanContainerVM @Inject constructor(
         tripWideExcludedActivityIds =
             args.getStringArrayList(ARG_TRIP_WIDE_EXCLUDED_IDS).orEmpty()
 
-        if (dayIndex in days.indices && days[dayIndex].isPastDay()) {
-            val todayIndex = days.indexOfFirst { it.isTodayDate() }
-            val firstFutureIndex = days.indexOfFirst { !it.isPastDay() }
-            dayIndex = when {
-                todayIndex >= 0 -> todayIndex
-                firstFutureIndex >= 0 -> firstFutureIndex
-                else -> (days.size - 1).coerceAtLeast(0)
-            }
-        }
-
         _availableDays.value = days
         _selectedDayIndex.value = dayIndex
 
         planData.availableDays = days
         planData.tripHash = tripHash
-
-        if (dayIndex < days.size) {
-            planData.selectedDay = days[dayIndex]
-            planData.selectedDayIndex = dayIndex
-        }
+        planData.selectedDay = days.getOrNull(dayIndex)
+        planData.selectedDayIndex = dayIndex
 
         if (citiesList.isEmpty()) {
             isUsingAllCities = true
@@ -257,7 +246,7 @@ class AddPlanContainerVM @Inject constructor(
      * Used to flag a picked start time as already passed, never to bound the picker.
      */
     fun minSelectableTimeForSelectedDay(): String? {
-        val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
+        val day = planData.selectedDay ?: return null
         val city = _selectedCity.value
         return CityTimeZones.minSelectableTime(day, CityTimeZones.timezoneFor(city?.id) ?: city?.timezone)
     }
@@ -267,7 +256,7 @@ class AddPlanContainerVM @Inject constructor(
      * been chosen yet (see [CityTimeZones.defaultStartTime]).
      */
     fun defaultStartTimeForSelectedDay(): String? {
-        val day = _availableDays.value?.getOrNull(_selectedDayIndex.value ?: 0) ?: return null
+        val day = planData.selectedDay ?: return null
         return CityTimeZones.defaultStartTime(day, _selectedCity.value)
     }
 
@@ -277,14 +266,14 @@ class AddPlanContainerVM @Inject constructor(
     // =====================
     // DAY SELECTION
     // =====================
+    /** Selects the day at [index]; out-of-range indices and past days are ignored. */
     fun selectDay(index: Int) {
-        val days = _availableDays.value ?: return
-        if (index >= 0 && index < days.size) {
-            _selectedDayIndex.value = index
-            planData.selectedDay = days[index]
-            planData.selectedDayIndex = index
-            updateContinueButtonState()
-        }
+        val day = _availableDays.value?.getOrNull(index) ?: return
+        if (day.isPastDay()) return
+        _selectedDayIndex.value = index
+        planData.selectedDay = day
+        planData.selectedDayIndex = index
+        updateContinueButtonState()
     }
 
     // =====================
@@ -468,6 +457,7 @@ class AddPlanContainerVM @Inject constructor(
     fun goToNextStep() {
         when (_currentStep.value) {
             AddPlanStep.SELECT_DAY_AND_CITY -> {
+                if (!planData.canContinueFromSelectDay()) return
                 when (planData.selectedMode) {
                     AddPlanMode.SMART_RECOMMENDATIONS, AddPlanMode.SMART -> {
                         _currentStep.value = AddPlanStep.TIME_AND_TRAVELERS
@@ -630,6 +620,21 @@ class AddPlanContainerVM @Inject constructor(
     }
 
     companion object {
+        /** Value of [selectedDayIndex] when no day is selected (every trip day is in the past). */
+        const val NO_DAY_SELECTED = -1
+
+        /**
+         * Initial selection for [days]: [requestedIndex] when it points at a non-past day,
+         * otherwise today, otherwise the first future day, otherwise [NO_DAY_SELECTED].
+         */
+        internal fun resolveInitialDayIndex(days: List<Date>, requestedIndex: Int): Int {
+            if (days.getOrNull(requestedIndex)?.isPastDay() == false) return requestedIndex
+            val todayIndex = days.indexOfFirst { it.isTodayDate() }
+            if (todayIndex >= 0) return todayIndex
+            val firstFutureIndex = days.indexOfFirst { !it.isPastDay() }
+            return if (firstFutureIndex >= 0) firstFutureIndex else NO_DAY_SELECTED
+        }
+
         const val ARG_AVAILABLE_DAYS = "availableDays"
         const val ARG_CITIES = "cities"
         const val ARG_SELECTED_DAY_INDEX = "selectedDayIndex"

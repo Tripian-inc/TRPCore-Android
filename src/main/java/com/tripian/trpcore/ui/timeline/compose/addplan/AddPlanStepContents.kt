@@ -169,7 +169,7 @@ internal fun AddPlanSelectDayStep(viewModel: AddPlanContainerVM) {
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
                 if (views.lastSelectedDayIndex != selectedDayIndex) {
                     views.lastSelectedDayIndex = selectedDayIndex
-                    b.rvDays.scrollToPosition(selectedDayIndex)
+                    if (selectedDayIndex >= 0) b.rvDays.scrollToPosition(selectedDayIndex)
                 }
 
                 val shouldShowCity = cities.size > 1 || viewModel.shouldAlwaysShowCitySelection()
@@ -321,7 +321,7 @@ internal fun AddPlanTimeTravelersStep(
                 views.dayAdapter.setSelectedPosition(selectedDayIndex)
                 if (views.lastSelectedDayIndex != selectedDayIndex) {
                     views.lastSelectedDayIndex = selectedDayIndex
-                    b.rvDays.scrollToPosition(selectedDayIndex)
+                    if (selectedDayIndex >= 0) b.rvDays.scrollToPosition(selectedDayIndex)
                 }
 
                 val name = startingPointName

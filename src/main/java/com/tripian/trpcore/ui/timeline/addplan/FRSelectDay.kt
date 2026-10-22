@@ -162,7 +162,7 @@ class FRSelectDay : Fragment() {
 
         sharedVM.selectedDayIndex.observe(viewLifecycleOwner) { index ->
             dayFilterAdapter?.setSelectedPosition(index)
-            binding.rvDays.scrollToPosition(index)
+            if (index >= 0) binding.rvDays.scrollToPosition(index)
         }
 
         sharedVM.cities.observe(viewLifecycleOwner) { cities ->

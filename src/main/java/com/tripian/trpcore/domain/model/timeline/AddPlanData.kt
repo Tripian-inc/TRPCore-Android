@@ -7,6 +7,7 @@ import com.tripian.one.api.trip.model.Accommodation
 import com.tripian.trpcore.R
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TimeSelectionValidation
+import com.tripian.trpcore.util.extensions.isPastDay
 import java.io.Serializable
 import java.util.Calendar
 import java.util.Date
@@ -66,7 +67,7 @@ data class AddPlanData(
      * Validation for Smart Recommendations mode
      */
     fun isValidForSmartMode(): Boolean {
-        return selectedDay != null &&
+        return hasSelectableDay() &&
                 selectedCity != null &&
                 startTime != null &&
                 endTime != null &&
@@ -78,17 +79,20 @@ data class AddPlanData(
      * Validation for Manual mode
      */
     fun isValidForManualMode(): Boolean {
-        return selectedDay != null &&
+        return hasSelectableDay() &&
                 selectedCity != null &&
                 selectedManualCategory != null
     }
 
+    /** True when a day is selected and it is today or later; a past day never counts as selected. */
+    fun hasSelectableDay(): Boolean = selectedDay?.isPastDay() == false
+
     /**
-     * Check if continue button should be enabled on SelectDay screen
-     * City must be selected before proceeding
+     * Check if continue button should be enabled on SelectDay screen.
+     * Requires a non-past day and a city before proceeding.
      */
     fun canContinueFromSelectDay(): Boolean {
-        if (selectedCity == null) return false
+        if (!hasSelectableDay() || selectedCity == null) return false
 
         return when (selectedMode) {
             AddPlanMode.SMART_RECOMMENDATIONS, AddPlanMode.SMART -> true

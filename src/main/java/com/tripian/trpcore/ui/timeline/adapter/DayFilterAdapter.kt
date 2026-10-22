@@ -58,11 +58,12 @@ class DayFilterAdapter(
         notifyDataSetChanged()
     }
 
+    /** Highlights [position]; a position outside [days] (e.g. -1) leaves no chip selected. */
     fun setSelectedPosition(position: Int) {
         val oldPosition = selectedPosition
         selectedPosition = position
-        notifyItemChanged(oldPosition)
-        notifyItemChanged(selectedPosition)
+        if (oldPosition in days.indices) notifyItemChanged(oldPosition)
+        if (position in days.indices) notifyItemChanged(position)
     }
 
     /** Returns the Date at [position] or null if the index is out of range. */
