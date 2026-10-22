@@ -65,7 +65,8 @@ data class SavedPlansArgs(
     val tripHash: String,
     val availableDays: List<Date>,
     val cityNameToIdMap: Map<String, Int>,
-    val plannedActivityIdsByDay: Map<String, List<String>>
+    val plannedActivityIdsByDay: Map<String, List<String>>,
+    val selectedDayIndex: Int = 0
 )
 
 data class StartingPointArgs(
@@ -143,10 +144,18 @@ class TimelineNavigator internal constructor(
         tripHash: String,
         availableDays: List<Date>,
         cityNameToIdMap: Map<String, Int>,
-        plannedActivityIdsByDay: Map<String, List<String>>
+        plannedActivityIdsByDay: Map<String, List<String>>,
+        selectedDayIndex: Int = 0
     ) = open(
         TimelineRoutes.SAVED_PLANS,
-        SavedPlansArgs(favorites, tripHash, availableDays, cityNameToIdMap, plannedActivityIdsByDay)
+        SavedPlansArgs(
+            favorites,
+            tripHash,
+            availableDays,
+            cityNameToIdMap,
+            plannedActivityIdsByDay,
+            selectedDayIndex
+        )
     )
 
     fun openStartingPoint(

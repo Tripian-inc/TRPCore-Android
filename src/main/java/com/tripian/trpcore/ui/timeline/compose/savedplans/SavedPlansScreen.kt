@@ -63,7 +63,8 @@ internal fun SavedPlansScreen(
                 tripHash = args.tripHash,
                 availableDays = args.availableDays,
                 cityNameToIdMap = args.cityNameToIdMap,
-                plannedActivityIdsByDay = args.plannedActivityIdsByDay
+                plannedActivityIdsByDay = args.plannedActivityIdsByDay,
+                selectedDayIndex = args.selectedDayIndex
             ).extras
             viewModel.onViewCreated(null)
             viewModel.initialize(
@@ -71,7 +72,8 @@ internal fun SavedPlansScreen(
                 tripHash = args.tripHash,
                 availableDays = args.availableDays,
                 cityNameToIdMap = args.cityNameToIdMap,
-                plannedActivityIdsByDay = args.plannedActivityIdsByDay
+                plannedActivityIdsByDay = args.plannedActivityIdsByDay,
+                selectedDayIndex = args.selectedDayIndex
             )
         }
     }

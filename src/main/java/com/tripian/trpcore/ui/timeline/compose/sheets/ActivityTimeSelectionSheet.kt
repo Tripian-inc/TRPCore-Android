@@ -28,6 +28,7 @@ import com.tripian.trpcore.ui.timeline.activity.GroupedTimeSlot
 import com.tripian.trpcore.ui.timeline.activity.ResolvedSchedule
 import com.tripian.trpcore.ui.timeline.activity.TimeSelectionMode
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
+import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.core.BindViewListener
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
@@ -36,6 +37,7 @@ import com.tripian.trpcore.ui.timeline.compose.core.rememberSheetViewModel
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.hideSheetDragHandle
+import com.tripian.trpcore.util.extensions.isPastDay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -207,6 +209,7 @@ private class ActivityTimeSelectionUi(
     private val mode = request.mode
     private val activity: TourProduct? = (mode as? ActivityTimeSelectionMode.Tour)?.activity
     private val isFavoriteMode = mode is ActivityTimeSelectionMode.Favorite
+    private val disablesPastDays = isFavoriteMode
     private val isStepEditMode = mode is ActivityTimeSelectionMode.StepEdit
     private val favoriteActivityId: String? = when (mode) {
         is ActivityTimeSelectionMode.Favorite -> mode.activityId
@@ -239,9 +242,7 @@ private class ActivityTimeSelectionUi(
     private val initialDayKey: String? = request.initialSelectedDay?.let { dayKeyFormatter.format(it) }
 
     private var dayAdapter: DayFilterAdapter? = null
-    private var selectedDayIndex: Int = request.initialSelectedDay?.let { initial ->
-        availableDays.indexOfFirst { isSameDay(it, initial) }.coerceAtLeast(0)
-    } ?: 0
+    private var selectedDayIndex: Int = resolveInitialSelectedDayIndex(request.initialSelectedDay)
     private var selectedTimeSlot: String? = null
     private var selectedPrice: Double? = null
     private var currentSlots: List<GroupedTimeSlot> = emptyList()
@@ -293,7 +294,7 @@ private class ActivityTimeSelectionUi(
         if (dayKeyFormatter.format(current) in available) return
 
         val firstAvailableIndex = availableDays.indexOfFirst {
-            dayKeyFormatter.format(it) in available
+            dayKeyFormatter.format(it) in available && isSelectableDay(it)
         }
         if (firstAvailableIndex < 0 || firstAvailableIndex == selectedDayIndex) return
 
@@ -358,9 +359,10 @@ private class ActivityTimeSelectionUi(
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
+        dayAdapter?.disablePastDays = disablesPastDays
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
-        binding.rvDays.scrollToPosition(selectedDayIndex)
+        if (selectedDayIndex >= 0) binding.rvDays.scrollToPosition(selectedDayIndex)
     }
 
     private fun setupClickListeners() {
@@ -573,8 +575,27 @@ private class ActivityTimeSelectionUi(
     }
 
     private fun updateContinueButtonState() {
-        binding.btnContinue.isEnabled = isFlexibleSelected || selectedTimeSlot != null
+        binding.btnContinue.isEnabled = selectedDayIndex in availableDays.indices &&
+            (isFlexibleSelected || selectedTimeSlot != null)
     }
+
+    /**
+     * Index of [initial] in [availableDays] (first day when absent). When past days are
+     * disabled, a past day falls back like the Add Plan flow and every-day-past yields
+     * [AddPlanContainerVM.NO_DAY_SELECTED].
+     */
+    private fun resolveInitialSelectedDayIndex(initial: Date?): Int {
+        val requested = initial?.let { day ->
+            availableDays.indexOfFirst { isSameDay(it, day) }.coerceAtLeast(0)
+        } ?: 0
+        return if (disablesPastDays) {
+            AddPlanContainerVM.resolveInitialDayIndex(availableDays, requested)
+        } else {
+            requested
+        }
+    }
+
+    private fun isSelectableDay(day: Date): Boolean = !(disablesPastDays && day.isPastDay())
 
     private fun isSameDay(date1: Date, date2: Date): Boolean =
         dayKeyFormatter.format(date1) == dayKeyFormatter.format(date2)
