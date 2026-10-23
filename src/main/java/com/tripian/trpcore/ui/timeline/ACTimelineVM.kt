@@ -51,6 +51,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateSegmentTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.sync.BookedActivityPairing
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncBookedActivityTimesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveObsoleteSegmentsUseCase
@@ -2958,11 +2959,10 @@ class ACTimelineVM @Inject constructor(
             }
         }
 
-        val existingActivityKeys = timelineActivityIds(initialTimeline)
-        tracker.addMissing = tripItems.any { item ->
-            val key = ActivityIdFormat.matchKey(item.activityId)
-            key != null && key !in existingActivityKeys
-        }
+        tracker.addMissing = BookedActivityPairing
+            .plan(tripItems, initialTimeline.tripProfile?.segments)
+            .missingItems
+            .isNotEmpty()
 
         viewModelScope.launch {
             runCatching {

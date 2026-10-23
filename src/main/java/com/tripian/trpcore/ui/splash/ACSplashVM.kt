@@ -261,7 +261,8 @@ class ACSplashVM @Inject constructor(
                     price = price,
                     cityId = cityId,
                     cityName = city?.name,
-                    countryName = city?.country?.name
+                    countryName = city?.country?.name,
+                    lineId = r.juniperLineId
                 )
             )
         }

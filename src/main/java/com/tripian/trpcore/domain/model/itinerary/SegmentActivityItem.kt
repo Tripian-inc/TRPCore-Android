@@ -6,6 +6,10 @@ import kotlinx.parcelize.Parcelize
 /**
  * Activities reserved or purchased by the user
  * Displayed as bookedActivity or reservedActivity segment in timeline.
+ *
+ * @property bookingId the host's display booking reference (e.g. the Nexus locator).
+ * @property lineId the host's per-line booking id, unique per booked service even when
+ *   several lines share [bookingId] and product (e.g. both legs of a round-trip transfer).
  */
 @Parcelize
 data class SegmentActivityItem(
@@ -25,5 +29,6 @@ data class SegmentActivityItem(
     val price: SegmentActivityPrice? = null,
     val cityId: Int? = null,                // Optional - resolved from cityName if not provided
     val cityName: String? = null,
-    val countryName: String? = null
+    val countryName: String? = null,
+    val lineId: String? = null
 ) : Parcelable

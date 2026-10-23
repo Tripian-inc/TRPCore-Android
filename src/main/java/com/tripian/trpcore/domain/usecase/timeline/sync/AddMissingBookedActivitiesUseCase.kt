@@ -8,11 +8,11 @@ import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import com.tripian.trpcore.sdk.TRPCoreErrorCode
-import com.tripian.trpcore.util.ActivityIdFormat
 import javax.inject.Inject
 
 /**
- * Adds booked_activity segments for tripItems not yet present on the timeline.
+ * Adds booked_activity segments for the tripItems [BookedActivityPairing] leaves
+ * unpaired: no stored booked segment and no reserved segment awaiting conversion took them.
  * Delegates payload construction to ItineraryWithActivities.createBookedActivitySegment
  * so initial-create and sync paths emit identical segments.
  */
@@ -27,17 +27,9 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
     )
 
     override suspend fun execute(params: Params): ResponseModelBase {
-        val existingActivityKeys = params.timeline.tripProfile?.segments
-            ?.mapNotNull { segment -> ActivityIdFormat.matchKey(segment.additionalData?.activityId) }
-            ?.toSet()
-            ?: emptySet()
-
-        val missingItems = params.itinerary.tripItems
-            ?.filter { item ->
-                val key = ActivityIdFormat.matchKey(item.activityId)
-                key != null && key !in existingActivityKeys
-            }
-            ?: emptyList()
+        val missingItems = BookedActivityPairing
+            .plan(params.itinerary.tripItems, params.timeline.tripProfile?.segments)
+            .missingItems
 
         if (missingItems.isEmpty()) {
             return ResponseModelBase()
