@@ -369,6 +369,7 @@ private class ActivityListingUi(
     }
 
     private fun showTimeSelectionBottomSheet(activity: TourProduct) {
+        binding.searchBar.hideKeyboard()
         sheets.timeLoadingText = null
         sheets.timeRequest = ActivityTimeSelectionRequest(
             mode = ActivityTimeSelectionMode.Tour(
