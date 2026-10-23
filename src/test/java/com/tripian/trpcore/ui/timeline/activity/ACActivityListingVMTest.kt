@@ -245,7 +245,7 @@ class ACActivityListingVMTest {
     }
 
     @Test
-    fun `test needsListingInitialization is false for an equal copy of previous args`() {
+    fun `test needsListingInitialization is true for a new args instance with equal values`() {
         val plan = planData()
         val previous = ActivityListingArgs(
             planData = plan,
@@ -260,7 +260,20 @@ class ACActivityListingVMTest {
             tripWideExcludedActivityIds = emptyList()
         )
 
-        assertFalse(needsListingInitialization(previous, incoming))
+        assertTrue(needsListingInitialization(previous, incoming))
+    }
+
+    @Test
+    fun `test needsListingInitialization is false for the same instance after its planData mutated`() {
+        val args = ActivityListingArgs(
+            planData = planData(dayIndex = 0),
+            tripHash = "hash",
+            plannedActivityIdsByDay = emptyMap(),
+            tripWideExcludedActivityIds = emptyList()
+        )
+        args.planData.selectedDayIndex = 2
+
+        assertFalse(needsListingInitialization(args, args))
     }
 
     @Test

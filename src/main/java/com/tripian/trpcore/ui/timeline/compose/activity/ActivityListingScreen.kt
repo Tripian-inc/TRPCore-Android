@@ -104,9 +104,14 @@ internal fun ActivityListingScreen(
     }
 }
 
-/** True when [incoming] differs from the arguments the listing was last initialized with. */
-internal fun needsListingInitialization(initializedArgs: Any?, incoming: ActivityListingArgs): Boolean =
-    initializedArgs != incoming
+/**
+ * True when [incoming] is not the instance the listing was last initialized with; every
+ * navigation builds a new args object while recomposition hands back the same one.
+ */
+internal fun needsListingInitialization(
+    initializedArgs: ActivityListingArgs?,
+    incoming: ActivityListingArgs
+): Boolean = initializedArgs !== incoming
 
 /** Which of the listing's sheets is open, kept as Compose state so the sheets survive recomposition. */
 private class ActivityListingSheetState {

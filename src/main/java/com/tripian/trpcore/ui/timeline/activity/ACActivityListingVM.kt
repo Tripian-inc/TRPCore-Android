@@ -16,6 +16,7 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
+import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
 import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
@@ -169,9 +170,9 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Launch arguments of the Compose route the listing was last initialized with;
-     * compared on entry to tell a re-entry with new arguments from a recomposition.
+     * compared by identity on entry to tell a new navigation from a recomposition.
      */
-    internal var initializedArgs: Any? = null
+    internal var initializedArgs: ActivityListingArgs? = null
 
     fun initialize(
         planData: AddPlanData,

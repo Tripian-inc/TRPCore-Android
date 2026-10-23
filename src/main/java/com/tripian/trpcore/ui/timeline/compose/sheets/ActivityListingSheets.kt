@@ -208,16 +208,20 @@ private class ActivityFilterEditor(
         updateDurationLabels()
     }
 
+    /** Restores the default filter, clamped to the current slider bounds. */
     fun reset() {
-        filter = ActivityFilterData.default()
-        binding.sliderPrice.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_PRICE,
-            ActivityFilterData.DEFAULT_MAX_PRICE
+        val priceFrom = binding.sliderPrice.valueFrom
+        val priceTo = binding.sliderPrice.valueTo
+        val durationFrom = binding.sliderDuration.valueFrom
+        val durationTo = binding.sliderDuration.valueTo
+        filter = ActivityFilterData(
+            minPrice = ActivityFilterData.DEFAULT_MIN_PRICE.coerceIn(priceFrom, priceTo),
+            maxPrice = ActivityFilterData.DEFAULT_MAX_PRICE.coerceIn(priceFrom, priceTo),
+            minDuration = ActivityFilterData.DEFAULT_MIN_DURATION.coerceIn(durationFrom, durationTo),
+            maxDuration = ActivityFilterData.DEFAULT_MAX_DURATION.coerceIn(durationFrom, durationTo)
         )
-        binding.sliderDuration.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_DURATION,
-            ActivityFilterData.DEFAULT_MAX_DURATION
-        )
+        binding.sliderPrice.values = listOf(filter.minPrice, filter.maxPrice)
+        binding.sliderDuration.values = listOf(filter.minDuration, filter.maxDuration)
         updatePriceLabels()
         updateDurationLabels()
     }
