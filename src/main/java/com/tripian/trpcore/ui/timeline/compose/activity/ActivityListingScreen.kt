@@ -352,8 +352,14 @@ private class ActivityListingUi(
 
     private fun setupClickListeners() {
         binding.imBack.setOnClickListener { navigator.back() }
-        binding.btnFilters.setOnClickListener { sheets.filterOpen = true }
-        binding.btnSortBy.setOnClickListener { sheets.sortOpen = true }
+        binding.btnFilters.setOnClickListener {
+            binding.searchBar.hideKeyboard()
+            sheets.filterOpen = true
+        }
+        binding.btnSortBy.setOnClickListener {
+            binding.searchBar.hideKeyboard()
+            sheets.sortOpen = true
+        }
     }
 
     private fun updateEmptyState(isEmpty: Boolean) {
