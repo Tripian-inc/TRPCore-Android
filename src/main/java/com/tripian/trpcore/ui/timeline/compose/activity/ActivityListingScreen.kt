@@ -66,8 +66,9 @@ internal fun ActivityListingScreen(
     val context = LocalContext.current
     val sheets = remember { ActivityListingSheetState() }
 
-    LaunchedEffect(Unit) {
-        if (viewModel.arguments == null) {
+    LaunchedEffect(args) {
+        if (needsListingInitialization(viewModel.initializedArgs, args)) {
+            viewModel.initializedArgs = args
             viewModel.arguments = ACActivityListing.launch(
                 context = context,
                 planData = args.planData,
@@ -102,6 +103,10 @@ internal fun ActivityListingScreen(
         ActivityListingSheets(sheets, viewModel)
     }
 }
+
+/** True when [incoming] differs from the arguments the listing was last initialized with. */
+internal fun needsListingInitialization(initializedArgs: Any?, incoming: ActivityListingArgs): Boolean =
+    initializedArgs != incoming
 
 /** Which of the listing's sheets is open, kept as Compose state so the sheets survive recomposition. */
 private class ActivityListingSheetState {

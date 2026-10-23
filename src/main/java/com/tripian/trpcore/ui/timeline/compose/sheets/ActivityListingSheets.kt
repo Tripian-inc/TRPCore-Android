@@ -223,17 +223,23 @@ private class ActivityFilterEditor(
     }
 
     private fun updatePriceLabels() {
-        binding.tvPriceMin.text = if (filter.minPrice == 0f) {
+        val from = binding.sliderPrice.valueFrom
+        val to = binding.sliderPrice.valueTo
+        val shownMin = filter.minPrice.coerceIn(from, to)
+        val shownMax = filter.maxPrice.coerceIn(from, to)
+        binding.tvPriceMin.text = if (shownMin == 0f) {
             getLanguage(LanguageConst.ADD_PLAN_FILTER_FREE)
         } else {
-            formatPrice(filter.minPrice)
+            formatPrice(shownMin)
         }
-        binding.tvPriceMax.text = formatPrice(filter.maxPrice)
+        binding.tvPriceMax.text = formatPrice(shownMax)
     }
 
     private fun updateDurationLabels() {
-        binding.tvDurationMin.text = FormatUtils.formatDuration(filter.minDuration)
-        binding.tvDurationMax.text = FormatUtils.formatDuration(filter.maxDuration)
+        val from = binding.sliderDuration.valueFrom
+        val to = binding.sliderDuration.valueTo
+        binding.tvDurationMin.text = FormatUtils.formatDuration(filter.minDuration.coerceIn(from, to))
+        binding.tvDurationMax.text = FormatUtils.formatDuration(filter.maxDuration.coerceIn(from, to))
     }
 
     private fun formatPrice(price: Float): String {
