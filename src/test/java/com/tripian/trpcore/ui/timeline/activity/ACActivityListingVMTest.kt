@@ -23,7 +23,10 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Date
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -417,5 +420,56 @@ class ACActivityListingVMTest {
 
         assertNull(capturedParams.last().categoryIds)
         assertEquals(setOf(0), vm.selectedCategoryIndices.value)
+    }
+
+    @Test
+    fun `test stale all response arriving after newer filtered request does not rebuild category strip success`() = runTest {
+        val staleResponse = CompletableDeferred<TourSearchResponse>()
+        val initial = response(facets = listOf(TourFacet().apply {
+            categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+        }))
+        val filtered = response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) }))
+        var call = 0
+        coEvery { searchToursUseCase(any()) } coAnswers {
+            capturedParams += it.invocation.args[0] as SearchToursUseCase.Params
+            when (call++) {
+                0 -> initial
+                1 -> withContext(NonCancellable) { staleResponse.await() }
+                else -> filtered
+            }
+        }
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.loadActivities()
+        vm.onCategorySelectionChanged(setOf(1))
+        staleResponse.complete(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c5", "Stale")) }))
+        )
+
+        assertEquals(3, capturedParams.size)
+        assertNull(capturedParams[1].categoryIds)
+        assertEquals("c1", capturedParams[2].categoryIds)
+        assertEquals(listOf("c1", "c2"), vm.getFacetCategoryItems().drop(1).map { it.id })
+        assertEquals(setOf(1), vm.selectedCategoryIndices.value)
+    }
+
+    @Test
+    fun `test rebuild re-emits selected category indices success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })),
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c2", "Tours"), facetCategory("c3", "Food"))
+            }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        val emissions = mutableListOf<Set<Int>>()
+        vm.selectedCategoryIndices.observeForever { emissions += it }
+        emissions.clear()
+
+        vm.loadActivities()
+
+        assertEquals(listOf(setOf(0)), emissions)
     }
 }

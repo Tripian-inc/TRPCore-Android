@@ -545,7 +545,7 @@ class ACActivityListingVM @Inject constructor(
         if (chips.isEmpty()) return
 
         val current = _facetCategories.value.orEmpty()
-        if (chips.map { it.id to it.label } != current.map { it.id to it.label }) {
+        if (chips.map { Triple(it.id, it.label, it.key) } != current.map { Triple(it.id, it.label, it.key) }) {
             _facetCategories.value = chips
         }
         selectedCategoryIds = reconcileCategorySelection(
