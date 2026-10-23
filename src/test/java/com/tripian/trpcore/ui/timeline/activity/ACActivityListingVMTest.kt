@@ -4,6 +4,8 @@ import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.TaskExecutor
 import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.pois.model.Coordinate
+import com.tripian.one.api.tour.model.TourFacet
+import com.tripian.one.api.tour.model.TourFacetCategory
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.one.api.tour.model.TourSearchData
 import com.tripian.one.api.tour.model.TourSearchResponse
@@ -70,16 +72,35 @@ class ACActivityListingVMTest {
     }
 
     private fun stubResponse(products: List<TourProduct>, total: Int) {
+        stubResponses(response(products, total))
+    }
+
+    private fun response(
+        products: List<TourProduct> = emptyList(),
+        total: Int = 0,
+        facets: List<TourFacet>? = null
+    ): TourSearchResponse = TourSearchResponse().apply {
+        data = TourSearchData().apply {
+            this.products = products
+            this.total = total
+            this.facets = facets
+        }
+    }
+
+    private fun facetCategory(id: String, label: String): TourFacetCategory =
+        TourFacetCategory().apply {
+            this.id = id
+            this.label = label
+        }
+
+    /** Scripts one [TourSearchResponse] per call; the last one repeats once exhausted. */
+    private fun stubResponses(vararg responses: TourSearchResponse) {
+        val queue = responses.toMutableList()
         coEvery { searchToursUseCase(any()) } coAnswers {
             @Suppress("UNCHECKED_CAST")
             val params = it.invocation.args[0] as SearchToursUseCase.Params
             capturedParams += params
-            TourSearchResponse().apply {
-                data = TourSearchData().apply {
-                    this.products = products
-                    this.total = total
-                }
-            }
+            if (queue.size > 1) queue.removeAt(0) else queue.first()
         }
     }
 
@@ -247,5 +268,154 @@ class ACActivityListingVMTest {
 
         assertEquals(3, capturedParams.size)
         assertEquals(0, capturedParams[2].offset)
+    }
+
+    @Test
+    fun `test second page zero response with all selected replaces category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })),
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c2", "Tours"), facetCategory("c3", "Food"))
+            }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        assertEquals(listOf("c1"), vm.getFacetCategoryItems().drop(1).map { it.id })
+
+        vm.loadActivities()
+
+        assertEquals(listOf("c2", "c3"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test response for a selected category does not change category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+            })),
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.onCategorySelectionChanged(setOf(1))
+
+        assertEquals("c1", capturedParams.last().categoryIds)
+        assertEquals(listOf("c1", "c2"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test empty facets list keeps previous category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })),
+            response(facets = emptyList())
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.loadActivities()
+
+        assertEquals(listOf("c1"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test facet with empty categories keeps previous category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })),
+            response(facets = listOf(TourFacet().apply { categories = emptyList() }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.loadActivities()
+
+        assertEquals(listOf("c1"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test pagination response never rebuilds category strip success`() = runTest {
+        val firstPage = (1..10).map { product(it.toString()) }
+        val secondPage = (11..20).map { product(it.toString()) }
+        stubResponses(
+            response(
+                products = firstPage,
+                total = 25,
+                facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })
+            ),
+            response(
+                products = secondPage,
+                total = 25,
+                facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) })
+            )
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.loadMoreActivities()
+
+        assertEquals(listOf("c1"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test reconcileCategorySelection drops ids no longer available success`() {
+        val result = ACActivityListingVM.reconcileCategorySelection(
+            selectedIds = setOf("c1", "c2"),
+            availableIds = listOf("c2", "c3")
+        )
+
+        assertEquals(setOf("c2"), result)
+    }
+
+    @Test
+    fun `test reconcileCategorySelection returns empty when none remain success`() {
+        val result = ACActivityListingVM.reconcileCategorySelection(
+            selectedIds = setOf("c1"),
+            availableIds = listOf("c9")
+        )
+
+        assertEquals(emptySet<String>(), result)
+    }
+
+    @Test
+    fun `test selecting single category sends its id success`() = runTest {
+        stubResponses(response(facets = listOf(TourFacet().apply {
+            categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+        })))
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.onCategorySelectionChanged(setOf(1))
+
+        assertEquals("c1", capturedParams.last().categoryIds)
+        assertEquals(setOf(1), vm.selectedCategoryIndices.value)
+    }
+
+    @Test
+    fun `test selecting multiple categories sends comma separated ids in selection order success`() = runTest {
+        stubResponses(response(facets = listOf(TourFacet().apply {
+            categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+        })))
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.onCategorySelectionChanged(setOf(2, 1))
+
+        assertEquals("c2,c1", capturedParams.last().categoryIds)
+        assertEquals(setOf(1, 2), vm.selectedCategoryIndices.value)
+    }
+
+    @Test
+    fun `test selecting the all chip sends null category ids success`() = runTest {
+        stubResponses(response(facets = listOf(TourFacet().apply {
+            categories = listOf(facetCategory("c1", "Museums"))
+        })))
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        vm.onCategorySelectionChanged(setOf(1))
+
+        vm.onCategorySelectionChanged(setOf(0))
+
+        assertNull(capturedParams.last().categoryIds)
+        assertEquals(setOf(0), vm.selectedCategoryIndices.value)
     }
 }
