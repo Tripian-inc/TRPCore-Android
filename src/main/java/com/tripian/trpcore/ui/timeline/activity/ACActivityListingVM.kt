@@ -1,7 +1,5 @@
 package com.tripian.trpcore.ui.timeline.activity
 
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.tripian.one.api.tour.model.TourFacet
@@ -128,7 +126,7 @@ class ACActivityListingVM @Inject constructor(
     private var currentSearchQuery: String = ""
     private var allActivities: MutableList<TourProduct> = mutableListOf()
 
-    /** Total result count reported by the API for the current query; shown when no local narrowing is active. */
+    /** Total result count reported by the API for the current query. */
     private var apiTotal: Int = 0
 
     /** Backend returns at most this many tours per call. */
@@ -159,9 +157,6 @@ class ACActivityListingVM @Inject constructor(
             if (_loadingMore.value != value) _loadingMore.value = value
         }
     private var fetchJob: Job? = null
-
-    /** True when the loaded list was fetched with search / filter / sort applied by the API. */
-    private var serverNarrowingActive: Boolean = false
 
     // =====================
     // INITIALIZATION
@@ -201,40 +196,14 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Title search; the search bar debounces typing. Runs locally when every
-     * product is already loaded, otherwise the API applies it.
+     * Keyword search applied by the API; the search bar debounces typing. A blank
+     * query re-fetches the unfiltered list.
      */
     fun search(query: String) {
         if (currentSearchQuery == query) return
         currentSearchQuery = query
-        if (canNarrowLocally()) {
-            applyAllFilters()
-            _scrollToTop.value = true
-        } else {
-            loadActivities(useSkeleton = true)
-        }
+        loadActivities(useSkeleton = true)
     }
-
-    /**
-     * Search, price/duration filter and sort run locally only when every product of
-     * the unfiltered query is already loaded; otherwise the API applies them and
-     * pagination continues on that query.
-     */
-    private fun applyNarrowingChange() {
-        if (canNarrowLocally()) {
-            applyAllFiltersWithSkeleton()
-        } else {
-            loadActivities(useSkeleton = true)
-        }
-    }
-
-    private fun canNarrowLocally(): Boolean =
-        !serverNarrowingActive && apiTotal > 0 && allActivities.size >= apiTotal
-
-    private fun hasServerNarrowing(): Boolean =
-        currentSearchQuery.isNotBlank() ||
-            (_currentFilter.value?.hasActiveFilters() == true) ||
-            (_currentSort.value ?: SortOption.DEFAULT) != SortOption.POPULARITY
 
     // =====================
     // CATEGORY SELECTION
@@ -292,7 +261,7 @@ class ACActivityListingVM @Inject constructor(
 
     fun applyFilter(filter: ActivityFilterData) {
         _currentFilter.value = filter
-        applyNarrowingChange()
+        loadActivities(useSkeleton = true)
     }
 
     fun getCurrentFilter(): ActivityFilterData =
@@ -308,7 +277,7 @@ class ACActivityListingVM @Inject constructor(
 
     fun applySort(sort: SortOption) {
         _currentSort.value = sort
-        applyNarrowingChange()
+        loadActivities(useSkeleton = true)
     }
 
     fun getCurrentSort(): SortOption = _currentSort.value ?: SortOption.DEFAULT
@@ -318,9 +287,8 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Fetches the first page of tours for the city and resets pagination. Category
-     * chips always go to the API; search, price / duration and sort go to the API as
-     * well whenever any of them is active at fetch time (see [serverNarrowingActive]).
+     * Fetches the first page of tours for the city and resets pagination. Search,
+     * category, price / duration filter and sort are always applied by the API.
      * Further pages are appended by [loadMoreActivities] until every product the API
      * counts has been loaded. minPrice=1 excludes free tours.
      *
@@ -332,7 +300,6 @@ class ACActivityListingVM @Inject constructor(
 
         fetchJob?.cancel()
         isLoadingMore = false
-        serverNarrowingActive = hasServerNarrowing()
 
         if (useSkeleton) {
             useSkeletonForNextLoad = true
@@ -357,7 +324,6 @@ class ACActivityListingVM @Inject constructor(
     private suspend fun fetchPage(offset: Int, isPagination: Boolean, scrollToTop: Boolean) {
         val filter = _currentFilter.value ?: ActivityFilterData.default()
         val sort = _currentSort.value ?: SortOption.DEFAULT
-        val useServerNarrowing = serverNarrowingActive
 
         val result = runCatching {
             searchToursUseCase(
@@ -365,23 +331,23 @@ class ACActivityListingVM @Inject constructor(
                     cityId = cityId,
                     lat = cityLat,
                     lng = cityLng,
-                    keywords = currentSearchQuery.trim().ifBlank { null }.takeIf { useServerNarrowing },
+                    keywords = currentSearchQuery.trim().ifBlank { null },
                     tagIds = null,
                     categoryIds = buildCategoryIds(),
                     providerId = 15,
                     date = selectedDateString,
                     to = selectedDateString,
                     currency = getCurrency(),
-                    minPrice = if (useServerNarrowing) filter.minPrice.toInt().coerceAtLeast(1) else 1,
+                    minPrice = filter.minPrice.toInt().coerceAtLeast(1),
                     maxPrice = filter.maxPrice.toInt()
-                        .takeIf { useServerNarrowing && filter.maxPrice != ActivityFilterData.DEFAULT_MAX_PRICE },
+                        .takeIf { filter.maxPrice != ActivityFilterData.DEFAULT_MAX_PRICE },
                     minDuration = filter.minDuration.toInt()
-                        .takeIf { useServerNarrowing && filter.minDuration != ActivityFilterData.DEFAULT_MIN_DURATION },
+                        .takeIf { filter.minDuration != ActivityFilterData.DEFAULT_MIN_DURATION },
                     maxDuration = filter.maxDuration.toInt()
-                        .takeIf { useServerNarrowing && filter.maxDuration != ActivityFilterData.DEFAULT_MAX_DURATION },
+                        .takeIf { filter.maxDuration != ActivityFilterData.DEFAULT_MAX_DURATION },
                     adults = (planData?.travelers ?: 1).coerceAtLeast(1),
-                    sortingBy = if (useServerNarrowing) sort.sortingBy else SortOption.POPULARITY.sortingBy,
-                    sortingType = if (useServerNarrowing) sort.sortingType else SortOption.POPULARITY.sortingType,
+                    sortingBy = sort.sortingBy,
+                    sortingType = sort.sortingType,
                     offset = offset,
                     limit = fetchLimit
                 )
@@ -403,7 +369,8 @@ class ACActivityListingVM @Inject constructor(
                 nextOffset = offset + products.size
                 hasMorePages = newProducts.isNotEmpty() && allActivities.size < apiTotal
                 updateFacetsFromResponse(response.data?.facets)
-                applyAllFilters()
+                _activities.value = allActivities.toList()
+                _activityCount.value = apiTotal
                 if (scrollToTop) _scrollToTop.value = true
             }
             .onFailure { error ->
@@ -419,90 +386,6 @@ class ACActivityListingVM @Inject constructor(
                     _activityCount.value = 0
                 }
             }
-    }
-
-    // =====================
-    // LOCAL FILTER PIPELINE
-    // =====================
-
-    /** Skeleton flash for user-triggered local list recomputes. */
-    private val skeletonHandler = Handler(Looper.getMainLooper())
-    private val skeletonShowMs: Long = 350L
-
-    /**
-     * Runs the local filter pipeline behind a short skeleton flash, then
-     * scrolls the list back to the top. Used by every user-triggered list
-     * change (filter / sort / category).
-     */
-    private fun applyAllFiltersWithSkeleton() {
-        skeletonHandler.removeCallbacksAndMessages(null)
-        useSkeletonForNextLoad = true
-        suppressNextIsLoadingLoader = true
-        _isLoading.value = true
-        skeletonHandler.postDelayed({
-            applyAllFilters()
-            _isLoading.value = false
-            _scrollToTop.value = true
-        }, skeletonShowMs)
-    }
-
-    /**
-     * Publishes the list. When the API already applied search / filter / sort the
-     * loaded pages are shown as they are with the API total as the count. Otherwise
-     * the local pipeline (price → duration → title search → sort) runs on
-     * [allActivities], and the count is the API total unless a local narrowing
-     * reduced the visible list.
-     */
-    private fun applyAllFilters() {
-        if (serverNarrowingActive) {
-            _activities.value = allActivities.toList()
-            _activityCount.value = apiTotal
-            return
-        }
-        val byPriceDuration = allActivities.filter { tourMatchesFilter(it) }
-        val bySearch = applyTitleSearch(byPriceDuration)
-        val sorted = sortActivities(bySearch)
-        _activities.value = sorted
-        val hasLocalNarrowing = currentSearchQuery.isNotBlank() ||
-            (_currentFilter.value?.hasActiveFilters() == true)
-        _activityCount.value = if (hasLocalNarrowing) sorted.size else apiTotal
-    }
-
-    private fun applyTitleSearch(list: List<TourProduct>): List<TourProduct> {
-        val q = currentSearchQuery.trim()
-        if (q.isBlank()) return list
-        return list.filter { it.title?.contains(q, ignoreCase = true) == true }
-    }
-
-    /**
-     * The default filter carries the slider's own bounds, not a user choice, so it
-     * must let every tour through — a tour longer than the default 24h ceiling is
-     * still part of an unfiltered list.
-     */
-    private fun tourMatchesFilter(tour: TourProduct): Boolean {
-        val filter = _currentFilter.value ?: return true
-        if (!filter.hasActiveFilters()) return true
-
-        val price = tour.currentPrice ?: tour.price
-        val priceOk = price?.let {
-            it >= filter.minPrice && it <= filter.maxPrice
-        } ?: true
-        val duration = tour.duration
-        val durationOk = duration?.let {
-            it >= filter.minDuration && it <= filter.maxDuration
-        } ?: true
-        return priceOk && durationOk
-    }
-
-    private fun sortActivities(list: List<TourProduct>): List<TourProduct> {
-        val sort = _currentSort.value ?: SortOption.DEFAULT
-        return when (sort) {
-            SortOption.POPULARITY -> list
-            SortOption.RATING -> list.sortedByDescending { it.rating ?: 0.0 }
-            SortOption.PRICE_LOW_TO_HIGH -> list.sortedBy { it.currentPrice ?: it.price ?: Double.MAX_VALUE }
-            SortOption.DURATION_SHORT_TO_LONG -> list.sortedBy { it.duration ?: Double.MAX_VALUE }
-            SortOption.DURATION_LONG_TO_SHORT -> list.sortedByDescending { it.duration ?: Double.MIN_VALUE }
-        }
     }
 
     // =====================
@@ -672,13 +555,4 @@ class ACActivityListingVM @Inject constructor(
     fun getSdkLanguage(): String = appLanguage
 
     fun getCurrency(): String = TRPCore.core.appConfig.appCurrency
-
-    // =====================
-    // CLEANUP
-    // =====================
-
-    override fun onDestroy() {
-        skeletonHandler.removeCallbacksAndMessages(null)
-        super.onDestroy()
-    }
 }
