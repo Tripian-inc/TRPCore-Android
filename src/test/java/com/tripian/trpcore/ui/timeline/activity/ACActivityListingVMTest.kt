@@ -1,5 +1,6 @@
 package com.tripian.trpcore.ui.timeline.activity
 
+import android.text.TextUtils
 import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.TaskExecutor
 import com.tripian.one.api.cities.model.City
@@ -24,7 +25,6 @@ import com.tripian.trpcore.ui.timeline.compose.activity.needsListingInitializati
 import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.Strings
-import android.text.TextUtils
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
