@@ -38,7 +38,7 @@ apply plugin: 'kotlin-parcelize'
 apply plugin: 'maven-publish'
 
 group = "com.github.Tripian-inc"
-version = "civitatis-2.0.3"
+version = "civitatis-2.0.4"
 
 android {
     namespace 'com.tripian.trpcore'
