@@ -197,7 +197,10 @@ class SearchBarView @JvmOverloads constructor(
         }
     }
 
-    private fun hideKeyboard() {
+    /**
+     * Hides the soft keyboard and clears the input focus.
+     */
+    fun hideKeyboard() {
         val inputMethodManager =
             context.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
         inputMethodManager?.hideSoftInputFromWindow(windowToken, 0)
