@@ -54,8 +54,8 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
             }
         }
 
-        setupUI()
         setupSliders()
+        setupUI()
         setupListeners()
     }
 
@@ -154,14 +154,23 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         }
 
         binding.btnConfirm.setOnClickListener {
-            onFilterConfirmedListener?.invoke(currentFilter)
+            onFilterConfirmedListener?.invoke(
+                currentFilter.withBoundsAsDefaults(
+                    priceFrom = binding.sliderPrice.valueFrom,
+                    priceTo = binding.sliderPrice.valueTo,
+                    durationFrom = binding.sliderDuration.valueFrom,
+                    durationTo = binding.sliderDuration.valueTo
+                )
+            )
             dismiss()
         }
     }
 
     private fun updatePriceLabels() {
-        val minPrice = currentFilter.minPrice
-        val maxPrice = currentFilter.maxPrice
+        val from = binding.sliderPrice.valueFrom
+        val to = binding.sliderPrice.valueTo
+        val minPrice = currentFilter.minPrice.coerceIn(from, to)
+        val maxPrice = currentFilter.maxPrice.coerceIn(from, to)
 
         binding.tvPriceMin.text = if (minPrice == 0f) {
             getLanguage(LANG_KEY_FREE)
@@ -173,8 +182,10 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
     }
 
     private fun updateDurationLabels() {
-        binding.tvDurationMin.text = FormatUtils.formatDuration(currentFilter.minDuration)
-        binding.tvDurationMax.text = FormatUtils.formatDuration(currentFilter.maxDuration)
+        val from = binding.sliderDuration.valueFrom
+        val to = binding.sliderDuration.valueTo
+        binding.tvDurationMin.text = FormatUtils.formatDuration(currentFilter.minDuration.coerceIn(from, to))
+        binding.tvDurationMax.text = FormatUtils.formatDuration(currentFilter.maxDuration.coerceIn(from, to))
     }
 
     private fun formatPrice(price: Float): String {
@@ -194,17 +205,16 @@ class ActivityFilterBottomSheet : BaseSimpleBottomSheet<BottomSheetActivityFilte
         }
     }
 
+    /** Moves every slider thumb to its bound; Confirm maps that back to the default filter. */
     private fun resetFilters() {
-        currentFilter = ActivityFilterData.default()
-
-        binding.sliderPrice.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_PRICE,
-            ActivityFilterData.DEFAULT_MAX_PRICE
+        currentFilter = ActivityFilterData(
+            minPrice = binding.sliderPrice.valueFrom,
+            maxPrice = binding.sliderPrice.valueTo,
+            minDuration = binding.sliderDuration.valueFrom,
+            maxDuration = binding.sliderDuration.valueTo
         )
-        binding.sliderDuration.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_DURATION,
-            ActivityFilterData.DEFAULT_MAX_DURATION
-        )
+        binding.sliderPrice.values = listOf(currentFilter.minPrice, currentFilter.maxPrice)
+        binding.sliderDuration.values = listOf(currentFilter.minDuration, currentFilter.maxDuration)
 
         updatePriceLabels()
         updateDurationLabels()

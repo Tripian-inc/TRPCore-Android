@@ -43,6 +43,22 @@ data class ActivityFilterData(
     }
 
     /**
+     * Maps every value sitting at or beyond its slider bound back to its default, so
+     * a slider left at its full range applies no price / duration filter.
+     */
+    internal fun withBoundsAsDefaults(
+        priceFrom: Float,
+        priceTo: Float,
+        durationFrom: Float,
+        durationTo: Float
+    ): ActivityFilterData = ActivityFilterData(
+        minPrice = if (minPrice <= priceFrom) DEFAULT_MIN_PRICE else minPrice,
+        maxPrice = if (maxPrice >= priceTo) DEFAULT_MAX_PRICE else maxPrice,
+        minDuration = if (minDuration <= durationFrom) DEFAULT_MIN_DURATION else minDuration,
+        maxDuration = if (maxDuration >= durationTo) DEFAULT_MAX_DURATION else maxDuration
+    )
+
+    /**
      * Count number of active filters
      * Price filter counts as 1 if either min or max is changed
      * Duration filter counts as 1 if either min or max is changed

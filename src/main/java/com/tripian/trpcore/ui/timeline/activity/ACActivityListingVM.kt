@@ -104,7 +104,10 @@ class ACActivityListingVM @Inject constructor(
     private val _facetCategories = MutableLiveData<List<TourFacetCategory>>(emptyList())
     val facetCategories: LiveData<List<TourFacetCategory>> = _facetCategories
 
-    /** Bounds for the price / duration filter sliders; null falls back to the sheet's defaults. */
+    /**
+     * Bounds for the price / duration filter sliders, seeded once per listing by the
+     * first page-0 response with usable bounds; null falls back to the sheet's defaults.
+     */
     private val _priceRangeFacet = MutableLiveData<TourFacetPriceRange?>(null)
     val priceRangeFacet: LiveData<TourFacetPriceRange?> = _priceRangeFacet
 
@@ -421,7 +424,11 @@ class ACActivityListingVM @Inject constructor(
                 apiTotal = response.data?.total ?: allActivities.size
                 nextOffset = offset + products.size
                 hasMorePages = newProducts.isNotEmpty() && allActivities.size < apiTotal
-                updateFacetsFromResponse(response.data?.facets, canRebuildCategoryStrip)
+                updateFacetsFromResponse(
+                    facets = response.data?.facets,
+                    isFirstPage = !isPagination && offset == 0,
+                    rebuildCategoryStrip = canRebuildCategoryStrip
+                )
                 _activities.value = allActivities.toList()
                 _activityCount.value = apiTotal
                 if (scrollToTop) _scrollToTop.value = true
@@ -548,15 +555,32 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Publishes the first facet entry's price / duration bounds to the filter
-     * sliders and, when [rebuildCategoryStrip] is true, rebuilds the chip strip
-     * from its categories.
+     * Seeds the filter slider bounds from the first facet entry when [isFirstPage] is
+     * true and, when [rebuildCategoryStrip] is true, rebuilds the chip strip from its
+     * categories.
      */
-    private fun updateFacetsFromResponse(facets: List<TourFacet>?, rebuildCategoryStrip: Boolean) {
+    private fun updateFacetsFromResponse(
+        facets: List<TourFacet>?,
+        isFirstPage: Boolean,
+        rebuildCategoryStrip: Boolean
+    ) {
         val facet = facets?.firstOrNull()
-        _priceRangeFacet.value = facet?.priceRange?.takeIf { it.hasUsableBounds() }
-        _durationRangeFacet.value = facet?.durationRange?.takeIf { it.hasUsableBounds() }
+        if (isFirstPage) seedRangeFacets(facet)
         if (rebuildCategoryStrip) rebuildCategoryStrip(facet?.categories)
+    }
+
+    /**
+     * Publishes each usable price / duration range of [facet] that is not seeded yet;
+     * a seeded range is kept until [resetListingState] clears it, so narrowing filters
+     * never shrink the slider bounds.
+     */
+    private fun seedRangeFacets(facet: TourFacet?) {
+        if (_priceRangeFacet.value == null) {
+            facet?.priceRange?.takeIf { it.hasUsableBounds() }?.let { _priceRangeFacet.value = it }
+        }
+        if (_durationRangeFacet.value == null) {
+            facet?.durationRange?.takeIf { it.hasUsableBounds() }?.let { _durationRangeFacet.value = it }
+        }
     }
 
     /**

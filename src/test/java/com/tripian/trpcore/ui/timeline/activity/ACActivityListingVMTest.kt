@@ -1,5 +1,6 @@
 package com.tripian.trpcore.ui.timeline.activity
 
+import android.text.TextUtils
 import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.TaskExecutor
 import com.tripian.one.api.cities.model.City
@@ -27,7 +28,9 @@ import com.tripian.trpcore.util.Strings
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import io.mockk.slot
+import io.mockk.unmockkStatic
 import java.util.Date
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -60,6 +63,8 @@ class ACActivityListingVMTest {
 
     @Before
     fun setUp() {
+        mockkStatic(TextUtils::class)
+        every { TextUtils.isEmpty(any()) } answers { (it.invocation.args[0] as? CharSequence).isNullOrEmpty() }
         Dispatchers.setMain(UnconfinedTestDispatcher())
         ArchTaskExecutor.getInstance().setDelegate(object : TaskExecutor() {
             override fun executeOnDiskIO(runnable: Runnable) = runnable.run()
@@ -80,6 +85,7 @@ class ACActivityListingVMTest {
     fun tearDown() {
         ArchTaskExecutor.getInstance().setDelegate(null)
         Dispatchers.resetMain()
+        unmockkStatic(TextUtils::class)
     }
 
     private fun stubResponse(products: List<TourProduct>, total: Int) {
@@ -753,5 +759,220 @@ class ACActivityListingVMTest {
         assertEquals(45, vm.durationRangeFacet.value?.minimumMinutes)
         assertEquals(240, vm.durationRangeFacet.value?.maximumMinutes)
         assertEquals(ActivityFilterData.default(), vm.getCurrentFilter())
+    }
+
+    private fun responseWithRanges(
+        products: List<TourProduct>,
+        total: Int,
+        minPrice: Int,
+        maxPrice: Int,
+        minMinutes: Int,
+        maxMinutes: Int
+    ): TourSearchResponse = responseWithRanges(minPrice, maxPrice, minMinutes, maxMinutes).apply {
+        data?.products = products
+        data?.total = total
+    }
+
+    @Test
+    fun `test facet ranges seeded by first response are kept on filtered and paginated responses success`() = runTest {
+        var call = 0
+        coEvery { searchToursUseCase(any()) } coAnswers {
+            capturedParams += it.invocation.args[0] as SearchToursUseCase.Params
+            when (call++) {
+                0 -> responseWithRanges(minPrice = 10, maxPrice = 500, minMinutes = 30, maxMinutes = 600)
+                1 -> responseWithRanges(
+                    products = listOf(product("p1")),
+                    total = 2,
+                    minPrice = 50,
+                    maxPrice = 200,
+                    minMinutes = 60,
+                    maxMinutes = 180
+                )
+                else -> responseWithRanges(
+                    products = listOf(product("p2")),
+                    total = 2,
+                    minPrice = 70,
+                    maxPrice = 120,
+                    minMinutes = 90,
+                    maxMinutes = 120
+                )
+            }
+        }
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "hash")
+
+        vm.applyFilter(ActivityFilterData(minPrice = 50f, maxPrice = 200f, minDuration = 60f, maxDuration = 180f))
+        vm.loadMoreActivities()
+
+        assertEquals(3, capturedParams.size)
+        assertEquals(0, capturedParams[1].offset)
+        assertEquals(1, capturedParams[2].offset)
+        assertEquals(10, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(500, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(30, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(600, vm.durationRangeFacet.value?.maximumMinutes)
+    }
+
+    @Test
+    fun `test second initialize seeds facet ranges from its first response after a narrowing filter success`() = runTest {
+        var call = 0
+        coEvery { searchToursUseCase(any()) } coAnswers {
+            capturedParams += it.invocation.args[0] as SearchToursUseCase.Params
+            when (call++) {
+                0 -> responseWithRanges(minPrice = 10, maxPrice = 500, minMinutes = 30, maxMinutes = 600)
+                1 -> responseWithRanges(minPrice = 50, maxPrice = 200, minMinutes = 60, maxMinutes = 180)
+                else -> responseWithRanges(minPrice = 5, maxPrice = 900, minMinutes = 15, maxMinutes = 900)
+            }
+        }
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        vm.applyFilter(ActivityFilterData(minPrice = 50f, maxPrice = 200f, minDuration = 60f, maxDuration = 180f))
+        assertEquals(500, vm.priceRangeFacet.value?.maximum?.amount)
+
+        vm.initialize(planData(), tripHash = "trip-2")
+
+        assertEquals(3, capturedParams.size)
+        assertEquals(5, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(900, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(15, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(900, vm.durationRangeFacet.value?.maximumMinutes)
+    }
+
+    @Test
+    fun `test first response without usable bounds leaves ranges null until a later page zero response seeds them success`() = runTest {
+        stubResponses(
+            responseWithRanges(minPrice = 50, maxPrice = 50, minMinutes = 0, maxMinutes = 0),
+            responseWithRanges(minPrice = 20, maxPrice = 300, minMinutes = 45, maxMinutes = 240),
+            responseWithRanges(minPrice = 60, maxPrice = 100, minMinutes = 60, maxMinutes = 90)
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "hash")
+
+        assertNull(vm.priceRangeFacet.value)
+        assertNull(vm.durationRangeFacet.value)
+
+        vm.applySort(SortOption.RATING)
+
+        assertEquals(20, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(300, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(45, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(240, vm.durationRangeFacet.value?.maximumMinutes)
+
+        vm.applyFilter(ActivityFilterData(minPrice = 60f, maxPrice = 100f))
+
+        assertEquals(3, capturedParams.size)
+        assertEquals(300, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(240, vm.durationRangeFacet.value?.maximumMinutes)
+    }
+
+    @Test
+    fun `test paginated response never seeds ranges still null success`() = runTest {
+        var call = 0
+        coEvery { searchToursUseCase(any()) } coAnswers {
+            capturedParams += it.invocation.args[0] as SearchToursUseCase.Params
+            when (call++) {
+                0 -> responseWithRanges(
+                    products = listOf(product("p1")),
+                    total = 2,
+                    minPrice = 50,
+                    maxPrice = 50,
+                    minMinutes = 0,
+                    maxMinutes = 0
+                )
+                else -> responseWithRanges(
+                    products = listOf(product("p2")),
+                    total = 2,
+                    minPrice = 10,
+                    maxPrice = 500,
+                    minMinutes = 30,
+                    maxMinutes = 600
+                )
+            }
+        }
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "hash")
+
+        assertNull(vm.priceRangeFacet.value)
+        assertNull(vm.durationRangeFacet.value)
+
+        vm.loadMoreActivities()
+
+        assertEquals(2, capturedParams.size)
+        assertEquals(1, capturedParams[1].offset)
+        assertNull(vm.priceRangeFacet.value)
+        assertNull(vm.durationRangeFacet.value)
+    }
+
+    @Test
+    fun `test failed response does not seed facet ranges success`() = runTest {
+        coEvery { searchToursUseCase(any()) } throws IllegalStateException("boom")
+        val vm = vm()
+
+        vm.initialize(planData(), tripHash = "hash")
+
+        assertNull(vm.priceRangeFacet.value)
+        assertNull(vm.durationRangeFacet.value)
+        assertEquals(0, vm.activities.value?.size)
+    }
+
+    @Test
+    fun `test duration seeds independently while price bounds stay unusable success`() = runTest {
+        stubResponses(
+            responseWithRanges(minPrice = 50, maxPrice = 50, minMinutes = 30, maxMinutes = 300),
+            responseWithRanges(minPrice = 20, maxPrice = 400, minMinutes = 90, maxMinutes = 600)
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "hash")
+
+        assertNull(vm.priceRangeFacet.value)
+        assertEquals(30, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(300, vm.durationRangeFacet.value?.maximumMinutes)
+
+        vm.applySort(SortOption.RATING)
+
+        assertEquals(20, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(400, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(30, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(300, vm.durationRangeFacet.value?.maximumMinutes)
+    }
+
+    @Test
+    fun `test price seeds independently while duration bounds stay unusable success`() = runTest {
+        stubResponses(
+            responseWithRanges(minPrice = 10, maxPrice = 500, minMinutes = 60, maxMinutes = 60),
+            responseWithRanges(minPrice = 70, maxPrice = 120, minMinutes = 45, maxMinutes = 240)
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "hash")
+
+        assertEquals(10, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(500, vm.priceRangeFacet.value?.maximum?.amount)
+        assertNull(vm.durationRangeFacet.value)
+
+        vm.applySort(SortOption.RATING)
+
+        assertEquals(10, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(500, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(45, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(240, vm.durationRangeFacet.value?.maximumMinutes)
+    }
+
+    @Test
+    fun `test filter confirmed at facet bounds sends default search params success`() = runTest {
+        stubResponse(emptyList(), total = 0)
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        val confirmed = ActivityFilterData(minPrice = 10f, maxPrice = 500f, minDuration = 30f, maxDuration = 600f)
+            .withBoundsAsDefaults(priceFrom = 10f, priceTo = 500f, durationFrom = 30f, durationTo = 600f)
+
+        vm.applyFilter(confirmed)
+
+        assertEquals(ActivityFilterData.default(), confirmed)
+        assertEquals(2, capturedParams.size)
+        val params = capturedParams[1]
+        assertEquals(1, params.minPrice)
+        assertNull(params.maxPrice)
+        assertNull(params.minDuration)
+        assertNull(params.maxDuration)
     }
 }
