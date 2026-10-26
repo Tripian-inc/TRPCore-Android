@@ -677,4 +677,29 @@ class ACActivityListingVMTest {
 
         assertTrue(needsListingInitialization(previous, incoming))
     }
+
+    @Test
+    fun `test second initialize after category selection sends null category ids and rebuilds strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+            })),
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) })),
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c7", "Food"), facetCategory("c8", "Nightlife"))
+            }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        vm.onCategorySelectionChanged(setOf(1))
+        assertEquals("c1", capturedParams.last().categoryIds)
+        val requestsBeforeReinit = capturedParams.size
+
+        vm.initialize(planData(), tripHash = "trip-2")
+
+        assertEquals(requestsBeforeReinit + 1, capturedParams.size)
+        assertNull(capturedParams[requestsBeforeReinit].categoryIds)
+        assertEquals(listOf("c7", "c8"), vm.getFacetCategoryItems().drop(1).map { it.id })
+        assertEquals(setOf(0), vm.selectedCategoryIndices.value)
+    }
 }
