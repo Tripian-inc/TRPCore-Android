@@ -208,32 +208,42 @@ private class ActivityFilterEditor(
         updateDurationLabels()
     }
 
+    /** Restores the default filter, clamped to the current slider bounds. */
     fun reset() {
-        filter = ActivityFilterData.default()
-        binding.sliderPrice.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_PRICE,
-            ActivityFilterData.DEFAULT_MAX_PRICE
+        val priceFrom = binding.sliderPrice.valueFrom
+        val priceTo = binding.sliderPrice.valueTo
+        val durationFrom = binding.sliderDuration.valueFrom
+        val durationTo = binding.sliderDuration.valueTo
+        filter = ActivityFilterData(
+            minPrice = ActivityFilterData.DEFAULT_MIN_PRICE.coerceIn(priceFrom, priceTo),
+            maxPrice = ActivityFilterData.DEFAULT_MAX_PRICE.coerceIn(priceFrom, priceTo),
+            minDuration = ActivityFilterData.DEFAULT_MIN_DURATION.coerceIn(durationFrom, durationTo),
+            maxDuration = ActivityFilterData.DEFAULT_MAX_DURATION.coerceIn(durationFrom, durationTo)
         )
-        binding.sliderDuration.values = listOf(
-            ActivityFilterData.DEFAULT_MIN_DURATION,
-            ActivityFilterData.DEFAULT_MAX_DURATION
-        )
+        binding.sliderPrice.values = listOf(filter.minPrice, filter.maxPrice)
+        binding.sliderDuration.values = listOf(filter.minDuration, filter.maxDuration)
         updatePriceLabels()
         updateDurationLabels()
     }
 
     private fun updatePriceLabels() {
-        binding.tvPriceMin.text = if (filter.minPrice == 0f) {
+        val from = binding.sliderPrice.valueFrom
+        val to = binding.sliderPrice.valueTo
+        val shownMin = filter.minPrice.coerceIn(from, to)
+        val shownMax = filter.maxPrice.coerceIn(from, to)
+        binding.tvPriceMin.text = if (shownMin == 0f) {
             getLanguage(LanguageConst.ADD_PLAN_FILTER_FREE)
         } else {
-            formatPrice(filter.minPrice)
+            formatPrice(shownMin)
         }
-        binding.tvPriceMax.text = formatPrice(filter.maxPrice)
+        binding.tvPriceMax.text = formatPrice(shownMax)
     }
 
     private fun updateDurationLabels() {
-        binding.tvDurationMin.text = FormatUtils.formatDuration(filter.minDuration)
-        binding.tvDurationMax.text = FormatUtils.formatDuration(filter.maxDuration)
+        val from = binding.sliderDuration.valueFrom
+        val to = binding.sliderDuration.valueTo
+        binding.tvDurationMin.text = FormatUtils.formatDuration(filter.minDuration.coerceIn(from, to))
+        binding.tvDurationMax.text = FormatUtils.formatDuration(filter.maxDuration.coerceIn(from, to))
     }
 
     private fun formatPrice(price: Float): String {

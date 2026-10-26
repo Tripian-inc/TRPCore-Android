@@ -14,6 +14,7 @@ import com.tripian.trpcore.domain.model.timeline.SortOption
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivitySegmentUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.SearchToursUseCase
+import com.tripian.trpcore.ui.timeline.compose.nav.ActivityListingArgs
 import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
@@ -162,12 +163,19 @@ class ACActivityListingVM @Inject constructor(
     // INITIALIZATION
     // =====================
 
+    /**
+     * Launch arguments of the Compose route the listing was last initialized with;
+     * compared by identity on entry to tell a new navigation from a recomposition.
+     */
+    internal var initializedArgs: ActivityListingArgs? = null
+
     fun initialize(
         planData: AddPlanData,
         tripHash: String,
         plannedActivityIdsByDay: Map<String, List<String>> = emptyMap(),
         tripWideExcludedActivityIds: List<String> = emptyList()
     ) {
+        resetListingState()
         this.planData = planData
         this.tripHash = tripHash
         this.cityId = planData.selectedCity?.id ?: 0
@@ -189,6 +197,16 @@ class ACActivityListingVM @Inject constructor(
         }
 
         loadActivities()
+    }
+
+    /** Restores the default filter, sort, search query and category selection of a fresh listing. */
+    private fun resetListingState() {
+        _currentFilter.value = ActivityFilterData.default()
+        _currentSort.value = SortOption.DEFAULT
+        currentSearchQuery = ""
+        _selectedCategoryIndices.value = setOf(0)
+        _facetCategories.value = emptyList()
+        categoryStripFrozen = false
     }
 
     // =====================
@@ -506,8 +524,8 @@ class ACActivityListingVM @Inject constructor(
             _durationRangeFacet.value = null
             return
         }
-        _priceRangeFacet.value = facet.priceRange
-        _durationRangeFacet.value = facet.durationRange
+        _priceRangeFacet.value = facet.priceRange?.takeIf { it.hasUsableBounds() }
+        _durationRangeFacet.value = facet.durationRange?.takeIf { it.hasUsableBounds() }
 
         if (categoryStripFrozen) return
         val cats = facet.categories?.filter { it.id != null && it.label != null }
@@ -516,6 +534,18 @@ class ACActivityListingVM @Inject constructor(
             _facetCategories.value = cats
             categoryStripFrozen = true
         }
+    }
+
+    private fun TourFacetPriceRange.hasUsableBounds(): Boolean {
+        val min = minimum?.amount ?: return false
+        val max = maximum?.amount ?: return false
+        return max > min
+    }
+
+    private fun TourFacetDurationRange.hasUsableBounds(): Boolean {
+        val min = minimumMinutes ?: return false
+        val max = maximumMinutes ?: return false
+        return max > min
     }
 
     /**
