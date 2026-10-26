@@ -55,7 +55,12 @@ class ACActivityListingVM @Inject constructor(
     private val _activityCount = MutableLiveData<Int>()
     val activityCount: LiveData<Int> = _activityCount
 
+    /** Ids of the selected category chips; empty means the "All" chip. */
+    private var selectedCategoryIds: Set<String> = emptySet()
+
     private val _selectedCategoryIndices = MutableLiveData(setOf(0))
+
+    /** Strip positions of [selectedCategoryIds]; index 0 is the "All" chip. */
     val selectedCategoryIndices: LiveData<Set<Int>> = _selectedCategoryIndices
 
     private val _showTimeSelection = MutableLiveData<TourProduct?>()
@@ -91,15 +96,13 @@ class ACActivityListingVM @Inject constructor(
     val scrollToTop: LiveData<Boolean> = _scrollToTop
 
     /**
-     * Facet-driven category strip — populated from the first non-empty search
-     * response and then frozen so later calls never reshuffle the chips.
+     * Facet-driven category strip. Rebuilt from every first-page response whose
+     * request carried no category filter and whose facet lists at least one
+     * category; any other response leaves it untouched.
      * Multi-select; chip "All" (index 0) clears the selection.
      */
     private val _facetCategories = MutableLiveData<List<TourFacetCategory>>(emptyList())
     val facetCategories: LiveData<List<TourFacetCategory>> = _facetCategories
-
-    /** Guards the chip strip against being reshuffled by later responses. */
-    private var categoryStripFrozen: Boolean = false
 
     /** Bounds for the price / duration filter sliders; null falls back to the sheet's defaults. */
     private val _priceRangeFacet = MutableLiveData<TourFacetPriceRange?>(null)
@@ -206,7 +209,7 @@ class ACActivityListingVM @Inject constructor(
         currentSearchQuery = ""
         _selectedCategoryIndices.value = setOf(0)
         _facetCategories.value = emptyList()
-        categoryStripFrozen = false
+        selectedCategoryIds = emptySet()
     }
 
     // =====================
@@ -227,27 +230,40 @@ class ACActivityListingVM @Inject constructor(
     // CATEGORY SELECTION
     // =====================
 
+    /**
+     * Maps the strip positions reported by the chip adapter to category ids and
+     * reloads. Index 0 ("All") or an empty set selects every category.
+     */
     fun onCategorySelectionChanged(selectedIndices: Set<Int>) {
-        _selectedCategoryIndices.value = selectedIndices
+        selectedCategoryIds = if (selectedIndices.isEmpty() || 0 in selectedIndices) {
+            emptySet()
+        } else {
+            val items = getFacetCategoryItems()
+            selectedIndices
+                .mapNotNull { items.getOrNull(it)?.id }
+                .filterTo(LinkedHashSet()) { it.isNotBlank() }
+        }
+        publishSelectedCategoryIndices()
         loadActivities(useSkeleton = true)
+    }
+
+    private fun publishSelectedCategoryIndices() {
+        val items = getFacetCategoryItems()
+        val indices = items.indices
+            .filter { it != 0 && items[it].id in selectedCategoryIds }
+            .toSet()
+        _selectedCategoryIndices.value = indices.ifEmpty { setOf(0) }
     }
 
     /**
      * Builds the comma-separated category-id string sent to the tour search API
-     * from the selected chips. "All" (index 0) or an empty selection returns
-     * null so the API returns every category.
+     * from [selectedCategoryIds]; null when "All" is selected.
      */
-    private fun buildCategoryIds(): String? {
-        val indices = _selectedCategoryIndices.value ?: setOf(0)
-        if (indices.contains(0) || indices.isEmpty()) return null
-
-        val items = getFacetCategoryItems()
-        return indices
-            .mapNotNull { items.getOrNull(it)?.id }
+    private fun buildCategoryIds(): String? =
+        selectedCategoryIds
             .filter { it.isNotBlank() }
             .joinToString(",")
             .ifBlank { null }
-    }
 
     /**
      * When `true`, the next `_isLoading = true` transition will NOT trigger the
@@ -325,8 +341,9 @@ class ACActivityListingVM @Inject constructor(
         }
         _isLoading.value = true
 
+        val params = buildSearchParams(offset = 0)
         fetchJob = viewModelScope.launch {
-            fetchPage(offset = 0, isPagination = false, scrollToTop = useSkeleton)
+            fetchPage(params, isPagination = false, scrollToTop = useSkeleton)
         }
     }
 
@@ -334,43 +351,56 @@ class ACActivityListingVM @Inject constructor(
     fun loadMoreActivities() {
         if (!hasMorePages || isLoadingMore || _isLoading.value == true) return
         isLoadingMore = true
+        val params = buildSearchParams(offset = nextOffset)
         fetchJob = viewModelScope.launch {
-            fetchPage(offset = nextOffset, isPagination = true, scrollToTop = false)
+            fetchPage(params, isPagination = true, scrollToTop = false)
         }
     }
 
-    private suspend fun fetchPage(offset: Int, isPagination: Boolean, scrollToTop: Boolean) {
+    /** Snapshots the current search, category, filter and sort state into a request. */
+    private fun buildSearchParams(offset: Int): SearchToursUseCase.Params {
         val filter = _currentFilter.value ?: ActivityFilterData.default()
         val sort = _currentSort.value ?: SortOption.DEFAULT
+        return SearchToursUseCase.Params(
+            cityId = cityId,
+            lat = cityLat,
+            lng = cityLng,
+            keywords = currentSearchQuery.trim().ifBlank { null },
+            tagIds = null,
+            categoryIds = buildCategoryIds(),
+            providerId = 15,
+            date = selectedDateString,
+            to = selectedDateString,
+            currency = getCurrency(),
+            minPrice = filter.minPrice.toInt().coerceAtLeast(1),
+            maxPrice = filter.maxPrice.toInt()
+                .takeIf { filter.maxPrice != ActivityFilterData.DEFAULT_MAX_PRICE },
+            minDuration = filter.minDuration.toInt()
+                .takeIf { filter.minDuration != ActivityFilterData.DEFAULT_MIN_DURATION },
+            maxDuration = filter.maxDuration.toInt()
+                .takeIf { filter.maxDuration != ActivityFilterData.DEFAULT_MAX_DURATION },
+            adults = (planData?.travelers ?: 1).coerceAtLeast(1),
+            sortingBy = sort.sortingBy,
+            sortingType = sort.sortingType,
+            offset = offset,
+            limit = fetchLimit
+        )
+    }
 
-        val result = runCatching {
-            searchToursUseCase(
-                SearchToursUseCase.Params(
-                    cityId = cityId,
-                    lat = cityLat,
-                    lng = cityLng,
-                    keywords = currentSearchQuery.trim().ifBlank { null },
-                    tagIds = null,
-                    categoryIds = buildCategoryIds(),
-                    providerId = 15,
-                    date = selectedDateString,
-                    to = selectedDateString,
-                    currency = getCurrency(),
-                    minPrice = filter.minPrice.toInt().coerceAtLeast(1),
-                    maxPrice = filter.maxPrice.toInt()
-                        .takeIf { filter.maxPrice != ActivityFilterData.DEFAULT_MAX_PRICE },
-                    minDuration = filter.minDuration.toInt()
-                        .takeIf { filter.minDuration != ActivityFilterData.DEFAULT_MIN_DURATION },
-                    maxDuration = filter.maxDuration.toInt()
-                        .takeIf { filter.maxDuration != ActivityFilterData.DEFAULT_MAX_DURATION },
-                    adults = (planData?.travelers ?: 1).coerceAtLeast(1),
-                    sortingBy = sort.sortingBy,
-                    sortingType = sort.sortingType,
-                    offset = offset,
-                    limit = fetchLimit
-                )
-            )
-        }
+    /**
+     * Runs [params] and applies the response. The category strip may only be rebuilt
+     * from a first-page response whose own request carried no category filter.
+     */
+    private suspend fun fetchPage(
+        params: SearchToursUseCase.Params,
+        isPagination: Boolean,
+        scrollToTop: Boolean
+    ) {
+        val offset = params.offset
+        val canRebuildCategoryStrip =
+            !isPagination && offset == 0 && params.categoryIds.isNullOrEmpty()
+
+        val result = runCatching { searchToursUseCase(params) }
         coroutineContext.ensureActive()
 
         isLoadingMore = false
@@ -386,7 +416,7 @@ class ACActivityListingVM @Inject constructor(
                 apiTotal = response.data?.total ?: allActivities.size
                 nextOffset = offset + products.size
                 hasMorePages = newProducts.isNotEmpty() && allActivities.size < apiTotal
-                updateFacetsFromResponse(response.data?.facets)
+                updateFacetsFromResponse(response.data?.facets, canRebuildCategoryStrip)
                 _activities.value = allActivities.toList()
                 _activityCount.value = apiTotal
                 if (scrollToTop) _scrollToTop.value = true
@@ -513,27 +543,34 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     /**
-     * Pulls facet metadata from the first facet entry and publishes it into the
-     * filter slider LiveData fields. The chip strip is populated only from the
-     * first non-empty response and then frozen (see [categoryStripFrozen]).
+     * Publishes the first facet entry's price / duration bounds to the filter
+     * sliders and, when [rebuildCategoryStrip] is true, rebuilds the chip strip
+     * from its categories.
      */
-    private fun updateFacetsFromResponse(facets: List<TourFacet>?) {
+    private fun updateFacetsFromResponse(facets: List<TourFacet>?, rebuildCategoryStrip: Boolean) {
         val facet = facets?.firstOrNull()
-        if (facet == null) {
-            _priceRangeFacet.value = null
-            _durationRangeFacet.value = null
-            return
-        }
-        _priceRangeFacet.value = facet.priceRange?.takeIf { it.hasUsableBounds() }
-        _durationRangeFacet.value = facet.durationRange?.takeIf { it.hasUsableBounds() }
+        _priceRangeFacet.value = facet?.priceRange?.takeIf { it.hasUsableBounds() }
+        _durationRangeFacet.value = facet?.durationRange?.takeIf { it.hasUsableBounds() }
+        if (rebuildCategoryStrip) rebuildCategoryStrip(facet?.categories)
+    }
 
-        if (categoryStripFrozen) return
-        val cats = facet.categories?.filter { it.id != null && it.label != null }
-            ?: emptyList()
-        if (cats.isNotEmpty()) {
-            _facetCategories.value = cats
-            categoryStripFrozen = true
+    /**
+     * Replaces the chip strip with [categories] and drops selected ids that are no
+     * longer offered. An empty or missing list keeps the current strip.
+     */
+    private fun rebuildCategoryStrip(categories: List<TourFacetCategory>?) {
+        val chips = categories.orEmpty().filter { it.id != null && it.label != null }
+        if (chips.isEmpty()) return
+
+        val current = _facetCategories.value.orEmpty()
+        if (chips.map { Triple(it.id, it.label, it.key) } != current.map { Triple(it.id, it.label, it.key) }) {
+            _facetCategories.value = chips
         }
+        selectedCategoryIds = reconcileCategorySelection(
+            selectedIds = selectedCategoryIds,
+            availableIds = chips.mapNotNull { it.id }
+        )
+        publishSelectedCategoryIndices()
     }
 
     private fun TourFacetPriceRange.hasUsableBounds(): Boolean {
@@ -550,8 +587,8 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Returns the chip list for the category strip. Index 0 is always the "All"
-     * chip; the rest come from the frozen facet snapshot. Before the first
-     * response (or if facets ever arrived empty), only "All" is shown.
+     * chip; the rest come from the latest rebuilt facet snapshot. Before the first
+     * non-empty facet arrives, only "All" is shown.
      */
     fun getFacetCategoryItems(): List<ActivityCategoryItem> {
         val items = mutableListOf<ActivityCategoryItem>()
@@ -585,4 +622,18 @@ class ACActivityListingVM @Inject constructor(
     fun getSdkLanguage(): String = appLanguage
 
     fun getCurrency(): String = TRPCore.core.appConfig.appCurrency
+
+    companion object {
+        /**
+         * Keeps the [selectedIds] still present in [availableIds], preserving order.
+         * An empty result means the "All" chip.
+         */
+        internal fun reconcileCategorySelection(
+            selectedIds: Set<String>,
+            availableIds: Collection<String>
+        ): Set<String> {
+            val available = availableIds.toHashSet()
+            return selectedIds.filterTo(LinkedHashSet()) { it in available }
+        }
+    }
 }
