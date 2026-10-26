@@ -202,9 +202,14 @@ class ACActivityListingVM @Inject constructor(
         loadActivities()
     }
 
-    /** Restores the default filter, sort, search query and category selection of a fresh listing. */
+    /**
+     * Restores the default filter, sort, search query, category selection and facet
+     * slider bounds of a fresh listing, so the next response seeds the bounds again.
+     */
     private fun resetListingState() {
         _currentFilter.value = ActivityFilterData.default()
+        _priceRangeFacet.value = null
+        _durationRangeFacet.value = null
         _currentSort.value = SortOption.DEFAULT
         currentSearchQuery = ""
         _selectedCategoryIndices.value = setOf(0)

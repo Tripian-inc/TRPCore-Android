@@ -702,4 +702,56 @@ class ACActivityListingVMTest {
         assertEquals(listOf("c7", "c8"), vm.getFacetCategoryItems().drop(1).map { it.id })
         assertEquals(setOf(0), vm.selectedCategoryIndices.value)
     }
+
+    private fun responseWithRanges(minPrice: Int, maxPrice: Int, minMinutes: Int, maxMinutes: Int): TourSearchResponse =
+        response(facets = listOf(TourFacet().apply {
+            priceRange = TourFacetPriceRange().apply {
+                minimum = TourFacetMoney().apply { amount = minPrice }
+                maximum = TourFacetMoney().apply { amount = maxPrice }
+            }
+            durationRange = TourFacetDurationRange().apply {
+                minimumMinutes = minMinutes
+                maximumMinutes = maxMinutes
+            }
+        }))
+
+    @Test
+    fun `test second initialize resets facet ranges and filter until next response seeds them success`() = runTest {
+        val reinitResponse = CompletableDeferred<TourSearchResponse>()
+        val firstTripRanges = responseWithRanges(minPrice = 10, maxPrice = 500, minMinutes = 30, maxMinutes = 600)
+        var call = 0
+        coEvery { searchToursUseCase(any()) } coAnswers {
+            capturedParams += it.invocation.args[0] as SearchToursUseCase.Params
+            when (call++) {
+                0, 1 -> firstTripRanges
+                else -> reinitResponse.await()
+            }
+        }
+        val fresh = vm()
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        assertEquals(500, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(600, vm.durationRangeFacet.value?.maximumMinutes)
+
+        vm.applyFilter(ActivityFilterData(minPrice = 50f, maxPrice = 200f, minDuration = 60f, maxDuration = 180f))
+        assertEquals(200f, vm.getCurrentFilter().maxPrice)
+
+        vm.initialize(planData(), tripHash = "trip-2")
+
+        assertEquals(3, capturedParams.size)
+        assertEquals(fresh.priceRangeFacet.value, vm.priceRangeFacet.value)
+        assertEquals(fresh.durationRangeFacet.value, vm.durationRangeFacet.value)
+        assertNull(vm.priceRangeFacet.value)
+        assertNull(vm.durationRangeFacet.value)
+        assertEquals(fresh.getCurrentFilter(), vm.getCurrentFilter())
+        assertEquals(ActivityFilterData.default(), vm.getCurrentFilter())
+
+        reinitResponse.complete(responseWithRanges(minPrice = 20, maxPrice = 90, minMinutes = 45, maxMinutes = 240))
+
+        assertEquals(20, vm.priceRangeFacet.value?.minimum?.amount)
+        assertEquals(90, vm.priceRangeFacet.value?.maximum?.amount)
+        assertEquals(45, vm.durationRangeFacet.value?.minimumMinutes)
+        assertEquals(240, vm.durationRangeFacet.value?.maximumMinutes)
+        assertEquals(ActivityFilterData.default(), vm.getCurrentFilter())
+    }
 }
