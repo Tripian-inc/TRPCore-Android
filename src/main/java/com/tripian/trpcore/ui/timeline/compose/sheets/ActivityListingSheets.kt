@@ -130,7 +130,7 @@ internal fun ActivityFilterSheet(
                 binding.ivClose.setOnClickListener { onDismiss() }
                 binding.tvClearSelection.setOnClickListener { editor.reset() }
                 binding.btnConfirm.setOnClickListener {
-                    onFilterConfirmed(editor.filter)
+                    onFilterConfirmed(editor.confirmedFilter())
                     onDismiss()
                 }
             }
@@ -208,23 +208,27 @@ private class ActivityFilterEditor(
         updateDurationLabels()
     }
 
-    /** Restores the default filter, clamped to the current slider bounds. */
+    /** Moves every slider thumb to its bound; [confirmedFilter] maps that back to the default. */
     fun reset() {
-        val priceFrom = binding.sliderPrice.valueFrom
-        val priceTo = binding.sliderPrice.valueTo
-        val durationFrom = binding.sliderDuration.valueFrom
-        val durationTo = binding.sliderDuration.valueTo
         filter = ActivityFilterData(
-            minPrice = ActivityFilterData.DEFAULT_MIN_PRICE.coerceIn(priceFrom, priceTo),
-            maxPrice = ActivityFilterData.DEFAULT_MAX_PRICE.coerceIn(priceFrom, priceTo),
-            minDuration = ActivityFilterData.DEFAULT_MIN_DURATION.coerceIn(durationFrom, durationTo),
-            maxDuration = ActivityFilterData.DEFAULT_MAX_DURATION.coerceIn(durationFrom, durationTo)
+            minPrice = binding.sliderPrice.valueFrom,
+            maxPrice = binding.sliderPrice.valueTo,
+            minDuration = binding.sliderDuration.valueFrom,
+            maxDuration = binding.sliderDuration.valueTo
         )
         binding.sliderPrice.values = listOf(filter.minPrice, filter.maxPrice)
         binding.sliderDuration.values = listOf(filter.minDuration, filter.maxDuration)
         updatePriceLabels()
         updateDurationLabels()
     }
+
+    /** The edited filter with every thumb left at its slider bound mapped back to the default. */
+    fun confirmedFilter(): ActivityFilterData = filter.withBoundsAsDefaults(
+        priceFrom = binding.sliderPrice.valueFrom,
+        priceTo = binding.sliderPrice.valueTo,
+        durationFrom = binding.sliderDuration.valueFrom,
+        durationTo = binding.sliderDuration.valueTo
+    )
 
     private fun updatePriceLabels() {
         val from = binding.sliderPrice.valueFrom
