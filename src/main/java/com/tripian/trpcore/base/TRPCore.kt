@@ -641,11 +641,12 @@ class TRPCore {
     /**
      * Makes sure a Mapbox access token is applied before a map view is created. Returns at once
      * when the applied token is the host-supplied or a fresh cached one; otherwise resolves it
-     * through [ResolveMapboxAccessToken] and applies it on the main thread. Reports an error to
-     * the listener when no token can be obtained.
+     * through [ResolveMapboxAccessToken] and applies it on the main thread. When resolution yields
+     * nothing but a token is already applied, that token stays in use. Reports an error to the
+     * listener only when no token can be obtained at all.
      *
      * @param uniqueId User id for the light login run before the token fetch when no session exists
-     * @return `true` once a token is applied, `false` when none is available or resolution fails
+     * @return `true` once a token is applied, `false` when none is available
      */
     internal suspend fun ensureMapboxAccessToken(uniqueId: String?): Boolean =
         withContext(Dispatchers.Main.immediate) {
@@ -653,6 +654,7 @@ class TRPCore {
             try {
                 val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken, uniqueId)
                 if (token.isNullOrBlank()) {
+                    if (hasAppliedMapboxAccessToken()) return@withContext true
                     notifyError(MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
                     return@withContext false
                 }
@@ -662,6 +664,7 @@ class TRPCore {
                 throw cancellation
             } catch (error: Throwable) {
                 Log.e(TAG, "Failed to resolve the Mapbox access token", error)
+                if (hasAppliedMapboxAccessToken()) return@withContext true
                 notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
                 false
             }
@@ -676,7 +679,7 @@ class TRPCore {
      * Whether the applied token is the one [ResolveMapboxAccessToken] would return without a
      * network request: the host-supplied token, or else the fresh persisted token.
      */
-    private fun isAppliedMapboxAccessTokenCurrent(): Boolean {
+    internal fun isAppliedMapboxAccessTokenCurrent(): Boolean {
         val appliedToken = mapBoxApiKey
         if (appliedToken.isBlank()) return false
         val hostToken = hostMapboxAccessToken

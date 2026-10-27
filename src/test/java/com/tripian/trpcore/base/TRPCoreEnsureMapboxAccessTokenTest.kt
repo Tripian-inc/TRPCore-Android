@@ -119,4 +119,30 @@ class TRPCoreEnsureMapboxAccessTokenTest {
         assertFalse(result)
         verify(exactly = 1) { listener.onError(any(), any<TRPCoreErrorCode>()) }
     }
+
+    @Test
+    fun testStaleAppliedTokenStaysInUseWhenRefreshFails() = runTest {
+        TRPCore.mapBoxApiKey = "pk.stale"
+        every { miscRepository.getFreshPersistedMapboxAccessToken() } returns null
+        coEvery { resolveMapboxAccessToken.execute(null, "user-1") } throws IllegalStateException("boom")
+
+        val result = trpCore.ensureMapboxAccessToken("user-1")
+
+        assertTrue(result)
+        assertEquals("pk.stale", TRPCore.mapBoxApiKey)
+        verify(exactly = 0) { listener.onError(any(), any<TRPCoreErrorCode>()) }
+    }
+
+    @Test
+    fun testStaleAppliedTokenStaysInUseWhenResolverReturnsNull() = runTest {
+        TRPCore.mapBoxApiKey = "pk.stale"
+        every { miscRepository.getFreshPersistedMapboxAccessToken() } returns null
+        coEvery { resolveMapboxAccessToken.execute(null, "user-1") } returns null
+
+        val result = trpCore.ensureMapboxAccessToken("user-1")
+
+        assertTrue(result)
+        assertEquals("pk.stale", TRPCore.mapBoxApiKey)
+        verify(exactly = 0) { listener.onError(any(), any<TRPCoreErrorCode>()) }
+    }
 }

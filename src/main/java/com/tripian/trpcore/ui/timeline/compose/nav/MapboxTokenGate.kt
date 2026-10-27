@@ -8,14 +8,16 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
- * Holds back the Timeline map until a Mapbox access token is applied. Starts [State.Ready] when
- * a token is already applied, otherwise [State.Resolving] until [resolve] settles.
+ * Holds back the Timeline map until a current Mapbox access token is applied. Starts
+ * [State.Ready] when the applied token is the host-supplied or a fresh cached one, otherwise
+ * [State.Resolving] until [resolve] settles.
  *
- * @param tokenAlreadyApplied whether a token is applied when the gate is created
- * @param ensureToken resolves and applies the token for a user id; `false` when none is available
+ * @param tokenCurrent whether a host-supplied or fresh cached token is applied when the gate is created
+ * @param ensureToken resolves and applies the token for a user id, keeping an already applied
+ * token when the refresh fails; `false` only when no token is available at all
  */
 internal class MapboxTokenGate(
-    tokenAlreadyApplied: Boolean = TRPCore.core.hasAppliedMapboxAccessToken(),
+    tokenCurrent: Boolean = TRPCore.core.isAppliedMapboxAccessTokenCurrent(),
     private val ensureToken: suspend (String?) -> Boolean = { TRPCore.core.ensureMapboxAccessToken(it) }
 ) {
 
@@ -26,7 +28,7 @@ internal class MapboxTokenGate(
         data object Unavailable : State
     }
 
-    private val mutableState = MutableStateFlow(if (tokenAlreadyApplied) State.Ready else State.Resolving)
+    private val mutableState = MutableStateFlow(if (tokenCurrent) State.Ready else State.Resolving)
 
     val state: StateFlow<State> = mutableState.asStateFlow()
 

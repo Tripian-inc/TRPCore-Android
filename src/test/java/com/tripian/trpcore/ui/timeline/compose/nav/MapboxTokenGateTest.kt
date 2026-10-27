@@ -11,9 +11,9 @@ import org.junit.Test
 class MapboxTokenGateTest {
 
     @Test
-    fun testGateStartsReadyAndSkipsResolverWhenTokenAlreadyApplied() = runTest {
+    fun testGateStartsReadyAndSkipsResolverWhenAppliedTokenIsCurrent() = runTest {
         val requestedIds = mutableListOf<String?>()
-        val gate = MapboxTokenGate(tokenAlreadyApplied = true) { requestedIds += it; true }
+        val gate = MapboxTokenGate(tokenCurrent = true) { requestedIds += it; true }
 
         assertEquals(MapboxTokenGate.State.Ready, gate.state.value)
         gate.resolve("user-1")
@@ -25,7 +25,7 @@ class MapboxTokenGateTest {
     @Test
     fun testGateMovesFromResolvingToReadyWhenResolverSucceeds() = runTest {
         val result = CompletableDeferred<Boolean>()
-        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { result.await() }
+        val gate = MapboxTokenGate(tokenCurrent = false) { result.await() }
 
         assertEquals(MapboxTokenGate.State.Resolving, gate.state.value)
         val job = launch { gate.resolve("user-1") }
@@ -40,7 +40,7 @@ class MapboxTokenGateTest {
 
     @Test
     fun testGateMovesFromResolvingToUnavailableWhenResolverFails() = runTest {
-        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { false }
+        val gate = MapboxTokenGate(tokenCurrent = false) { false }
 
         assertEquals(MapboxTokenGate.State.Resolving, gate.state.value)
         gate.resolve(null)
@@ -51,7 +51,7 @@ class MapboxTokenGateTest {
     @Test
     fun testGatePassesUniqueIdToResolver() = runTest {
         val requestedIds = mutableListOf<String?>()
-        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { requestedIds += it; true }
+        val gate = MapboxTokenGate(tokenCurrent = false) { requestedIds += it; true }
 
         gate.resolve("user-42")
 
@@ -61,7 +61,7 @@ class MapboxTokenGateTest {
     @Test
     fun testGateResolvesOnlyOnceAfterSettling() = runTest {
         var calls = 0
-        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { calls++; false }
+        val gate = MapboxTokenGate(tokenCurrent = false) { calls++; false }
 
         gate.resolve("user-1")
         gate.resolve("user-1")
@@ -74,7 +74,7 @@ class MapboxTokenGateTest {
     fun testConcurrentResolveCallsRunResolverOnce() = runTest {
         val result = CompletableDeferred<Boolean>()
         var calls = 0
-        val gate = MapboxTokenGate(tokenAlreadyApplied = false) { calls++; result.await() }
+        val gate = MapboxTokenGate(tokenCurrent = false) { calls++; result.await() }
 
         val first = launch { gate.resolve("user-1") }
         val second = launch { gate.resolve("user-1") }
@@ -84,6 +84,18 @@ class MapboxTokenGateTest {
         result.complete(true)
         first.join()
         second.join()
+
+        assertEquals(1, calls)
+        assertEquals(MapboxTokenGate.State.Ready, gate.state.value)
+    }
+
+    @Test
+    fun testGateWithStaleTokenStartsResolvingAndRefreshes() = runTest {
+        var calls = 0
+        val gate = MapboxTokenGate(tokenCurrent = false) { calls++; true }
+
+        assertEquals(MapboxTokenGate.State.Resolving, gate.state.value)
+        gate.resolve("user-1")
 
         assertEquals(1, calls)
         assertEquals(MapboxTokenGate.State.Ready, gate.state.value)
