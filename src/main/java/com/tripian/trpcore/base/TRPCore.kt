@@ -33,6 +33,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 /**
@@ -343,6 +344,8 @@ class TRPCore {
 
     private var hostMapboxAccessToken: String? = null
 
+    private val timelineLaunchPending = AtomicBoolean(false)
+
     @Volatile
     internal var hostGooglePlacesApiKey: String? = null
 
@@ -618,6 +621,7 @@ class TRPCore {
      * Resolves the Mapbox access token and runs [startScreen] on the main thread once one is
      * applied. Reports an error to the listener and skips [startScreen] when no token is
      * available or resolution fails; also skips it when [context] is a finishing activity.
+     * Calls made while an earlier launch is still pending are ignored.
      *
      * @param uniqueId User id for the light login run before the token fetch when no session exists
      */
@@ -626,14 +630,19 @@ class TRPCore {
         uniqueId: String?,
         startScreen: () -> Unit
     ) {
+        if (!timelineLaunchPending.compareAndSet(false, true)) return
         initScope.launch(Dispatchers.Main.immediate) {
-            if (!ensureMapboxAccessToken(uniqueId)) return@launch
-            if ((context as? Activity)?.isFinishing == true) return@launch
             try {
-                startScreen()
-            } catch (error: Throwable) {
-                Log.e(TAG, "Failed to open the Timeline screen", error)
-                notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
+                if (!ensureMapboxAccessToken(uniqueId)) return@launch
+                if ((context as? Activity)?.isFinishing == true) return@launch
+                try {
+                    startScreen()
+                } catch (error: Throwable) {
+                    Log.e(TAG, "Failed to open the Timeline screen", error)
+                    notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
+                }
+            } finally {
+                timelineLaunchPending.set(false)
             }
         }
     }
