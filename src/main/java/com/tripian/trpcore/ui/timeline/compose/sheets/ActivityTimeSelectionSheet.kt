@@ -28,7 +28,6 @@ import com.tripian.trpcore.ui.timeline.activity.GroupedTimeSlot
 import com.tripian.trpcore.ui.timeline.activity.ResolvedSchedule
 import com.tripian.trpcore.ui.timeline.activity.TimeSelectionMode
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
-import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.ui.timeline.compose.core.BindViewListener
 import com.tripian.trpcore.ui.timeline.compose.core.BindingHost
 import com.tripian.trpcore.ui.timeline.compose.core.TimelineLoaderOverlay
@@ -37,7 +36,9 @@ import com.tripian.trpcore.ui.timeline.compose.core.rememberSheetViewModel
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.extensions.hideSheetDragHandle
+import com.tripian.trpcore.util.extensions.NO_DAY_INDEX
 import com.tripian.trpcore.util.extensions.isPastDay
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -582,14 +583,14 @@ private class ActivityTimeSelectionUi(
     /**
      * Index of [initial] in [availableDays] (first day when absent). When past days are
      * disabled, a past day falls back like the Add Plan flow and every-day-past yields
-     * [AddPlanContainerVM.NO_DAY_SELECTED].
+     * [NO_DAY_INDEX].
      */
     private fun resolveInitialSelectedDayIndex(initial: Date?): Int {
         val requested = initial?.let { day ->
             availableDays.indexOfFirst { isSameDay(it, day) }.coerceAtLeast(0)
         } ?: 0
         return if (disablesPastDays) {
-            AddPlanContainerVM.resolveInitialDayIndex(availableDays, requested)
+            availableDays.resolveInitialDayIndex(requested)
         } else {
             requested
         }

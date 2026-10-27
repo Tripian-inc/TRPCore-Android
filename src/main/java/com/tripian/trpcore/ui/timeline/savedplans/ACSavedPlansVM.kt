@@ -8,13 +8,13 @@ import com.tripian.trpcore.domain.model.itinerary.SegmentFavoriteItem
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.base.ErrorModel
-import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
 import com.tripian.trpcore.util.ActivityIdFormat
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.RemovedFavoritesStore
 import com.tripian.trpcore.util.extensions.cityNameKey
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -98,7 +98,7 @@ class ACSavedPlansVM @Inject constructor(
         this.tripHash = tripHash
         this.availableDays = availableDays
         this.selectedDate = availableDays.getOrNull(
-            AddPlanContainerVM.resolveInitialDayIndex(availableDays, selectedDayIndex)
+            availableDays.resolveInitialDayIndex(selectedDayIndex)
         )
         this.cityNameToIdMap = cityNameToIdMap
         this.plannedActivityIdsByDay.clear()

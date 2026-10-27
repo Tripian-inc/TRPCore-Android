@@ -6,6 +6,7 @@ import androidx.arch.core.executor.TaskExecutor
 import com.tripian.one.api.cities.model.City
 import com.tripian.trpcore.domain.model.timeline.AddPlanMode
 import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import io.mockk.every
 import io.mockk.mockk
 import java.util.ArrayList
@@ -21,7 +22,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * Pins [AddPlanContainerVM.Companion.resolveInitialDayIndex] and the initial-selection
+ * Pins [resolveInitialDayIndex] and the initial-selection
  * and day-selection behaviour it feeds into [AddPlanContainerVM.initializeFromArgs] and
  * [AddPlanContainerVM.selectDay] for a trip that includes past days.
  */
@@ -57,49 +58,49 @@ class AddPlanContainerVMTest {
 
     @Test
     fun `test resolveInitialDayIndex returns NO_DAY_SELECTED for empty list`() {
-        val result = AddPlanContainerVM.resolveInitialDayIndex(emptyList(), 0)
+        val result = emptyList<Date>().resolveInitialDayIndex(0)
         assertEquals(AddPlanContainerVM.NO_DAY_SELECTED, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex returns NO_DAY_SELECTED when all days are past`() {
         val days = listOf(dayOffsetFromToday(-3), dayOffsetFromToday(-2), yesterday)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 0)
+        val result = days.resolveInitialDayIndex(0)
         assertEquals(AddPlanContainerVM.NO_DAY_SELECTED, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex keeps requested index when it points at a future day`() {
         val days = listOf(yesterday, today, tomorrow, dayAfterTomorrow)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 3)
+        val result = days.resolveInitialDayIndex(3)
         assertEquals(3, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex keeps requested index when it points at today`() {
         val days = listOf(yesterday, today, tomorrow)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 1)
+        val result = days.resolveInitialDayIndex(1)
         assertEquals(1, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex falls back to today when requested index is past and today is present`() {
         val days = listOf(yesterday, today, tomorrow)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 0)
+        val result = days.resolveInitialDayIndex(0)
         assertEquals(1, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex falls back to first future day when requested index is past and today is absent`() {
         val days = listOf(dayOffsetFromToday(-2), yesterday, tomorrow, dayAfterTomorrow)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 0)
+        val result = days.resolveInitialDayIndex(0)
         assertEquals(2, result)
     }
 
     @Test
     fun `test resolveInitialDayIndex remaps out of range requested index`() {
         val days = listOf(yesterday, today, tomorrow)
-        val result = AddPlanContainerVM.resolveInitialDayIndex(days, 99)
+        val result = days.resolveInitialDayIndex(99)
         assertEquals(1, result)
     }
 

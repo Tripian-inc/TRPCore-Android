@@ -17,7 +17,8 @@ import com.tripian.trpcore.domain.model.timeline.SmartCategory
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.isPastDay
-import com.tripian.trpcore.util.extensions.isTodayDate
+import com.tripian.trpcore.util.extensions.NO_DAY_INDEX
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import com.tripian.trpcore.util.CityTimeZones
 import com.tripian.trpcore.util.LanguageConst
 import com.tripian.trpcore.util.TimeFieldError
@@ -163,7 +164,7 @@ class AddPlanContainerVM @Inject constructor(
     fun initializeFromArgs(args: Bundle) {
         val days = args.getSerializable(ARG_AVAILABLE_DAYS) as? ArrayList<Date> ?: arrayListOf()
         val citiesList = args.getSerializable(ARG_CITIES) as? ArrayList<City> ?: arrayListOf()
-        val dayIndex = resolveInitialDayIndex(days, args.getInt(ARG_SELECTED_DAY_INDEX, 0))
+        val dayIndex = days.resolveInitialDayIndex(args.getInt(ARG_SELECTED_DAY_INDEX, 0))
         val city = args.getSerializable(ARG_SELECTED_CITY) as? City
         val tripHash = args.getString(ARG_TRIP_HASH)
         accommodation = args.getSerializable(ARG_ACCOMMODATION) as? Accommodation
@@ -621,19 +622,7 @@ class AddPlanContainerVM @Inject constructor(
 
     companion object {
         /** Value of [selectedDayIndex] when no day is selected (every trip day is in the past). */
-        const val NO_DAY_SELECTED = -1
-
-        /**
-         * Initial selection for [days]: [requestedIndex] when it points at a non-past day,
-         * otherwise today, otherwise the first future day, otherwise [NO_DAY_SELECTED].
-         */
-        internal fun resolveInitialDayIndex(days: List<Date>, requestedIndex: Int): Int {
-            if (days.getOrNull(requestedIndex)?.isPastDay() == false) return requestedIndex
-            val todayIndex = days.indexOfFirst { it.isTodayDate() }
-            if (todayIndex >= 0) return todayIndex
-            val firstFutureIndex = days.indexOfFirst { !it.isPastDay() }
-            return if (firstFutureIndex >= 0) firstFutureIndex else NO_DAY_SELECTED
-        }
+        const val NO_DAY_SELECTED = NO_DAY_INDEX
 
         const val ARG_AVAILABLE_DAYS = "availableDays"
         const val ARG_CITIES = "cities"

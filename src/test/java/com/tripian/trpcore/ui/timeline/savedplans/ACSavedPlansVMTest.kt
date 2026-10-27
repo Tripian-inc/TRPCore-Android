@@ -5,7 +5,7 @@ import androidx.arch.core.executor.TaskExecutor
 import com.tripian.trpcore.domain.usecase.timeline.CreateReservedActivityFromFavoriteUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.repository.TimelineRepository
-import com.tripian.trpcore.ui.timeline.addplan.AddPlanContainerVM
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import com.tripian.trpcore.util.Preferences
 import io.mockk.mockk
 import java.util.Calendar
@@ -18,7 +18,7 @@ import org.junit.Test
 
 /**
  * Pins the day carried over from the timeline into [ACSavedPlansVM.initialize] and the
- * [AddPlanContainerVM.resolveInitialDayIndex] rule it relies on for a trip with past days.
+ * [resolveInitialDayIndex] rule it relies on for a trip with past days.
  */
 class ACSavedPlansVMTest {
 
