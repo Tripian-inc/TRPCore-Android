@@ -632,18 +632,33 @@ class TRPCore {
     ) {
         if (!timelineLaunchPending.compareAndSet(false, true)) return
         initScope.launch(Dispatchers.Main.immediate) {
-            try {
-                if (!ensureMapboxAccessToken(uniqueId)) return@launch
-                if ((context as? Activity)?.isFinishing == true) return@launch
-                try {
-                    startScreen()
-                } catch (error: Throwable) {
-                    Log.e(TAG, "Failed to open the Timeline screen", error)
-                    notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
-                }
+            val failure = try {
+                openScreenWhenMapboxTokenReady(context, uniqueId, startScreen)
             } finally {
                 timelineLaunchPending.set(false)
             }
+            failure?.let { notifyError(it) }
+        }
+    }
+
+    /**
+     * Runs [startScreen] once a Mapbox access token is applied, without notifying the listener.
+     *
+     * @return the error message to report, or `null` when the screen opened or [context] is finishing
+     */
+    private suspend fun openScreenWhenMapboxTokenReady(
+        context: Context,
+        uniqueId: String?,
+        startScreen: () -> Unit
+    ): String? {
+        resolveMapboxAccessTokenFailure(uniqueId)?.let { return it }
+        if ((context as? Activity)?.isFinishing == true) return null
+        return try {
+            startScreen()
+            null
+        } catch (error: Throwable) {
+            Log.e(TAG, "Failed to open the Timeline screen", error)
+            error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE
         }
     }
 
@@ -657,25 +672,34 @@ class TRPCore {
      * @param uniqueId User id for the light login run before the token fetch when no session exists
      * @return `true` once a token is applied, `false` when none is available
      */
-    internal suspend fun ensureMapboxAccessToken(uniqueId: String?): Boolean =
+    internal suspend fun ensureMapboxAccessToken(uniqueId: String?): Boolean {
+        val failure = resolveMapboxAccessTokenFailure(uniqueId) ?: return true
+        notifyError(failure)
+        return false
+    }
+
+    /**
+     * Same resolution as [ensureMapboxAccessToken] without notifying the listener.
+     *
+     * @return `null` once a token is applied, otherwise the error message to report
+     */
+    private suspend fun resolveMapboxAccessTokenFailure(uniqueId: String?): String? =
         withContext(Dispatchers.Main.immediate) {
-            if (isAppliedMapboxAccessTokenCurrent()) return@withContext true
+            if (isAppliedMapboxAccessTokenCurrent()) return@withContext null
             try {
                 val token = resolveMapboxAccessToken.execute(hostMapboxAccessToken, uniqueId)
                 if (token.isNullOrBlank()) {
-                    if (hasAppliedMapboxAccessToken()) return@withContext true
-                    notifyError(MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
-                    return@withContext false
+                    if (hasAppliedMapboxAccessToken()) return@withContext null
+                    return@withContext MAPBOX_TOKEN_UNAVAILABLE_MESSAGE
                 }
                 applyMapboxAccessToken(token)
-                true
+                null
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Throwable) {
                 Log.e(TAG, "Failed to resolve the Mapbox access token", error)
-                if (hasAppliedMapboxAccessToken()) return@withContext true
-                notifyError(error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE)
-                false
+                if (hasAppliedMapboxAccessToken()) return@withContext null
+                error.message ?: MAPBOX_TOKEN_UNAVAILABLE_MESSAGE
             }
         }
 
