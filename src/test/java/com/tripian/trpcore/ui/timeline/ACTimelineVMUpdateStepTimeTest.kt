@@ -165,7 +165,7 @@ class ACTimelineVMUpdateStepTimeTest {
         val vm = vm()
         val timeline = timelineWithStep(segment(), "2024-05-01 10:00", "2024-05-01 11:00")
         seedTimeline(vm, timeline, "trip-1")
-        coEvery { fetchTimelineUseCase(any()) } returns timeline
+        coEvery { fetchTimelineUseCase(any()) } throws RuntimeException("offline")
 
         vm.updateStepTime(stepId, "07:00", "11:00")
 
@@ -180,7 +180,7 @@ class ACTimelineVMUpdateStepTimeTest {
         val vm = vm()
         val timeline = timelineWithStep(segment(), "2024-05-01 10:00", "2024-05-01 11:00")
         seedTimeline(vm, timeline, "trip-1")
-        coEvery { fetchTimelineUseCase(any()) } returns timeline
+        coEvery { fetchTimelineUseCase(any()) } throws RuntimeException("offline")
 
         vm.updateStepTime(stepId, "07:00", "11:00")
 
@@ -221,5 +221,51 @@ class ACTimelineVMUpdateStepTimeTest {
 
         coVerify(exactly = 0) { updateStepTimeUseCase(any()) }
         assertEquals("segment update failed", vm.error.value)
+    }
+
+    @Test
+    fun `test updateStepTime refetches timeline and reports step error when step update fails after widening`() = runTest {
+        val vm = vm()
+        val timeline = timelineWithStep(segment(), "2024-05-01 10:00", "2024-05-01 11:00")
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { updateStepTimeUseCase(any()) } throws RuntimeException("step update failed")
+        coEvery { fetchTimelineUseCase(any()) } throws RuntimeException("offline")
+
+        vm.updateStepTime(stepId, "07:00", "11:00")
+
+        coVerify(exactly = 1) { updateSegmentTimeUseCase(any()) }
+        coVerify(exactly = 1) { fetchTimelineUseCase(any()) }
+        assertEquals("step update failed", vm.error.value)
+    }
+
+    @Test
+    fun `test updateStepTime skips refetch when step update fails without widening`() = runTest {
+        val vm = vm()
+        val timeline = timelineWithStep(segment(), "2024-05-01 10:00", "2024-05-01 11:00")
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { updateStepTimeUseCase(any()) } throws RuntimeException("step update failed")
+
+        vm.updateStepTime(stepId, "10:30", "11:30")
+
+        coVerify(exactly = 0) { fetchTimelineUseCase(any()) }
+        assertEquals("step update failed", vm.error.value)
+    }
+
+    @Test
+    fun `test updateStepTime applies widened segment range locally when refetch fails`() = runTest {
+        val vm = vm()
+        val segment = segment()
+        val timeline = timelineWithStep(segment, "2024-05-01 10:00", "2024-05-01 11:00")
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { updateStepTimeUseCase(any()) } returns TimelineStep()
+        coEvery { fetchTimelineUseCase(any()) } throws RuntimeException("fetch failed")
+
+        vm.updateStepTime(stepId, "07:00", "08:00")
+
+        assertEquals("2024-05-01 07:00", segment.startDate)
+        assertEquals("2024-05-01 18:00", segment.endDate)
+        val step = timeline.plans!!.first().steps!!.first()
+        assertEquals("2024-05-01 07:00", step.startDateTimes)
+        assertEquals("2024-05-01 08:00", step.endDateTimes)
     }
 }

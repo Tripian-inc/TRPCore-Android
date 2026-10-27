@@ -41,6 +41,7 @@ import com.tripian.trpcore.domain.usecase.timeline.DeleteStepUseCase
 import com.tripian.trpcore.domain.usecase.timeline.FetchTimelineUseCase
 import com.tripian.trpcore.domain.usecase.timeline.GetTimelineStepRoutesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.ResolveCitiesUseCase
+import com.tripian.trpcore.domain.usecase.timeline.SegmentTimeRange
 import com.tripian.trpcore.domain.usecase.timeline.SegmentTimeRangeAdjustment
 import com.tripian.trpcore.domain.usecase.timeline.UpdateSegmentTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
@@ -1596,8 +1597,9 @@ class ACTimelineVM @Inject constructor(
         }
 
         viewModelScope.launch {
+            var widenedSegment: WidenedSegment? = null
             runCatching {
-                widenSegmentToFitStep(stepId, startTime, resolvedEndTime)
+                widenedSegment = widenSegmentToFitStep(stepId, startTime, resolvedEndTime)
                 updateStepTimeUseCase(
                     UpdateStepTimeUseCase.Params(
                         stepId = stepId,
@@ -1608,11 +1610,14 @@ class ACTimelineVM @Inject constructor(
             }
                 .onSuccess {
                     reloadTimelineAndFinishTimeChange(useInlineLoader) {
-                        applyLocalStepTimeUpdate(stepId, startTime, resolvedEndTime)
+                        val stepUpdated = applyLocalStepTimeUpdate(stepId, startTime, resolvedEndTime)
+                        val segmentWidened = widenedSegment?.let(::applyLocalSegmentRange) ?: false
+                        stepUpdated || segmentWidened
                     }
                     onInlineResult?.invoke(true)
                 }
                 .onFailure { t ->
+                    if (widenedSegment != null) refetchTimelineAfterPartialTimeChange()
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
@@ -1622,37 +1627,65 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
+    /** A segment whose window was widened on the backend to fit a moved step. */
+    private data class WidenedSegment(val segmentIndex: Int, val range: SegmentTimeRange)
+
+    /**
+     * Re-fetches the timeline after the segment was widened but the step update failed, so the
+     * client reflects the widened segment. A fetch failure leaves the current timeline as is.
+     */
+    private suspend fun refetchTimelineAfterPartialTimeChange() {
+        clearRouteInfoCache()
+        runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
+            .onSuccess { timeline -> processTimeline(timeline) }
+    }
+
+    /** Writes [widened]'s window onto the local segment; `false` when the segment is gone. */
+    private fun applyLocalSegmentRange(widened: WidenedSegment): Boolean {
+        val segment = _timeline.value?.tripProfile?.segments?.getOrNull(widened.segmentIndex)
+            ?: return false
+        segment.startDate = widened.range.startDate
+        segment.endDate = widened.range.endDate
+        segment.additionalData?.let { add ->
+            add.startDatetime = widened.range.startDate
+            add.endDatetime = widened.range.endDate
+        }
+        return true
+    }
+
     /**
      * Widens the segment that owns [stepId] when the step's new window falls outside the
      * segment's startDate..endDate, since the step endpoint rejects such a move. Booked and
      * reserved segments are left untouched so their booking times are never rewritten.
      * Throws when the segment update fails so the step update is never sent.
+     *
+     * @return the widened segment once the backend accepted it, `null` when no widening was needed
      */
-    private suspend fun widenSegmentToFitStep(stepId: Int, startTime: String?, endTime: String?) {
-        val timeline = _timeline.value ?: return
-        val plans = timeline.plans ?: return
+    private suspend fun widenSegmentToFitStep(stepId: Int, startTime: String?, endTime: String?): WidenedSegment? {
+        val timeline = _timeline.value ?: return null
+        val plans = timeline.plans ?: return null
         val segmentIndex = plans.indexOfFirst { plan -> plan.steps?.any { it.id == stepId } == true }
-        if (segmentIndex < 0) return
+        if (segmentIndex < 0) return null
         val plan = plans[segmentIndex]
-        val segment = timeline.tripProfile?.segments?.getOrNull(segmentIndex) ?: return
-        if (segment.segmentType !in WIDENABLE_SEGMENT_TYPES) return
-        val step = plan.steps?.firstOrNull { it.id == stepId } ?: return
+        val segment = timeline.tripProfile?.segments?.getOrNull(segmentIndex) ?: return null
+        if (segment.segmentType !in WIDENABLE_SEGMENT_TYPES) return null
+        val step = plan.steps?.firstOrNull { it.id == stepId } ?: return null
 
         val stepDate = SegmentTimeRangeAdjustment.datePartOf(step.startDateTimes)
             ?: SegmentTimeRangeAdjustment.datePartOf(plan.startDate)
             ?: SegmentTimeRangeAdjustment.datePartOf(segment.startDate)
-            ?: return
-        val stepStartTime = startTime ?: SegmentTimeRangeAdjustment.timePartOf(step.startDateTimes) ?: return
-        val stepWindow = SegmentTimeRangeAdjustment.stepWindow(stepDate, stepStartTime, endTime) ?: return
+            ?: return null
+        val stepStartTime = startTime ?: SegmentTimeRangeAdjustment.timePartOf(step.startDateTimes) ?: return null
+        val stepWindow = SegmentTimeRangeAdjustment.stepWindow(stepDate, stepStartTime, endTime) ?: return null
         val widened = SegmentTimeRangeAdjustment.widenedRange(
             segmentStart = segment.startDate,
             segmentEnd = segment.endDate,
             stepStart = stepWindow.startDate,
             stepEnd = stepWindow.endDate
-        ) ?: return
+        ) ?: return null
 
-        val newStartTime = SegmentTimeRangeAdjustment.timePartOf(widened.startDate) ?: return
-        val newEndTime = SegmentTimeRangeAdjustment.timePartOf(widened.endDate) ?: return
+        val newStartTime = SegmentTimeRangeAdjustment.timePartOf(widened.startDate) ?: return null
+        val newEndTime = SegmentTimeRangeAdjustment.timePartOf(widened.endDate) ?: return null
         updateSegmentTimeUseCase(
             UpdateSegmentTimeUseCase.Params(
                 tripHash = _tripHash,
@@ -1664,6 +1697,7 @@ class ACTimelineVM @Inject constructor(
                 newEndDate = SegmentTimeRangeAdjustment.datePartOf(widened.endDate)
             )
         )
+        return WidenedSegment(segmentIndex, widened)
     }
 
     /**
