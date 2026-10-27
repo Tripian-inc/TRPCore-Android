@@ -211,6 +211,21 @@ class ACTimelineVMUpdateStepTimeTest {
     }
 
     @Test
+    fun `test updateStepTime leaves a reserved segment untouched when step moves outside its range success`() = runTest {
+        val vm = vm()
+        val timeline = timelineWithStep(
+            segment(SegmentType.RESERVED_ACTIVITY), "2024-05-01 10:00", "2024-05-01 11:00"
+        )
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { fetchTimelineUseCase(any()) } returns timeline
+
+        vm.updateStepTime(stepId, "07:00", "11:00")
+
+        coVerify(exactly = 0) { updateSegmentTimeUseCase(any()) }
+        coVerify(exactly = 1) { updateStepTimeUseCase(any()) }
+    }
+
+    @Test
     fun `test updateStepTime never calls step use case when widening the segment fails success`() = runTest {
         val vm = vm()
         val timeline = timelineWithStep(segment(), "2024-05-01 10:00", "2024-05-01 11:00")

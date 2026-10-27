@@ -109,6 +109,18 @@ class TRPCoreEnsureMapboxAccessTokenTest {
     }
 
     @Test
+    fun testBlankResolverResultNotifiesErrorOnceAndReturnsFalse() = runTest {
+        TRPCore.mapBoxApiKey = ""
+        every { miscRepository.getFreshPersistedMapboxAccessToken() } returns null
+        coEvery { resolveMapboxAccessToken.execute(null, "user-1") } returns "   "
+
+        val result = trpCore.ensureMapboxAccessToken("user-1")
+
+        assertFalse(result)
+        verify(exactly = 1) { listener.onError(any(), any<TRPCoreErrorCode>()) }
+    }
+
+    @Test
     fun testResolverFailureNotifiesErrorOnceAndReturnsFalse() = runTest {
         TRPCore.mapBoxApiKey = ""
         every { miscRepository.getFreshPersistedMapboxAccessToken() } returns null

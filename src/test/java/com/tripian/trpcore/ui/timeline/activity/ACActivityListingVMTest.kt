@@ -958,6 +958,76 @@ class ACActivityListingVMTest {
     }
 
     @Test
+    fun `test isInitialized is false before initialize is called`() {
+        val vm = vm()
+
+        assertFalse(vm.isInitialized)
+    }
+
+    @Test
+    fun `test isInitialized is true after initialize succeeds`() = runTest {
+        stubResponse(emptyList(), total = 0)
+        val vm = vm()
+
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        assertTrue(vm.isInitialized)
+    }
+
+    @Test
+    fun `test keyword search response does not rebuild category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+            })),
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.search("museum")
+
+        assertEquals("museum", capturedParams.last().keywords)
+        assertEquals(listOf("c1", "c2"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test active price filter response does not rebuild category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c1", "Museums"), facetCategory("c2", "Tours"))
+            })),
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+
+        vm.applyFilter(ActivityFilterData(minPrice = 50f, maxPrice = 200f))
+
+        assertEquals(50, capturedParams.last().minPrice)
+        assertEquals(listOf("c1", "c2"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
+    fun `test clearing search back to baseline rebuilds category strip success`() = runTest {
+        stubResponses(
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c1", "Museums")) })),
+            response(facets = listOf(TourFacet().apply { categories = listOf(facetCategory("c9", "Other")) })),
+            response(facets = listOf(TourFacet().apply {
+                categories = listOf(facetCategory("c7", "Food"), facetCategory("c8", "Nightlife"))
+            }))
+        )
+        val vm = vm()
+        vm.initialize(planData(), tripHash = "trip-1")
+        vm.search("museum")
+        assertEquals(listOf("c1"), vm.getFacetCategoryItems().drop(1).map { it.id })
+
+        vm.search("")
+
+        assertEquals(listOf("c7", "c8"), vm.getFacetCategoryItems().drop(1).map { it.id })
+    }
+
+    @Test
     fun `test filter confirmed at facet bounds sends default search params success`() = runTest {
         stubResponse(emptyList(), total = 0)
         val vm = vm()
