@@ -401,7 +401,7 @@ class ACActivityListingVM @Inject constructor(
 
     /**
      * Runs [params] and applies the response. The category strip may only be rebuilt
-     * from a first-page response whose own request carried no category filter.
+     * from a first-page response to the unfiltered baseline request.
      */
     private suspend fun fetchPage(
         params: SearchToursUseCase.Params,
@@ -409,8 +409,7 @@ class ACActivityListingVM @Inject constructor(
         scrollToTop: Boolean
     ) {
         val offset = params.offset
-        val canRebuildCategoryStrip =
-            !isPagination && offset == 0 && params.categoryIds.isNullOrEmpty()
+        val canRebuildCategoryStrip = !isPagination && offset == 0 && isUnfilteredBaseline(params)
 
         val result = runCatching { searchToursUseCase(params) }
         coroutineContext.ensureActive()
@@ -557,6 +556,15 @@ class ACActivityListingVM @Inject constructor(
     // =====================
     // FACETS
     // =====================
+
+    /**
+     * True when [params] carries no keywords and no categories while the default
+     * price / duration filter is active; only such a response lists every category.
+     */
+    private fun isUnfilteredBaseline(params: SearchToursUseCase.Params): Boolean =
+        params.keywords == null &&
+            params.categoryIds.isNullOrEmpty() &&
+            !getCurrentFilter().hasActiveFilters()
 
     /**
      * Seeds the filter slider bounds from the first facet entry when [isFirstPage] is
