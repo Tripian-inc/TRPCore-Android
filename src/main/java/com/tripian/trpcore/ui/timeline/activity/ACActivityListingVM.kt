@@ -119,6 +119,10 @@ class ACActivityListingVM @Inject constructor(
     // =====================
 
     private var planData: AddPlanData? = null
+
+    /** True once [initialize] has seeded this listing with its launch data. */
+    internal val isInitialized: Boolean
+        get() = planData != null
     private var tripHash: String = ""
     private var cityId: Int = 0
 

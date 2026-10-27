@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
@@ -44,6 +45,14 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     private var pendingScrollToTop = false
 
     private var paginationScrollListener: RecyclerView.OnScrollListener? = null
+
+    /** True when the activity is recreated from saved state (configuration change or process restore). */
+    private var isRecreated = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        isRecreated = savedInstanceState != null
+        super.onCreate(savedInstanceState)
+    }
 
     override fun onDestroy() {
         paginationScrollListener?.let { binding.rvActivities.removeOnScrollListener(it) }
@@ -87,6 +96,8 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
         setupSearchBar()
         setupClickListeners()
         setupCollapseGap()
+
+        if (isRecreated && viewModel.isInitialized) return
 
         intent?.let { intent ->
             @Suppress("DEPRECATION")
