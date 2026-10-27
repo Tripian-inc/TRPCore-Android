@@ -283,4 +283,22 @@ class ACTimelineVMUpdateStepTimeTest {
         assertEquals("2024-05-01 07:00", step.startDateTimes)
         assertEquals("2024-05-01 08:00", step.endDateTimes)
     }
+
+    @Test
+    fun `test updateStepTime applies widened segment range locally when step update and refetch fail`() = runTest {
+        val vm = vm()
+        val segment = segment()
+        val timeline = timelineWithStep(segment, "2024-05-01 10:00", "2024-05-01 11:00")
+        seedTimeline(vm, timeline, "trip-1")
+        coEvery { updateStepTimeUseCase(any()) } throws RuntimeException("step update failed")
+        coEvery { fetchTimelineUseCase(any()) } throws RuntimeException("offline")
+
+        vm.updateStepTime(stepId, "07:00", "08:00")
+
+        assertEquals("2024-05-01 07:00", segment.startDate)
+        assertEquals("2024-05-01 18:00", segment.endDate)
+        val step = timeline.plans!!.first().steps!!.first()
+        assertEquals("2024-05-01 10:00", step.startDateTimes)
+        assertEquals("step update failed", vm.error.value)
+    }
 }

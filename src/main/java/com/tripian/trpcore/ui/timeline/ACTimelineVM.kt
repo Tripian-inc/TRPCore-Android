@@ -1617,7 +1617,7 @@ class ACTimelineVM @Inject constructor(
                     onInlineResult?.invoke(true)
                 }
                 .onFailure { t ->
-                    if (widenedSegment != null) refetchTimelineAfterPartialTimeChange()
+                    widenedSegment?.let { refetchTimelineAfterPartialTimeChange(it) }
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
                     _error.value = errorModel.errorDesc
@@ -1631,13 +1631,14 @@ class ACTimelineVM @Inject constructor(
     private data class WidenedSegment(val segmentIndex: Int, val range: SegmentTimeRange)
 
     /**
-     * Re-fetches the timeline after the segment was widened but the step update failed, so the
-     * client reflects the widened segment. A fetch failure leaves the current timeline as is.
+     * Re-fetches the timeline after [widened] was accepted but the step update failed, so the
+     * client reflects the widened segment. A fetch failure applies [widened] locally instead.
      */
-    private suspend fun refetchTimelineAfterPartialTimeChange() {
+    private suspend fun refetchTimelineAfterPartialTimeChange(widened: WidenedSegment) {
         clearRouteInfoCache()
         runCatching { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }
             .onSuccess { timeline -> processTimeline(timeline) }
+            .onFailure { if (applyLocalSegmentRange(widened)) republishCurrentTimeline() }
     }
 
     /** Writes [widened]'s window onto the local segment; `false` when the segment is gone. */
