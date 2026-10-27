@@ -16,7 +16,10 @@ import com.tripian.trpcore.databinding.BottomSheetActivityTimeSelectionBinding
 import com.tripian.trpcore.ui.timeline.adapter.DayFilterAdapter
 import com.tripian.trpcore.util.AlertType
 import com.tripian.trpcore.util.LanguageConst
+import com.tripian.trpcore.util.extensions.NO_DAY_INDEX
 import com.tripian.trpcore.util.extensions.asIdsByDay
+import com.tripian.trpcore.util.extensions.isPastDay
+import com.tripian.trpcore.util.extensions.resolveInitialDayIndex
 import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.trpcore.util.widget.BottomToast
 import java.text.SimpleDateFormat
@@ -139,10 +142,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             if (initialDay != null && availableDays.none { isSameDay(it, initialDay) }) {
                 availableDays = (availableDays + initialDay).sortedBy { it.time }
             }
-            selectedDayIndex = initialDay
-                ?.let { day -> availableDays.indexOfFirst { isSameDay(it, day) } }
-                ?.coerceAtLeast(0)
-                ?: 0
+            selectedDayIndex = resolveInitialSelectedDayIndex(initialDay)
         }
 
         setupUI()
@@ -200,7 +200,7 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
         if (dayKeyFormatter.format(current) in available) return
 
         val firstAvailableIndex = availableDays.indexOfFirst {
-            dayKeyFormatter.format(it) in available
+            dayKeyFormatter.format(it) in available && isSelectableDay(it)
         }
         if (firstAvailableIndex < 0 || firstAvailableIndex == selectedDayIndex) return
 
@@ -264,9 +264,10 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = dayAdapter
         }
+        dayAdapter?.disablePastDays = disablesPastDays
         dayAdapter?.setDays(availableDays)
         dayAdapter?.setSelectedPosition(selectedDayIndex)
-        binding.rvDays.scrollToPosition(selectedDayIndex)
+        if (selectedDayIndex >= 0) binding.rvDays.scrollToPosition(selectedDayIndex)
     }
 
     private fun setupClickListeners() {
@@ -586,9 +587,31 @@ class ActivityTimeSelectionBottomSheet : BaseBottomDialogFragment<BottomSheetAct
     }
 
     private fun updateContinueButtonState() {
-        val isValid = isFlexibleSelected || selectedTimeSlot != null
-        binding.btnContinue.isEnabled = isValid
+        binding.btnContinue.isEnabled = selectedDayIndex in availableDays.indices &&
+            (isFlexibleSelected || selectedTimeSlot != null)
     }
+
+    /** Past days are locked when adding a favorite, so a plan is never placed on a day gone by. */
+    private val disablesPastDays: Boolean
+        get() = isFavoriteMode
+
+    /**
+     * Index of [initial] in [availableDays] (first day when absent). When past days are
+     * disabled, a past day falls back like the Add Plan flow and every-day-past yields
+     * [NO_DAY_INDEX].
+     */
+    private fun resolveInitialSelectedDayIndex(initial: Date?): Int {
+        val requested = initial?.let { day ->
+            availableDays.indexOfFirst { isSameDay(it, day) }.coerceAtLeast(0)
+        } ?: 0
+        return if (disablesPastDays) {
+            availableDays.resolveInitialDayIndex(requested)
+        } else {
+            requested
+        }
+    }
+
+    private fun isSelectableDay(day: Date): Boolean = !(disablesPastDays && day.isPastDay())
 
     private fun isSameDay(date1: Date, date2: Date): Boolean {
         val format = SimpleDateFormat("yyyy-MM-dd", Locale.US)
