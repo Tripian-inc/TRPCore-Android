@@ -15,6 +15,7 @@ import com.google.android.material.appbar.AppBarLayout
 import com.tripian.trpcore.util.extensions.applyBottomSystemBarInsetPadding
 import com.tripian.trpcore.util.extensions.asIdsByDay
 import com.tripian.trpcore.util.extensions.dp
+import com.tripian.trpcore.util.extensions.hideKeyboard
 import com.tripian.trpcore.util.extensions.toSerializableIdsByDay
 import com.tripian.one.api.tour.model.TourProduct
 import com.tripian.trpcore.R
@@ -332,6 +333,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
      * duration bounds are already in minutes.
      */
     private fun showFilterBottomSheet() {
+        hideKeyboard()
         val priceFacet = viewModel.priceRangeFacet.value
         val durationFacet = viewModel.durationRangeFacet.value
         val minPriceBound = priceFacet?.minimum?.amount?.let { it / 100f }
@@ -357,6 +359,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     private fun showSortBottomSheet() {
+        hideKeyboard()
         sortBottomSheet = ActivitySortBottomSheet.newInstance(
             currentSort = viewModel.getCurrentSort()
         )
@@ -376,6 +379,7 @@ class ACActivityListing : BaseActivity<AcActivityListingBinding, ACActivityListi
     }
 
     private fun showTimeSelectionBottomSheet(activity: TourProduct) {
+        hideKeyboard()
         timeSelectionBottomSheet = ActivityTimeSelectionBottomSheet.newInstance(
             activity = activity,
             availableDays = viewModel.getAvailableDays(),
