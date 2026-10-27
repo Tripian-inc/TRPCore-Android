@@ -35,13 +35,13 @@ fun Date.isPastDay(): Boolean {
 }
 
 /** Day index meaning no day is selected, e.g. when every day of a trip is in the past. */
-const val NO_DAY_INDEX = -1
+internal const val NO_DAY_INDEX = -1
 
 /**
  * Initial day selection among the receiver's days: [requestedIndex] when it points at a non-past
  * day, otherwise today, otherwise the first future day, otherwise [NO_DAY_INDEX].
  */
-fun List<Date>.resolveInitialDayIndex(requestedIndex: Int): Int {
+internal fun List<Date>.resolveInitialDayIndex(requestedIndex: Int): Int {
     if (getOrNull(requestedIndex)?.isPastDay() == false) return requestedIndex
     val todayIndex = indexOfFirst { it.isTodayDate() }
     if (todayIndex >= 0) return todayIndex
