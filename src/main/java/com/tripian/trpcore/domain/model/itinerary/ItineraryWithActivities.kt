@@ -4,6 +4,7 @@ import android.os.Parcelable
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import kotlinx.parcelize.Parcelize
 
 /**
@@ -96,7 +97,7 @@ data class ItineraryWithActivities(
         val endDatePart = extractDatePart(endDatetime) ?: return null
 
         return TimelineSegmentSettings().apply {
-            this.title = "TimelineDate"
+            this.title = TIMELINE_DATE_TITLE
             this.startDate = "$startDatePart 00:00"
             this.endDate = "$endDatePart 23:59"
             this.segmentType = "itinerary"

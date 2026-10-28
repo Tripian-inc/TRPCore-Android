@@ -326,6 +326,9 @@ object SegmentTypes {
     const val GENERATED = "generated"
 }
 
+/** Title of the itinerary-typed control segment that carries the trip's date range. */
+const val TIMELINE_DATE_TITLE = "TimelineDate"
+
 /**
  * Category ID Constants (Legacy)
  */

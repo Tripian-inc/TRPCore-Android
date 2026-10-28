@@ -4,6 +4,7 @@ import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
+import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import com.tripian.trpcore.repository.TimelineRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -15,7 +16,7 @@ import javax.inject.Inject
  * range: mutates the existing segment in-place (optimistic, caller re-publishes),
  * then fires a background PUT /timeline/{hash} with a segmentIndex hint so the
  * server treats it as an update, not an insertion.
- * Detection uses BOTH `title == "TimelineDate"` AND `available == false` (SDK
+ * Detection uses BOTH `title ==` [TIMELINE_DATE_TITLE] AND `available == false` (SDK
  * sentinel contract). No polling: `available = false` keeps it out of plan generation.
  */
 class UpdateDateRangeUseCase @Inject constructor(
@@ -39,7 +40,7 @@ class UpdateDateRangeUseCase @Inject constructor(
             ?: return Result(mutated = false)
 
         val existingIndex = segments.indexOfFirst { seg ->
-            seg.title == "TimelineDate" && !seg.available
+            seg.title == TIMELINE_DATE_TITLE && !seg.available
         }
         if (existingIndex < 0) return Result(mutated = false)
 

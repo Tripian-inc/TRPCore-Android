@@ -18,6 +18,7 @@ import com.tripian.trpcore.domain.DoLightLogin
 import com.tripian.trpcore.domain.model.MapStep
 import com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
 import com.tripian.trpcore.domain.model.timeline.BookingKeySet
+import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import com.tripian.trpcore.domain.model.timeline.bookingKey
 import com.tripian.trpcore.domain.model.timeline.missingBookedItems
 import com.tripian.trpcore.domain.model.itinerary.SegmentDestinationItem
@@ -1146,7 +1147,7 @@ class ACTimelineVM @Inject constructor(
 
         val segments = timeline.tripProfile?.segments ?: return emptyList()
 
-        segments.firstOrNull { it.title == "TimelineDate" && !it.available }
+        segments.firstOrNull { it.title == TIMELINE_DATE_TITLE && !it.available }
             ?.let { sentinel ->
                 val start = sentinel.startDate?.toDate()
                 val end = sentinel.endDate?.toDate()
@@ -2786,7 +2787,7 @@ class ACTimelineVM @Inject constructor(
 
         val out = mutableSetOf<Int>()
         segments.forEachIndexed { idx, seg ->
-            if (seg.title == "TimelineDate" && !seg.available) return@forEachIndexed
+            if (seg.title == TIMELINE_DATE_TITLE && !seg.available) return@forEachIndexed
 
             val cityId = seg.cityId
             if (currentCityIds.isNotEmpty() && cityId != null && cityId > 0 &&
