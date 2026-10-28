@@ -61,6 +61,7 @@ fun TimelineSegment.toEditSettings(segmentIndex: Int): TimelineSegmentSettings {
         this.segmentIndex = segmentIndex
         cityId = source.cityId
         title = source.title
+        description = source.description
         startDate = source.startDate
         endDate = source.endDate
         adults = source.adults
