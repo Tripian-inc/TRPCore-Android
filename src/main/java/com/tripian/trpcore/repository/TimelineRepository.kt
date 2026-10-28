@@ -4,6 +4,7 @@ import com.tripian.one.TRPRest
 import com.tripian.one.api.cities.model.CityResolveData
 import com.tripian.one.api.pois.model.Coordinate
 import com.tripian.one.api.timeline.model.CustomPoi
+import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelinePlan
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
@@ -80,7 +81,20 @@ class TimelineRepository @Inject constructor(
         )
     }
 
+    /**
+     * Adds [segment] when its segmentIndex is null, otherwise updates it; `doNotGenerate` is 0 on
+     * create and on a booked or reserved activity update, and 1 on every other update.
+     */
     suspend fun editSegmentAsync(
+        tripHash: String,
+        segment: TimelineSegmentSettings
+    ) {
+        val isCreate = segment.segmentIndex == null
+        segment.doNotGenerate = if (isCreate || segment.segmentType in ACTIVITY_SEGMENT_TYPES) 0 else 1
+        sendSegment(tripHash, segment)
+    }
+
+    private suspend fun sendSegment(
         tripHash: String,
         segment: TimelineSegmentSettings
     ): Unit = suspendCancellableCoroutine { cont ->
@@ -238,5 +252,9 @@ class TimelineRepository @Inject constructor(
             success = { response -> ok(response.data ?: emptyList()) },
             error = { throwable -> fail(throwable ?: Exception("City resolve failed")) }
         )
+    }
+
+    private companion object {
+        val ACTIVITY_SEGMENT_TYPES = setOf(SegmentType.BOOKED_ACTIVITY, SegmentType.RESERVED_ACTIVITY)
     }
 }
