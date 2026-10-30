@@ -86,3 +86,6 @@ Desktop.ini
 .claude/
 claude.md
 CLAUDE.md
+
+# Live-backend flow test settings
+live-test.properties

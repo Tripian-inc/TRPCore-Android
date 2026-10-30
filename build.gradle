@@ -88,6 +88,12 @@ android {
     }
 }
 
+tasks.withType(Test).configureEach {
+    if (!project.hasProperty("liveFlow")) {
+        exclude "**/flow/live/**"
+    }
+}
+
 // Force Kotlin stdlib version to match compiler version
 // This ensures all Kotlin dependencies use the same version as the compiler
 configurations.all {
