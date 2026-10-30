@@ -88,8 +88,12 @@ android {
     }
 }
 
+def liveFlowEnabled = project.findProperty("liveFlow")?.toString()?.trim()?.toBoolean() ?: false
+
 tasks.withType(Test).configureEach {
-    if (!project.hasProperty("liveFlow")) {
+    if (liveFlowEnabled) {
+        outputs.upToDateWhen { false }
+    } else {
         exclude "**/flow/live/**"
     }
 }

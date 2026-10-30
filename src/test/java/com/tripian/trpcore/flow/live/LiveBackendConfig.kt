@@ -25,7 +25,10 @@ class LiveBackendConfig private constructor(
         private const val ENV_API_KEY = "TRIPIAN_LIVE_API_KEY"
         private val STAGES = setOf("predev", "prod")
 
-        /** The configuration, or null when no stage or API key is available so the live suite is skipped. */
+        /**
+         * The configuration, or null when no stage or API key is configured so the live suite is skipped.
+         * Throws when `apiKeyFile`/`apiKeyProperty` are configured but do not resolve to a key.
+         */
         fun loadOrNull(): LiveBackendConfig? {
             val file = locatePropertiesFile()
             val properties = Properties().apply { file?.inputStream()?.use(::load) }
@@ -51,12 +54,22 @@ class LiveBackendConfig private constructor(
                 ?.takeIf { it.isFile }
         }
 
+        /**
+         * The key named by `apiKeyProperty` in the properties file at `apiKeyFile`, or null when neither is set.
+         * Fails, naming the path and property but never the value, when they are set but cannot be resolved.
+         */
         private fun readKeyFromFile(propertiesFile: File?, properties: Properties): String? {
-            val relativePath = properties.getProperty("apiKeyFile")?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-            val keyName = properties.getProperty("apiKeyProperty")?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-            val keyFile = File(propertiesFile?.parentFile, relativePath).takeIf { it.isFile } ?: return null
+            val relativePath = properties.getProperty("apiKeyFile")?.trim()?.takeIf { it.isNotEmpty() }
+            val keyName = properties.getProperty("apiKeyProperty")?.trim()?.takeIf { it.isNotEmpty() }
+            if (relativePath == null && keyName == null) return null
+            check(relativePath != null && keyName != null) {
+                "$FILE_NAME must set both apiKeyFile and apiKeyProperty (apiKeyFile=$relativePath, apiKeyProperty=$keyName)"
+            }
+            val keyFile = File(propertiesFile?.parentFile, relativePath)
+            check(keyFile.isFile) { "apiKeyFile ${keyFile.path} does not exist" }
             val secrets = Properties().apply { keyFile.inputStream().use(::load) }
             return secrets.getProperty(keyName)?.unquoted()
+                ?: error("Property $keyName is missing or empty in ${keyFile.path}")
         }
 
         private fun String.unquoted(): String? =

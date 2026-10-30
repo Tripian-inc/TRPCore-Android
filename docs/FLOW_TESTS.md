@@ -72,10 +72,16 @@ The environment variables `TRIPIAN_LIVE_STAGE` and `TRIPIAN_LIVE_API_KEY` overri
 
 ### Running
 
-The suite is excluded from every test task unless `-PliveFlow` is set:
+The suite is excluded from every test task unless `-PliveFlow=true` is passed (`-PliveFlow=false` or no
+property keeps it excluded):
 `./gradlew :TRPCore:testDebugUnitTest -PliveFlow=true --tests 'com.tripian.trpcore.flow.live.*'`
 
-Without a stage or a key the tests are skipped (JUnit assumption), not failed. Results and the
+With `-PliveFlow=true` the test tasks are never up-to-date, so repeating the command always reaches the
+backend; `live-test.properties` and the environment variables are not task inputs.
+
+Without a stage or a key the tests are skipped (JUnit assumption), not failed. When `apiKeyFile` or
+`apiKeyProperty` is set but the file, the property or the other setting is missing, the tests fail with a
+message naming the path and property (never the key). Results and the
 recorded requests are printed as `[live]` lines in the test report's standard output.
 
 The suite registers a real guest user per test and creates and deletes real trips on the chosen

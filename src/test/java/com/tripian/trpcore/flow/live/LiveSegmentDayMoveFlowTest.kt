@@ -10,7 +10,6 @@ import com.tripian.one.api.timeline.model.TimelineSettings
 import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import com.tripian.trpcore.flow.live.LiveTimelineHarness.Companion.CURRENCY
 import org.junit.Assert.assertTrue
-import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import java.time.LocalDate
@@ -28,16 +27,18 @@ class LiveSegmentDayMoveFlowTest {
 
     private val vm get() = harness.vm
 
+    private lateinit var tripHash: String
+
     private val day1 = LocalDate.now().plusDays(7).toString()
     private val day2 = LocalDate.now().plusDays(8).toString()
     private val day3 = LocalDate.now().plusDays(9).toString()
 
     @Test
     fun `a booked activity moved to another day is accepted by the backend`() {
-        val activityType = setUpTrip()
+        setUpTrip()
         val (index, activity) = segmentTitled(ACTIVITY_TITLE)
 
-        val call = changeSegmentTime("move $activityType from day 2 to day 3", activity, index, "10:00", "12:00", newDate = day3)
+        val call = changeSegmentTime("move booked_activity from day 2 to day 3", activity, index, "10:00", "12:00", newDate = day3)
 
         call.assertPlanFlags(doNotGenerate = 1, available = false, distinctPlan = true)
         assertSegmentStartsAt(ACTIVITY_TITLE, "$day3 10:00")
@@ -45,10 +46,10 @@ class LiveSegmentDayMoveFlowTest {
 
     @Test
     fun `a booked activity's hours changed on the same day are accepted by the backend`() {
-        val activityType = setUpTrip()
+        setUpTrip()
         val (index, activity) = segmentTitled(ACTIVITY_TITLE)
 
-        val call = changeSegmentTime("change $activityType hours on day 2", activity, index, "14:00", "16:00")
+        val call = changeSegmentTime("change booked_activity hours on day 2", activity, index, "14:00", "16:00")
 
         call.assertPlanFlags(doNotGenerate = 1, available = false, distinctPlan = true)
         assertSegmentStartsAt(ACTIVITY_TITLE, "$day2 14:00")
@@ -70,8 +71,8 @@ class LiveSegmentDayMoveFlowTest {
         setUpTrip()
         val (index, _) = segmentTitled(DAY_PLAN_TITLE)
         val step = vm.timeline.value?.plans?.getOrNull(index)?.steps?.firstOrNull()
-        Assume.assumeTrue("The generated day plan has no steps", step != null)
-        val stepStart = LocalTime.parse(timeOf(step!!.startDateTimes))
+            ?: throw AssertionError("The generated day plan of trip $tripHash has no steps")
+        val stepStart = LocalTime.parse(timeOf(step.startDateTimes))
         val stepEnd = step.endDateTimes?.let { LocalTime.parse(timeOf(it)) } ?: stepStart.plusHours(1)
         val newStart = stepStart.plusMinutes(STEP_SHIFT_MINUTES).toString()
         val newEnd = stepEnd.plusMinutes(STEP_SHIFT_MINUTES).toString()
@@ -89,16 +90,23 @@ class LiveSegmentDayMoveFlowTest {
             ?: throw AssertionError("No step PUT was sent; VM error: ${harness.lastErrorMessage()}")
         harness.report("move step ${step.id} from $stepStart to $newStart on day 1: ${call.outcome}")
         assertTrue("Step PUT ${call.outcome}; VM error: ${harness.lastErrorMessage()}", finished && call.outcome.accepted)
-        val reloaded = vm.timeline.value?.plans?.flatMap { it.steps.orEmpty() }?.firstOrNull { it.id == step.id }
-        harness.report("step ${step.id} after reload starts at ${reloaded?.startDateTimes}")
+        val inVm = vm.timeline.value?.plans?.flatMap { it.steps.orEmpty() }?.firstOrNull { it.id == step.id }
         assertTrue(
-            "Step ${step.id} should start at $newStart after reload but starts at ${reloaded?.startDateTimes}",
-            reloaded?.startDateTimes?.let(::timeOf) == newStart
+            "Step ${step.id} should start at $newStart in the VM but starts at ${inVm?.startDateTimes}",
+            inVm?.startDateTimes?.let(::timeOf) == newStart
+        )
+        val fetched = harness.fetchTimeline(tripHash).plans.orEmpty()
+            .flatMap { it.steps.orEmpty() }
+            .firstOrNull { it.id == step.id }
+        harness.report("step ${step.id} after backend fetch starts at ${fetched?.startDateTimes}")
+        assertTrue(
+            "Step ${step.id} should start at $newStart after backend fetch but starts at ${fetched?.startDateTimes}",
+            fetched?.startDateTimes?.let(::timeOf) == newStart
         )
     }
 
-    /** Builds the trip, loads it into the VM and returns the activity segment type the backend accepted. */
-    private fun setUpTrip(): String {
+    /** Builds the trip and loads it into the VM. */
+    private fun setUpTrip() {
         val created = harness.createTimeline(
             TimelineSettings.create(
                 cityId = harness.config.cityId,
@@ -107,31 +115,19 @@ class LiveSegmentDayMoveFlowTest {
                 segments = listOf(timelineDateSegment())
             )
         )
-        harness.report("created trip ${created.tripHash} on ${harness.config}")
+        tripHash = created.tripHash
+        harness.report("created trip $tripHash on ${harness.config}")
 
         val dayPlan = harness.addSegment(created.tripHash, dayPlanSegment())
         harness.report("add itinerary day plan: ${dayPlan.flags} -> ${dayPlan.outcome}")
         assertTrue("Adding the day plan was ${dayPlan.outcome}", dayPlan.outcome.accepted)
         harness.awaitGeneration(created.tripHash)
 
-        val activityType = addActivity(created.tripHash, created.city?.coordinate)
+        val booked = harness.addSegment(created.tripHash, bookedActivitySegment(created.city?.coordinate))
+        harness.report("add booked_activity: ${booked.flags} -> ${booked.outcome}")
+        assertTrue("Adding the booked_activity was ${booked.outcome}", booked.outcome.accepted)
         harness.awaitGeneration(created.tripHash)
         harness.loadTimeline(created.tripHash)
-        return activityType
-    }
-
-    private fun addActivity(tripHash: String, coordinate: Coordinate?): String {
-        val booked = harness.addSegment(tripHash, activitySegment(SegmentType.BOOKED_ACTIVITY, coordinate))
-        harness.report("add booked_activity: ${booked.flags} -> ${booked.outcome}")
-        if (booked.outcome.accepted) return SegmentType.BOOKED_ACTIVITY
-
-        val manual = harness.addSegment(tripHash, activitySegment(SegmentType.MANUAL_POI, coordinate))
-        harness.report("add manual_poi fallback: ${manual.flags} -> ${manual.outcome}")
-        assertTrue(
-            "The backend refused booked_activity (${booked.outcome}) and manual_poi (${manual.outcome})",
-            manual.outcome.accepted
-        )
-        return SegmentType.MANUAL_POI
     }
 
     private fun changeSegmentTime(
@@ -163,10 +159,17 @@ class LiveSegmentDayMoveFlowTest {
             ?: throw AssertionError("No segment titled '$title' in trip ${timeline.tripHash}")
     }
 
+    /** Asserts the segment's start in the VM and, authoritatively, in a fresh backend fetch of the trip. */
     private fun assertSegmentStartsAt(title: String, expectedStart: String) {
-        val actual = segmentTitled(title).value.startDate
-        harness.report("'$title' after reload starts at $actual")
-        assertTrue("'$title' should start at $expectedStart after reload but starts at $actual", actual?.startsWith(expectedStart) == true)
+        val inVm = segmentTitled(title).value.startDate
+        assertTrue("'$title' should start at $expectedStart in the VM but starts at $inVm", inVm?.startsWith(expectedStart) == true)
+        val fetched = harness.fetchTimeline(tripHash).tripProfile?.segments.orEmpty().firstOrNull { it.title == title }
+            ?: throw AssertionError("No segment titled '$title' in the backend copy of trip $tripHash")
+        harness.report("'$title' after backend fetch starts at ${fetched.startDate}")
+        assertTrue(
+            "'$title' should start at $expectedStart after backend fetch but starts at ${fetched.startDate}",
+            fetched.startDate?.startsWith(expectedStart) == true
+        )
     }
 
     private fun timeOf(dateTime: String?): String =
@@ -204,7 +207,7 @@ class LiveSegmentDayMoveFlowTest {
         available = true
     }
 
-    private fun activitySegment(type: String, coordinate: Coordinate?) = TimelineSegmentSettings.create(
+    private fun bookedActivitySegment(coordinate: Coordinate?) = TimelineSegmentSettings.create(
         title = ACTIVITY_TITLE,
         cityId = harness.config.cityId,
         startDate = "$day2 10:00",
@@ -216,20 +219,18 @@ class LiveSegmentDayMoveFlowTest {
         distinctPlan = true,
         currency = CURRENCY
     ).apply {
-        segmentType = type
-        if (type == SegmentType.BOOKED_ACTIVITY) {
-            additionalData = TimelineSegmentAdditionalData().apply {
-                activityId = ACTIVITY_ID
-                bookingId = "livetest-booking-$day2"
-                title = ACTIVITY_TITLE
-                startDatetime = "$day2 10:00"
-                endDatetime = "$day2 12:00"
-                this.coordinate = coordinate
-                price = 0.0
-                currency = CURRENCY
-                duration = 120.0
-                isNoLocation = coordinate == null
-            }
+        segmentType = SegmentType.BOOKED_ACTIVITY
+        additionalData = TimelineSegmentAdditionalData().apply {
+            activityId = ACTIVITY_ID
+            bookingId = "livetest-booking-$day2"
+            title = ACTIVITY_TITLE
+            startDatetime = "$day2 10:00"
+            endDatetime = "$day2 12:00"
+            this.coordinate = coordinate
+            price = 0.0
+            currency = CURRENCY
+            duration = 120.0
+            isNoLocation = coordinate == null
         }
     }
 
