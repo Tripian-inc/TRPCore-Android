@@ -33,13 +33,12 @@ class TimelineSegmentDayMoveFlowTest {
 
     @Test
     fun `moving a booked activity to another day sends one bare unavailable segment and closes the sheet`() {
-        val initial = timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
-        harness.loadTimeline(initial)
+        val initial = loadBookedActivityOnDay2()
 
         succeedSegmentChange(initial, segmentIndex = 1, startTime = "10:00", endTime = "12:00", newDate = DAY_3)
 
         val put = harness.takeRequest()
-        assertSegmentPut(put, segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(put)
         val additionalData = put.body!!.getAsJsonObject("additionalData")
         assertEquals("$DAY_3 10:00", additionalData.get("startDatetime").asString)
         assertEquals("$DAY_3 12:00", additionalData.get("endDatetime").asString)
@@ -56,7 +55,7 @@ class TimelineSegmentDayMoveFlowTest {
 
         succeedSegmentChange(initial, segmentIndex = 1, startTime = "10:00", endTime = "12:00", newDate = DAY_3)
 
-        assertSegmentPut(harness.takeRequest(), segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(harness.takeRequest())
         harness.assertTimelineReloaded()
         harness.assertChangeFinished()
     }
@@ -149,31 +148,27 @@ class TimelineSegmentDayMoveFlowTest {
 
     @Test
     fun `a rejected day move shows the backend message and leaves the sheet open`() {
-        val backendMessage = "The segment's dates cannot change while its plan is kept; regenerate the segment or keep its dates."
-        val initial = timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
-        harness.loadTimeline(initial)
-        harness.enqueueJson(400, TimelineFixtures.errorJson(backendMessage))
+        loadBookedActivityOnDay2()
+        harness.enqueueJson(400, TimelineFixtures.errorJson(REJECTED_DAY_MOVE_MESSAGE))
 
         vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
         harness.awaitIdle()
 
-        assertSegmentPut(harness.takeRequest(), segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(harness.takeRequest())
         harness.assertNoMoreRequests()
-        assertEquals(backendMessage, vm.error.value)
+        assertEquals(REJECTED_DAY_MOVE_MESSAGE, vm.error.value)
         assertEquals(false, vm.changeTimeFinished.value)
     }
 
     @Test
     fun `an identical rejection after the shown error was consumed surfaces again`() {
-        val backendMessage = "The segment's dates cannot change while its plan is kept; regenerate the segment or keep its dates."
-        val initial = timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
-        harness.loadTimeline(initial)
-        harness.enqueueJson(400, TimelineFixtures.errorJson(backendMessage))
-        harness.enqueueJson(400, TimelineFixtures.errorJson(backendMessage))
+        loadBookedActivityOnDay2()
+        harness.enqueueJson(400, TimelineFixtures.errorJson(REJECTED_DAY_MOVE_MESSAGE))
+        harness.enqueueJson(400, TimelineFixtures.errorJson(REJECTED_DAY_MOVE_MESSAGE))
 
         vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
         harness.awaitIdle()
-        assertEquals(backendMessage, vm.error.value)
+        assertEquals(REJECTED_DAY_MOVE_MESSAGE, vm.error.value)
         assertEquals(false, vm.changeTimeFinished.value)
 
         vm.consumeError()
@@ -181,12 +176,12 @@ class TimelineSegmentDayMoveFlowTest {
 
         vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
         harness.awaitIdle()
-        assertEquals(backendMessage, vm.error.value)
+        assertEquals(REJECTED_DAY_MOVE_MESSAGE, vm.error.value)
         assertEquals(false, vm.changeTimeFinished.value)
 
         val firstPut = harness.takeRequest()
         val secondPut = harness.takeRequest()
-        assertSegmentPut(firstPut, segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(firstPut)
         assertEquals(firstPut.body, secondPut.body)
         harness.assertNoMoreRequests()
     }
@@ -202,39 +197,42 @@ class TimelineSegmentDayMoveFlowTest {
     }
 
     @Test
-    fun `a successful retry after a rejection clears the error and closes the sheet`() {
-        val backendMessage = "The segment's dates cannot change while its plan is kept; regenerate the segment or keep its dates."
-        val initial = timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
-        harness.loadTimeline(initial)
-        harness.enqueueJson(400, TimelineFixtures.errorJson(backendMessage))
+    fun `a retry succeeds after a rejection and closes the sheet`() {
+        val initial = loadBookedActivityOnDay2()
+        harness.enqueueJson(400, TimelineFixtures.errorJson(REJECTED_DAY_MOVE_MESSAGE))
 
         vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
         harness.awaitIdle()
-        assertEquals(backendMessage, vm.error.value)
-        vm.consumeError()
+        assertEquals(REJECTED_DAY_MOVE_MESSAGE, vm.error.value)
         vm.resetChangeTimeFinished()
 
         succeedSegmentChange(initial, segmentIndex = 1, startTime = "10:00", endTime = "12:00", newDate = DAY_3)
 
-        assertSegmentPut(harness.takeRequest(), segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
-        assertSegmentPut(harness.takeRequest(), segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(harness.takeRequest())
+        assertBookedActivityMovedToDay3(harness.takeRequest())
         harness.assertTimelineReloaded()
-        harness.assertChangeFinished()
+        assertEquals(true, vm.changeTimeFinished.value)
     }
 
     private fun assertRejectionFallsBackToCommonError(errorBody: String) {
-        val initial = timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
-        harness.loadTimeline(initial)
+        loadBookedActivityOnDay2()
         harness.enqueueJson(400, errorBody)
 
         vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
         harness.awaitIdle()
 
-        assertSegmentPut(harness.takeRequest(), segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
+        assertBookedActivityMovedToDay3(harness.takeRequest())
         harness.assertNoMoreRequests()
         assertEquals(harness.localized(LanguageConst.COMMON_ERROR), vm.error.value)
         assertEquals(false, vm.changeTimeFinished.value)
     }
+
+    private fun loadBookedActivityOnDay2(): Timeline =
+        timeline(listOf(itinerary("$DAY_1 09:00", "$DAY_1 18:00"), bookedActivity("$DAY_2 10:00", "$DAY_2 12:00")))
+            .also(harness::loadTimeline)
+
+    private fun assertBookedActivityMovedToDay3(call: TimelineFlowHarness.RecordedCall) =
+        assertSegmentPut(call, segmentIndex = 1, segmentType = "booked_activity", available = false, distinctPlan = true, startDate = "$DAY_3 10:00", endDate = "$DAY_3 12:00")
 
     private fun segmentAt(index: Int): TimelineSegment = vm.timeline.value!!.tripProfile!!.segments!![index]
 
@@ -274,5 +272,9 @@ class TimelineSegmentDayMoveFlowTest {
         }
         assertEquals(startDate, body.get("startDate").asString)
         assertEquals(endDate, body.get("endDate").asString)
+    }
+
+    private companion object {
+        const val REJECTED_DAY_MOVE_MESSAGE = "The segment's dates cannot change while its plan is kept; regenerate the segment or keep its dates."
     }
 }

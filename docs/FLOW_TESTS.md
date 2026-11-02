@@ -48,8 +48,8 @@ From the host app that includes `:TRPCore` (e.g. TripianApp):
   both PUTs carry the same body.
 - `a rejection with a blank message ...` / `a rejection without a message ...`: an empty or missing
   `message` falls back to `LanguageConst.COMMON_ERROR`; the sheet stays open.
-- `a successful retry after a rejection clears the error and closes the sheet`: the retry PUT succeeds,
-  the timeline reloads, `error` is `null` and `changeTimeFinished` is `true`.
+- `a retry succeeds after a rejection and closes the sheet`: the retry PUT succeeds, the timeline
+  reloads and `changeTimeFinished` is `true`.
 
 ## Live-backend flow tests
 
