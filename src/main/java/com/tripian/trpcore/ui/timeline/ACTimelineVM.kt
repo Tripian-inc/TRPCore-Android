@@ -714,7 +714,7 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     _error.value = errorMessageOrCommon(errorModel.errorDesc)
-                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                     hideLottieLoading()
                 }
         }
@@ -776,7 +776,7 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     _error.value = errorMessageOrCommon(errorModel.errorDesc)
-                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                     hideLottieLoading()
                 }
         }
@@ -826,7 +826,7 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     _error.value = errorMessageOrCommon(errorModel.errorDesc)
-                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                     hideLottieLoading()
                 }
         }
