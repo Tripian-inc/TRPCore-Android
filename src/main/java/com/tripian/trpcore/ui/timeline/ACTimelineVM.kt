@@ -546,8 +546,8 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     isLoginInProgress = false
-                    _error.value = errorModel.errorDesc ?: "Login failed"
-                    TRPCore.notifyError(errorModel.errorDesc ?: "Login failed")
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                 }
         }
     }
@@ -594,7 +594,7 @@ class ACTimelineVM @Inject constructor(
 
             else -> {
                 hideLoading()
-                _error.value = "No trip hash or itinerary provided"
+                _error.value = getLanguageForKey(LanguageConst.COMMON_ERROR)
             }
         }
     }
@@ -617,7 +617,7 @@ class ACTimelineVM @Inject constructor(
 
         if (coordinates.isEmpty()) {
             hideLoading()
-            _error.value = "No valid coordinates found"
+            _error.value = getLanguageForKey(LanguageConst.COMMON_ERROR)
             return
         }
 
@@ -633,8 +633,8 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     hideLoading()
-                    _error.value = errorModel.errorDesc ?: "City resolve failed"
-                    TRPCore.notifyError(errorModel.errorDesc ?: "City resolve failed")
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                 }
         }
     }
@@ -795,8 +795,8 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     hideLottieLoading()
-                    _error.value = errorModel.errorDesc ?: "Timeline generation failed"
-                    TRPCore.notifyError(errorModel.errorDesc ?: "Timeline generation failed")
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
+                    TRPCore.notifyError(errorMessageOrCommon(errorModel.errorDesc))
                 }
         }
     }
