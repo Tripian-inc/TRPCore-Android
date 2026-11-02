@@ -10,8 +10,9 @@ import com.tripian.trpcore.util.widget.BottomToast
 
 /**
  * Places Timeline toasts above the topmost open sheet. Sheets register their
- * window roots, most recent last; a toast still on screen when its sheet closes
- * is shown again on the next sheet, or on the activity when none is left.
+ * window roots, most recent last; a non-error toast still on screen when its sheet
+ * closes is shown again on the next sheet, or on the activity when none is left.
+ * Error toasts close together with their sheet.
  */
 internal class TimelineToastAnchor {
     private val roots = mutableListOf<ViewGroup>()
@@ -29,7 +30,9 @@ internal class TimelineToastAnchor {
         roots.remove(root)
         val toast = anchoredToast?.takeIf { it.root === root } ?: return
         anchoredToast = null
-        if (BottomToast.isShowing(root)) show(toast.activity, toast.message, toast.type)
+        if (toast.type != AlertType.ERROR && BottomToast.isShowing(root)) {
+            show(toast.activity, toast.message, toast.type)
+        }
     }
 
     fun show(activity: Activity, message: String, type: AlertType) {
