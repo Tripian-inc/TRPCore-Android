@@ -16,8 +16,8 @@ import kotlin.reflect.KClass
 
 /**
  * [ViewListener] adapter for Compose screens. Alerts surface through
- * [BottomToast], warning dialogs through [TimelineOverlayState]; back/finish
- * requests route to [onExit].
+ * [BottomToast] on top of the open Timeline sheet, if any, warning dialogs
+ * through [TimelineOverlayState]; back/finish requests route to [onExit].
  */
 internal class ComposeViewListener(
     private val context: Context,
@@ -33,7 +33,7 @@ internal class ComposeViewListener(
     }
 
     override fun showAlert(type: AlertType, message: String) {
-        context.findActivity()?.let { BottomToast.show(it, message, type) }
+        showToast(message, type)
     }
 
     override fun showLoading() = Unit
@@ -59,7 +59,12 @@ internal class ComposeViewListener(
     override fun finishActivity() = onExit()
 
     override fun showSnackBarMessage(message: String) {
-        context.findActivity()?.let { BottomToast.show(it, message, AlertType.INFO) }
+        showToast(message, AlertType.INFO)
+    }
+
+    private fun showToast(message: String, type: AlertType) {
+        val activity = context.findActivity() ?: return
+        BottomToast.show(activity, message, type, parent = overlays.toastAnchor.current)
     }
 }
 

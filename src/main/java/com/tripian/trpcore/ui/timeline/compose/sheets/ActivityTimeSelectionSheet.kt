@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -122,6 +123,7 @@ internal fun ActivityTimeSelectionSheet(
     val loaderEvent by viewModel.lottieLoadingEvent.observeAsState()
     val vmLoader = loaderEvent?.takeIf { it.show }
     val busy = inSheetLoadingText != null || vmLoader != null
+    val uiHolder = remember { ActivityTimeSelectionUiHolder() }
 
     TimelineSheet(onDismissRequest = onDismiss, dismissible = !busy) {
         Column(
@@ -131,21 +133,22 @@ internal fun ActivityTimeSelectionSheet(
         ) {
             BindingHost(
                 inflate = BottomSheetActivityTimeSelectionBinding::inflate,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                update = { uiHolder.ui?.isBusy = busy }
             ) { binding, owner, _ ->
                 if (viewModel.arguments == null) {
                     viewModel.arguments = request.toFragmentArguments()
                     viewModel.onViewCreated(null)
                     viewModel.onStart()
                 }
-                ActivityTimeSelectionUi(
+                uiHolder.ui = ActivityTimeSelectionUi(
                     binding = binding,
                     viewModel = viewModel,
                     request = request,
                     onDismiss = { currentOnDismiss() },
                     onTimeSelected = { currentOnTimeSelected(it) },
                     onRemove = { currentOnRemove?.invoke() }
-                ).bind(owner)
+                ).also { it.bind(owner) }
             }
         }
         when {
@@ -186,6 +189,10 @@ private fun ActivityTimeSelectionRequest.toFragmentArguments(): Bundle? = when (
         isNotAvailable = m.isNotAvailable,
         hideDaySelector = m.hideDaySelector
     ).arguments
+}
+
+private class ActivityTimeSelectionUiHolder {
+    var ui: ActivityTimeSelectionUi? = null
 }
 
 /**
@@ -249,6 +256,14 @@ private class ActivityTimeSelectionUi(
     private var currentSlots: List<GroupedTimeSlot> = emptyList()
     private var currentFlexiblePrice: Double? = null
     private var isFlexibleSelected: Boolean = false
+
+    /** True while the sheet shows a loader; keeps Continue disabled until it clears. */
+    var isBusy: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            updateContinueButtonState()
+        }
 
     fun bind(owner: LifecycleOwner) {
         binding.root.hideSheetDragHandle()
@@ -576,7 +591,8 @@ private class ActivityTimeSelectionUi(
     }
 
     private fun updateContinueButtonState() {
-        binding.btnContinue.isEnabled = selectedDayIndex in availableDays.indices &&
+        binding.btnContinue.isEnabled = !isBusy &&
+            selectedDayIndex in availableDays.indices &&
             (isFlexibleSelected || selectedTimeSlot != null)
     }
 

@@ -57,6 +57,7 @@ internal fun TimelineSheet(
 ) {
     val maxContentHeight = rememberMaxSheetContentHeight()
     val sheetCornerRadius = dimensionResource(R.dimen.trp_bottom_sheet_corner_radius)
+    val toastAnchor = LocalTimelineOverlays.current.toastAnchor
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = rememberModalBottomSheetState(
@@ -77,6 +78,7 @@ internal fun TimelineSheet(
             }
         }
     ) {
+        RegisterToastAnchor(toastAnchor)
         Box(Modifier.heightIn(max = maxContentHeight), content = content)
     }
 }
