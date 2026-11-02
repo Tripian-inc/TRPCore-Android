@@ -94,6 +94,7 @@ property keeps it excluded):
 
 With `-PliveFlow=true` the test tasks are never up-to-date, so repeating the command always reaches the
 backend; `live-test.properties` and the environment variables are not task inputs.
+The test JVM ignores the host system proxy (Proxyman, Charles), so the suite always reaches the backend directly.
 
 Without a stage or a key the tests are skipped (JUnit assumption), not failed. When `apiKeyFile` or
 `apiKeyProperty` is set but the file, the property or the other setting is missing, the tests fail with a

@@ -91,6 +91,13 @@ android {
 def liveFlowEnabled = project.findProperty("liveFlow")?.toString()?.trim()?.toBoolean() ?: false
 
 tasks.withType(Test).configureEach {
+    systemProperties(
+        "http.proxyHost": "",
+        "http.proxyPort": "",
+        "https.proxyHost": "",
+        "https.proxyPort": "",
+        "socksProxyHost": ""
+    )
     if (liveFlowEnabled) {
         outputs.upToDateWhen { false }
     } else {
