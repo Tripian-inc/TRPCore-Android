@@ -4,6 +4,7 @@ import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.Timeline
 import com.tripian.one.api.timeline.model.TimelineSegment
+import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import com.tripian.trpcore.domain.model.timeline.TimelineDisplayItem
 import com.tripian.trpcore.domain.model.timeline.effectiveEndDatetime
 import com.tripian.trpcore.domain.model.timeline.effectiveStartDatetime
@@ -53,7 +54,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
     // ============================================================
 
     /**
-     * Turns the day's segments into display items. "TimelineDate" control segments and
+     * Turns the day's segments into display items. [TIMELINE_DATE_TITLE] control segments and
      * empty smart recommendations are skipped. Expired step ids and step times are
      * snapshotted into the Recommendations item so its data-class equality (and DiffUtil)
      * reacts to in-place step mutations.
@@ -127,7 +128,7 @@ class TimelineDisplayItemBuilder @Inject constructor(
                 SegmentType.ITINERARY, SegmentType.GENERATED -> {
                     if (plan != null) {
                         val steps = plan.steps ?: emptyList()
-                        if (segment.title == "TimelineDate") return@forEachIndexed
+                        if (segment.title == TIMELINE_DATE_TITLE) return@forEachIndexed
                         if (plan.generatedStatus == -2 && steps.isEmpty()) return@forEachIndexed
 
                         val cityId = segment.cityId

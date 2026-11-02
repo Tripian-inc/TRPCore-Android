@@ -44,7 +44,7 @@ class AddMissingBookedActivitiesUseCase @Inject constructor(
             try {
                 repository.editSegmentAsync(params.tripHash, segment)
             } catch (error: Throwable) {
-                val reason = ApiErrorMapper.serverMessage(error) ?: error.message.orEmpty()
+                val reason = ApiErrorMapper.map(error, miscRepository, tripianUserRepository).errorDesc
                 android.util.Log.e("SYNC", "Booked activity add failed: ${tripItem.activityId} $reason")
                 TRPCore.notifyError(
                     "${tripItem.title.orEmpty()} ${reason}".trim(),

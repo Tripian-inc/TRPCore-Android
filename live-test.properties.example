@@ -1,0 +1,15 @@
+# Copy to live-test.properties (gitignored) to enable the live-backend flow suite.
+# Run: ./gradlew :TRPCore:testDebugUnitTest -PliveFlow=true --tests 'com.tripian.trpcore.flow.live.*'
+# Only -PliveFlow=true enables the suite; live runs are never up-to-date, so every run hits the backend.
+
+# predev | prod
+stage=predev
+
+# Either put the key inline:
+# apiKey=<api key>
+# or point to a properties file holding it, relative to this file:
+apiKeyFile=../../TripianApp/secrets.properties
+apiKeyProperty=TRIPIAN_API_KEY_DEV
+
+# Optional, defaults to 109 (Barcelona)
+# cityId=109

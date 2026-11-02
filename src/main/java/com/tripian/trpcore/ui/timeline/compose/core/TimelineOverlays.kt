@@ -35,6 +35,8 @@ import com.tripian.trpcore.util.WarningDialogRequest
  * ViewModel asked for through [com.tripian.trpcore.base.BaseViewModel.showDialog].
  */
 class TimelineOverlayState {
+    internal val toastAnchor = TimelineToastAnchor()
+
     var dialog by mutableStateOf<WarningDialogRequest?>(null)
         private set
 

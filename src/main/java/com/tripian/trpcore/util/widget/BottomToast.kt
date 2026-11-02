@@ -33,6 +33,7 @@ class BottomToast private constructor(
     companion object {
         private const val DEFAULT_DURATION = 3000L
         private const val ANIMATION_DURATION = 300L
+        private const val TOAST_TAG = "bottom_toast"
 
         /**
          * @param parent optional attach target. Pass a dialog's decor view to
@@ -49,6 +50,9 @@ class BottomToast private constructor(
         ) {
             BottomToast(activity, message, alertType, duration, parent).display()
         }
+
+        /** True while a toast is attached to [parent], i.e. shown and not yet dismissed. */
+        fun isShowing(parent: ViewGroup): Boolean = parent.findViewWithTag<View>(TOAST_TAG) != null
     }
 
     private fun resolveParent(): ViewGroup =
@@ -109,7 +113,7 @@ class BottomToast private constructor(
         }
 
         toastView?.let { view ->
-            view.tag = "bottom_toast"
+            view.tag = TOAST_TAG
             rootView.addView(view, params)
 
             view.translationY = 500f
@@ -173,7 +177,7 @@ class BottomToast private constructor(
     private fun removeExistingToast() {
         try {
             val rootView = resolveParent()
-            val existingToast = rootView.findViewWithTag<View>("bottom_toast")
+            val existingToast = rootView.findViewWithTag<View>(TOAST_TAG)
             existingToast?.let {
                 rootView.removeView(it)
             }

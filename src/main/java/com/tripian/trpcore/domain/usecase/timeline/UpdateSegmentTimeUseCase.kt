@@ -1,22 +1,20 @@
 package com.tripian.trpcore.domain.usecase.timeline
 
+import com.tripian.one.api.timeline.model.SegmentType
 import com.tripian.one.api.timeline.model.TimelineSegment
 import com.tripian.one.api.timeline.model.TimelineSegmentAdditionalData
 import com.tripian.one.api.timeline.model.TimelineSegmentSettings
 import com.tripian.trpcore.base.SuspendUseCase
 import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.domain.model.timeline.TIMELINE_DATE_TITLE
 import com.tripian.trpcore.domain.usecase.timeline.SegmentTimeRangeAdjustment.datePartOf
 import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.base.ResponseModelBase
 import javax.inject.Inject
 
 /**
- * UpdateSegmentTimeUseCase
- *
- * Updates the start/end time of an existing top-level segment (reserved_activity
- * or flexible activity) in-place. The backend uses [TimelineSegmentSettings.segmentIndex]
- * as the identity for editSegment, so we re-send the whole segment payload with
- * the index pinned and only the time fields changed.
+ * Updates the time and day of any top-level segment in place, keyed by
+ * [TimelineSegmentSettings.segmentIndex], and decides the plan flags it is sent with.
  */
 class UpdateSegmentTimeUseCase @Inject constructor(
     private val repository: TimelineRepository
@@ -65,6 +63,8 @@ class UpdateSegmentTimeUseCase @Inject constructor(
             }
         }
 
+        val (outgoingAvailable, outgoingDistinctPlan) = planFlagsFor(params.original)
+
         val segment = TimelineSegmentSettings().apply {
             segmentIndex = params.segmentIndex
             cityId = params.original.cityId
@@ -82,8 +82,8 @@ class UpdateSegmentTimeUseCase @Inject constructor(
             excludePoiIds = params.original.excludePoiIds
             includePoiIds = params.original.includePoiIds
             considerWeather = params.original.considerWeather
-            distinctPlan = params.original.distinctPlan
-            available = params.original.available
+            distinctPlan = outgoingDistinctPlan
+            available = outgoingAvailable
             accommodation = params.original.accommodation
             destinationAccommodation = params.original.destinationAccommodation
             smartRecommendation = params.original.smartRecommendation
@@ -98,4 +98,12 @@ class UpdateSegmentTimeUseCase @Inject constructor(
         repository.editSegmentAsync(params.tripHash, segment)
         return ResponseModelBase().apply { status = 200 }
     }
+
+    /** Plan flags to send as (available, distinctPlan): only a real day-plan itinerary is available, everything else is unavailable with a distinct plan. */
+    private fun planFlagsFor(segment: TimelineSegment): Pair<Boolean, Boolean> =
+        if (segment.segmentType == SegmentType.ITINERARY && segment.title != TIMELINE_DATE_TITLE) {
+            true to segment.distinctPlan
+        } else {
+            false to true
+        }
 }
