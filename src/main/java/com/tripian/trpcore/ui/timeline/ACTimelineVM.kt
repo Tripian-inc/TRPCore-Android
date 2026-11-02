@@ -713,7 +713,7 @@ class ACTimelineVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
                     hideLottieLoading()
                 }
@@ -775,7 +775,7 @@ class ACTimelineVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     TRPCore.notifyError(errorModel.errorDesc ?: "Timeline creation failed")
                     hideLottieLoading()
                 }
@@ -825,7 +825,7 @@ class ACTimelineVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     TRPCore.notifyError(errorModel.errorDesc ?: "Timeline fetch failed")
                     hideLottieLoading()
                 }
@@ -1493,7 +1493,7 @@ class ACTimelineVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     hideLottieLoading()
                 }
         }
@@ -1540,7 +1540,7 @@ class ACTimelineVM @Inject constructor(
                 }
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     hideLottieLoading()
                 }
         }
@@ -1621,7 +1621,7 @@ class ACTimelineVM @Inject constructor(
                     widenedSegment?.let { refetchTimelineAfterPartialTimeChange(it) }
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     if (useInlineLoader) _changeTimeFinished.value = false
                     onInlineResult?.invoke(false)
                 }
@@ -1835,7 +1835,7 @@ class ACTimelineVM @Inject constructor(
                 .onFailure { t ->
                     val errorModel = t.toErrorModel()
                     if (!useInlineLoader) hideLottieLoading()
-                    _error.value = errorModel.errorDesc
+                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     if (useInlineLoader) _changeTimeFinished.value = false
                     onInlineResult?.invoke(false)
                 }
@@ -1919,6 +1919,14 @@ class ACTimelineVM @Inject constructor(
     fun resetChangeTimeFinished() {
         _changeTimeFinished.value = null
     }
+
+    /** Clears [error] once the screen has shown it, so an identical next failure is a new event. */
+    fun consumeError() {
+        _error.value = null
+    }
+
+    private fun errorMessageOrCommon(message: String?): String =
+        message?.takeIf { it.isNotBlank() } ?: getLanguageForKey(LanguageConst.COMMON_ERROR)
 
     // =====================
     // UI ACTIONS

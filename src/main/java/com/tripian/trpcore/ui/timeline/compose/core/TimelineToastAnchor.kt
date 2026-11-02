@@ -1,19 +1,21 @@
 package com.tripian.trpcore.ui.timeline.compose.core
 
+import android.app.Activity
 import android.view.ViewGroup
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.ui.platform.LocalView
+import com.tripian.trpcore.util.AlertType
+import com.tripian.trpcore.util.widget.BottomToast
 
 /**
- * Window roots of the Timeline sheets currently on screen, most recent last.
- * Toasts attach to [current] so they draw above an open sheet's dialog window
- * instead of the activity content underneath it.
+ * Places Timeline toasts above the topmost open sheet. Sheets register their
+ * window roots, most recent last; a toast still on screen when its sheet closes
+ * is shown again on the next sheet, or on the activity when none is left.
  */
-@Stable
 internal class TimelineToastAnchor {
     private val roots = mutableListOf<ViewGroup>()
+    private var anchoredToast: AnchoredToast? = null
 
     val current: ViewGroup?
         get() = roots.lastOrNull()
@@ -25,7 +27,23 @@ internal class TimelineToastAnchor {
 
     fun unregister(root: ViewGroup) {
         roots.remove(root)
+        val toast = anchoredToast?.takeIf { it.root === root } ?: return
+        anchoredToast = null
+        if (BottomToast.isShowing(root)) show(toast.activity, toast.message, toast.type)
     }
+
+    fun show(activity: Activity, message: String, type: AlertType) {
+        val root = current
+        BottomToast.show(activity, message, type, parent = root)
+        anchoredToast = root?.let { AnchoredToast(activity, message, type, it) }
+    }
+
+    private class AnchoredToast(
+        val activity: Activity,
+        val message: String,
+        val type: AlertType,
+        val root: ViewGroup
+    )
 }
 
 /** Registers the calling composition's window root with [anchor] while it stays composed. */

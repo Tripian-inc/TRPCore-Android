@@ -620,7 +620,10 @@ fun TimelineScreen(
 
     val error by viewModel.error.observeAsState()
     LaunchedEffect(error) {
-        error?.let { viewModel.showAlert(com.tripian.trpcore.util.AlertType.ERROR, it) }
+        error?.let {
+            viewModel.showAlert(com.tripian.trpcore.util.AlertType.ERROR, it)
+            viewModel.consumeError()
+        }
     }
 
     val showOnboarding by viewModel.showOnboarding.observeAsState()

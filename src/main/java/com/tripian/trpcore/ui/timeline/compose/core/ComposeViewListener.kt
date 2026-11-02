@@ -64,7 +64,7 @@ internal class ComposeViewListener(
 
     private fun showToast(message: String, type: AlertType) {
         val activity = context.findActivity() ?: return
-        BottomToast.show(activity, message, type, parent = overlays.toastAnchor.current)
+        overlays.toastAnchor.show(activity, message, type)
     }
 }
 
