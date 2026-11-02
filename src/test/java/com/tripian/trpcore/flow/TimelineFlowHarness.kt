@@ -168,6 +168,14 @@ class TimelineFlowHarness : ExternalResource() {
         )
     }
 
+    /**
+     * Answers the next request with a malformed status line, so OkHttp fails the call with a
+     * `ProtocolException` (an IOException it does not retry) after the request reached the server.
+     */
+    fun enqueueTransportFailure() {
+        server.enqueue(MockResponse().setStatus(MALFORMED_STATUS_LINE))
+    }
+
     /** Takes the next request the client sent and fails if it is an auth call or never arrives. */
     fun takeRequest(): RecordedCall {
         val recorded = server.takeRequest(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -248,6 +256,7 @@ class TimelineFlowHarness : ExternalResource() {
         const val MOCK_BASE_PATH = "/prod/"
         private const val MOCK_API_KEY = "flow-test-key"
         private const val UNEXPECTED_REQUEST_CODE = 599
+        private const val MALFORMED_STATUS_LINE = "HTTP/1.1 malformed"
         private const val REQUEST_TIMEOUT_SECONDS = 5L
         private const val IDLE_TIMEOUT_MILLIS = 15_000L
     }

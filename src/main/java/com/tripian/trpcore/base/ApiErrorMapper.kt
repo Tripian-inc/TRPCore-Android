@@ -1,15 +1,15 @@
 package com.tripian.trpcore.base
 
 import com.google.gson.Gson
+import com.google.gson.stream.MalformedJsonException
 import com.tripian.one.util.BaseResponse
 import com.tripian.trpcore.repository.MiscRepository
 import com.tripian.trpcore.repository.TripianUserRepository
 import com.tripian.trpcore.repository.base.ErrorModel
 import com.tripian.trpcore.util.LanguageConst
 import retrofit2.HttpException
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import javax.net.ssl.SSLHandshakeException
+import java.io.EOFException
+import java.io.IOException
 
 /**
  * Translates any Throwable thrown from the repository / service layer into
@@ -31,13 +31,16 @@ internal object ApiErrorMapper {
         return when (throwable) {
             is ErrorModel -> throwable
 
-            is ConnectException,
-            is SocketTimeoutException,
-            is SSLHandshakeException -> ErrorModel(
-                miscRepository.getLanguageValueForKey(LanguageConst.NO_NETWORK)
+            is HttpException -> mapHttpException(throwable, miscRepository, tripianUserRepository)
+
+            is MalformedJsonException,
+            is EOFException -> ErrorModel(
+                miscRepository.getLanguageValueForKey(LanguageConst.COMMON_ERROR)
             )
 
-            is HttpException -> mapHttpException(throwable, miscRepository, tripianUserRepository)
+            is IOException -> ErrorModel(
+                miscRepository.getLanguageValueForKey(LanguageConst.NO_NETWORK)
+            )
 
             else -> ErrorModel(
                 throwable.message?.takeIf { it.isNotEmpty() }

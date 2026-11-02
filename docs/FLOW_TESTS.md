@@ -48,6 +48,8 @@ From the host app that includes `:TRPCore` (e.g. TripianApp):
   both PUTs carry the same body.
 - `a rejection with a blank message ...` / `a rejection without a message ...`: an empty or missing
   `message` falls back to `LanguageConst.COMMON_ERROR`; the sheet stays open.
+- `a transport failure shows the localized network error ...`: a PUT failing with an IOException
+  (malformed status line) shows `LanguageConst.NO_NETWORK`, never the raw exception text; the sheet stays open.
 - `a retry succeeds after a rejection and closes the sheet`: the retry PUT succeeds, the timeline
   reloads and `changeTimeFinished` is `true`.
 

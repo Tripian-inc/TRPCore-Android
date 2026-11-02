@@ -197,6 +197,20 @@ class TimelineSegmentDayMoveFlowTest {
     }
 
     @Test
+    fun `a transport failure shows the localized network error and leaves the sheet open`() {
+        loadBookedActivityOnDay2()
+        harness.enqueueTransportFailure()
+
+        vm.updateSegmentTime(segmentAt(1), 1, "10:00", "12:00", newDate = DAY_3, useInlineLoader = true)
+        harness.awaitIdle()
+
+        assertBookedActivityMovedToDay3(harness.takeRequest())
+        harness.assertNoMoreRequests()
+        assertEquals(harness.localized(LanguageConst.NO_NETWORK), vm.error.value)
+        assertEquals(false, vm.changeTimeFinished.value)
+    }
+
+    @Test
     fun `a retry succeeds after a rejection and closes the sheet`() {
         val initial = loadBookedActivityOnDay2()
         harness.enqueueJson(400, TimelineFixtures.errorJson(REJECTED_DAY_MOVE_MESSAGE))
