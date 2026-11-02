@@ -37,6 +37,20 @@ From the host app that includes `:TRPCore` (e.g. TripianApp):
 4. Assert each request with `takeRequest()`, then `assertNoMoreRequests()` and the VM state.
    Every regression fix adds its scenario in the same PR.
 
+## Rejected change-time scenarios
+
+`TimelineSegmentDayMoveFlowTest` pins how a rejected segment PUT reaches the open Modify plan sheet:
+
+- `a rejected day move shows the backend message and leaves the sheet open`: the backend message lands
+  in `error`, `changeTimeFinished` is `false`.
+- `an identical rejection after the shown error was consumed surfaces again`: after `consumeError()`
+  (what the Compose screen calls once the toast is shown) a second identical 400 sets `error` again;
+  both PUTs carry the same body.
+- `a rejection with a blank message ...` / `a rejection without a message ...`: an empty or missing
+  `message` falls back to `LanguageConst.COMMON_ERROR`; the sheet stays open.
+- `a successful retry after a rejection clears the error and closes the sheet`: the retry PUT succeeds,
+  the timeline reloads, `error` is `null` and `changeTimeFinished` is `true`.
+
 ## Live-backend flow tests
 
 `flow/live/` drives the real `ACTimelineVM` against the real Tripian API to answer questions the
