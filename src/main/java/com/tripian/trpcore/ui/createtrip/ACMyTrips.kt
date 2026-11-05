@@ -48,7 +48,7 @@ class ACMyTrips : BaseActivity<ActivityMyTripsBinding, ACMyTripsVM>() {
                         TRPAnalyticsParam.CITY_NAME to trip.city?.name
                     )
                 )
-                TRPCore.core.startTimeline(this, trip.tripHash)
+                TRPCore.core.startTimeline(this, trip.tripHash, intent.getStringExtra("uniqueId"))
             },
             onDeleteClicked = { trip -> showDeleteConfirmation(trip) }
         )

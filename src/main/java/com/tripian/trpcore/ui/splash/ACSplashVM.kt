@@ -90,13 +90,17 @@ class ACSplashVM @Inject constructor(
 
     private fun prepare() {
         val uniqueId = arguments?.getString("uniqueId")
+        val firstName = arguments?.getString("name")?.takeIf { it.isNotBlank() }
+        val lastName = arguments?.getString("lastName")?.takeIf { it.isNotBlank() }
 
         viewModelScope.launch {
             runCatching {
-                // Light login — uniqueId only (device-derived guest id when absent).
-                // No firstName/lastName are sent.
                 doLightLogin(
-                    DoLightLogin.Params(uniqueId = uniqueId)
+                    DoLightLogin.Params(
+                        firstName = firstName,
+                        lastName = lastName,
+                        uniqueId = uniqueId
+                    )
                 )
                 TRPAnalytics.log(TRPAnalyticsEvent.LOGIN_SUCCESS)
                 buildItinerary()

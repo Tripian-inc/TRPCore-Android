@@ -29,6 +29,13 @@ class Preferences @Inject constructor(var context: Context) {
         // Timeline created by the host-itinerary flow. Stored internally so the
         // host does not need to send a tripHash; reused on the next launch.
         const val SAVED_TRIP_HASH = "saved_trip_hash"
+
+        /** The uniqueId sent to the last successful light login (host-provided or device id). */
+        const val ACTIVE_UNIQUE_ID = "active_unique_id"
+
+        /** [SAVED_TRIP_HASH] scoped to one Tripian identity. */
+        fun savedTripHashFor(uniqueId: String) = "$SAVED_TRIP_HASH.$uniqueId"
+
         // TOKEN info
         const val TOKEN_TYPE = "TokenType"
         const val ACCESS_TOKEN = "AccessToken"

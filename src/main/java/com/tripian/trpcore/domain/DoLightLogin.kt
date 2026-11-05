@@ -23,10 +23,12 @@ class DoLightLogin @Inject constructor(
         } else {
             params.uniqueId
         }
-        return tripianUserRepository.lightLoginAsync(
+        val response = tripianUserRepository.lightLoginAsync(
             uniqueId = resolvedUniqueId,
             firstName = params.firstName,
             lastName = params.lastName
         )
+        pref.setString(Preferences.Keys.ACTIVE_UNIQUE_ID, resolvedUniqueId)
+        return response
     }
 }

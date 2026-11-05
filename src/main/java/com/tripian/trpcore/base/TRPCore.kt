@@ -543,12 +543,14 @@ class TRPCore {
      *
      * @param context The application context.
      * @param tripHash The timeline/trip hash to load.
+     * @param uniqueId Identity to light-login with (device ID used if null).
      */
     fun startTimeline(
         context: Context,
-        tripHash: String
+        tripHash: String,
+        uniqueId: String? = null
     ) {
-        val intent = ACTimeline.newIntent(context, tripHash)
+        val intent = ACTimeline.newIntent(context, tripHash, uniqueId)
         if (context !is Activity) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

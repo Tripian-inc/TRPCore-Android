@@ -100,15 +100,30 @@ class NexusHostStrategy : HostStrategy() {
         return map
     }
 
-    override fun storedTripHash(preferences: Preferences): String? =
-        preferences.getString(Preferences.Keys.SAVED_TRIP_HASH)?.takeIf { it.isNotBlank() }
+    override fun storedTripHash(preferences: Preferences): String? {
+        val key = savedTripHashKey(preferences) ?: return null
+        return preferences.getString(key)?.takeIf { it.isNotBlank() }
+    }
 
     override fun onTimelineCreated(preferences: Preferences, tripHash: String) {
-        preferences.setString(Preferences.Keys.SAVED_TRIP_HASH, tripHash)
+        savedTripHashKey(preferences)?.let { preferences.setString(it, tripHash) }
     }
 
     override fun clearStoredTripHash(preferences: Preferences) {
-        preferences.deleteKey(Preferences.Keys.SAVED_TRIP_HASH)
+        savedTripHashKey(preferences)?.let { preferences.deleteKey(it) }
+    }
+
+    /**
+     * The saved-trip-hash key of the identity that last light-logged in, or null
+     * before any login. Drops the legacy device-global key on every access.
+     */
+    private fun savedTripHashKey(preferences: Preferences): String? {
+        if (preferences.pref.contains(Preferences.Keys.SAVED_TRIP_HASH)) {
+            preferences.deleteKey(Preferences.Keys.SAVED_TRIP_HASH)
+        }
+        val uniqueId = preferences.getString(Preferences.Keys.ACTIVE_UNIQUE_ID)
+            ?.takeIf { it.isNotBlank() } ?: return null
+        return Preferences.Keys.savedTripHashFor(uniqueId)
     }
 
     /** Reservations that move out of the stored range → delete + recreate. */

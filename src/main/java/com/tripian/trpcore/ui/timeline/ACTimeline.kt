@@ -1560,9 +1560,10 @@ class ACTimeline : BaseActivity<ActivityTimelineBinding, ACTimelineVM>() {
         private const val EXTRA_TRIP_HASH = "tripHash"
         private const val MAP_EMPTY_CLICK_DEBOUNCE_MS = 400L
 
-        fun newIntent(context: Context, tripHash: String): Intent {
+        fun newIntent(context: Context, tripHash: String, uniqueId: String? = null): Intent {
             return Intent(context, ACTimeline::class.java).apply {
                 putExtra(EXTRA_TRIP_HASH, tripHash)
+                if (!uniqueId.isNullOrEmpty()) putExtra(TRPCore.EXTRA_UNIQUE_ID, uniqueId)
             }
         }
     }
