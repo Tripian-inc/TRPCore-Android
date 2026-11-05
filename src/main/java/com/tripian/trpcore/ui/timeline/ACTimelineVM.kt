@@ -1,6 +1,7 @@
 package com.tripian.trpcore.ui.timeline
 
 import android.os.Bundle
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.mapbox.geojson.Point
@@ -54,6 +55,7 @@ import com.tripian.trpcore.domain.usecase.timeline.UpdateStepTimeUseCase
 import com.tripian.trpcore.domain.usecase.timeline.WaitForGenerationUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.AddMissingBookedActivitiesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.BookedActivityPairing
+import com.tripian.trpcore.domain.usecase.timeline.sync.ObsoleteSegmentSelector
 import com.tripian.trpcore.domain.usecase.timeline.sync.SyncBookedActivityTimesUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.DetectReservedToBookedTransitionUseCase
 import com.tripian.trpcore.domain.usecase.timeline.sync.RemoveObsoleteSegmentsUseCase
@@ -3195,74 +3197,34 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Every reason a segment no longer belongs on the timeline, unioned by index
-     * against a single snapshot: its city left the itinerary, its day fell outside
-     * the trip range, or it is a booked activity the host no longer reports.
-     * The UI hides the union immediately and [RemoveObsoleteSegmentsUseCase]
-     * deletes it in one descending pass.
-     *
-     * The host's `tripItems` is the full booking state at startup, so a booked
-     * segment missing from it — including when the host sends none at all — is
-     * stale. Booked segments are the only host-owned ones; a reserved activity the
-     * user added inside the SDK is never touched.
-     *
-     * Never a candidate: the TimelineDate sentinel, a segment whose city is simply
-     * unresolved, and a booked segment carrying no activityId to match on.
+     * Indices of segments that no longer belong on the timeline; see
+     * [ObsoleteSegmentSelector] for the reasons and guards.
      */
     private fun computeBackgroundDeletionIndices(
         timeline: Timeline,
         itineraryData: com.tripian.trpcore.domain.model.itinerary.ItineraryWithActivities
     ): Set<Int> {
-        val segments = timeline.tripProfile?.segments ?: return emptySet()
-        val currentCityIds = itineraryData.destinationItems
-            .mapNotNull { d -> d.cityId }
-            .filter { id -> id > 0 }
-            .toSet()
-        val tripStart = itineraryData.startDatetime.take(10).takeIf { d ->
-            d.length == 10 && d[4] == '-' && d[7] == '-'
+        val selection = ObsoleteSegmentSelector.select(timeline.tripProfile?.segments, itineraryData)
+        if (selection.hostIdGuardTripped) {
+            Log.d(RECONCILE_LOG_TAG, "notInHostReservations skipped: host trip items carry no activity id")
         }
-        val tripEnd = itineraryData.endDatetime.take(10).takeIf { d ->
-            d.length == 10 && d[4] == '-' && d[7] == '-'
+        selection.reasons.forEach { (index, reason) ->
+            Log.d(RECONCILE_LOG_TAG, "remove index=$index reason=${reason.logTag}")
         }
-        val hostBookedIds = itineraryData.tripItems.orEmpty()
-            .mapNotNull { item -> ActivityIdFormat.matchKey(item.activityId) }
-            .toSet()
-
-        val out = mutableSetOf<Int>()
-        segments.forEachIndexed { idx, seg ->
-            if (seg.title == "TimelineDate" && !seg.available) return@forEachIndexed
-
-            val cityId = seg.cityId
-            if (currentCityIds.isNotEmpty() && cityId != null && cityId > 0 &&
-                cityId !in currentCityIds
-            ) {
-                out += idx
-                return@forEachIndexed
-            }
-
-            if (seg.segmentType == SegmentType.BOOKED_ACTIVITY) {
-                val activityId = ActivityIdFormat.matchKey(seg.additionalData?.activityId)
-                if (activityId != null && activityId !in hostBookedIds) {
-                    out += idx
-                    return@forEachIndexed
-                }
-            }
-
-            if (tripStart != null && tripEnd != null) {
-                val day = seg.startDate?.take(10)?.takeIf {
-                    it.length == 10 && it[4] == '-' && it[7] == '-'
-                }
-                if (day != null && (day < tripStart || day > tripEnd)) {
-                    out += idx
-                }
-            }
-        }
-        return out
+        return selection.indices
     }
+
+    private val ObsoleteSegmentSelector.Reason.logTag: String
+        get() = when (this) {
+            ObsoleteSegmentSelector.Reason.NOT_IN_HOST_RESERVATIONS -> "notInHostReservations"
+            ObsoleteSegmentSelector.Reason.CITY_REMOVED -> "cityRemoved"
+            ObsoleteSegmentSelector.Reason.OUT_OF_DATE_RANGE -> "outOfDateRange"
+        }
 
     companion object {
         const val ARG_TRIP_HASH = "tripHash"
         private const val NO_RECOMMENDATIONS_FALLBACK = "No recommendations found for this area"
+        private const val RECONCILE_LOG_TAG = "TRPReconcile"
 
         /** Span applied to a moved step whose own start/end can't be read. */
         private const val DEFAULT_STEP_DURATION_MINUTES = 60
