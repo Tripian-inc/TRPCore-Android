@@ -110,6 +110,22 @@ class ObsoleteSegmentSelectorTest {
     }
 
     @Test
+    fun partialHostPayloadWithOneIdLessItemKeepsAllBookedSegments() {
+        val keyedHost = hostItem(activityId = "100", startDatetime = "2026-10-21 09:00", cityId = cityA)
+        val idLessHost = hostItem(activityId = null, startDatetime = "2026-10-22 09:00", cityId = cityB)
+        val stillBooked = segment(SegmentType.BOOKED_ACTIVITY, "100", cityA, "2026-10-21")
+        val unmatched = segment(SegmentType.BOOKED_ACTIVITY, "200", cityB, "2026-10-22")
+
+        val selection = ObsoleteSegmentSelector.select(
+            listOf(stillBooked, unmatched),
+            itinerary(listOf(keyedHost, idLessHost))
+        )
+
+        assertTrue(selection.hostIdGuardTripped)
+        assertTrue(selection.reasons.isEmpty())
+    }
+
+    @Test
     fun emptyHostTripItemListTripsTheGuardAndSkipsTheBookedReason() {
         val stored = segment(SegmentType.BOOKED_ACTIVITY, "100", cityA, "2026-10-21")
 

@@ -3206,7 +3206,7 @@ class ACTimelineVM @Inject constructor(
     ): Set<Int> {
         val selection = ObsoleteSegmentSelector.select(timeline.tripProfile?.segments, itineraryData)
         if (selection.hostIdGuardTripped) {
-            Log.d(RECONCILE_LOG_TAG, "notInHostReservations skipped: host trip items carry no activity id")
+            Log.d(RECONCILE_LOG_TAG, "notInHostReservations skipped: host trip items missing or without activity id")
         }
         selection.reasons.forEach { (index, reason) ->
             Log.d(RECONCILE_LOG_TAG, "remove index=$index reason=${reason.logTag}")

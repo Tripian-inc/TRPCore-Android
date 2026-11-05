@@ -8,11 +8,13 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Pins that a successful light login with a host-provided uniqueId records it
- * as the active identity, so a later saved-trip-hash lookup scopes to it.
+ * as the active identity, so a later saved-trip-hash lookup scopes to it, and
+ * that a failed login leaves the previous identity in place.
  */
 class DoLightLoginTest {
 
@@ -30,5 +32,22 @@ class DoLightLoginTest {
         useCase(DoLightLogin.Params(uniqueId = "user-a"))
 
         verify { pref.setString(Preferences.Keys.ACTIVE_UNIQUE_ID, "user-a") }
+    }
+
+    @Test
+    fun failedLoginKeepsPreviousActiveUniqueId() = runTest {
+        val pref: Preferences = mockk(relaxed = true)
+        val repository: TripianUserRepository = mockk()
+        coEvery {
+            repository.lightLoginAsync(uniqueId = "user-b", firstName = any(), lastName = any())
+        } throws IllegalStateException("light login failed")
+
+        val useCase = DoLightLogin(pref)
+        useCase.tripianUserRepository = repository
+
+        val result = runCatching { useCase(DoLightLogin.Params(uniqueId = "user-b")) }
+
+        assertTrue(result.isFailure)
+        verify(exactly = 0) { pref.setString(Preferences.Keys.ACTIVE_UNIQUE_ID, any()) }
     }
 }

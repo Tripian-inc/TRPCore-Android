@@ -13,9 +13,9 @@ import com.tripian.trpcore.util.ActivityIdFormat
  * a day outside the trip range.
  *
  * Never a candidate: the TimelineDate sentinel, a segment whose city is simply
- * unresolved, and a booked segment carrying no activityId. When no host trip item
- * carries an activity id, the booked-activity reason is skipped entirely so an
- * id-less payload cannot wipe every booked card. A reserved activity the user added
+ * unresolved, and a booked segment carrying no activityId. When the host sends no
+ * trip items or any of them lacks an activity id, the booked-activity reason is
+ * skipped entirely so a partial payload cannot delete booked cards it still holds. A reserved activity the user added
  * inside the SDK is never removed for not being in the host reservations.
  */
 object ObsoleteSegmentSelector {
@@ -24,8 +24,8 @@ object ObsoleteSegmentSelector {
 
     /**
      * @param reasons segment index to the first reason that selected it.
-     * @param hostIdGuardTripped true when the host sent no trip item with an activity id
-     *   and the booked-activity reason was skipped.
+     * @param hostIdGuardTripped true when the host sent no trip items or one without an
+     *   activity id, and the booked-activity reason was skipped.
      */
     data class Selection(val reasons: Map<Int, Reason>, val hostIdGuardTripped: Boolean) {
         val indices: Set<Int>
@@ -37,7 +37,8 @@ object ObsoleteSegmentSelector {
         val reasons = linkedMapOf<Int, Reason>()
 
         val hostItems = itinerary.tripItems.orEmpty()
-        val hostIdGuardTripped = hostItems.none { ActivityIdFormat.matchKey(it.activityId) != null }
+        val hostIdGuardTripped = hostItems.isEmpty() ||
+            hostItems.any { ActivityIdFormat.matchKey(it.activityId) == null }
         if (!hostIdGuardTripped) {
             BookedActivityPairing.plan(hostItems, all).booked.unmatchedSegmentIndices
                 .forEach { reasons.putIfAbsent(it, Reason.NOT_IN_HOST_RESERVATIONS) }
