@@ -4,6 +4,7 @@ import com.tripian.trpcore.repository.MiscRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
@@ -14,7 +15,9 @@ import org.junit.Test
 
 class ResolveGooglePlacesApiKeyTest {
 
-    private val miscRepository: MiscRepository = mockk()
+    private val miscRepository: MiscRepository = mockk {
+        every { getFreshPersistedGooglePlacesApiKey() } returns null
+    }
     private val ensureSession: EnsureSession = mockk {
         coEvery { execute(any()) } returns true
     }
@@ -25,8 +28,31 @@ class ResolveGooglePlacesApiKeyTest {
         val result = resolveGooglePlacesApiKey.execute("host.key", "user-1")
 
         assertEquals("host.key", result)
+        coVerify(exactly = 0) { miscRepository.getFreshPersistedGooglePlacesApiKey() }
         coVerify(exactly = 0) { ensureSession.execute(any()) }
         coVerify(exactly = 0) { miscRepository.getGooglePlacesApiKey() }
+    }
+
+    @Test
+    fun testFreshPersistedKeyIsReturnedWithoutEnsuringSessionOrFetching() = runTest {
+        every { miscRepository.getFreshPersistedGooglePlacesApiKey() } returns "places.fresh-cached"
+
+        val result = resolveGooglePlacesApiKey.execute(null, "user-1")
+
+        assertEquals("places.fresh-cached", result)
+        coVerify(exactly = 0) { ensureSession.execute(any()) }
+        coVerify(exactly = 0) { miscRepository.getGooglePlacesApiKey() }
+    }
+
+    @Test
+    fun testFreshPersistedPlaceholderKeyIsIgnoredAndKeyIsFetched() = runTest {
+        every { miscRepository.getFreshPersistedGooglePlacesApiKey() } returns "DEFAULT_API_KEY"
+        coEvery { miscRepository.getGooglePlacesApiKey() } returns "repo.key"
+
+        val result = resolveGooglePlacesApiKey.execute(null, "user-1")
+
+        assertEquals("repo.key", result)
+        coVerify(exactly = 1) { ensureSession.execute("user-1") }
     }
 
     @Test

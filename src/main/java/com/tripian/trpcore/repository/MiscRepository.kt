@@ -348,6 +348,13 @@ class MiscRepository(
     fun getPersistedGooglePlacesApiKey(): String? = getPersistedConfigSecret(GOOGLE_PLACES_KEY)
 
     /**
+     * Google Places API key persisted from `misc/config-list` when it is younger than
+     * [CONFIG_SECRET_CACHE_TTL_MS], otherwise `null`.
+     */
+    fun getFreshPersistedGooglePlacesApiKey(): String? =
+        getPersistedConfigSecret(GOOGLE_PLACES_KEY)?.takeIf { isConfigSecretFresh(GOOGLE_PLACES_KEY) }
+
+    /**
      * Returns [secret] from `misc/config-list`. A persisted value younger than
      * [CONFIG_SECRET_CACHE_TTL_MS] is returned without a request; otherwise the config list is
      * fetched from the network, bypassing the in-memory copy, and every secret it carries is

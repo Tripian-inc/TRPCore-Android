@@ -5,9 +5,10 @@ import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 /**
- * Picks the Google Places API key the SDK runs with: the host-supplied key when present,
- * otherwise the key served by the Tripian backend, fetched after a session has been ensured
- * (capped at [MiscRepository.CONFIG_FETCH_TIMEOUT_MS]) so the request carries a bearer token.
+ * Picks the Google Places API key the SDK runs with: the host-supplied key when present, then a
+ * fresh persisted key, otherwise the key served by the Tripian backend, fetched after a session
+ * has been ensured (capped at [MiscRepository.CONFIG_FETCH_TIMEOUT_MS]) so the request carries a
+ * bearer token.
  */
 class ResolveGooglePlacesApiKey @Inject internal constructor(
     private val miscRepository: MiscRepository,
@@ -21,6 +22,9 @@ class ResolveGooglePlacesApiKey @Inject internal constructor(
      */
     suspend fun execute(hostProvidedKey: String?, uniqueId: String?): String? {
         if (isUsableGooglePlacesApiKey(hostProvidedKey)) return hostProvidedKey
+        miscRepository.getFreshPersistedGooglePlacesApiKey()
+            ?.takeIf { isUsableGooglePlacesApiKey(it) }
+            ?.let { return it }
         withTimeoutOrNull(MiscRepository.CONFIG_FETCH_TIMEOUT_MS) { ensureSession.execute(uniqueId) }
         return miscRepository.getGooglePlacesApiKey()?.takeIf { isUsableGooglePlacesApiKey(it) }
     }

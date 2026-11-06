@@ -395,6 +395,42 @@ class MiscRepositoryTest {
     }
 
     @Test
+    fun testGetFreshPersistedGooglePlacesApiKeyReturnsKeyWhenFresh() {
+        every { preferences.getString(Preferences.Keys.GOOGLE_PLACES_API_KEY, "") } returns "places.cached"
+        every {
+            preferences.getLong(Preferences.Keys.GOOGLE_PLACES_API_KEY_FETCHED_AT, 0L)
+        } returns NOW
+
+        val repository = repository()
+
+        assertEquals("places.cached", repository.getFreshPersistedGooglePlacesApiKey())
+    }
+
+    @Test
+    fun testGetFreshPersistedGooglePlacesApiKeyReturnsNullWhenStale() {
+        every { preferences.getString(Preferences.Keys.GOOGLE_PLACES_API_KEY, "") } returns "places.stale"
+        every {
+            preferences.getLong(Preferences.Keys.GOOGLE_PLACES_API_KEY_FETCHED_AT, 0L)
+        } returns STALE_FETCHED_AT
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedGooglePlacesApiKey())
+    }
+
+    @Test
+    fun testGetFreshPersistedGooglePlacesApiKeyReturnsNullWhenBlank() {
+        every { preferences.getString(Preferences.Keys.GOOGLE_PLACES_API_KEY, "") } returns "   "
+        every {
+            preferences.getLong(Preferences.Keys.GOOGLE_PLACES_API_KEY_FETCHED_AT, 0L)
+        } returns NOW
+
+        val repository = repository()
+
+        assertNull(repository.getFreshPersistedGooglePlacesApiKey())
+    }
+
+    @Test
     fun testGetFreshPersistedMapboxAccessTokenReturnsTokenWhenFresh() {
         every { preferences.getString(Preferences.Keys.MAPBOX_ACCESS_TOKEN, "") } returns "pk.cached"
         every {
