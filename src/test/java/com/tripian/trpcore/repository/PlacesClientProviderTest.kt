@@ -59,7 +59,7 @@ class PlacesClientProviderTest {
 
         assertSame(client, result)
         verify(exactly = 0) { Places.initialize(any(), any()) }
-        coVerify(exactly = 0) { resolveGooglePlacesApiKey.execute(any()) }
+        coVerify(exactly = 0) { resolveGooglePlacesApiKey.execute(any(), any()) }
     }
 
     @Test
@@ -68,7 +68,7 @@ class PlacesClientProviderTest {
         every { Places.isInitialized() } returns false
         every { Places.initialize(any(), any()) } returns Unit
         every { Places.createClient(any()) } returns client
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns "places.key"
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns "places.key"
 
         val result = provider().getClient()
 
@@ -80,7 +80,7 @@ class PlacesClientProviderTest {
     @Test
     fun testNotInitialisedWithNoKeyReturnsNullWithoutInitializing() = runTest {
         every { Places.isInitialized() } returns false
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns null
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns null
 
         val result = provider().getClient()
 
@@ -108,7 +108,7 @@ class PlacesClientProviderTest {
     fun testMissingKeyWithinRetryIntervalSkipsSecondResolution() = runTest {
         var currentTime = 0L
         every { Places.isInitialized() } returns false
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns null
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns null
 
         val providerInstance = provider { currentTime }
         val first = providerInstance.getClient()
@@ -117,21 +117,21 @@ class PlacesClientProviderTest {
 
         assertNull(first)
         assertNull(second)
-        coVerify(exactly = 1) { resolveGooglePlacesApiKey.execute(any()) }
+        coVerify(exactly = 1) { resolveGooglePlacesApiKey.execute(any(), any()) }
     }
 
     @Test
     fun testMissingKeyAtRetryIntervalResolvesAgain() = runTest {
         var currentTime = 0L
         every { Places.isInitialized() } returns false
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns null
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns null
 
         val providerInstance = provider { currentTime }
         providerInstance.getClient()
         currentTime = KEY_RETRY_INTERVAL_MS
         providerInstance.getClient()
 
-        coVerify(exactly = 2) { resolveGooglePlacesApiKey.execute(any()) }
+        coVerify(exactly = 2) { resolveGooglePlacesApiKey.execute(any(), any()) }
     }
 
     @Test
@@ -141,12 +141,12 @@ class PlacesClientProviderTest {
         every { Places.isInitialized() } returns false
         every { Places.initialize(any(), any()) } returns Unit
         every { Places.createClient(any()) } returns client
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns null
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns null
 
         val providerInstance = provider { currentTime }
         val first = providerInstance.getClient()
         currentTime = KEY_RETRY_INTERVAL_MS
-        coEvery { resolveGooglePlacesApiKey.execute(any()) } returns "places.key"
+        coEvery { resolveGooglePlacesApiKey.execute(any(), any()) } returns "places.key"
         val second = providerInstance.getClient()
 
         assertNull(first)

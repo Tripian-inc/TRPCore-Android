@@ -46,7 +46,7 @@ class PlacesClientProvider internal constructor(
             client?.let { return@withLock it }
             if (!Places.isInitialized()) {
                 if (isKeyRetryPending()) return@withLock null
-                val key = resolveGooglePlacesApiKey.execute(TRPCore.core.hostGooglePlacesApiKey)
+                val key = resolveGooglePlacesApiKey.execute(TRPCore.core.hostGooglePlacesApiKey, uniqueId = null)
                 if (key.isNullOrBlank()) {
                     lastMissingKeyAt = now()
                     return@withLock null
