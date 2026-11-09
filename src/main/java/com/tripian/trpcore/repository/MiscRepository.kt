@@ -405,7 +405,7 @@ class MiscRepository @Inject constructor(
 
     companion object {
         /** Cold starts within this window load translations from preferences and skip the API. */
-        private const val LANGUAGE_CACHE_TTL_MS: Long = 60L * 60L * 1000L
+        private const val LANGUAGE_CACHE_TTL_MS: Long = 24L * 60L * 60L * 1000L
 
         private const val DEFAULT_LANGUAGE = "en"
     }
