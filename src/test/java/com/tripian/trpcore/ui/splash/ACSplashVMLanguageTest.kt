@@ -1,0 +1,167 @@
+package com.tripian.trpcore.ui.splash
+
+import android.os.Bundle
+import android.os.Looper
+import com.tripian.trpcore.base.TRPCore
+import com.tripian.trpcore.base.host.HostStrategy
+import com.tripian.trpcore.domain.DoLightLogin
+import com.tripian.trpcore.domain.usecase.timeline.LookupTourProductUseCase
+import com.tripian.trpcore.repository.MiscRepository
+import com.tripian.trpcore.repository.TimelineRepository
+import com.tripian.trpcore.repository.TripRepository
+import com.tripian.trpcore.util.Preferences
+import com.tripian.trpcore.util.Strings
+import com.tripian.one.api.timeline.model.Timeline
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+
+/**
+ * Pins that the host-start splash applies the host language and waits for its
+ * translations before opening My Trips / create-trip, and that a failed or
+ * timed-out load still navigates instead of leaving the splash hanging.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class ACSplashVMLanguageTest {
+
+    private val miscRepository: MiscRepository = mockk(relaxed = true)
+    private val timelineRepository: TimelineRepository = mockk(relaxed = true)
+    private val mainLooper: Looper = mockk(relaxed = true)
+    private val originalHost = TRPCore.host
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(UnconfinedTestDispatcher())
+        mockkStatic(Looper::class)
+        every { Looper.getMainLooper() } returns mainLooper
+        every { Looper.myLooper() } returns mainLooper
+        every { mainLooper.thread } returns Thread.currentThread()
+        TRPCore.host = mockk<HostStrategy>(relaxed = true) {
+            every { createsTimelineFromScratchOnEmpty() } returns true
+        }
+        coEvery { timelineRepository.getUserTimelinesAsync(any(), any(), any()) } returns emptyList()
+        every { miscRepository.isLanguagesLoaded } returns true
+    }
+
+    @After
+    fun tearDown() {
+        TRPCore.host = originalHost
+        unmockkStatic(Looper::class)
+        Dispatchers.resetMain()
+    }
+
+    private fun vm(): ACSplashVM {
+        val vm = ACSplashVM(
+            doLightLogin = mockk<DoLightLogin>(relaxed = true),
+            tripRepository = mockk<TripRepository>(relaxed = true),
+            timelineRepository = timelineRepository,
+            lookupTourProductUseCase = mockk<LookupTourProductUseCase>(relaxed = true),
+            preferences = mockk<Preferences>(relaxed = true)
+        )
+        vm.strings = mockk<Strings>(relaxed = true)
+        vm.miscRepository = miscRepository
+        vm.arguments = mockk<Bundle> {
+            every { getString(any()) } returns null
+            every { getString("language") } returns "es"
+        }
+        return vm
+    }
+
+    private fun countCreateTripEvents(vm: ACSplashVM): () -> Int {
+        var count = 0
+        vm.onShowCreateTrip.observeForever { count++ }
+        return { count }
+    }
+
+    private fun countMyTripsEvents(vm: ACSplashVM): () -> Int {
+        var count = 0
+        vm.onShowMyTrips.observeForever { count++ }
+        return { count }
+    }
+
+    @Test
+    fun hostLanguageIsAppliedAndAwaitedBeforeNavigation() = runTest {
+        val translations = CompletableDeferred<Boolean>()
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } coAnswers { translations.await() }
+        val vm = vm()
+        val createTripEvents = countCreateTripEvents(vm)
+
+        vm.onViewCreated(null)
+        runCurrent()
+
+        verify { miscRepository.changeLanguage("es") }
+        assertEquals(0, createTripEvents())
+
+        translations.complete(true)
+        runCurrent()
+
+        assertEquals(1, createTripEvents())
+        coVerify(exactly = 1) { miscRepository.waitForLanguagesLoadedAsync() }
+    }
+
+    @Test
+    fun failedLanguageLoadIsRetriedOnceAndStillNavigates() = runTest {
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } returns false
+        val vm = vm()
+        val createTripEvents = countCreateTripEvents(vm)
+
+        vm.onViewCreated(null)
+        runCurrent()
+
+        assertEquals(1, createTripEvents())
+        coVerify(exactly = 2) { miscRepository.waitForLanguagesLoadedAsync() }
+    }
+
+    @Test
+    fun timedOutLanguageLoadStillNavigatesAfterOneRetry() = runTest {
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } coAnswers { awaitCancellation() }
+        val vm = vm()
+        val createTripEvents = countCreateTripEvents(vm)
+
+        vm.onViewCreated(null)
+        advanceTimeBy(30_001)
+        runCurrent()
+
+        assertEquals(0, createTripEvents())
+
+        advanceTimeBy(30_000)
+        runCurrent()
+
+        assertEquals(1, createTripEvents())
+        coVerify(exactly = 2) { miscRepository.waitForLanguagesLoadedAsync() }
+    }
+
+    @Test
+    fun existingNotPastTimelineShowsMyTripsInsteadOfCreateTrip() = runTest {
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } returns true
+        coEvery { timelineRepository.getUserTimelinesAsync(any(), any(), any()) } returns
+            listOf(mockk<Timeline>(relaxed = true))
+        val vm = vm()
+        val createTripEvents = countCreateTripEvents(vm)
+        val myTripsEvents = countMyTripsEvents(vm)
+
+        vm.onViewCreated(null)
+        runCurrent()
+
+        assertEquals(1, myTripsEvents())
+        assertEquals(0, createTripEvents())
+    }
+}

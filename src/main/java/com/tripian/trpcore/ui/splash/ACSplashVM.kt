@@ -27,7 +27,10 @@ import com.tripian.trpcore.util.event.SingleLiveEvent
 import com.tripian.trpcore.util.extensions.PLACEHOLDER_DURATION
 import com.tripian.trpcore.util.extensions.PLACEHOLDER_END_TIME
 import com.tripian.trpcore.util.extensions.PLACEHOLDER_START_TIME
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -37,6 +40,8 @@ import java.util.TimeZone
 import javax.inject.Inject
 
 private const val TRIP_END_PADDING_DAYS = 5
+private const val LANGUAGE_LOAD_TIMEOUT_MS = 30_000L
+private const val LANGUAGE_LOAD_ATTEMPTS = 2
 
 /**
  * Entry-point ViewModel used when the SDK is started from a host app (e.g. the
@@ -92,8 +97,12 @@ class ACSplashVM @Inject constructor(
         val uniqueId = arguments?.getString("uniqueId")
         val firstName = arguments?.getString("name")?.takeIf { it.isNotBlank() }
         val lastName = arguments?.getString("lastName")?.takeIf { it.isNotBlank() }
+        arguments?.getString("language")?.takeIf { it.isNotBlank() }?.let {
+            miscRepository.changeLanguage(it)
+        }
 
         viewModelScope.launch {
+            val languagesLoaded = async { loadLanguagesWithRetry() }
             runCatching {
                 doLightLogin(
                     DoLightLogin.Params(
@@ -116,6 +125,7 @@ class ACSplashVM @Inject constructor(
                     val notPast = runCatching {
                         TripDisplay.notPast(timelineRepository.getUserTimelinesAsync())
                     }.getOrDefault(emptyList())
+                    languagesLoaded.await()
                     hideLottieLoading()
                     if (notPast.isNotEmpty()) {
                         timelineRepository.cachedUserTimelines = notPast
@@ -130,6 +140,26 @@ class ACSplashVM @Inject constructor(
                 fail((t as? ErrorModel)?.errorDesc ?: t.message ?: "Failed to start")
             }
         }
+    }
+
+    /**
+     * Waits for the active language's translations with the timeline's policy
+     * (30 s, one retry); returns `false` instead of failing so the splash never hangs.
+     */
+    private suspend fun loadLanguagesWithRetry(): Boolean {
+        repeat(LANGUAGE_LOAD_ATTEMPTS) {
+            val loaded = try {
+                withTimeoutOrNull(LANGUAGE_LOAD_TIMEOUT_MS) {
+                    miscRepository.waitForLanguagesLoadedAsync()
+                } ?: false
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                false
+            }
+            if (loaded && miscRepository.isLanguagesLoaded) return true
+        }
+        return false
     }
 
     private fun fail(message: String) {
