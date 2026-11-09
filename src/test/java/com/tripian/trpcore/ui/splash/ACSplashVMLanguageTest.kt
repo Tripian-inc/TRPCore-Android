@@ -11,7 +11,11 @@ import com.tripian.trpcore.repository.TimelineRepository
 import com.tripian.trpcore.repository.TripRepository
 import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.Strings
+import com.tripian.trpcore.util.ViewListener
+import com.tripian.one.api.cities.model.City
 import com.tripian.one.api.timeline.model.Timeline
+import com.tripian.one.api.tour.model.TourProduct
+import com.tripian.one.api.tour.model.TourProductLookupResponse
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -31,6 +35,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 
@@ -68,12 +73,17 @@ class ACSplashVMLanguageTest {
         Dispatchers.resetMain()
     }
 
-    private fun vm(): ACSplashVM {
+    private fun vm(
+        doLightLogin: DoLightLogin = mockk(relaxed = true),
+        tripRepository: TripRepository = mockk(relaxed = true),
+        lookupTourProductUseCase: LookupTourProductUseCase = mockk(relaxed = true),
+        reservations: String? = null
+    ): ACSplashVM {
         val vm = ACSplashVM(
-            doLightLogin = mockk<DoLightLogin>(relaxed = true),
-            tripRepository = mockk<TripRepository>(relaxed = true),
+            doLightLogin = doLightLogin,
+            tripRepository = tripRepository,
             timelineRepository = timelineRepository,
-            lookupTourProductUseCase = mockk<LookupTourProductUseCase>(relaxed = true),
+            lookupTourProductUseCase = lookupTourProductUseCase,
             preferences = mockk<Preferences>(relaxed = true)
         )
         vm.strings = mockk<Strings>(relaxed = true)
@@ -81,8 +91,15 @@ class ACSplashVMLanguageTest {
         vm.arguments = mockk<Bundle> {
             every { getString(any()) } returns null
             every { getString("language") } returns "es"
+            every { getString("reservations") } returns reservations
         }
         return vm
+    }
+
+    private fun countItineraryEvents(vm: ACSplashVM): () -> Int {
+        var count = 0
+        vm.onItineraryReady.observeForever { count++ }
+        return { count }
     }
 
     private fun countCreateTripEvents(vm: ACSplashVM): () -> Int {
@@ -163,5 +180,60 @@ class ACSplashVMLanguageTest {
 
         assertEquals(1, myTripsEvents())
         assertEquals(0, createTripEvents())
+    }
+
+    @Test
+    fun reservationsOpenTheItineraryWithoutWaitingForTranslations() = runTest {
+        val translations = CompletableDeferred<Boolean>()
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } coAnswers { translations.await() }
+        val lookup = mockk<LookupTourProductUseCase> {
+            coEvery { this@mockk.invoke(any()) } returns mockk<TourProductLookupResponse> {
+                every { data } returns TourProduct().apply { cityId = 42 }
+            }
+        }
+        val tripRepository = mockk<TripRepository>(relaxed = true) {
+            every { getCachedCityById(42) } returns mockk<City>(relaxed = true)
+        }
+        val viewListener = mockk<ViewListener>(relaxed = true)
+        val vm = vm(
+            tripRepository = tripRepository,
+            lookupTourProductUseCase = lookup,
+            reservations = "[{\"ProductId\":123,\"Title\":\"Tour\",\"Date\":\"2026-12-01T10:00:00\"}]"
+        )
+        vm.viewListener = viewListener
+        val itineraryEvents = countItineraryEvents(vm)
+        val createTripEvents = countCreateTripEvents(vm)
+
+        vm.onViewCreated(null)
+        runCurrent()
+
+        assertFalse(translations.isCompleted)
+        assertEquals(1, itineraryEvents())
+        assertEquals(0, createTripEvents())
+        verify(exactly = 0) { viewListener.finishActivity() }
+    }
+
+    @Test
+    fun lightLoginFailureFinishesWithoutWaitingForTranslations() = runTest {
+        val translations = CompletableDeferred<Boolean>()
+        coEvery { miscRepository.waitForLanguagesLoadedAsync() } coAnswers { translations.await() }
+        val doLightLogin = mockk<DoLightLogin> {
+            coEvery { this@mockk.invoke(any()) } throws RuntimeException("light login failed")
+        }
+        val viewListener = mockk<ViewListener>(relaxed = true)
+        val vm = vm(doLightLogin = doLightLogin)
+        vm.viewListener = viewListener
+        val itineraryEvents = countItineraryEvents(vm)
+        val createTripEvents = countCreateTripEvents(vm)
+        val myTripsEvents = countMyTripsEvents(vm)
+
+        vm.onViewCreated(null)
+        runCurrent()
+
+        assertFalse(translations.isCompleted)
+        verify(exactly = 1) { viewListener.finishActivity() }
+        assertEquals(0, itineraryEvents())
+        assertEquals(0, createTripEvents())
+        assertEquals(0, myTripsEvents())
     }
 }
