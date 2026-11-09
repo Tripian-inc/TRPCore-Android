@@ -513,6 +513,8 @@ class TRPCore {
                 ?.let { applyGooglePlacesApiKey(it) }
         }
 
+        miscRepository.warmUpFromCache()
+
         return this
     }
 

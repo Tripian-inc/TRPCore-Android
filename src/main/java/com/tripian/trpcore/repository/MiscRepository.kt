@@ -25,6 +25,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -64,11 +66,22 @@ class MiscRepository(
     /** Emits every time the in-memory key table starts serving a different language. */
     val appliedLanguage: LiveData<String> = _appliedLanguage
 
-    /** Single Deferred coalesces concurrent fetches: subsequent callers await the same in-flight request. */
+    /**
+     * Guards [inflight] and every state commit of a fetch. At most one fetch is
+     * active at a time; callers asking for the same language await it.
+     */
     private val fetchMutex = Mutex()
     private var inflight: Deferred<Boolean>? = null
     private var inflightLanguage: String? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Returns the raw v2 translations payload for a language; replaceable in unit tests. */
+    internal var translationsFetcher: suspend (String) -> String = { language ->
+        fetchTranslationsFromApi(language)
+    }
+
+    /** Reports whether a network connection is available; replaceable in unit tests. */
+    internal var isOnline: () -> Boolean = { app.isConnectedNet() }
 
     /**
      * Fetches the translation blob for the active language.
@@ -78,7 +91,7 @@ class MiscRepository(
         val language = activeLanguage()
         if (isLoadedFor(language)) return true
         if (loadFreshCachedLanguages(language)) return true
-        if (app.isConnectedNet().not()) return tryLoadCachedLanguages(language)
+        if (!isOnline()) return tryLoadCachedLanguages(language)
         return runOrJoinFetch(language)
     }
 
@@ -92,19 +105,33 @@ class MiscRepository(
     }
 
     /**
-     * Forces a fresh translations fetch, bypassing any cached in-flight result
-     * (still respects the fresh-cache TTL).
+     * Forces a fresh translations fetch: the in-flight request, if any, is
+     * cancelled and replaced (still respects the fresh-cache TTL).
      */
     suspend fun refetchLanguagesAsync(): Boolean {
         val language = activeLanguage()
         if (isLoadedFor(language)) return true
         if (loadFreshCachedLanguages(language)) return true
-        if (app.isConnectedNet().not()) return tryLoadCachedLanguages(language)
-        fetchMutex.withLock {
-            inflight = null
-            inflightLanguage = null
-        }
-        return runOrJoinFetch(language)
+        if (!isOnline()) return tryLoadCachedLanguages(language)
+        return runOrJoinFetch(language, replaceInflight = true)
+    }
+
+    /**
+     * Second attempt after a timed-out or failed wait: joins the fetch still in
+     * flight for the active language and starts a new one only when none is.
+     */
+    internal suspend fun retryLanguagesAsync(): Boolean {
+        return waitForLanguagesLoadedAsync()
+    }
+
+    /**
+     * Serves the active language from a cache entry younger than the TTL
+     * without any network request. Returns `true` when translations are loaded.
+     */
+    fun warmUpFromCache(): Boolean {
+        val language = activeLanguage()
+        if (isLoadedFor(language)) return true
+        return loadFreshCachedLanguages(language)
     }
 
     private fun isLoadedFor(language: String): Boolean {
@@ -128,27 +155,72 @@ class MiscRepository(
         return lang.trim().replace('_', '-').lowercase()
     }
 
-    private suspend fun runOrJoinFetch(language: String): Boolean {
+    /**
+     * Joins the active fetch for [language] or starts one. A fetch for another
+     * language, or any fetch when [replaceInflight] is set, is cancelled first.
+     */
+    private suspend fun runOrJoinFetch(language: String, replaceInflight: Boolean = false): Boolean {
         val deferred = fetchMutex.withLock {
+            if (isLoadedFor(language)) return true
             val existing = inflight
-            if (existing != null && inflightLanguage == language) {
+            if (!replaceInflight && existing != null && existing.isActive && inflightLanguage == language) {
                 existing
             } else {
+                existing?.cancel()
                 scope.async { performFetch(language) }.also {
                     inflight = it
                     inflightLanguage = language
                 }
             }
         }
-        return try {
-            deferred.await()
-        } finally {
-            fetchMutex.withLock {
-                if (inflight === deferred) {
-                    inflight = null
-                    inflightLanguage = null
-                }
+        return awaitFetch(deferred)
+    }
+
+    /**
+     * Awaits [deferred]. When it is cancelled by a replacing fetch while the
+     * caller is still active, the caller follows the replacement instead.
+     */
+    private suspend fun awaitFetch(deferred: Deferred<Boolean>): Boolean {
+        var current = deferred
+        while (true) {
+            try {
+                return current.await()
+            } catch (cancelled: CancellationException) {
+                currentCoroutineContext().ensureActive()
+                current = fetchMutex.withLock { inflight?.takeIf { it !== current && it.isActive } }
+                    ?: return isLoadedFor(activeLanguage())
             }
+        }
+    }
+
+    /**
+     * Fetches [language] and commits it under [fetchMutex] only while this fetch
+     * is still active and [language] is still the active language, so a
+     * superseded fetch never overwrites the state of its replacement.
+     */
+    private suspend fun performFetch(language: String): Boolean {
+        val jsonText = try {
+            translationsFetcher(language)
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            null
+        }
+        return fetchMutex.withLock {
+            currentCoroutineContext().ensureActive()
+            if (language != activeLanguage()) return@withLock isLoadedFor(activeLanguage())
+            val applied = jsonText != null && applyFetchedTranslations(jsonText, language)
+            applied || tryLoadCachedLanguages(language)
+        }
+    }
+
+    private fun applyFetchedTranslations(jsonText: String, language: String): Boolean {
+        return try {
+            setLanguages(jsonText, language)
+            if (isLoadedFor(language)) cacheTranslations(language, jsonText)
+            isLoadedFor(language)
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -156,21 +228,12 @@ class MiscRepository(
      * The endpoint resolves the language from the request query TRPOne appends,
      * so the config language is aligned with [language] before the call.
      */
-    private suspend fun performFetch(language: String): Boolean {
-        return try {
-            TRPCore.core.appConfig.appLanguage = language
-            val body: ResponseBody = awaitCallback { ok, fail ->
-                TRPCore.core.trpRest.getLanguageValuesV2(success = ok, error = fail)
-            }
-            val jsonText = body.string()
-            setLanguages(jsonText, language)
-            if (isLoadedFor(language)) {
-                cacheTranslations(language, jsonText)
-            }
-            isLoadedFor(language)
-        } catch (_: Throwable) {
-            tryLoadCachedLanguages(language)
+    private suspend fun fetchTranslationsFromApi(language: String): String {
+        TRPCore.core.appConfig.appLanguage = language
+        val body: ResponseBody = awaitCallback { ok, fail ->
+            TRPCore.core.trpRest.getLanguageValuesV2(success = ok, error = fail)
         }
+        return body.string()
     }
 
     private fun cacheTranslations(language: String, jsonText: String) {
@@ -451,7 +514,7 @@ class MiscRepository(
 
     companion object {
         /** Cold starts within this window load translations from preferences and skip the API. */
-        private const val LANGUAGE_CACHE_TTL_MS: Long = 60L * 60L * 1000L
+        private const val LANGUAGE_CACHE_TTL_MS: Long = 24L * 60L * 60L * 1000L
 
         /** A persisted config-list secret younger than this window is used without asking the API. */
         private const val CONFIG_SECRET_CACHE_TTL_MS: Long = 24L * 60L * 60L * 1000L
