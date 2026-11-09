@@ -335,22 +335,34 @@ class MiscRepository @Inject constructor(
         return ParsedTranslations(data.getJSONObject("translations"), codes)
     }
 
+    /**
+     * Installs [parsed] for [requestedLanguage]. When the active language changed
+     * while it was being applied, the table stays unloaded and nothing is published.
+     */
     private fun applyTranslations(parsed: ParsedTranslations, requestedLanguage: String) {
         languageValues = parsed.values
         languageCodes = parsed.codes
-        setCurrentLanguageKeys(requestedLanguage)
+        val resolvedLang = setCurrentLanguageKeys(parsed.values, requestedLanguage)
         setDaysTexts()
         loadedLanguage = requestedLanguage
         isLanguagesLoaded = true
+        if (requestedLanguage != activeLanguage()) {
+            isLanguagesLoaded = false
+            return
+        }
+        publishAppliedLanguage(resolvedLang)
     }
 
-    private fun setCurrentLanguageKeys(requestedLanguage: String) {
-        val values = languageValues ?: return
+    /** Points the key table at [requestedLanguage] as resolved within [values]; returns the resolved code. */
+    private fun setCurrentLanguageKeys(values: JSONObject, requestedLanguage: String): String {
         val resolvedLang = resolveLanguageCode(values, requestedLanguage)
-        val changed = resolvedLang != _appliedLanguage.value
-        TRPCore.core.appConfig.appLanguage = resolvedLang
         currentLanguageValues = values.getJSONObject(resolvedLang).getJSONObject("keys")
-        if (changed) _appliedLanguage.postValue(resolvedLang)
+        return resolvedLang
+    }
+
+    private fun publishAppliedLanguage(resolvedLang: String) {
+        TRPCore.core.appConfig.appLanguage = resolvedLang
+        if (resolvedLang != _appliedLanguage.value) _appliedLanguage.postValue(resolvedLang)
     }
 
     /**
@@ -392,7 +404,10 @@ class MiscRepository @Inject constructor(
         val language = normalizeLanguage(lang)
         preferences.setString(Preferences.Keys.APP_LANGUAGE, language)
         if (loadedLanguage == language) {
-            if (isLanguagesLoaded) runCatching { setCurrentLanguageKeys(language) }
+            val values = languageValues
+            if (isLanguagesLoaded && values != null) {
+                runCatching { publishAppliedLanguage(setCurrentLanguageKeys(values, language)) }
+            }
             return
         }
         isLanguagesLoaded = false
