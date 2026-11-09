@@ -3,6 +3,8 @@ package com.tripian.trpcore.repository
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.SharedPreferences
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 /**
  * Minimal in-memory [SharedPreferences] used by JVM unit tests; only the
@@ -112,6 +114,47 @@ class InMemorySharedPreferences : SharedPreferences {
 /** A [ContextWrapper] with a null base context that only backs [getSharedPreferences]. */
 class FakeContext : ContextWrapper(null) {
     val preferences = InMemorySharedPreferences()
+
+    override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences = preferences
+}
+
+/**
+ * In-memory [SharedPreferences] whose reads of [gatedKey] block until [release]
+ * is called (or a safety timeout elapses) and record the reading thread.
+ */
+class GatedSharedPreferences(
+    private val gatedKey: String,
+    private val delegate: SharedPreferences = InMemorySharedPreferences()
+) : SharedPreferences by delegate {
+    private val readStarted = CountDownLatch(1)
+    private val released = CountDownLatch(1)
+
+    @Volatile
+    var readerThread: Thread? = null
+        private set
+
+    override fun getString(key: String?, defValue: String?): String? {
+        if (key == gatedKey) {
+            readerThread = Thread.currentThread()
+            readStarted.countDown()
+            released.await(GATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        }
+        return delegate.getString(key, defValue)
+    }
+
+    /** Blocks until a read of [gatedKey] has started; returns `false` on timeout. */
+    fun awaitGatedRead(): Boolean = readStarted.await(GATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+
+    fun release() = released.countDown()
+
+    private companion object {
+        const val GATE_TIMEOUT_SECONDS = 5L
+    }
+}
+
+/** A [ContextWrapper] with a null base context backed by [GatedSharedPreferences]. */
+class GatedContext(gatedKey: String) : ContextWrapper(null) {
+    val preferences = GatedSharedPreferences(gatedKey)
 
     override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences = preferences
 }

@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -49,7 +51,7 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
     }
 
     @Test
-    fun warmUpWithFreshCacheLoadsStringsWithoutFetching() {
+    fun warmUpWithFreshCacheLoadsStringsWithoutFetching() = runBlocking {
         val preferences = Preferences(FakeContext())
         stampCache(preferences, TimeUnit.HOURS.toMillis(1), "CachedHello", "English")
         val repo = MiscRepository(Application(), preferences)
@@ -59,7 +61,7 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
             payload(lang, "English", "ShouldNotBeUsed")
         }
 
-        assertTrue(repo.warmUpFromCache())
+        repo.warmUpFromCache().join()
 
         assertTrue(repo.isLanguagesLoaded)
         assertEquals("CachedHello", repo.getLanguageValueForKey("hello"))
@@ -67,7 +69,48 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
     }
 
     @Test
-    fun warmUpWithoutCacheMakesNoFetch() {
+    fun warmUpReadsTheCacheOffTheCallerThread() = runBlocking {
+        val context = GatedContext(Preferences.Keys.translationsForLanguage(language))
+        val preferences = Preferences(context)
+        stampCache(preferences, TimeUnit.HOURS.toMillis(1), "CachedHello", "English")
+        val repo = MiscRepository(Application(), preferences)
+
+        val warmUp = repo.warmUpFromCache()
+
+        assertTrue(context.preferences.awaitGatedRead())
+        assertFalse(repo.isLanguagesLoaded)
+        context.preferences.release()
+        warmUp.join()
+
+        assertNotNull(context.preferences.readerThread)
+        assertNotSame(Thread.currentThread(), context.preferences.readerThread)
+        assertTrue(repo.isLanguagesLoaded)
+        assertEquals("CachedHello", repo.getLanguageValueForKey("hello"))
+    }
+
+    @Test
+    fun warmUpDoesNotOverwriteAFetchThatFinishedForAnotherLanguage() = runBlocking {
+        val context = GatedContext(Preferences.Keys.translationsForLanguage(language))
+        val preferences = Preferences(context)
+        stampCache(preferences, TimeUnit.HOURS.toMillis(1), "CachedHello", "English")
+        val repo = MiscRepository(Application(), preferences)
+        repo.isOnline = { true }
+        repo.translationsFetcher = { lang -> payload(lang, "Español", "Hola") }
+
+        val warmUp = repo.warmUpFromCache()
+        assertTrue(context.preferences.awaitGatedRead())
+        repo.changeLanguage("es")
+        assertTrue(repo.getLanguageValuesAsync())
+        context.preferences.release()
+        warmUp.join()
+
+        assertTrue(repo.isLanguagesLoaded)
+        assertEquals("Hola", repo.getLanguageValueForKey("hello"))
+        assertEquals("es", repo.appliedLanguage.value)
+    }
+
+    @Test
+    fun warmUpWithoutCacheMakesNoFetch() = runBlocking {
         val repo = newRepository()
         val callCount = AtomicInteger(0)
         repo.translationsFetcher = { lang ->
@@ -75,14 +118,14 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
             payload(lang, "English", "ShouldNotBeUsed")
         }
 
-        assertFalse(repo.warmUpFromCache())
+        repo.warmUpFromCache().join()
 
         assertFalse(repo.isLanguagesLoaded)
         assertEquals(0, callCount.get())
     }
 
     @Test
-    fun warmUpWithStaleCacheMakesNoFetchAndLeavesLanguagesUnloaded() {
+    fun warmUpWithStaleCacheMakesNoFetchAndLeavesLanguagesUnloaded() = runBlocking {
         val preferences = Preferences(FakeContext())
         stampCache(preferences, TimeUnit.HOURS.toMillis(25), "StaleCachedHello", "English")
         val repo = MiscRepository(Application(), preferences)
@@ -92,7 +135,7 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
             payload(lang, "English", "ShouldNotBeUsed")
         }
 
-        assertFalse(repo.warmUpFromCache())
+        repo.warmUpFromCache().join()
 
         assertFalse(repo.isLanguagesLoaded)
         assertEquals(0, callCount.get())
@@ -111,8 +154,9 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
         assertTrue(repo.getLanguageValuesAsync())
         assertEquals(1, callCount.get())
 
-        assertTrue(repo.warmUpFromCache())
+        repo.warmUpFromCache().join()
 
+        assertTrue(repo.isLanguagesLoaded)
         assertEquals(1, callCount.get())
         assertEquals("FetchedHello", repo.getLanguageValueForKey("hello"))
     }

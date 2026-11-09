@@ -23,6 +23,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
@@ -125,13 +126,25 @@ class MiscRepository(
     }
 
     /**
-     * Serves the active language from a cache entry younger than the TTL
-     * without any network request. Returns `true` when translations are loaded.
+     * Serves the active language from a cache entry younger than the TTL without
+     * any network request. The cache is read and parsed on [scope], so the caller
+     * never blocks; the result is committed under [fetchMutex] only while that
+     * language is still active, not yet loaded and not being fetched.
      */
-    internal fun warmUpFromCache(): Boolean {
+    internal fun warmUpFromCache(): Job = scope.launch {
+        runCatching { warmUpActiveLanguageFromCache() }
+    }
+
+    private suspend fun warmUpActiveLanguageFromCache() {
         val language = activeLanguage()
-        if (isLoadedFor(language)) return true
-        return loadFreshCachedLanguages(language)
+        if (isLoadedFor(language)) return
+        val cached = freshCachedTranslations(language) ?: return
+        val parsed = parseTranslations(cached)
+        fetchMutex.withLock {
+            if (isLoadedFor(language) || language != activeLanguage()) return
+            if (inflightLanguage == language && inflight?.isActive == true) return
+            applyTranslations(parsed, language)
+        }
     }
 
     private fun isLoadedFor(language: String): Boolean {
@@ -259,6 +272,10 @@ class MiscRepository(
     private fun tryLoadCachedLanguages(language: String): Boolean {
         val cached = preferences.getString(Preferences.Keys.translationsForLanguage(language), "")
         if (cached.isNullOrEmpty()) return false
+        return applyCachedTranslations(cached, language)
+    }
+
+    private fun applyCachedTranslations(cached: String, language: String): Boolean {
         return try {
             setLanguages(cached, language)
             isLoadedFor(language)
@@ -272,14 +289,21 @@ class MiscRepository(
      * [LANGUAGE_CACHE_TTL_MS]. Returns `true` on a successful in-window hit.
      */
     private fun loadFreshCachedLanguages(language: String): Boolean {
+        val cached = freshCachedTranslations(language) ?: return false
+        return applyCachedTranslations(cached, language)
+    }
+
+    /** Returns the persisted blob for [language] when it is younger than [LANGUAGE_CACHE_TTL_MS]. */
+    private fun freshCachedTranslations(language: String): String? {
         val fetchedAt = preferences.getLong(
             Preferences.Keys.translationsFetchedAtForLanguage(language),
             0L
         )
-        if (fetchedAt <= 0L) return false
+        if (fetchedAt <= 0L) return null
         val age = System.currentTimeMillis() - fetchedAt
-        if (age !in 0 until LANGUAGE_CACHE_TTL_MS) return false
-        return tryLoadCachedLanguages(language)
+        if (age !in 0 until LANGUAGE_CACHE_TTL_MS) return null
+        return preferences.getString(Preferences.Keys.translationsForLanguage(language), "")
+            .takeIf { it.isNotEmpty() }
     }
 
     /**
@@ -384,13 +408,27 @@ class MiscRepository(
      */
     private fun setLanguages(jsonText: String, requestedLanguage: String) {
         if (jsonText.isEmpty()) return
+        applyTranslations(parseTranslations(jsonText), requestedLanguage)
+    }
+
+    private class ParsedTranslations(
+        val values: JSONObject,
+        val codes: List<Pair<String, String>>
+    )
+
+    private fun parseTranslations(jsonText: String): ParsedTranslations {
         val data = JSONObject(jsonText).getJSONObject("data")
-        languageValues = data.getJSONObject("translations")
         val langCodesJson = data.getJSONArray("langCodes")
-        languageCodes = (0 until langCodesJson.length()).map { index ->
+        val codes = (0 until langCodesJson.length()).map { index ->
             val item = langCodesJson.getJSONObject(index)
             Pair(item.getString("value"), item.getString("label"))
         }
+        return ParsedTranslations(data.getJSONObject("translations"), codes)
+    }
+
+    private fun applyTranslations(parsed: ParsedTranslations, requestedLanguage: String) {
+        languageValues = parsed.values
+        languageCodes = parsed.codes
         setCurrentLanguageKeys(requestedLanguage)
         setDaysTexts()
         loadedLanguage = requestedLanguage
