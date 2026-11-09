@@ -112,6 +112,23 @@ class MiscRepository @Inject constructor(
         return runOrJoinFetch(language, replaceInflight = true)
     }
 
+    /**
+     * Second attempt after a timed-out or failed wait: joins the fetch still in
+     * flight for the active language and starts a new one only when none is.
+     */
+    internal suspend fun retryLanguagesAsync(): Boolean {
+        return if (hasActiveFetch(activeLanguage())) {
+            waitForLanguagesLoadedAsync()
+        } else {
+            refetchLanguagesAsync()
+        }
+    }
+
+    /** Whether a translations fetch for [language] is currently in flight. */
+    internal suspend fun hasActiveFetch(language: String): Boolean {
+        return fetchMutex.withLock { inflight?.isActive == true && inflightLanguage == language }
+    }
+
     private fun isLoadedFor(language: String): Boolean {
         return isLanguagesLoaded && loadedLanguage == language
     }
