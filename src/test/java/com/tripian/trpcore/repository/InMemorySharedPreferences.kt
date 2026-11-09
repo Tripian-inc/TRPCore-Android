@@ -5,6 +5,7 @@ import android.content.ContextWrapper
 import android.content.SharedPreferences
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Minimal in-memory [SharedPreferences] used by JVM unit tests; only the
@@ -119,22 +120,25 @@ class FakeContext : ContextWrapper(null) {
 }
 
 /**
- * In-memory [SharedPreferences] whose reads of [gatedKey] block until [release]
- * is called (or a safety timeout elapses) and record the reading thread.
+ * In-memory [SharedPreferences] whose [gatedRead]-th read of [gatedKey] blocks
+ * until [release] is called (or a safety timeout elapses) and records the
+ * reading thread. Other reads pass through.
  */
 class GatedSharedPreferences(
     private val gatedKey: String,
+    private val gatedRead: Int = 1,
     private val delegate: SharedPreferences = InMemorySharedPreferences()
 ) : SharedPreferences by delegate {
     private val readStarted = CountDownLatch(1)
     private val released = CountDownLatch(1)
+    private val readCount = AtomicInteger(0)
 
     @Volatile
     var readerThread: Thread? = null
         private set
 
     override fun getString(key: String?, defValue: String?): String? {
-        if (key == gatedKey) {
+        if (key == gatedKey && readCount.incrementAndGet() == gatedRead) {
             readerThread = Thread.currentThread()
             readStarted.countDown()
             released.await(GATE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -153,8 +157,8 @@ class GatedSharedPreferences(
 }
 
 /** A [ContextWrapper] with a null base context backed by [GatedSharedPreferences]. */
-class GatedContext(gatedKey: String) : ContextWrapper(null) {
-    val preferences = GatedSharedPreferences(gatedKey)
+class GatedContext(gatedKey: String, gatedRead: Int = 1) : ContextWrapper(null) {
+    val preferences = GatedSharedPreferences(gatedKey, gatedRead)
 
     override fun getSharedPreferences(name: String?, mode: Int): SharedPreferences = preferences
 }
