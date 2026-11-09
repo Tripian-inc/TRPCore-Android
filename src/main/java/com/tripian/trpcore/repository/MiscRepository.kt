@@ -128,7 +128,7 @@ class MiscRepository(
      * Serves the active language from a cache entry younger than the TTL
      * without any network request. Returns `true` when translations are loaded.
      */
-    fun warmUpFromCache(): Boolean {
+    internal fun warmUpFromCache(): Boolean {
         val language = activeLanguage()
         if (isLoadedFor(language)) return true
         return loadFreshCachedLanguages(language)
