@@ -464,6 +464,8 @@ class TRPCore {
             FirebaseApp.initializeApp(app)
         }
 
+        miscRepository.warmUpFromCache()
+
         return this
     }
 

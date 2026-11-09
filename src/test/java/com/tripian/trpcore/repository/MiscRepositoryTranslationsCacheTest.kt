@@ -1,10 +1,12 @@
 package com.tripian.trpcore.repository
 
+import android.app.Application
 import com.tripian.trpcore.util.Preferences
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,7 +34,7 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
     fun cacheWithinTtlIsServedWithoutFetching() = runBlocking {
         val preferences = Preferences(FakeContext())
         stampCache(preferences, TimeUnit.HOURS.toMillis(23), "CachedHello", "English")
-        val repo = MiscRepository(android.app.Application(), preferences)
+        val repo = MiscRepository(Application(), preferences)
         repo.isOnline = { true }
         val callCount = AtomicInteger(0)
         repo.translationsFetcher = { lang ->
@@ -47,10 +49,79 @@ class MiscRepositoryTranslationsCacheTest : MiscRepositoryTestBase() {
     }
 
     @Test
+    fun warmUpWithFreshCacheLoadsStringsWithoutFetching() {
+        val preferences = Preferences(FakeContext())
+        stampCache(preferences, TimeUnit.HOURS.toMillis(1), "CachedHello", "English")
+        val repo = MiscRepository(Application(), preferences)
+        val callCount = AtomicInteger(0)
+        repo.translationsFetcher = { lang ->
+            callCount.incrementAndGet()
+            payload(lang, "English", "ShouldNotBeUsed")
+        }
+
+        assertTrue(repo.warmUpFromCache())
+
+        assertTrue(repo.isLanguagesLoaded)
+        assertEquals("CachedHello", repo.getLanguageValueForKey("hello"))
+        assertEquals(0, callCount.get())
+    }
+
+    @Test
+    fun warmUpWithoutCacheMakesNoFetch() {
+        val repo = newRepository()
+        val callCount = AtomicInteger(0)
+        repo.translationsFetcher = { lang ->
+            callCount.incrementAndGet()
+            payload(lang, "English", "ShouldNotBeUsed")
+        }
+
+        assertFalse(repo.warmUpFromCache())
+
+        assertFalse(repo.isLanguagesLoaded)
+        assertEquals(0, callCount.get())
+    }
+
+    @Test
+    fun warmUpWithStaleCacheMakesNoFetchAndLeavesLanguagesUnloaded() {
+        val preferences = Preferences(FakeContext())
+        stampCache(preferences, TimeUnit.HOURS.toMillis(25), "StaleCachedHello", "English")
+        val repo = MiscRepository(Application(), preferences)
+        val callCount = AtomicInteger(0)
+        repo.translationsFetcher = { lang ->
+            callCount.incrementAndGet()
+            payload(lang, "English", "ShouldNotBeUsed")
+        }
+
+        assertFalse(repo.warmUpFromCache())
+
+        assertFalse(repo.isLanguagesLoaded)
+        assertEquals(0, callCount.get())
+    }
+
+    @Test
+    fun warmUpWhenAlreadyLoadedMakesNoFetch() = runBlocking {
+        val repo = newRepository()
+        repo.isOnline = { true }
+        val callCount = AtomicInteger(0)
+        repo.translationsFetcher = { lang ->
+            callCount.incrementAndGet()
+            payload(lang, "English", "FetchedHello")
+        }
+
+        assertTrue(repo.getLanguageValuesAsync())
+        assertEquals(1, callCount.get())
+
+        assertTrue(repo.warmUpFromCache())
+
+        assertEquals(1, callCount.get())
+        assertEquals("FetchedHello", repo.getLanguageValueForKey("hello"))
+    }
+
+    @Test
     fun cachePastTtlTriggersExactlyOneFetch() = runBlocking {
         val preferences = Preferences(FakeContext())
         stampCache(preferences, TimeUnit.HOURS.toMillis(25), "StaleCachedHello", "English")
-        val repo = MiscRepository(android.app.Application(), preferences)
+        val repo = MiscRepository(Application(), preferences)
         repo.isOnline = { true }
         val callCount = AtomicInteger(0)
         repo.translationsFetcher = { lang ->

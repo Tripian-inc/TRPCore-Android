@@ -117,16 +117,17 @@ class MiscRepository @Inject constructor(
      * flight for the active language and starts a new one only when none is.
      */
     internal suspend fun retryLanguagesAsync(): Boolean {
-        return if (hasActiveFetch(activeLanguage())) {
-            waitForLanguagesLoadedAsync()
-        } else {
-            refetchLanguagesAsync()
-        }
+        return waitForLanguagesLoadedAsync()
     }
 
-    /** Whether a translations fetch for [language] is currently in flight. */
-    internal suspend fun hasActiveFetch(language: String): Boolean {
-        return fetchMutex.withLock { inflight?.isActive == true && inflightLanguage == language }
+    /**
+     * Serves the active language from a cache entry younger than the TTL
+     * without any network request. Returns `true` when translations are loaded.
+     */
+    fun warmUpFromCache(): Boolean {
+        val language = activeLanguage()
+        if (isLoadedFor(language)) return true
+        return loadFreshCachedLanguages(language)
     }
 
     private fun isLoadedFor(language: String): Boolean {

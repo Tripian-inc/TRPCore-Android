@@ -2,7 +2,7 @@ package com.tripian.trpcore.repository
 
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
@@ -39,10 +39,11 @@ class MiscRepositoryRetryTest : MiscRepositoryTestBase() {
             timedOut = true
         }
         assertTrue(timedOut)
-        assertTrue(repo.hasActiveFetch("en"))
+        assertEquals(1, callCount.get())
 
-        val retry = async(Dispatchers.Default) { repo.retryLanguagesAsync() }
-        waitUntil { callCount.get() == 1 }
+        val retry = async(start = CoroutineStart.UNDISPATCHED) { repo.retryLanguagesAsync() }
+        assertFalse(retry.isCompleted)
+        assertEquals(1, callCount.get())
         gate.complete(Unit)
 
         assertTrue(retry.await())
@@ -64,7 +65,7 @@ class MiscRepositoryRetryTest : MiscRepositoryTestBase() {
         }
 
         assertFalse(repo.waitForLanguagesLoadedAsync())
-        assertFalse(repo.hasActiveFetch("en"))
+        assertEquals(1, callCount.get())
 
         assertTrue(repo.retryLanguagesAsync())
         assertEquals(2, callCount.get())

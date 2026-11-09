@@ -2,12 +2,14 @@ package com.tripian.trpcore.repository
 
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -32,8 +34,10 @@ class MiscRepositoryFetchCoordinationTest : MiscRepositoryTestBase() {
             payload(lang, "English", "Hello")
         }
 
-        val first = async(Dispatchers.Default) { repo.getLanguageValuesAsync() }
-        val second = async(Dispatchers.Default) { repo.getLanguageValuesAsync() }
+        val first = async(start = CoroutineStart.UNDISPATCHED) { repo.getLanguageValuesAsync() }
+        val second = async(start = CoroutineStart.UNDISPATCHED) { repo.getLanguageValuesAsync() }
+        assertFalse(first.isCompleted)
+        assertFalse(second.isCompleted)
         waitUntil { callCount.get() == 1 }
         gate.complete(Unit)
 
