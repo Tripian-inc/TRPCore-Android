@@ -533,7 +533,7 @@ class TRPCore {
             FirebaseApp.initializeApp(app)
         }
 
-        fetchLanguages()
+        miscRepository.warmUpFromCache()
 
         return this
     }
@@ -608,22 +608,6 @@ class TRPCore {
     }
 
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    /**
-     * Fetches language values from the server during SDK initialization
-     * on an IO dispatcher.
-     */
-    private fun fetchLanguages() {
-        initScope.launch {
-            try {
-                val success = miscRepository.getLanguageValuesAsync()
-                Log.d("TRPCore", "Languages fetched successfully: $success")
-            } catch (error: Throwable) {
-                Log.e("TRPCore", "Failed to fetch languages: ${error.message}")
-            }
-        }
-    }
-
 
     /**
      * Applies the caller's [appLanguage] to AppConfig + TRPOne and then

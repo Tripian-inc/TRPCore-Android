@@ -341,8 +341,9 @@ class ACTimelineVM @Inject constructor(
     }
 
     /**
-     * Drives the translation fetch with one explicit retry; the retry forces a
-     * brand-new /languages request via [MiscRepository.refetchLanguages].
+     * Drives the translation fetch with one explicit retry; the retry keeps
+     * waiting on a still-running request and only re-requests after a failure
+     * (see [MiscRepository.retryLanguagesAsync]).
      */
     private fun attemptLanguageFetch(allowRetry: Boolean) {
         viewModelScope.launch {
@@ -353,7 +354,7 @@ class ACTimelineVM @Inject constructor(
                     if (allowRetry) {
                         miscRepository.waitForLanguagesLoadedAsync()
                     } else {
-                        miscRepository.refetchLanguagesAsync()
+                        miscRepository.retryLanguagesAsync()
                     }
                 }
                 if (loaded && miscRepository.isLanguagesLoaded) {
