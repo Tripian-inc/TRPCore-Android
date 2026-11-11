@@ -21,7 +21,7 @@ class WaitForGenerationUseCase @Inject constructor(
 
     /**
      * @param maxRetries number of fetch attempts.
-     * @param maxFailures total number of non-4xx failures tolerated before the last one is rethrown.
+     * @param maxFailures limit on non-4xx failures; the attempt whose failure count reaches it rethrows its error.
      * @param isGenerated terminal condition; null uses the all-itinerary-segments-generated rule.
      * @param onAttemptCompleted called with the 1-based attempt number after every attempt that does not end polling.
      */

@@ -145,15 +145,16 @@ class WaitForGenerationUseCasePollTest {
     @Test
     fun `poll tolerates failures under the failure budget and keeps polling`() = runTest {
         var calls = 0
+        var lastFetched: Timeline? = null
         val fetch: suspend () -> Timeline = {
             calls++
-            if (calls <= 2) throw RuntimeException("transient") else timeline()
+            if (calls <= 2) throw RuntimeException("transient") else timeline().also { lastFetched = it }
         }
 
         val result = WaitForGenerationUseCase.poll(paramsOf(maxRetries = 10, maxFailures = 3), fetch)
 
         assertEquals(10, calls)
-        assertEquals(timeline()::class, result::class)
+        assertSame(lastFetched, result)
     }
 
     @Test
@@ -205,11 +206,32 @@ class WaitForGenerationUseCasePollTest {
     }
 
     @Test
-    fun `poll uses the default all-itinerary-generated rule when isGenerated is null`() = runTest {
-        /** No tripProfile/plans means the default rule treats the timeline as generated. */
+    fun `poll treats a timeline without plans as generated when isGenerated is null`() = runTest {
         val emptyTimeline = Timeline()
         val result = WaitForGenerationUseCase.poll(paramsOf(maxRetries = 1, isGenerated = null), { emptyTimeline })
 
         assertSame(emptyTimeline, result)
+    }
+
+    @Test
+    fun `default Params make 15 attempts and tolerate every non-4xx failure`() = runTest {
+        val defaults = WaitForGenerationUseCase.Params(tripHash = "trip-1", isGenerated = { false })
+        var calls = 0
+        val fetch: suspend () -> Timeline = {
+            calls++
+            throw RuntimeException("transient-$calls")
+        }
+
+        val error = try {
+            WaitForGenerationUseCase.poll(defaults, fetch)
+            null
+        } catch (e: RuntimeException) {
+            e
+        }
+
+        assertEquals(15, defaults.maxRetries)
+        assertEquals(Int.MAX_VALUE, defaults.maxFailures)
+        assertEquals("transient-16", error?.message)
+        assertEquals(16, calls)
     }
 }
