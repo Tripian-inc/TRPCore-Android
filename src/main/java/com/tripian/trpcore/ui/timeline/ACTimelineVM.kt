@@ -3078,15 +3078,18 @@ class ACTimelineVM @Inject constructor(
         updateDisplayItems()
 
         viewModelScope.launch {
-            segmentMutationMutex.withLock {
-                runCatching {
-                    removeObsoleteSegmentsUseCase(
-                        RemoveObsoleteSegmentsUseCase.Params(_tripHash, indices)
-                    )
+            try {
+                segmentMutationMutex.withLock {
+                    runCatching {
+                        removeObsoleteSegmentsUseCase(
+                            RemoveObsoleteSegmentsUseCase.Params(_tripHash, indices)
+                        )
+                    }
+                    silentRefreshAfterBackgroundDeletion()
                 }
-                silentRefreshAfterBackgroundDeletion()
+            } finally {
+                releaseDeferredRecommendationResume()
             }
-            releaseDeferredRecommendationResume()
         }
     }
 
