@@ -425,6 +425,13 @@ object LanguageConst {
     const val TIMELINE_CONFLICT_BANNER_ACTION = "timeline.conflict.banner.action"
 
     // =====================
+    // TIMELINE — RECOMMENDATION GENERATION
+    // =====================
+    const val TIMELINE_INFO_RECOMMENDATION_GENERATION_CONTINUES = "timeline.info.recommendationGenerationContinues"
+    const val TIMELINE_INFO_RECOMMENDATION_GENERATION_READY = "timeline.info.recommendationGenerationReady"
+    const val TIMELINE_ERROR_GENERATION_FAILED = "timeline.error.generationFailed"
+
+    // =====================
     // ADD PLAN — TIME SELECTION ENHANCEMENTS
     // =====================
     const val ADD_PLAN_TS_SHOW_MORE = "addPlan.time.showMore"

@@ -70,10 +70,18 @@ import com.tripian.trpcore.util.Preferences
 import com.tripian.trpcore.util.extensions.hideLoading
 import com.tripian.trpcore.util.extensions.showLoading
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 import javax.inject.Inject
 
 /**
@@ -214,8 +222,17 @@ class ACTimelineVM @Inject constructor(
     private val _smartCreateInProgress = MutableLiveData<Boolean>()
     val smartCreateInProgress: LiveData<Boolean> = _smartCreateInProgress
 
-    // Track existing plan IDs before creating new segment
-    private var existingPlanIds: Set<String> = emptySet()
+    /** Produces the unique suffix of the recommendation segment title sent in the PUT. */
+    internal var recommendationTitleToken: () -> String = { UUID.randomUUID().toString().lowercase() }
+
+    private val activeRecommendationGenerations = mutableListOf<RecommendationGeneration>()
+    private val abandonedRecommendationPlanIds = mutableSetOf<String>()
+    private val segmentMutationMutex = Mutex()
+    private var isScreenVisible = false
+
+    /** True while a smart recommendation segment is being generated, in the foreground or in the background. */
+    val isRecommendationGenerationPending: Boolean
+        get() = activeRecommendationGenerations.isNotEmpty()
 
     // =====================
     // STATE
@@ -973,6 +990,8 @@ class ACTimelineVM @Inject constructor(
 
         updateDisplayItems()
 
+        resumePendingRecommendationGenerations(timeline)
+
         if (!onboardingDispatched) {
             onboardingDispatched = true
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -987,6 +1006,21 @@ class ACTimelineVM @Inject constructor(
     override fun onCleared() {
         availabilityCheckManager.cancel()
         super.onCleared()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setScreenVisible(true)
+    }
+
+    override fun onPause() {
+        setScreenVisible(false)
+        super.onPause()
+    }
+
+    /** Tells the VM whether the timeline screen is on screen; gates the background "ready" notice. */
+    fun setScreenVisible(visible: Boolean) {
+        isScreenVisible = visible
     }
 
     /**
@@ -1357,6 +1391,11 @@ class ACTimelineVM @Inject constructor(
     }
 
     fun createSmartRecommendationSegment(data: AddPlanData) {
+        if (isRecommendationGenerationPending) {
+            showRecommendationGenerationContinuesNotice()
+            return
+        }
+
         val city = data.selectedCity
         val selectedDate = data.selectedDate
 
@@ -1375,14 +1414,20 @@ class ACTimelineVM @Inject constructor(
             return
         }
 
-        existingPlanIds = _timeline.value?.plans
-            ?.map { it.id }
-            ?.filter { it.isNotEmpty() }
-            ?.toSet() ?: emptySet()
+        val generation = RecommendationGeneration(
+            existingPlanIds = _timeline.value?.plans
+                ?.map { it.id }
+                ?.filter { it.isNotEmpty() }
+                ?.toSet() ?: emptySet(),
+            planId = null,
+            isForeground = true,
+            maxAttempts = RECOMMENDATION_MAX_ATTEMPTS
+        )
+        activeRecommendationGenerations += generation
 
         _smartCreateInProgress.value = true
 
-        val title = generateSegmentTitle(validCity, selectedDate)
+        val title = RECOMMENDATION_TITLE_PREFIX + recommendationTitleToken()
 
         val dateStr = selectedDate.toApiDateString()
         val startDateTimeStr = if (data.startTime != null) {
@@ -1420,9 +1465,10 @@ class ACTimelineVM @Inject constructor(
                     _smartCreateInProgress.value = false
                     _smartSegmentCreated.value = data.selectedDayIndex
                     showLottieLoading()
-                    waitForSegmentGeneration()
+                    pollRecommendationGeneration(generation)
                 }
                 .onFailure { t ->
+                    activeRecommendationGenerations -= generation
                     val errorModel = t.toErrorModel()
                     _smartCreateInProgress.value = false
                     _smartCreateError.value = errorModel.errorDesc
@@ -1430,48 +1476,217 @@ class ACTimelineVM @Inject constructor(
         }
     }
 
-    private fun waitForSegmentGeneration() {
-        viewModelScope.launch {
-            runCatching { waitForGenerationUseCase(WaitForGenerationUseCase.Params(_tripHash)) }
-                .onSuccess { timeline ->
-                    val newPlanId = try {
-                        timeline.plans?.find { plan ->
-                            plan.id.isNotEmpty() && plan.id !in existingPlanIds
-                        }?.id
-                    } catch (e: Exception) {
-                        null
-                    }
-                    processTimeline(timeline)
-                    if (!newPlanId.isNullOrEmpty()) {
-                        _scrollToNewSegmentPlanId.value = newPlanId
-                    }
-                    hideLottieLoading()
-                }
-                .onFailure {
-                    hideLottieLoading()
-                    refreshTimeline()
-                }
+    /**
+     * Polls a recommendation generation until its plan is generated, fails, disappears or the
+     * attempt limit is reached. Attempts up to [RECOMMENDATION_FOREGROUND_ATTEMPTS] keep the
+     * full-screen loader; after that the loader is dropped and polling continues in the background.
+     */
+    private suspend fun pollRecommendationGeneration(generation: RecommendationGeneration) {
+        val polled = try {
+            waitForGenerationUseCase(
+                WaitForGenerationUseCase.Params(
+                    tripHash = _tripHash,
+                    maxRetries = generation.maxAttempts,
+                    intervalMs = RECOMMENDATION_POLL_INTERVAL_MS,
+                    maxFailures = RECOMMENDATION_MAX_FAILURES,
+                    isGenerated = generation::isConcluded,
+                    onAttemptCompleted = { attempt -> onRecommendationAttemptCompleted(generation, attempt) }
+                )
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Throwable) {
+            null
+        }
+        currentCoroutineContext().ensureActive()
+        try {
+            concludeRecommendationGeneration(generation, polled)
+        } finally {
+            activeRecommendationGenerations -= generation
         }
     }
 
-    private fun generateSegmentTitle(city: City, date: Date): String {
-        val baseTitle = getLanguageForKey(LanguageConst.RECOMMENDATIONS)
-        val dateStr = date.toApiDateString()
-
-        val existingCount = _timeline.value?.tripProfile?.segments
-            ?.filter { segment ->
-                (segment.segmentType == SegmentType.ITINERARY || segment.segmentType == "itinerary") &&
-                        segment.startDate?.startsWith(dateStr) == true &&
-                        segment.cityId == city.id &&
-                        segment.title?.startsWith(baseTitle) == true
+    private suspend fun onRecommendationAttemptCompleted(generation: RecommendationGeneration, attempt: Int) {
+        withContext(Dispatchers.Main.immediate) {
+            if (generation.isForeground && attempt >= RECOMMENDATION_FOREGROUND_ATTEMPTS) {
+                generation.isForeground = false
+                hideLottieLoading()
+                showRecommendationGenerationContinuesNotice()
             }
-            ?.size ?: 0
-
-        return if (existingCount == 0) {
-            baseTitle
-        } else {
-            "$baseTitle ${existingCount + 1}"
         }
+    }
+
+    private suspend fun concludeRecommendationGeneration(
+        generation: RecommendationGeneration,
+        polled: Timeline?
+    ) {
+        val plan = polled?.let { generation.locate(it) }
+        when {
+            polled != null && plan != null && plan.hasRenderableRecommendation() ->
+                applyGeneratedRecommendation(generation, polled, plan)
+            polled != null && plan == null && generation.planId != null -> {
+                if (generation.isForeground) hideLottieLoading()
+            }
+            else -> discardFailedRecommendation(generation)
+        }
+    }
+
+    private suspend fun applyGeneratedRecommendation(
+        generation: RecommendationGeneration,
+        polled: Timeline,
+        plan: TimelinePlan
+    ) {
+        if (generation.isForeground) {
+            processTimeline(polled)
+            _scrollToNewSegmentPlanId.value = plan.id
+            hideLottieLoading()
+            return
+        }
+        segmentMutationMutex.withLock {
+            val fresh = runCancellable { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }.getOrNull()
+            processTimeline(fresh ?: polled)
+        }
+        if (isScreenVisible) {
+            showAlert(
+                AlertType.INFO,
+                localizedOrDefault(
+                    LanguageConst.TIMELINE_INFO_RECOMMENDATION_GENERATION_READY,
+                    "Your recommendations are ready."
+                )
+            )
+        }
+    }
+
+    /**
+     * Best-effort removal of a recommendation segment whose generation failed: re-locates the plan
+     * by id from a fresh GET under the segment mutation lock, deletes it when still present and
+     * publishes the refreshed timeline. No error is shown when the user already removed the segment.
+     */
+    private suspend fun discardFailedRecommendation(generation: RecommendationGeneration) {
+        val planId = generation.planId
+        if (planId != null) abandonedRecommendationPlanIds += planId
+        var removedByUser = false
+        segmentMutationMutex.withLock {
+            val fresh = runCancellable { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }.getOrNull()
+            val index = planId?.let { id -> fresh?.plans?.indexOfFirst { it.id == id } } ?: -1
+            removedByUser = fresh != null && planId != null && index < 0
+            if (fresh == null || index < 0) {
+                fresh?.let { processTimeline(it) }
+                return@withLock
+            }
+            val deleted = runCancellable {
+                deleteSegmentUseCase(DeleteSegmentUseCase.Params(_tripHash, index))
+            }.isSuccess
+            clearRouteInfoCache()
+            val refreshed = runCancellable { fetchTimelineUseCase(FetchTimelineUseCase.Params(_tripHash)) }.getOrNull()
+            when {
+                refreshed != null -> processTimeline(refreshed)
+                deleted -> removeLocalSegmentByPlanId(planId)
+                else -> processTimeline(fresh)
+            }
+        }
+        if (generation.isForeground) hideLottieLoading()
+        if (!removedByUser) {
+            showAlert(
+                AlertType.ERROR,
+                localizedOrDefault(
+                    LanguageConst.TIMELINE_ERROR_GENERATION_FAILED,
+                    "We couldn't generate recommendations right now. Please try again."
+                )
+            )
+        }
+    }
+
+    private fun removeLocalSegmentByPlanId(planId: String?) {
+        val index = _timeline.value?.plans?.indexOfFirst { it.id == planId } ?: -1
+        if (index >= 0 && applyLocalSegmentDelete(index)) republishCurrentTimeline()
+    }
+
+    /**
+     * Starts a background poller for every smart recommendation plan that is still generating
+     * but is not tracked by an active poller, e.g. after the app was killed mid-generation.
+     */
+    private fun resumePendingRecommendationGenerations(timeline: Timeline) {
+        val segments = timeline.tripProfile?.segments ?: return
+        val plans = timeline.plans ?: return
+        plans.forEachIndexed { index, plan ->
+            if (plan.id.isEmpty() || plan.generatedStatus != 0) return@forEachIndexed
+            if (plan.id in abandonedRecommendationPlanIds) return@forEachIndexed
+            if (segments.getOrNull(index)?.isSmartRecommendationSegment() != true) return@forEachIndexed
+            if (activeRecommendationGenerations.any { it.tracks(plan.id) }) return@forEachIndexed
+            val generation = RecommendationGeneration(
+                existingPlanIds = emptySet(),
+                planId = plan.id,
+                isForeground = false,
+                maxAttempts = RECOMMENDATION_RESUME_MAX_ATTEMPTS
+            )
+            activeRecommendationGenerations += generation
+            viewModelScope.launch { pollRecommendationGeneration(generation) }
+        }
+    }
+
+    private fun TimelineSegment.isSmartRecommendationSegment(): Boolean =
+        (segmentType == SegmentType.ITINERARY || segmentType == SegmentType.GENERATED) &&
+                title != TIMELINE_DATE_TITLE &&
+                (smartRecommendation == true || title?.startsWith(RECOMMENDATION_TITLE_PREFIX) == true)
+
+    private fun TimelinePlan.hasRenderableRecommendation(): Boolean =
+        generatedStatus >= 1 && !steps.isNullOrEmpty()
+
+    private fun showRecommendationGenerationContinuesNotice() {
+        showAlert(
+            AlertType.INFO,
+            localizedOrDefault(
+                LanguageConst.TIMELINE_INFO_RECOMMENDATION_GENERATION_CONTINUES,
+                "Your recommendations are still being prepared. The list will update automatically when they're ready."
+            )
+        )
+    }
+
+    private fun localizedOrDefault(key: String, fallback: String): String =
+        getLanguageForKey(key).let { if (it.isBlank() || it == key) fallback else it }
+
+    private suspend inline fun <T> runCancellable(block: () -> T): Result<T> {
+        val result = try {
+            Result.success(block())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (t: Throwable) {
+            Result.failure(t)
+        }
+        currentCoroutineContext().ensureActive()
+        return result
+    }
+
+    /**
+     * One smart recommendation generation. [planId] is locked the first time the created plan is
+     * seen (a plan id absent from [existingPlanIds]); it is read from the polling thread.
+     */
+    private class RecommendationGeneration(
+        val existingPlanIds: Set<String>,
+        planId: String?,
+        @Volatile var isForeground: Boolean,
+        val maxAttempts: Int
+    ) {
+        @Volatile
+        var planId: String? = planId
+            private set
+
+        fun locate(timeline: Timeline): TimelinePlan? {
+            val plans = timeline.plans ?: return null
+            planId?.let { id -> return plans.firstOrNull { it.id == id } }
+            val created = plans.firstOrNull { it.id.isNotEmpty() && it.id !in existingPlanIds } ?: return null
+            planId = created.id
+            return created
+        }
+
+        fun isConcluded(timeline: Timeline): Boolean {
+            val plan = locate(timeline) ?: return planId != null
+            return plan.generatedStatus != 0
+        }
+
+        fun tracks(candidatePlanId: String): Boolean =
+            planId?.let { it == candidatePlanId } ?: (candidatePlanId !in existingPlanIds)
     }
 
     // =====================
@@ -1480,24 +1695,47 @@ class ACTimelineVM @Inject constructor(
 
     fun deleteSegment(segmentIndex: Int) {
         showBottomSheetLoader(LanguageConst.LOADING_TEXT_REMOVING_FROM_PLAN, "Removing from plan")
+        val planId = planIdAt(segmentIndex)
 
         viewModelScope.launch {
-            runCatching { deleteSegmentUseCase(DeleteSegmentUseCase.Params(_tripHash, segmentIndex)) }
-                .onSuccess {
-                    val mutated = applyLocalSegmentDelete(segmentIndex)
+            segmentMutationMutex.withLock {
+                val index = resolveSegmentIndex(segmentIndex, planId)
+                if (index == null) {
                     hideLottieLoading()
-                    if (mutated) {
-                        republishCurrentTimeline()
-                    } else {
-                        refreshTimeline()
+                    republishCurrentTimeline()
+                    return@withLock
+                }
+                runCatching { deleteSegmentUseCase(DeleteSegmentUseCase.Params(_tripHash, index)) }
+                    .onSuccess {
+                        val mutated = applyLocalSegmentDelete(index)
+                        hideLottieLoading()
+                        if (mutated) {
+                            republishCurrentTimeline()
+                        } else {
+                            refreshTimeline()
+                        }
                     }
-                }
-                .onFailure { t ->
-                    val errorModel = t.toErrorModel()
-                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
-                    hideLottieLoading()
-                }
+                    .onFailure { t ->
+                        val errorModel = t.toErrorModel()
+                        _error.value = errorMessageOrCommon(errorModel.errorDesc)
+                        hideLottieLoading()
+                    }
+            }
         }
+    }
+
+    private fun planIdAt(segmentIndex: Int): String? =
+        _timeline.value?.plans?.getOrNull(segmentIndex)?.id?.takeIf { it.isNotEmpty() }
+
+    /**
+     * Re-resolves a segment index captured before waiting for the segment mutation lock.
+     * Returns null when the segment identified by [planId] is no longer in the timeline.
+     */
+    private fun resolveSegmentIndex(requestedIndex: Int, planId: String?): Int? {
+        if (planId == null) return requestedIndex
+        val plans = _timeline.value?.plans ?: return null
+        if (plans.getOrNull(requestedIndex)?.id == planId) return requestedIndex
+        return plans.indexOfFirst { it.id == planId }.takeIf { it >= 0 }
     }
 
     /**
@@ -1812,34 +2050,45 @@ class ACTimelineVM @Inject constructor(
         if (!useInlineLoader) {
             showBottomSheetLoader(LanguageConst.LOADING_TEXT_CHANGING_TIME, "Changing time")
         }
+        val planId = planIdAt(segmentIndex)
 
         viewModelScope.launch {
-            runCatching {
-                updateSegmentTimeUseCase(
-                    UpdateSegmentTimeUseCase.Params(
-                        tripHash = _tripHash,
-                        segmentIndex = segmentIndex,
-                        original = segment,
-                        newStartTime = startTime,
-                        newEndTime = endTime,
-                        newDate = newDate,
-                        newPrice = newPrice
-                    )
-                )
-            }
-                .onSuccess {
-                    reloadTimelineAndFinishTimeChange(useInlineLoader) {
-                        applyLocalSegmentTimeUpdate(segmentIndex, startTime, endTime, newDate, newPrice)
-                    }
-                    onInlineResult?.invoke(true)
-                }
-                .onFailure { t ->
-                    val errorModel = t.toErrorModel()
+            segmentMutationMutex.withLock {
+                val index = resolveSegmentIndex(segmentIndex, planId)
+                if (index == null) {
                     if (!useInlineLoader) hideLottieLoading()
-                    _error.value = errorMessageOrCommon(errorModel.errorDesc)
                     if (useInlineLoader) _changeTimeFinished.value = false
+                    republishCurrentTimeline()
                     onInlineResult?.invoke(false)
+                    return@withLock
                 }
+                runCatching {
+                    updateSegmentTimeUseCase(
+                        UpdateSegmentTimeUseCase.Params(
+                            tripHash = _tripHash,
+                            segmentIndex = index,
+                            original = segment,
+                            newStartTime = startTime,
+                            newEndTime = endTime,
+                            newDate = newDate,
+                            newPrice = newPrice
+                        )
+                    )
+                }
+                    .onSuccess {
+                        reloadTimelineAndFinishTimeChange(useInlineLoader) {
+                            applyLocalSegmentTimeUpdate(index, startTime, endTime, newDate, newPrice)
+                        }
+                        onInlineResult?.invoke(true)
+                    }
+                    .onFailure { t ->
+                        val errorModel = t.toErrorModel()
+                        if (!useInlineLoader) hideLottieLoading()
+                        _error.value = errorMessageOrCommon(errorModel.errorDesc)
+                        if (useInlineLoader) _changeTimeFinished.value = false
+                        onInlineResult?.invoke(false)
+                    }
+            }
         }
     }
 
@@ -2828,6 +3077,13 @@ class ACTimelineVM @Inject constructor(
 
     companion object {
         const val ARG_TRIP_HASH = "tripHash"
+
+        private const val RECOMMENDATION_TITLE_PREFIX = "Recommendations-"
+        private const val RECOMMENDATION_POLL_INTERVAL_MS = 2000L
+        private const val RECOMMENDATION_FOREGROUND_ATTEMPTS = 20
+        private const val RECOMMENDATION_MAX_ATTEMPTS = 60
+        private const val RECOMMENDATION_RESUME_MAX_ATTEMPTS = 40
+        private const val RECOMMENDATION_MAX_FAILURES = 3
 
         /** Span applied to a moved step whose own start/end can't be read. */
         private const val DEFAULT_STEP_DURATION_MINUTES = 60

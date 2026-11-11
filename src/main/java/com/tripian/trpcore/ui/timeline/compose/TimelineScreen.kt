@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -69,6 +70,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -180,6 +183,21 @@ fun TimelineScreen(
                 putString(TRPCore.EXTRA_APP_CURRENCY, appCurrency)
             }
             viewModel.onViewCreated(null)
+        }
+    }
+
+    DisposableEffect(navEntry, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewModel.setScreenVisible(true)
+                Lifecycle.Event.ON_PAUSE -> viewModel.setScreenVisible(false)
+                else -> Unit
+            }
+        }
+        navEntry.lifecycle.addObserver(observer)
+        onDispose {
+            navEntry.lifecycle.removeObserver(observer)
+            viewModel.setScreenVisible(false)
         }
     }
 
