@@ -460,6 +460,56 @@ class ACTimelineVMSmartRecommendationTest {
         }
 
     @Test
+    fun `resumed generation that times out keeps its segment and shows no error`() =
+        runTest(testDispatcher) {
+            val vm = vm()
+            val pending = timelineOf(listOf(smartSegment()), listOf(plan("p1", status = 0)))
+            every { timelineRepository.consumeGeneratedTimeline(any()) } returns pending
+            var pollCalls = 0
+            stubPolling {
+                pollCalls++
+                timelineOf(listOf(smartSegment()), listOf(plan("p1", status = 0)))
+            }
+            coEvery { deleteSegmentUseCase(any()) } returns ResponseModelBase().apply { status = 200 }
+
+            vm.onReturnFromSavedPlans()
+            testDispatcher.scheduler.advanceUntilIdle()
+            vm.onReturnFromSavedPlans()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            assertEquals(40, pollCalls)
+            assertFalse(vm.isRecommendationGenerationPending)
+            assertEquals("p1", vm.timeline.value?.plans?.single()?.id)
+            coVerify(exactly = 1) { waitForGenerationUseCase(any()) }
+            coVerify(exactly = 0) { deleteSegmentUseCase(any()) }
+            coVerify(exactly = 0) { fetchTimelineUseCase(any()) }
+            coVerify(exactly = 0) { viewListener.showAlert(any(), any()) }
+        }
+
+    @Test
+    fun `resumed generation deletes its segment when the backend reports a negative status`() =
+        runTest(testDispatcher) {
+            val vm = vm()
+            every { timelineRepository.consumeGeneratedTimeline(any()) } returns
+                timelineOf(listOf(smartSegment()), listOf(plan("p1", status = 0)))
+            stubPolling { timelineOf(listOf(smartSegment()), listOf(plan("p1", status = -1, hasSteps = false))) }
+            coEvery { fetchTimelineUseCase(any()) } returnsMany listOf(
+                timelineOf(listOf(smartSegment()), listOf(plan("p1", status = -1, hasSteps = false))),
+                timelineOf(emptyList(), emptyList())
+            )
+            coEvery { deleteSegmentUseCase(any()) } returns ResponseModelBase().apply { status = 200 }
+
+            vm.onReturnFromSavedPlans()
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                deleteSegmentUseCase(match<DeleteSegmentUseCase.Params> { it.segmentIndex == 0 })
+            }
+            assertTrue(vm.timeline.value?.plans.isNullOrEmpty())
+            coVerify(exactly = 1) { viewListener.showAlert(AlertType.ERROR, failureAlert) }
+        }
+
+    @Test
     fun `cleanup delete waits for an in-flight user segment delete and uses the re-located index`() =
         runTest(testDispatcher) {
             val vm = vm()

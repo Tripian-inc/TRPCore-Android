@@ -1426,6 +1426,7 @@ class ACTimelineVM @Inject constructor(
             expectedTitle = title,
             planId = null,
             isForeground = true,
+            isResumed = false,
             maxAttempts = RECOMMENDATION_MAX_ATTEMPTS
         )
         activeRecommendationGenerations += generation
@@ -1531,8 +1532,15 @@ class ACTimelineVM @Inject constructor(
             polled != null && plan == null && generation.planId != null -> {
                 if (generation.isForeground) hideLottieLoading()
             }
+            generation.isResumed && (plan == null || plan.generatedStatus >= 0) ->
+                stopResumedRecommendationGeneration(generation)
             else -> discardFailedRecommendation(generation)
         }
+    }
+
+    /** Ends a resumed generation without touching its segment and keeps it from being resumed again. */
+    private fun stopResumedRecommendationGeneration(generation: RecommendationGeneration) {
+        generation.planId?.let { abandonedRecommendationPlanIds += it }
     }
 
     private suspend fun applyGeneratedRecommendation(
@@ -1614,6 +1622,8 @@ class ACTimelineVM @Inject constructor(
     /**
      * Starts a background poller for every smart recommendation plan that is still generating
      * but is not tracked by an active poller, e.g. after the app was killed mid-generation.
+     * A resumed generation deletes its segment only when the backend reports a negative status;
+     * on timeout, polling failures or an empty result it stops silently and leaves the segment as it is.
      */
     private fun resumePendingRecommendationGenerations(timeline: Timeline) {
         val segments = timeline.tripProfile?.segments ?: return
@@ -1628,6 +1638,7 @@ class ACTimelineVM @Inject constructor(
                 expectedTitle = null,
                 planId = plan.id,
                 isForeground = false,
+                isResumed = true,
                 maxAttempts = RECOMMENDATION_RESUME_MAX_ATTEMPTS
             )
             activeRecommendationGenerations += generation
@@ -1659,7 +1670,10 @@ class ACTimelineVM @Inject constructor(
         activeRecommendationGenerations -= abandoned.toSet()
     }
 
-    /** A plan with status >= 1 but no steps is a failed generation, so its empty segment is deleted. */
+    /**
+     * A plan with status >= 1 but no steps is a failed generation; its empty segment is deleted
+     * unless the generation was resumed.
+     */
     private fun TimelinePlan.hasRenderableRecommendation(): Boolean =
         generatedStatus >= 1 && !steps.isNullOrEmpty()
 
@@ -1698,6 +1712,7 @@ class ACTimelineVM @Inject constructor(
         val expectedTitle: String?,
         planId: String?,
         @Volatile var isForeground: Boolean,
+        val isResumed: Boolean,
         val maxAttempts: Int
     ) {
         @Volatile
